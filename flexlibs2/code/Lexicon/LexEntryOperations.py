@@ -607,13 +607,13 @@ class LexEntryOperations(BaseOperations):
                 remaining_props[k] = v
 
         # Resolve the target project's publication list once for both RC fields.
-        # Publications live in lp.PublicationsOA.PossibilitiesOS (flat list;
+        # Publications live in lexDB.PublicationTypesOA.PossibilitiesOS (flat list;
         # sub-publications are accessed via SubPossibilitiesOS but publication
         # exclusion flags only reference top-level publications in practice).
         def _build_pub_guid_map():
             pub_map = {}
             try:
-                for pub in self.project.lp.PublicationsOA.PossibilitiesOS:
+                for pub in self.project.lexDB.PublicationTypesOA.PossibilitiesOS:
                     pub_map[str(pub.Guid)] = pub
             except Exception as exc:
                 _log.warning(

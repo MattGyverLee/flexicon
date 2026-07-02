@@ -715,7 +715,7 @@ class LexSenseOperations(BaseOperations):
             def _build_pub_guid_map():
                 pub_map = {}
                 try:
-                    for pub in self.project.lp.PublicationsOA.PossibilitiesOS:
+                    for pub in self.project.lexDB.PublicationTypesOA.PossibilitiesOS:
                         pub_map[str(pub.Guid)] = pub
                 except Exception as exc:
                     _log.warning(
