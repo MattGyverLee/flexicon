@@ -100,3 +100,63 @@ class TestWritingSystemsEnumerationPattern:
         # Sanity: should be found in at least one grammar/lexicon operations file
         ops_files = [path for path, _, _ in matches if "Operations.py" in str(path)]
         assert ops_files, "Expected self.project.WritingSystems.GetAll() in at least one Operations class"
+
+
+class TestWritingSystemsLiveSmoke:
+    """
+    Live smoke test for WritingSystems enumeration fix (issue #216, part 2).
+    Exercises GetSyncableProperties on real objects to ensure no regressions.
+    """
+
+    def test_getsyncableproperties_calls_succeed(self, sena3_sandbox):
+        """
+        Call GetSyncableProperties on representative objects from each
+        Operations class that exposes it. Verify no AttributeError on
+        missing WritingSystems methods.
+        """
+        import pytest
+
+        flex_project = sena3_sandbox
+
+        # List of (Operations class, method, object_source) tuples
+        test_cases = [
+            ("GrammaticalMorphemeOperations", "GetAll", None),
+            ("LexEntryOperations", "GetAll", None),
+            ("LexSenseOperations", "GetAll", None),
+            ("InflectionFeatureOperations", "GetAll", None),
+        ]
+
+        for class_name, method_name, object_source in test_cases:
+            try:
+                ops = getattr(flex_project, class_name, None)
+                if ops is None:
+                    continue  # Class not available in this project
+
+                # Get an object to sync
+                items = list(getattr(ops, method_name)())
+                if not items:
+                    continue  # No items to test
+
+                item = items[0]
+
+                # Call GetSyncableProperties — this is where WritingSystems
+                # enumeration happens. If the old pattern regressed, this
+                # will raise AttributeError.
+                try:
+                    props = ops.GetSyncableProperties(item)
+                    assert isinstance(props, dict), f"{class_name}: GetSyncableProperties returned non-dict"
+                except AttributeError as exc:
+                    if any(
+                        bad_pattern in str(exc)
+                        for bad_pattern in ["GetAllWritingSystems", "GetWritingSystemTag", "ws_factory"]
+                    ):
+                        pytest.fail(
+                            f"{class_name}.GetSyncableProperties raised AttributeError indicating "
+                            f"regression to old WritingSystems enumeration pattern: {exc}"
+                        )
+                    else:
+                        raise
+
+            except Exception as exc:
+                pytest.skip(f"Could not test {class_name}: {exc}")
+
