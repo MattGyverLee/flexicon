@@ -467,7 +467,7 @@ class PossibilityItemOperations(BaseOperations):
 
         # Collect all writing system alternatives for Name
         name_alts = {}
-        for ws in self.project.WritingSystems.GetAllWritingSystems():
+        for ws in self.project.WritingSystems.GetAll():
             wsHandle = ws.Handle
             name_str = item.Name.get_String(wsHandle)
             if name_str:
@@ -478,7 +478,7 @@ class PossibilityItemOperations(BaseOperations):
 
         # Collect all writing system alternatives for Description
         desc_alts = {}
-        for ws in self.project.WritingSystems.GetAllWritingSystems():
+        for ws in self.project.WritingSystems.GetAll():
             wsHandle = ws.Handle
             desc_str = item.Description.get_String(wsHandle)
             if desc_str:

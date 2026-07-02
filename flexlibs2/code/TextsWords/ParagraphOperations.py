@@ -376,7 +376,10 @@ class ParagraphOperations(BaseOperations):
                 # Get the writing system of the TsString
                 ws = item.Contents.get_WritingSystemAt(0) if item.Contents.Length > 0 else None
                 if ws:
-                    ws_dict[self.project.GetWritingSystemTag(ws)] = text
+                    # Find the WritingSystemDefinition with this handle to get its ID
+                    ws_def = next((w for w in self.project.WritingSystems.GetAll() if w.Handle == ws), None)
+                    if ws_def:
+                        ws_dict[ws_def.Id] = text
             props["Contents"] = ws_dict
 
         return props

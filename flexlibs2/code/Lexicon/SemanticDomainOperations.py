@@ -1222,51 +1222,46 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         # Name - domain name
         name_dict = {}
         if hasattr(item, "Name"):
-            for ws_handle in self.project.GetAllWritingSystems():
-                text = ITsString(item.Name.get_String(ws_handle)).Text
+            for ws_def in self.project.WritingSystems.GetAll():
+                text = ITsString(item.Name.get_String(ws_def.Handle)).Text
                 if text:
-                    ws_tag = self.project.GetWritingSystemTag(ws_handle)
-                    name_dict[ws_tag] = text
+                    name_dict[ws_def.Id] = text
         props["Name"] = name_dict
 
         # Description - domain description
         description_dict = {}
         if hasattr(item, "Description"):
-            for ws_handle in self.project.GetAllWritingSystems():
-                text = ITsString(item.Description.get_String(ws_handle)).Text
+            for ws_def in self.project.WritingSystems.GetAll():
+                text = ITsString(item.Description.get_String(ws_def.Handle)).Text
                 if text:
-                    ws_tag = self.project.GetWritingSystemTag(ws_handle)
-                    description_dict[ws_tag] = text
+                    description_dict[ws_def.Id] = text
         props["Description"] = description_dict
 
         # Abbreviation - domain number
         abbreviation_dict = {}
         if hasattr(item, "Abbreviation"):
-            for ws_handle in self.project.GetAllWritingSystems():
-                text = ITsString(item.Abbreviation.get_String(ws_handle)).Text
+            for ws_def in self.project.WritingSystems.GetAll():
+                text = ITsString(item.Abbreviation.get_String(ws_def.Handle)).Text
                 if text:
-                    ws_tag = self.project.GetWritingSystemTag(ws_handle)
-                    abbreviation_dict[ws_tag] = text
+                    abbreviation_dict[ws_def.Id] = text
         props["Abbreviation"] = abbreviation_dict
 
         # Questions - elicitation questions
         questions_dict = {}
         if hasattr(item, "Questions"):
-            for ws_handle in self.project.GetAllWritingSystems():
-                text = ITsString(item.Questions.get_String(ws_handle)).Text
+            for ws_def in self.project.WritingSystems.GetAll():
+                text = ITsString(item.Questions.get_String(ws_def.Handle)).Text
                 if text:
-                    ws_tag = self.project.GetWritingSystemTag(ws_handle)
-                    questions_dict[ws_tag] = text
+                    questions_dict[ws_def.Id] = text
         props["Questions"] = questions_dict
 
         # OcmCodes - OCM codes
         ocm_dict = {}
         if hasattr(item, "OcmCodes"):
-            for ws_handle in self.project.GetAllWritingSystems():
-                text = ITsString(item.OcmCodes.get_String(ws_handle)).Text
+            for ws_def in self.project.WritingSystems.GetAll():
+                text = ITsString(item.OcmCodes.get_String(ws_def.Handle)).Text
                 if text:
-                    ws_tag = self.project.GetWritingSystemTag(ws_handle)
-                    ocm_dict[ws_tag] = text
+                    ocm_dict[ws_def.Id] = text
         props["OcmCodes"] = ocm_dict
 
         # Note: SubPossibilitiesOS is an Owning Sequence (OS) - not included
