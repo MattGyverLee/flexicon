@@ -1,4 +1,8 @@
-# flexlibs History
+# flexicon History
+
+> Formerly `flexlibs2`. This file is the project's own development history --
+> it is no longer an upstream-sync mirror of cdfarrow/flexlibs, which flexicon
+> no longer tracks. See `CHANGELOG.md` for the released-version changelog.
 
 ## Known Issues
 

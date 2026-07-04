@@ -15,6 +15,30 @@ _Nothing yet. Non-breaking fixes and breaking changes accumulate here until the 
 
 ---
 
+## [4.1.0]
+
+### Changed
+- **Renamed the library from `flexlibs2` to `flexicon`** (distribution name on
+  PyPI: `pyflexicon`). flexicon is now maintained as an independent successor
+  to cdfarrow/flexlibs rather than a fork; it no longer tracks the upstream
+  codebase. Original LGPL-2.1 attribution (Craig Farrow) is retained in
+  `LICENSE.txt` / `NOTICE`.
+- Packaging consolidated to a single `pyproject.toml` (removed `setup.cfg`);
+  corrected the license metadata from `GPL-2.0-or-later` to the actual
+  `LGPL-2.1-or-later`.
+
+### Added
+- `flexlibs2` compatibility alias: `import flexlibs2` (and deep submodule
+  imports such as `flexlibs2.code.lcm_casting`) transparently resolve to the
+  identical `flexicon` objects via a meta-path finder, so existing FlexTools /
+  FlexTrans scripts keep working. Emits a `DeprecationWarning`.
+
+### Deprecated
+- The `flexlibs2` import alias is deprecated and will be **removed in v5.0.0**.
+  Update imports to `flexicon`.
+
+---
+
 ## [4.0.1] - 2026-06-30
 
 ### Fixed

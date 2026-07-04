@@ -1,15 +1,23 @@
-flexlibs
+flexicon
 ========
 
-flexlibs is a library for accessing FieldWorks Language Explorer 
+flexicon is a library for accessing FieldWorks Language Explorer
 (FLEx) [1]_ projects.
 
-flexlibs handles the necessary initialisation of the FLEx engine, and 
-provides a class (FLExProject) for opening a FLEx project and working 
+flexicon handles the necessary initialisation of the FLEx engine, and
+provides a class (FLExProject) for opening a FLEx project and working
 with its contents.
 
 For the GUI application that runs Python scripts/plugins
-on FLEx databases see FLExTools [2]_, which is built on flexlibs2.
+on FLEx databases see FLExTools [2]_.
+
+.. note::
+
+   **flexicon was previously named flexicon.** It began as a fork of
+   cdfarrow/flexlibs (LGPL-2.1) and is now an independent successor library.
+   The legacy ``flexlibs2`` import name still works as a deprecated alias
+   (removed in v5.0.0) -- existing FlexTools / FlexTrans scripts keep running
+   unchanged. Install with ``pip install pyflexicon``; import as ``flexicon``.
 
 
 Requirements
@@ -31,7 +39,7 @@ Fieldworks.
 Installation
 ------------
 Run:
-``pip install flexlibs``
+``pip install pyflexicon``
 
 Usage
 -----
@@ -41,18 +49,18 @@ Basic usage:
 .. code-block:: python
 
 
-  import flexlibs2
-  flexlibs2.FLExInitialize()
-  p = flexlibs2.FLExProject()
+  import flexicon
+  flexicon.FLExInitialize()
+  p = flexicon.FLExProject()
   p.OpenProject('parser-experiments')
   p.GetPartsOfSpeech()
   # ['Adverb', 'Noun', 'Pro-form', 'Pronoun', 'Verb', 'Copulative verb', 'Ditransitive verb', 'Intransitive verb', 'Transitive verb', 'Coordinating connective']
 
   # The API documentation is an HTML file
-  os.startfile(flexlibs2.APIHelpFile)
+  os.startfile(flexicon.APIHelpFile)
   ...
   p.CloseProject()
-  flexlibs2.FLExCleanup()
+  flexicon.FLExCleanup()
 
 
 Version 2.0+ Operations Classes
@@ -73,10 +81,10 @@ Example usage:
 
 .. code-block:: python
 
-  import flexlibs2
-  flexlibs2.FLExInitialize()
+  import flexicon
+  flexicon.FLExInitialize()
 
-  project = flexlibs2.FLExProject()
+  project = flexicon.FLExProject()
   project.OpenProject('MyProject', writeEnabled=True)
 
   # Create a new lexical entry
@@ -95,7 +103,7 @@ Example usage:
       "The dog runs in the park.", "en")
 
   project.CloseProject()
-  flexlibs2.FLExCleanup()
+  flexicon.FLExCleanup()
 
 All v1.x API methods remain available for backward compatibility.
 
@@ -118,8 +126,8 @@ the need for manual type checking and casting.
 
 .. code-block:: python
 
-  from flexlibs2 import FLExProject
-  from flexlibs2.wrappers import PhonologicalRule
+  from flexicon import FLExProject
+  from flexicon.wrappers import PhonologicalRule
 
   project = FLExProject()
   project.OpenProject('MyProject')
@@ -156,7 +164,7 @@ Contract Testing
 
 A pre-commit hook verifies that LibLCM API dependencies stay consistent
 as you develop. On machines with FieldWorks installed, the full suite
-checks every type and member flexlibs2 depends on and detects regressions
+checks every type and member flexicon depends on and detects regressions
 across LibLCM upgrades.
 
 **Setup**: ``python hooks/install.py``

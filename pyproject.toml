@@ -1,5 +1,50 @@
 [build-system]
-requires = [
-    "setuptools",
-    ]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyflexicon"
+version = "4.1.0"
+description = "flexicon: a user-centric Python library for FieldWorks Language Explorer (FLEx) projects via the SIL Language and Culture Model (LCM) API"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+requires-python = ">=3.8,<3.14"
+license = "LGPL-2.1-or-later"
+license-files = ["LICENSE.txt"]
+authors = [
+    { name = "Matthew Lee", email = "matthew_lee@sil.org" },
+]
+# flexicon began as a fork of cdfarrow/flexlibs (Copyright 2008-2022 Craig
+# Farrow, LGPL-2.1); original attribution retained in LICENSE.txt / NOTICE.
+maintainers = [
+    { name = "Matthew Lee", email = "matthew_lee@sil.org" },
+]
+keywords = ["FieldWorks", "FLEx", "LCM", "linguistics", "lexicon", "SIL"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Database",
+    "Operating System :: Microsoft :: Windows",
+]
+dependencies = [
+    "pythonnet >= 3.0.3, <3.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/MattGyverLee/flexicon"
+Repository = "https://github.com/MattGyverLee/flexicon"
+Changelog = "https://github.com/MattGyverLee/flexicon/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+# Ship the flexicon package and the deprecated flexlibs2 compatibility alias.
+include = ["flexicon*", "flexlibs2*"]
+
+[tool.setuptools.package-data]
+# Ship type stubs and any bundled data alongside the package.
+"*" = ["py.typed", "*.pyi"]

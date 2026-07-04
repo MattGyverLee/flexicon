@@ -1,246 +1,72 @@
 # ----------------------------------------------------------------------------
-# Name:         flexlibs2
-# Purpose:      This package provides a Python interface to FLEx project data
-#               via the Fieldworks Language and Culture Model (LCM).
-#               FlexLibs 3.0 - Consolidated API with PossibilityItemOperations base class
+# Name:         flexlibs2  (compatibility alias)
+# Purpose:      Backward-compatibility shim. The library formerly published as
+#               `flexlibs2` is now `flexicon` (distribution name: pyflexicon).
+#
+#               This package aliases the whole `flexlibs2` namespace onto
+#               `flexicon` so that existing code -- including FlexTools /
+#               FlexTrans scripts on disk -- keeps working unchanged:
+#
+#                   import flexlibs2
+#                   from flexlibs2 import FLExProject, LexEntryOperations
+#                   from flexlibs2.code.lcm_casting import cast_to_concrete
+#
+#               all resolve to the SAME `flexicon` objects. A meta-path finder
+#               guarantees identity for arbitrarily deep submodules (so
+#               `flexlibs2.code.X.Y is flexicon.code.X.Y`), which matters for
+#               isinstance / casting checks that compare classes by identity.
+#
+#   DEPRECATED:  The `flexlibs2` alias will be REMOVED in flexicon v5.0.0.
+#                Update imports to `flexicon` before then.
 # ----------------------------------------------------------------------------
 
-version = "4.0.1"
+import importlib
+import importlib.abc
+import importlib.util
+import sys
+import warnings
 
-# Define exported classes, etc. at the top level of the package
+import flexicon
 
-from .code.FLExInit import (
-    FLExInitialize,
-    FLExCleanup,
-)
+_SELF = "flexlibs2"
+_TARGET = "flexicon"
 
-from .code.FLExGlobals import (
-    FWCodeDir,
-    FWProjectsDir,
-    FWExecutable,
-    FWShortVersion,
-    FWLongVersion,
-    APIHelpFile,
-)
 
-from .code.FLExProject import (
-    AllProjectNames,
-    OpenProjectInFW,
-    FLExProject,
-    FP_FileLockedError,
-    FP_FileNotFoundError,
-    FP_MigrationRequired,
-    FP_NullParameterError,
-    FP_ParameterError,
-    FP_ProjectError,
-    FP_ReadOnlyError,
-    FP_RuntimeError,
-    FP_TransactionError,
-    FP_WritingSystemError,
-)
+class _FlexiconAliasFinder(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+    """Redirect every `flexlibs2.<sub>` import to the already-imported
+    `flexicon.<sub>` module object, preserving identity (no re-execution)."""
 
-# Advanced Operations (v2.0+)
+    _prefix = _SELF + "."
 
-# Grammar Operations
-from .code.Grammar.POSOperations import (
-    POSOperations,
-)
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname != _SELF and not fullname.startswith(self._prefix):
+            return None
+        return importlib.util.spec_from_loader(fullname, self)
 
-from .code.Grammar.PhonemeOperations import (
-    PhonemeOperations,
-)
+    def create_module(self, spec):
+        if spec.name == _SELF:
+            return flexicon
+        target = _TARGET + spec.name[len(_SELF):]
+        module = importlib.import_module(target)
+        sys.modules[spec.name] = module
+        return module
 
-from .code.Grammar.NaturalClassOperations import (
-    NaturalClassOperations,
-)
+    def exec_module(self, module):
+        # Module is fully initialised by flexicon; nothing to execute here.
+        pass
 
-from .code.Grammar.EnvironmentOperations import (
-    EnvironmentOperations,
-)
 
-from .code.Grammar.MorphRuleOperations import (
-    MorphRuleOperations,
-)
+# Point the top-level name at flexicon, and install the finder so deep
+# submodule imports resolve to the identical flexicon objects.
+sys.modules[_SELF] = flexicon
+if not any(isinstance(f, _FlexiconAliasFinder) for f in sys.meta_path):
+    sys.meta_path.insert(0, _FlexiconAliasFinder())
 
-from .code.Grammar.InflectionFeatureOperations import (
-    InflectionFeatureOperations,
-)
-
-from .code.Grammar.GramCatOperations import (
-    GramCatOperations,
-)
-
-from .code.Grammar.PhonologicalRuleOperations import (
-    PhonologicalRuleOperations,
-)
-
-# Lexicon Operations
-from .code.Lexicon.LexEntryOperations import (
-    LexEntryOperations,
-)
-
-from .code.Lexicon.LexSenseOperations import (
-    LexSenseOperations,
-)
-
-from .code.Lexicon.ExampleOperations import (
-    ExampleOperations,
-)
-
-from .code.Lexicon.LexReferenceOperations import (
-    LexReferenceOperations,
-)
-
-from .code.Lexicon.VariantOperations import (
-    VariantOperations,
-)
-
-from .code.Lexicon.PronunciationOperations import (
-    PronunciationOperations,
-)
-
-from .code.Lexicon.SemanticDomainOperations import (
-    SemanticDomainOperations,
-)
-
-from .code.Lexicon.EtymologyOperations import (
-    EtymologyOperations,
-)
-
-from .code.Lexicon.AllomorphOperations import (
-    AllomorphOperations,
-)
-
-# TextsWords Operations
-from .code.TextsWords.TextOperations import (
-    TextOperations,
-)
-
-from .code.TextsWords.WordformOperations import (
-    WordformOperations,
-    SpellingStatusStates,
-)
-
-from .code.TextsWords.WfiAnalysisOperations import (
-    WfiAnalysisOperations,
-    ApprovalStatusTypes,
-)
-
-from .code.TextsWords.ParagraphOperations import (
-    ParagraphOperations,
-)
-
-from .code.TextsWords.SegmentOperations import (
-    SegmentOperations,
-)
-
-from .code.TextsWords.WfiGlossOperations import (
-    WfiGlossOperations,
-)
-
-from .code.TextsWords.WfiMorphBundleOperations import (
-    WfiMorphBundleOperations,
-)
-
-from .code.Shared.MediaOperations import (
-    MediaOperations,
-    MediaType,
-)
-
-from .code.Shared.FilterOperations import (
-    FilterOperations,
-)
-
-from .code.Shared.string_utils import (
-    normalize_text,
-    is_empty_text,
-    best_analysis_text,
-    best_vernacular_text,
-    best_text,
-    FLEX_NULL_MARKER,
-)
-
-from .code.Shared.rule_patterns import (
-    Seg,
-    NC,
-    Boundary,
-)
-
-from .code.TextsWords.DiscourseOperations import (
-    DiscourseOperations,
-)
-
-# Notebook Operations
-from .code.Notebook.NoteOperations import (
-    NoteOperations,
-)
-
-from .code.Notebook.PersonOperations import (
-    PersonOperations,
-)
-
-from .code.Notebook.LocationOperations import (
-    LocationOperations,
-)
-
-from .code.Notebook.AnthropologyOperations import (
-    AnthropologyOperations,
-)
-
-from .code.Notebook.DataNotebookOperations import (
-    DataNotebookOperations,
-)
-
-# Lists Operations
-from .code.Lists.PublicationOperations import (
-    PublicationOperations,
-)
-
-from .code.Lists.AgentOperations import (
-    AgentOperations,
-)
-
-from .code.Lists.ConfidenceOperations import (
-    ConfidenceOperations,
-)
-
-from .code.Lists.OverlayOperations import (
-    OverlayOperations,
-)
-
-from .code.Lists.TranslationTypeOperations import (
-    TranslationTypeOperations,
-)
-
-from .code.Lists.PossibilityListOperations import (
-    PossibilityListOperations,
-)
-
-# System Operations
-from .code.System.WritingSystemOperations import (
-    WritingSystemOperations,
-)
-
-from .code.System.ProjectSettingsOperations import (
-    ProjectSettingsOperations,
-)
-
-from .code.System.AnnotationDefOperations import (
-    AnnotationDefOperations,
-)
-
-from .code.System.CheckOperations import (
-    CheckOperations,
-)
-
-from .code.System.CustomFieldOperations import (
-    CustomFieldOperations,
-)
-
-# Pythonic Wrapper - suffix-free property access
-from .code.PythonicWrapper import (
-    wrap,
-    unwrap,
-    p,
-    PythonicWrapper,
+warnings.warn(
+    "The 'flexlibs2' package has been renamed to 'flexicon' "
+    "(pip install pyflexicon). The 'flexlibs2' import alias still works but is "
+    "deprecated and will be removed in flexicon v5.0.0; update your imports to "
+    "'flexicon'.",
+    DeprecationWarning,
+    stacklevel=2,
 )
