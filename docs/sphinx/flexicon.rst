@@ -1,10 +1,10 @@
-flexlibs library
+flexicon library
 ================
 
 :mod:`FLExProject` class
 ------------------------
 
-.. autoclass:: flexlibs2.FLExProject
+.. autoclass:: flexicon.FLExProject
     :members: 
     :undoc-members:
 

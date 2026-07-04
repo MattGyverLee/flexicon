@@ -1,5 +1,5 @@
 @ECHO OFF
-REM Simple build commands for flexlibs
+REM Simple build commands for flexicon
 
 REM Build with the default Python version
 set PYTHON=py
@@ -33,9 +33,9 @@ FOR %%C IN ("Init"
 :DoClean
     rmdir /s /q ".\build"
     rmdir /s /q ".\dist"
-    rmdir /s /q ".\flexlibs2\docs"
-    rmdir /s /q ".\flexlibs2.egg-info"
-    rmdir /s /q ".\flexlibs.egg-info"
+    rmdir /s /q ".\flexicon\docs"
+    rmdir /s /q ".\pyflexicon.egg-info"
+    rmdir /s /q ".\flexicon.egg-info"
     rmdir /s /q ".\.pytest_cache"
     del /q ".\pytest_output.txt" 2>nul
     del /q ".\pytest_operations.txt" 2>nul
@@ -44,7 +44,7 @@ FOR %%C IN ("Init"
     
 :DoBuild
     @REM Build the Sphinx docs
-    sphinx-build docs/sphinx flexlibs2/docs/flexlibsAPI
+    sphinx-build docs/sphinx flexicon/docs/flexiconAPI
 
     @REM Build the wheel with setuptools
     %PYTHON% -m build -w -nx
@@ -55,7 +55,7 @@ FOR %%C IN ("Init"
     
 :DoPublish
     echo Publishing wheel to PyPI
-    %PYTHON% -m twine upload .\dist\flexlibs2*
+    %PYTHON% -m twine upload .\dist\pyflexicon*
     goto :End
 
 

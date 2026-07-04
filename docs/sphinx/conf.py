@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# flexlibs documentation build configuration file, created by
+# flexicon documentation build configuration file, created by
 # sphinx-quickstart on Sat Feb 18 22:39:00 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -8,7 +8,7 @@
 
 import sys, os
 
-# Add the path to the flexlibs root for documenting the code with autodoc.
+# Add the path to the flexicon root for documenting the code with autodoc.
 # (We need to use os.path.abspath to make the relative path absolute.)
 sys.path.insert(0, os.path.abspath("..\\..\\"))
 
@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath("..\\..\\"))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "FLExTools"
+project = "flexicon"
 copyright = "%Y, Craig Farrow"
 
 
@@ -24,13 +24,20 @@ copyright = "%Y, Craig Farrow"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 # Auto-doc the FLExProject code, and provide the source code, too.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.viewcode"]
+# napoleon parses the Google-style docstrings (Args/Returns/Raises/Example)
+# used throughout FLExProject; without it those sections are treated as raw
+# reStructuredText and their indented continuation lines raise warnings.
+extensions = [
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.viewcode",
+]
 
 # The suffix of source filenames.
 source_suffix = {".rst": "restructuredtext"}
 
 # The master toctree document.
-master_doc = "flexlibs"
+master_doc = "flexicon"
 
 # The default Pygments (syntax highlighting) style.
 pygments_style = "sphinx"
