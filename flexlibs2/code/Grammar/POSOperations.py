@@ -1156,7 +1156,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         return props
 
     @OperationsMethod
-    def ApplySyncableProperties(self, item, props, ws_map=None):
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
         """Apply syncable properties (from GetSyncableProperties) onto a POS.
 
         Inherited from BaseOperations; declared here so static API indexers
@@ -1166,7 +1166,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         Description + plain-string CatalogSourceId), so no per-class
         customisation is needed.
         """
-        return super().ApplySyncableProperties(item, props, ws_map)
+        return super().ApplySyncableProperties(item, props, ws_map, fill_gaps=fill_gaps)
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):

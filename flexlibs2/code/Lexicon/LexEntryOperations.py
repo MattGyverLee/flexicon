@@ -576,7 +576,7 @@ class LexEntryOperations(BaseOperations):
         return props
 
     @OperationsMethod
-    def ApplySyncableProperties(self, item, props, ws_map=None):
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
         """
         Apply a syncable-properties dict onto a LexEntry item.
 
@@ -585,10 +585,18 @@ class LexEntryOperations(BaseOperations):
         as frozensets of GUID strings by GetSyncableProperties. All other fields
         delegate to the base class.
 
+        Domain ruling: under fill_gaps=True the RC fields are skipped entirely
+        because an empty frozenset is a complete intended value ("publish
+        everywhere"), not a gap. Under fill_gaps=False the existing
+        clear-and-rebuild behavior is unchanged.
+
         Args:
             item: Target ILexEntry object (must already exist in target project).
             props: dict produced by GetSyncableProperties on a source entry.
             ws_map: Optional source->target writing-system Id mapping.
+            fill_gaps (bool): When True, skip DoNotPublishInRC and
+                DoNotShowMainEntryInRC; pass through to BaseOperations for all
+                other fields.
         """
         import logging as _logging
         _log = _logging.getLogger(__name__)
@@ -624,11 +632,16 @@ class LexEntryOperations(BaseOperations):
 
         with self._TransactionCM("Apply entry properties"):
             # Apply plain / multistring fields via base class.
-            super().ApplySyncableProperties(item, remaining_props, ws_map=ws_map)
+            super().ApplySyncableProperties(item, remaining_props, ws_map=ws_map, fill_gaps=fill_gaps)
 
             pub_guid_map = None  # Lazy: only built if an RC field is present.
 
             for field_name, guid_set in rc_props.items():
+                # Domain ruling: an empty frozenset means "publish everywhere" --
+                # it is a complete intended value, not a gap. Skip RC fields
+                # entirely under fill_gaps so they are never cleared or rebuilt.
+                if fill_gaps:
+                    continue
                 if not hasattr(item, field_name):
                     continue
                 if not isinstance(guid_set, (frozenset, set)):

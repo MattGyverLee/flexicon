@@ -427,7 +427,7 @@ class ExampleOperations(BaseOperations):
         return props
 
     @OperationsMethod
-    def ApplySyncableProperties(self, item, props, ws_map=None):
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
         """
         Apply a syncable-properties dict onto an ILexExampleSentence item.
 
@@ -442,6 +442,10 @@ class ExampleOperations(BaseOperations):
             item: Target ILexExampleSentence (must already exist in target project).
             props: dict produced by GetSyncableProperties on a source example.
             ws_map: Optional source->target writing-system Id mapping.
+            fill_gaps (bool): When True, only write fields whose current target
+                value is empty/absent; passed through to BaseOperations.
+                Reference/TranslationsOC are always applied regardless (domain
+                has not ruled on them).
         """
         import logging as _logging
         _log = _logging.getLogger(__name__)
@@ -459,7 +463,7 @@ class ExampleOperations(BaseOperations):
 
         with self._TransactionCM("Apply example sync properties"):
             # Apply plain / multistring fields via base class.
-            super().ApplySyncableProperties(item, remaining_props, ws_map=ws_map)
+            super().ApplySyncableProperties(item, remaining_props, ws_map=ws_map, fill_gaps=fill_gaps)
 
             # --- Reference (ITsString, single-string) ---
             if "Reference" in special_props:

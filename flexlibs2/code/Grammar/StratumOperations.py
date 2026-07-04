@@ -301,7 +301,7 @@ class StratumOperations(BaseOperations):
         return props
 
     @OperationsMethod
-    def ApplySyncableProperties(self, item, props, ws_map=None):
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
         """
         Apply syncable properties produced by GetSyncableProperties.
 
@@ -310,11 +310,13 @@ class StratumOperations(BaseOperations):
             props (dict): Property dict as returned by GetSyncableProperties.
             ws_map (dict or None): Optional mapping of source WS IDs to target
                 WS IDs; passed through to BaseOperations implementation.
+            fill_gaps (bool): When True, only write fields whose current target
+                value is empty/absent; passed through to BaseOperations.
 
         Returns:
             None
         """
-        return super().ApplySyncableProperties(item, props, ws_map)
+        return super().ApplySyncableProperties(item, props, ws_map=ws_map, fill_gaps=fill_gaps)
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):

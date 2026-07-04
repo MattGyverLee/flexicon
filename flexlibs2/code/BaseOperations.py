@@ -252,6 +252,136 @@ class OperationsMethod:
             return func.__get__(obj, objtype)
 
 
+def _apply_props_loop(item, props, target_ws_by_id, fill_gaps=False,
+                      ws_map=None, _default_ws_getter=None, _ts_string_utils=None):
+    """Pure loop body of ApplySyncableProperties. No project handle required.
+
+    Extracted so that unit tests (T-S3a) can call this directly with fabricated
+    dicts and fake item objects, without needing a live self.project.
+
+    Args:
+        item: LCM object to update.
+        props: dict of {prop_name: value} from GetSyncableProperties.
+        target_ws_by_id: dict of {ws_id: handle} for multistring WS resolution.
+            Must already be built from self.project.WritingSystems.GetAll() by
+            the caller (ApplySyncableProperties); this helper makes no runtime
+            lookups itself.
+        fill_gaps: if True, skip non-empty target values (fill-gaps / merge mode).
+            For multistring: a WS alt is skipped when existing.RunCount > 0
+            (RunCount directly reflects text-run presence; equivalent but weaker
+            alternative: (existing.Text or "").strip()).
+            For plain str: skipped when getattr(item, prop_name) is non-empty.
+            For bool/int: ALWAYS skipped when fill_gaps=True — stored False/0 is
+            a real choice, never overwrite.
+        ws_map: Optional source->target WS Id mapping dict.
+        _default_ws_getter: Callable returning the default analysis WS handle,
+            used only for ITsString fallback on plain str properties.
+        _ts_string_utils: The imported TsStringUtils class, passed in to avoid
+            a re-import inside the pure helper.
+    """
+    for prop_name, value in props.items():
+        if value is None:
+            continue
+        if isinstance(value, dict):
+            # Multi-WS multistring property.
+            prop_obj = getattr(item, prop_name, None)
+            if prop_obj is None:
+                continue
+            for src_ws_id, text in value.items():
+                if not text:
+                    continue
+                tgt_ws_id = (
+                    ws_map.get(src_ws_id, src_ws_id) if ws_map else src_ws_id
+                )
+                tgt_handle = target_ws_by_id.get(tgt_ws_id)
+                if tgt_handle is None:
+                    # Target lacks this WS; skip silently. Callers wanting
+                    # strict mapping should pre-validate ws_map.
+                    continue
+                if fill_gaps:
+                    existing = prop_obj.get_String(tgt_handle)
+                    # Guard: treat whitespace-only alts as empty so a valid source
+                    # fill is not blocked by a phantom-whitespace alt (RunCount>0
+                    # but no real text). Mirrors the plain-str branch below.
+                    if (existing.Text or "").strip():
+                        continue  # target alt non-empty: target wins
+                if _ts_string_utils is not None:
+                    prop_obj.set_String(
+                        tgt_handle, _ts_string_utils.MakeString(text, tgt_handle)
+                    )
+        elif isinstance(value, str):
+            # Plain string attribute. LCM properties come in three
+            # shapes from the perspective of "assign a Python str":
+            # (1) plain string properties (works directly with setattr);
+            # (2) ITsString properties (need TsStringUtils wrapping);
+            # (3) object-reference properties typed as some LCM
+            #     interface (e.g. IMoMorphSynAnalysis) — these can't
+            #     be assigned a string at all; they need a cross-project
+            #     object lookup which lives outside this dict-driven
+            #     sync path.
+            # We handle (1) via the bare setattr, (2) via the ITsString
+            # fallback, and (3) by skipping silently — the caller is
+            # responsible for object-reference wiring.
+            if not hasattr(item, prop_name):
+                continue
+            if fill_gaps:
+                current = getattr(item, prop_name, None)
+                if current is not None and str(current).strip():
+                    continue  # target str non-empty: target wins
+            try:
+                setattr(item, prop_name, value)
+            except TypeError as exc:
+                msg = str(exc)
+                if "ITsString" in msg:
+                    try:
+                        default_ws = _default_ws_getter() if _default_ws_getter else None
+                        if default_ws is not None and _ts_string_utils is not None:
+                            setattr(
+                                item,
+                                prop_name,
+                                _ts_string_utils.MakeString(value, default_ws),
+                            )
+                    except Exception:
+                        # If wrapping also fails, skip the property
+                        # silently — the sync framework treats this as
+                        # a soft incompatibility rather than a hard error.
+                        continue
+                elif "cannot be converted to SIL.LCModel." in msg:
+                    # Object-reference property — case (3). Skip; the
+                    # caller wires cross-project references explicitly
+                    # via GUID lookup (e.g. target.MSA.CreateInflAff).
+                    continue
+                else:
+                    raise
+        elif isinstance(value, bool):
+            # Bool flag (e.g. Disabled, Final). stored False is a deliberate
+            # choice; always skip in fill-gaps mode.
+            if fill_gaps:
+                continue
+            if hasattr(item, prop_name):
+                try:
+                    setattr(item, prop_name, value)
+                except (TypeError, AttributeError):
+                    continue
+        elif isinstance(value, int):
+            # Pure int attribute (e.g. HomographNumber). Apply the same
+            # non-empty-current guard as the plain-str branch: in fill-gaps
+            # mode only skip when the target already has a non-zero/non-None
+            # value. bool is checked first so True/False never reaches here.
+            if fill_gaps:
+                current = getattr(item, prop_name, None)
+                if current is not None and current != 0:
+                    continue
+            if hasattr(item, prop_name):
+                try:
+                    setattr(item, prop_name, value)
+                except (TypeError, AttributeError):
+                    continue
+        else:
+            # Unknown shape; subclasses override to handle.
+            continue
+
+
 class BaseOperations:
     """
     Base class for all FLEx operation classes.
@@ -1025,7 +1155,7 @@ class BaseOperations:
         )
 
     @OperationsMethod
-    def ApplySyncableProperties(self, item, props, ws_map=None):
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
         """
         Apply a syncable-properties dict (from GetSyncableProperties) onto an
         item. Inverse of GetSyncableProperties.
@@ -1099,77 +1229,10 @@ class BaseOperations:
             ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()
         }
 
-        for prop_name, value in props.items():
-            if value is None:
-                continue
-            if isinstance(value, dict):
-                # Multi-WS multistring property.
-                prop_obj = getattr(item, prop_name, None)
-                if prop_obj is None:
-                    continue
-                for src_ws_id, text in value.items():
-                    if not text:
-                        continue
-                    tgt_ws_id = (
-                        ws_map.get(src_ws_id, src_ws_id) if ws_map else src_ws_id
-                    )
-                    tgt_handle = target_ws_by_id.get(tgt_ws_id)
-                    if tgt_handle is None:
-                        # Target lacks this WS; skip silently. Callers wanting
-                        # strict mapping should pre-validate ws_map.
-                        continue
-                    prop_obj.set_String(
-                        tgt_handle, TsStringUtils.MakeString(text, tgt_handle)
-                    )
-            elif isinstance(value, str):
-                # Plain string attribute. LCM properties come in three
-                # shapes from the perspective of "assign a Python str":
-                # (1) plain string properties (works directly with setattr);
-                # (2) ITsString properties (need TsStringUtils wrapping);
-                # (3) object-reference properties typed as some LCM
-                #     interface (e.g. IMoMorphSynAnalysis) — these can't
-                #     be assigned a string at all; they need a cross-project
-                #     object lookup which lives outside this dict-driven
-                #     sync path.
-                # We handle (1) via the bare setattr, (2) via the ITsString
-                # fallback, and (3) by skipping silently — the caller is
-                # responsible for object-reference wiring.
-                if not hasattr(item, prop_name):
-                    continue
-                try:
-                    setattr(item, prop_name, value)
-                except TypeError as exc:
-                    msg = str(exc)
-                    if "ITsString" in msg:
-                        try:
-                            default_ws = self.project.GetDefaultAnalysisWSHandle()
-                            setattr(
-                                item,
-                                prop_name,
-                                TsStringUtils.MakeString(value, default_ws),
-                            )
-                        except Exception:
-                            # If wrapping also fails, skip the property
-                            # silently — the sync framework treats this as
-                            # a soft incompatibility rather than a hard error.
-                            continue
-                    elif "cannot be converted to SIL.LCModel." in msg:
-                        # Object-reference property — case (3). Skip; the
-                        # caller wires cross-project references explicitly
-                        # via GUID lookup (e.g. target.MSA.CreateInflAff).
-                        continue
-                    else:
-                        raise
-            elif isinstance(value, bool) or isinstance(value, int):
-                # Bool/int attribute — common on flags like Disabled, Final.
-                if hasattr(item, prop_name):
-                    try:
-                        setattr(item, prop_name, value)
-                    except (TypeError, AttributeError):
-                        continue
-            else:
-                # Unknown shape; subclasses override to handle.
-                continue
+        _apply_props_loop(item, props, target_ws_by_id, fill_gaps,
+                          ws_map=ws_map,
+                          _default_ws_getter=self.project.GetDefaultAnalysisWSHandle,
+                          _ts_string_utils=TsStringUtils)
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):

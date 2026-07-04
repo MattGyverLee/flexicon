@@ -468,7 +468,7 @@ class EtymologyOperations(BaseOperations):
         return props
 
     @OperationsMethod
-    def ApplySyncableProperties(self, item, props, ws_map=None):
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
         """
         Apply a syncable-properties dict onto an ILexEtymology item.
 
@@ -481,6 +481,10 @@ class EtymologyOperations(BaseOperations):
             item: Target ILexEtymology (must already exist in target project).
             props: dict produced by GetSyncableProperties on a source etymology.
             ws_map: Optional source->target writing-system Id mapping.
+            fill_gaps (bool): When True, only write fields whose current target
+                value is empty/absent; passed through to BaseOperations.
+                Atomic-ref fields (LanguageRA, LanguageNotesRA) are always
+                applied regardless (domain has not ruled on them).
         """
         import logging as _logging
         _log = _logging.getLogger(__name__)
@@ -498,7 +502,7 @@ class EtymologyOperations(BaseOperations):
 
         with self._TransactionCM("Apply etymology properties"):
             # Apply plain / multistring fields via base class.
-            super().ApplySyncableProperties(item, remaining_props, ws_map=ws_map)
+            super().ApplySyncableProperties(item, remaining_props, ws_map=ws_map, fill_gaps=fill_gaps)
 
             # Resolve atomic reference fields by GUID.
             for field_name, guid_str in ra_props.items():
