@@ -1,0 +1,79 @@
+name: Publish Docs to GitHub Pages
+
+# Builds the Sphinx API docs and deploys them to the gh-pages branch, which
+# GitHub Pages serves at https://flexicon.langtech.cloud.
+#
+# IMPORTANT: this MUST run on a self-hosted runner with FieldWorks installed.
+# `import flexicon` probes the Windows FieldWorks registry at import time and
+# autodoc cannot mock that away (see docs/sphinx/conf.py and make.bat). A
+# cloud runner (ubuntu/windows-latest) cannot build these docs.
+#
+# Triggers are deliberately conservative to spare the shared FieldWorks runner:
+#   - workflow_dispatch: build/publish on demand
+#   - release published: refresh the site when a release is cut
+# To also rebuild on every docs/code change, add a `push` trigger with paths
+# filters for docs/sphinx/** and flexicon/** (excluding flexicon/docs/**).
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+# ghp-import pushes the built HTML to the gh-pages branch using the checkout's
+# GITHUB_TOKEN, which needs write access to repository contents.
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-docs
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build Sphinx docs and deploy to gh-pages
+    # Self-hosted runner with FLEx pre-installed (same pool as the
+    # upstream-compatibility-check workflow).
+    runs-on: [self-hosted, windows, fieldworks]
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          # Full history so ghp-import can update the gh-pages branch.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          # Must match the installed FieldWorks architecture.
+          architecture: 'x64'
+
+      - name: Install flexicon with docs extras
+        shell: powershell
+        run: |
+          python -m pip install --upgrade pip
+          # [docs] pulls sphinx + ghp-import; the base install pulls pythonnet.
+          python -m pip install -e ".[docs]"
+
+      - name: Configure git identity for gh-pages commit
+        shell: powershell
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Build Sphinx HTML
+        shell: powershell
+        run: |
+          # Regenerate per-module API stubs (whole package, excluding tests
+          # and examples), then build the HTML site. Mirrors `make docs`.
+          sphinx-apidoc -f -o docs/sphinx/api flexicon flexicon/tests flexicon/examples flexicon/sync/tests
+          sphinx-build docs/sphinx flexicon/docs/flexiconAPI
+
+      - name: Deploy to gh-pages
+        shell: powershell
+        run: |
+          # -n adds .nojekyll so Sphinx _static/ dirs survive; -c writes the
+          # CNAME for the custom domain (else -f would wipe it); -p pushes;
+          # -f overwrites. Mirrors `make publishdocs`.
+          python -m ghp_import -n -c flexicon.langtech.cloud -p -f -m "docs: publish flexicon Sphinx API to GitHub Pages" flexicon/docs/flexiconAPI
