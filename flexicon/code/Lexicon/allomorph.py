@@ -121,7 +121,7 @@ class Allomorph(LCMObjectWrapper):
         Notes:
             - Uses vernacular writing system by default
             - Empty string returned if form not set
-            - FLEx null marker ('***') is normalized to empty string
+            - FLEx null marker (``***``) is normalized to empty string
         """
         try:
             from SIL.LCModel.Core.KernelInterfaces import ITsString

@@ -34,6 +34,7 @@ FOR %%C IN ("Init"
     rmdir /s /q ".\build"
     rmdir /s /q ".\dist"
     rmdir /s /q ".\flexicon\docs"
+    rmdir /s /q ".\docs\sphinx\api"
     rmdir /s /q ".\pyflexicon.egg-info"
     rmdir /s /q ".\flexicon.egg-info"
     rmdir /s /q ".\.pytest_cache"
@@ -43,7 +44,9 @@ FOR %%C IN ("Init"
     goto :End
     
 :DoBuild
-    @REM Build the Sphinx docs
+    @REM Regenerate the per-module API stubs (whole package, excluding the
+    @REM package's own tests/ and examples/), then build the HTML site.
+    sphinx-apidoc -f -o docs/sphinx/api flexicon flexicon/tests flexicon/examples flexicon/sync/tests
     sphinx-build docs/sphinx flexicon/docs/flexiconAPI
 
     @REM Build the wheel with setuptools

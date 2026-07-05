@@ -59,6 +59,7 @@ class SegmentOperations(BaseOperations):
     translations (free and literal), and notes.
 
     The write path follows the LCM idiom:
+
     1. Edit IStTxtPara.Contents (via TsStringBuilder) first.
     2. Assign builder.GetString() to para.Contents - this fires ContentsSideEffects
        which triggers AnalysisAdjuster to reconcile segment offsets automatically.

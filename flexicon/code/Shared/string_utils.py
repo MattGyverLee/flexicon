@@ -19,7 +19,7 @@ def normalize_text(text):
     """
     Normalize a text value from LCM, converting FLEx's null marker to empty string.
 
-    FLEx/LCM uses '***' as a placeholder when multilingual string fields
+    FLEx/LCM uses ``***`` as a placeholder when multilingual string fields
     (IMultiString, IMultiUnicode) have no value set. This function normalizes
     such values to empty strings for consistent handling.
 
@@ -27,7 +27,7 @@ def normalize_text(text):
         text: A string value from an LCM text field, or None
 
     Returns:
-        The original text if it has content, or "" if None/empty/'***'
+        The original text if it has content, or "" if None/empty/``***``
 
     Example:
         >>> from flexlibs2.code.Shared.string_utils import normalize_text
@@ -58,14 +58,14 @@ def normalize_match_key(text, casefold=True):
     Find/Exists comparison.
 
     Args:
-        text: Input string (may be None, '', or '***').
+        text: Input string (may be None, '', or ``***``).
         casefold: If True (default), apply str.casefold() after NFD
                   normalization. Pass False for case-sensitive Find methods.
                   Use casefold (not lower) for correct handling of Turkish
                   dotted/dotless I, German ess-zett, etc.
 
     Returns:
-        Normalized string. Empty string for None/empty/'***' inputs.
+        Normalized string. Empty string for None/empty/``***`` inputs.
 
     Example:
         >>> needle = normalize_match_key("oo", casefold=False)
@@ -131,7 +131,7 @@ def normalize_ws_handle(ws):
 
 def is_empty_text(text):
     """
-    Check if a text value from LCM is empty (None, empty string, or '***').
+    Check if a text value from LCM is empty (None, empty string, or ``***``).
 
     Args:
         text: A string value from an LCM text field, or None
@@ -168,7 +168,7 @@ def best_analysis_text(multi_obj):
         multi_obj: An IMultiString or IMultiUnicode object, or None
 
     Returns:
-        The text content, or "" if None/empty/'***'
+        The text content, or "" if None/empty/``***``
 
     Example:
         >>> text = best_analysis_text(sense.Definition)
@@ -191,7 +191,7 @@ def best_vernacular_text(multi_obj):
         multi_obj: An IMultiString or IMultiUnicode object, or None
 
     Returns:
-        The text content, or "" if None/empty/'***'
+        The text content, or "" if None/empty/``***``
 
     Example:
         >>> text = best_vernacular_text(entry.LexemeFormOA.Form)
@@ -214,7 +214,7 @@ def best_text(multi_obj):
         multi_obj: An IMultiString or IMultiUnicode object, or None
 
     Returns:
-        The text content, or "" if None/empty/'***'
+        The text content, or "" if None/empty/``***``
 
     Example:
         >>> text = best_text(sense.Gloss)

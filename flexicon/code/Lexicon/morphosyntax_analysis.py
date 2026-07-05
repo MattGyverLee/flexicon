@@ -25,6 +25,7 @@ All share base interface IMoMorphSynAnalysis.
 
 Problem:
     MSAs have different properties depending on their concrete type:
+
     - All have PartOfSpeechRA or similar properties for grammatical category
     - MoDerivAffMsa has FromPartOfSpeechRA and ToPartOfSpeechRA (input/output POS)
     - MoInflAffMsa has PartOfSpeechRA and inflection class references
@@ -33,6 +34,7 @@ Problem:
 
 Solution:
     MorphosyntaxAnalysis wrapper provides:
+
     - Simple properties for common features (pos_main, class_type)
     - Capability check properties (is_stem_msa, is_deriv_aff_msa, etc.)
     - Property access that works across all types

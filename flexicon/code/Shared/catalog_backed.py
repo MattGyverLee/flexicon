@@ -74,6 +74,7 @@ class CatalogBackedMixin:
 
         CATALOG_PREFIX_WRITE
             Either a string (e.g. ``"GOLD"``) or ``None``.
+
             * String: the mixin writes ``CatalogSourceId = "{PREFIX}:{entry.id}"``.
             * None: the mixin writes ``CatalogSourceId = entry.id`` (the bare
               FW convention used by PhonFeats).
@@ -115,17 +116,19 @@ class CatalogBackedMixin:
             top-level _create_from_entry call; if it is None and the
             domain supports subcategories, the subclass attaches to the
             top-level collection on ``_get_root_list()``.
+
             * POS: ``parent_obj.SubPossibilitiesOS.Add(new_obj)`` if
-                   parent_obj is a POS, else
-                   ``self.project.lp.PartsOfSpeechOA.PossibilitiesOS.Add(new_obj)``.
+              parent_obj is a POS, else
+              ``self.project.lp.PartsOfSpeechOA.PossibilitiesOS.Add(new_obj)``.
             * PhonFeats: ``self._get_root_list().FeaturesOC.Add(new_obj)``.
 
         _cast_to_domain(self, raw_lcm_obj)
             Return the interface-cast view of the raw LCM object.
+
             * POS:        ``IPartOfSpeech(raw)``
             * PhonFeats:  ``IFsClosedFeature(raw)``
 
-        _set_localized(self, obj, term, abbrev, def_, missing_ws_seen, warnings)
+        _set_localized(self, obj, term, abbrev, ``def_``, missing_ws_seen, warnings)
             Per-domain multistring writes. ``term``, ``abbrev`` and ``def_``
             are ``{ws_tag: text}`` dicts from the CatalogEntry. The
             subclass writes ``obj.Name`` / ``obj.Abbreviation`` /
@@ -144,10 +147,12 @@ class CatalogBackedMixin:
 
         _handle_entry_children(self, entry, created_obj, missing_ws_seen, warnings, result)
             Per-domain handling of CatalogEntry.children.
+
             * POS: empty (use ``_supports_recursive_entries=True`` instead).
             * PhonFeats: walk ``entry.children`` (value entries) and
               create IFsSymFeatVal items under ``created_obj.ValuesOC``,
               respecting per-feature value-GUID idempotency.
+
             ``result`` is the CatalogImportResult (so per-value
             created/skipped counts and created_guids can be updated).
             ``result`` is None when called from CreateFromCatalog or
@@ -157,7 +162,7 @@ class CatalogBackedMixin:
     CreateFromCatalog, FixGuidsAgainstCatalog) plus private helpers
     (_create_from_entry, _get_all_guids, _find_by_guid,
     _set_multistring, _flattened_catalog_count). The public methods are
-    plain ``def``s on the mixin; subclasses reach them through normal
+    plain ``def``\\ s on the mixin; subclasses reach them through normal
     instance dispatch (see the note below for the @OperationsMethod
     convention).
 

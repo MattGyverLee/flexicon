@@ -25,6 +25,7 @@ without exposing the underlying ClassName or casting complexity.
 
 Problem:
     Compound rules have different properties depending on their concrete type:
+
     - MoEndoCompound and MoExoCompound both have LeftHeadDep, RightHeadDep,
       LeftContextOA, RightContextOA
 
@@ -33,6 +34,7 @@ Problem:
 
 Solution:
     CompoundRule wrapper provides:
+
     - Simple properties for common features (name, head_dependency, contexts)
     - Capability check properties (is_endo_compound, is_exo_compound)
     - Property access that works across all types

@@ -350,7 +350,9 @@ class AffixTemplateCollection(SmartCollection):
             print(f"Found {len(full_templates)} templates with all slot types")
 
         Notes:
-            - Equivalent to where(lambda t: all([
+            - Equivalent to::
+
+                where(lambda t: all([
                     t.has_prefix_slots,
                     t.has_suffix_slots,
                     t.has_proclitic_slots,

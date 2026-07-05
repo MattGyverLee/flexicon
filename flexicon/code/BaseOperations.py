@@ -204,8 +204,8 @@ class OperationsMethod:
 
         class POSOperations(BaseOperations):
             @wrap_enumerable
-    @OperationsMethod
-    def GetAll(self):
+            @OperationsMethod
+            def GetAll(self):
                 # Implementation
                 return self.project.GetAllPOS()
 

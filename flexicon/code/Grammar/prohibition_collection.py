@@ -24,6 +24,7 @@ operations across the three concrete types:
 Problem:
     GetAllAdhocCoProhibitions() returns objects with multiple concrete
     implementations. Users need to:
+
     - See which types are in the collection
     - Filter by type if they want to
     - Work with all types together without manual casting
@@ -31,6 +32,7 @@ Problem:
 
 Solution:
     ProhibitionCollection provides:
+
     - __str__() showing type breakdown
     - by_type() filtering to specific concrete types
     - filter() for filtering by prohibition type
