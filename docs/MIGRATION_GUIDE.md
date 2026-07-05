@@ -166,7 +166,7 @@ Known caveats:
 - `AgentOperations` (#54) and `OverlayOperations` (#149) have partial parent-class fit problems;
   a small number of inherited methods may not function correctly in edge cases.
 
-See [RELEASE_v3_0_0.md](RELEASE_v3_0_0.md) for the full consolidation table and change details.
+See [RELEASE_v3_0_0.md](internal/RELEASE_v3_0_0.md) for the full consolidation table and change details.
 
 ---
 

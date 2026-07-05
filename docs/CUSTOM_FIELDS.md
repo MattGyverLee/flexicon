@@ -113,5 +113,5 @@ mode background.
 - Issue #20 — original `NotImplementedError` report
 - Issue #21 — corruption-on-reopen postmortem
 - `docs/TRANSACTION_GUIDE.md` — Phase 1 vs Phase 2 transaction modes
-- `docs/RESEARCH_NEEDED.md` — open questions on LCM transaction semantics
+- `docs/internal/RESEARCH_NEEDED.md` — open questions on LCM transaction semantics
 - `flexlibs2/code/System/CustomFieldOperations.py` — the guard

@@ -1,0 +1,68 @@
+# flexicon
+
+> Python library for accessing FieldWorks Language Explorer (FLEx) projects via
+> the SIL Language and Culture Model (LCM) API. flexicon handles FLEx engine
+> initialization and provides the `FLExProject` class for opening a project and
+> performing CRUD operations across Grammar, Lexicon, Texts & Words, Notebook,
+> Lists, and System domains. Wrapper classes and smart collections hide LCM
+> casting complexity so polymorphic types work without manual `ClassName` checks.
+
+Install with `pip install pyflexicon`; import as `flexicon`. Requires Python
+3.8-3.13, pythonnet 3.0.3+, and FieldWorks Language Explorer 9.0.17-9.3.1. The
+Python architecture (32/64-bit) must match the installed FieldWorks. The legacy
+`flexlibs2` import name still works as a deprecated alias (removed in v5.0.0).
+
+Quickstart:
+
+```python
+import flexicon
+flexicon.FLExInitialize()
+project = flexicon.FLExProject()
+project.OpenProject("MyProject", writeEnabled=True)
+
+entry = project.LexEntry.Create("run", "stem")
+sense = project.LexEntry.AddSense(entry, "to move rapidly on foot")
+project.Senses.SetGloss(sense, "run", "en")
+
+project.CloseProject()
+flexicon.FLExCleanup()
+```
+
+## Getting Started
+
+- [README](README.rst): Installation, requirements, and basic usage.
+- [Migration Guide](docs/MIGRATION_GUIDE.md): Upgrading from flexlibs / flexlibs2.
+- [Architecture Overview](docs/ARCHITECTURE.md): Wrapper + smart-collection design.
+
+## API Reference
+
+- [API Surface](docs/API_SURFACE.md): The public API at a glance.
+- [Function Reference](docs/FUNCTION_REFERENCE.md): Comprehensive per-operation reference.
+- [Full HTML API docs](https://flexicon.langtech.cloud): Rendered Sphinx documentation.
+
+## Core Concepts
+
+- [Wrapper Classes](docs/ARCHITECTURE_WRAPPERS.md): Transparent casting over polymorphic LCM types.
+- [Smart Collections](docs/ARCHITECTURE_COLLECTIONS.md): Type-aware filtering and display.
+- [Exception Handling](docs/EXCEPTION_HANDLING.md): FLEx-specific error patterns.
+- [Transactions](docs/TRANSACTION_GUIDE.md): Safe rollback of batched operations.
+- [Custom Fields](docs/CUSTOM_FIELDS.md): Workflow and transaction safety.
+- [Catalog Conventions](docs/CATALOG_CONVENTIONS.md): Possibility-list conventions.
+- [Linguistic Safety](docs/LINGUISTIC_SAFETY_GUIDE.md): Guardrails for linguistic data.
+- [Known API Issues](docs/API_ISSUES_CATEGORIZED.md): Documented LCM quirks and workarounds.
+
+## Usage Guides
+
+- [Phonological Rules](docs/USAGE_PHONOLOGICAL_RULES.md)
+- [Phonological Contexts](docs/USAGE_CONTEXTS.md)
+- [Morphosyntactic Analysis (MSA)](docs/USAGE_MORPHOSYNTAX.md)
+- [Morphosyntactic Prohibitions](docs/USAGE_PROHIBITIONS.md)
+- [Compound Rules](docs/USAGE_COMPOUND_RULES.md)
+- [Affix Templates](docs/USAGE_AFFIX_TEMPLATES.md)
+- [Allomorphs](docs/USAGE_ALLOMORPHS.md)
+- [Annotations](docs/USAGE_ANNOTATIONS.md)
+- [Reversal API Migration](docs/REVERSAL_API_MIGRATION.md)
+
+## Optional
+
+- [Operation-specific guides](docs/operations/): Deep dives on individual Operations classes.

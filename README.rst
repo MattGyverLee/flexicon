@@ -41,6 +41,13 @@ Installation
 Run:
 ``pip install pyflexicon``
 
+Documentation
+-------------
+Full API documentation is published at https://flexicon.langtech.cloud.
+
+The rendered HTML API help is also bundled and accessible from Python via
+``flexicon.APIHelpFile``.
+
 Usage
 -----
 
@@ -169,7 +176,7 @@ across LibLCM upgrades.
 
 **Setup**: ``python hooks/install.py``
 
-See `Contract Testing Guide <docs/CONTRACT_TESTING.md>`_ for details.
+See `Contract Testing Guide <docs/internal/CONTRACT_TESTING.md>`_ for details.
 
 --------------
 

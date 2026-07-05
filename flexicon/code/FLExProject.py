@@ -184,7 +184,7 @@ class FLExProject(object):
             Only valid when writeEnabled=True. Ignored if False.
 
             Phase 2 feature: requires LCM BeginUndoTask/EndUndoTask support.
-            See docs/RESEARCH_NEEDED.md for details.
+            See docs/internal/RESEARCH_NEEDED.md for details.
 
         Note:
             A call to `OpenProject()` may fail with a `FP_FileLockedError`
@@ -519,7 +519,7 @@ class FLExProject(object):
         logging.getLogger(__name__).warning(
             "FLExProject.Transaction: no LCM rollback API found. "
             "Transactions will execute but rollback on failure is not available. "
-            "See docs/RESEARCH_NEEDED.md for details on Phase 2 research."
+            "See docs/internal/RESEARCH_NEEDED.md for details on Phase 2 research."
         )
         return (None, None)
 
@@ -583,7 +583,7 @@ class FLExProject(object):
 
         Note:
             Phase 2 feature. Requires research-verified LCM APIs.
-            See docs/RESEARCH_NEEDED.md and docs/TRANSACTION_GUIDE.md.
+            See docs/internal/RESEARCH_NEEDED.md and docs/TRANSACTION_GUIDE.md.
 
             Atomicity caveat (Phase 2): ``BeginUndoTask``/``EndUndoTask`` is NOT
             transactional. If an exception is raised inside the block, partial
@@ -639,7 +639,7 @@ class FLExProject(object):
             "FLExProject: no LCM undo/redo API found. "
             "UndoableOperation() requires BeginUndoTask/EndUndoTask methods. "
             "Verify your FieldWorks version supports these APIs. "
-            "See docs/RESEARCH_NEEDED.md for Phase 2 research details."
+            "See docs/internal/RESEARCH_NEEDED.md for Phase 2 research details."
         )
 
     def Undo(self):

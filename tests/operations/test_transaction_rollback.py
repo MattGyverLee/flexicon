@@ -161,7 +161,7 @@ class TestPhase1NoMarkAPI:
     PHASE 1 with no rollback API available (Domain Concern 2).
 
     The Phase-1 Mark/RollbackToMark API is not yet discoverable in the shipped
-    LCM build (docs/RESEARCH_NEEDED.md). When it resolves to (None, None) on a
+    LCM build (docs/internal/RESEARCH_NEEDED.md). When it resolves to (None, None) on a
     write-enabled project, _FLExTransaction degrades gracefully: it logs a
     warning and proceeds WITHOUT rollback, because raising would make every
     write impossible. The body still runs and any body exception still

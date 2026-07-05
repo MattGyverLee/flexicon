@@ -247,7 +247,7 @@ Phase 2 will add:
 - `project.Undo()` / `project.Redo()` - methods to call FLEx undo/redo
 - `undoable=True` parameter on `OpenProject()` to enable full undo stack support
 
-Phase 2 requires research to verify the LCM APIs (BeginUndoTask, EndUndoTask, etc.) work correctly. See `docs/RESEARCH_NEEDED.md` for details.
+Phase 2 requires research to verify the LCM APIs (BeginUndoTask, EndUndoTask, etc.) work correctly. See `docs/internal/RESEARCH_NEEDED.md` for details.
 
 Until Phase 2:
 - Transactions do NOT appear in FLEx's undo menu
@@ -267,7 +267,7 @@ Until Phase 2:
 **What happens:** Transactions still execute, but **rollback on failure is NOT available**. If an error occurs, changes are NOT automatically reverted.
 
 **Fix:**
-1. See `docs/RESEARCH_NEEDED.md` for the list of APIs being researched
+1. See `docs/internal/RESEARCH_NEEDED.md` for the list of APIs being researched
 2. Report this issue with your FW version to the FlexLibs2 team
 
 ### Project appears inconsistent after rollback failure
@@ -328,7 +328,7 @@ project.SaveChanges()  # Persist pending changes
 
 ## See Also
 
-- `docs/RESEARCH_NEEDED.md` - Details on Phase 2 research and API verification
+- `docs/internal/RESEARCH_NEEDED.md` - Details on Phase 2 research and API verification
 - `flexlibs2.code.transaction._FLExTransaction` - Internal context manager class
 - `FLExProject.OpenProject()` - How to open projects with write access
 - `FP_ReadOnlyError`, `FP_TransactionError` - Exceptions

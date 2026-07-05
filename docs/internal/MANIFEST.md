@@ -19,7 +19,7 @@ The canonical index of every doc the `/lex-doc` agent maintains. Each entry decl
 | `CHANGELOG.md` | Versioned user-visible change record (Keep a Changelog format) | Every public-API commit; `feat`/`fix`/`refactor`/`docs`/`chore` on `main`; release cut | live |
 | `docs/MIGRATION_GUIDE.md` | Cross-version migration guidance (v1 -> v2 -> ...) | `refactor!`, `feat!`, deprecation; planned removal | live |
 | `docs/_archive/RELEASE_NOTES_v2.3.0.md` | Per-release narrative notes for v2.3.0 (Feb 28 2026) | (none — frozen) | archived |
-| `docs/RELEASE_v3_0_0.md` | Planning / draft notes for v3 | active development toward v3 | live |
+| `docs/internal/RELEASE_v3_0_0.md` | Planning / draft notes for v3 | active development toward v3 | live |
 
 ## Architecture docs
 
@@ -36,11 +36,11 @@ The canonical index of every doc the `/lex-doc` agent maintains. Each entry decl
 |---|---|---|---|
 | `docs/CATALOG_CONVENTIONS.md` | CatalogSourceId prefix policies (GOLD / PHON / INFL / synthetic) | Changes under `flexlibs2/code/Shared/catalog*.py`; new catalog domain | live |
 | `docs/EXCEPTION_HANDLING.md` | FLEx-specific exception taxonomy and patterns | New `FP_*Error` class; change to `_EnsureWriteEnabled` / `_ValidateParam` | live |
-| `docs/CONTRACT_TESTING.md` | LibLCM contract test conventions | New contract test category; FW version bump | live |
-| `docs/TESTING_STRATEGY.md` | Project-wide testing approach | Test infrastructure changes (conftest, fixtures) | live |
-| `docs/TESTING_UNDO_REDO.md` | Undo/redo testing patterns | Changes to transaction framework | live |
+| `docs/internal/CONTRACT_TESTING.md` | LibLCM contract test conventions | New contract test category; FW version bump | live |
+| `docs/internal/TESTING_STRATEGY.md` | Project-wide testing approach | Test infrastructure changes (conftest, fixtures) | live |
+| `docs/internal/TESTING_UNDO_REDO.md` | Undo/redo testing patterns | Changes to transaction framework | live |
 | `docs/TRANSACTION_GUIDE.md` | Transaction management patterns | Changes to `Transaction()` context manager; Phase 2 transaction work | live |
-| `docs/PRE_COMMIT_SETUP.md` | Pre-commit hook setup + rationale | Changes under `.pre-commit-config.yaml`; new linter | live |
+| `docs/internal/PRE_COMMIT_SETUP.md` | Pre-commit hook setup + rationale | Changes under `.pre-commit-config.yaml`; new linter | live |
 | `docs/CUSTOM_FIELDS.md` | Custom-field corruption mechanism + workflow guidance | Changes to `CustomFieldOperations.CreateField` | live |
 | `docs/LINGUISTIC_SAFETY_GUIDE.md` | Linguistic-data safety practices (WS handling, NFD/NFC, etc.) | Changes to string normalization, WS handling, multilingual surfaces | live |
 
@@ -68,10 +68,10 @@ The canonical index of every doc the `/lex-doc` agent maintains. Each entry decl
 | Doc | Purpose | Update Triggers | Status |
 |---|---|---|---|
 | `docs/API_ISSUES_CATEGORIZED.md` | Known API issues + workarounds | Issue closed/opened against an API surface | live |
-| `docs/API_BUGS_FOUND_AND_FIXED.md` | Historical record of fixed bugs | Bug fixed and ready to record | live |
+| `docs/internal/API_BUGS_FOUND_AND_FIXED.md` | Historical record of fixed bugs | Bug fixed and ready to record | live |
 | `docs/FUNCTION_REFERENCE.md` | Hand-maintained function-level reference (method → LibLCM mapping, grouped by phase + Post-v2.0 supersection) | New `@OperationsMethod`-decorated method; removed/renamed public method | live (refreshed 2026-05-27, Phase 5/6 additions integrated) |
-| `docs/MERGE_OPERATIONS_AUDIT.md` | Audit of merge-related operations | Changes to merge operations / `validate_merge_compatibility` | live |
-| `docs/RESEARCH_NEEDED.md` | Open research questions | New unresolved API question; resolved question moved out | live |
+| `docs/internal/MERGE_OPERATIONS_AUDIT.md` | Audit of merge-related operations | Changes to merge operations / `validate_merge_compatibility` | live |
+| `docs/internal/RESEARCH_NEEDED.md` | Open research questions | New unresolved API question; resolved question moved out | live |
 | `docs/REVERSAL_API_MIGRATION.md` | Reversal-index API migration notes | Reversal-index operations changes | live |
 | `docs/audit/LCM_AUDIT_INDEX.md` | Index of LCM capability audits | LCM audit refresh; FW version bump | live (refreshed 2026-05-27) |
 | `docs/audit/LCM_AUDIT_SUMMARY.md` | Summary of LCM capability audits (decision-maker read) | LCM audit refresh | live (refreshed 2026-05-27) |
@@ -79,7 +79,7 @@ The canonical index of every doc the `/lex-doc` agent maintains. Each entry decl
 | `docs/audit/LCM_CAPABILITIES_AUDIT_REFERENCES.md` | Cross-references for LCM audit | LCM audit refresh; FW version bump | live (partially refreshed 2026-05-27 — line numbers reference `reports/audit/api_usage_extract.json`) |
 | `docs/audit/LCM_AUDIT_QUICK_REFERENCE.txt` | Quick-reference companion to the LCM audit set | LCM audit refresh | live (refreshed 2026-05-27) |
 | `docs/audit/README_LCM_AUDIT.md` | Entry-point doc for the LCM audit set | Audit set restructuring | live (refreshed 2026-05-27) |
-| `docs/LISTS_CONSOLIDATION_TEMPLATE.md` | One-time refactoring guide for migrating 4 ops classes to `PossibilityItemOperations` (work landed; refactor partially superseded — see issue #54) | (none — historical) | archived |
+| `docs/internal/LISTS_CONSOLIDATION_TEMPLATE.md` | One-time refactoring guide for migrating 4 ops classes to `PossibilityItemOperations` (work landed; refactor partially superseded — see issue #54) | (none — historical) | archived |
 
 ## Project guidance
 
@@ -113,7 +113,7 @@ The canonical index of every doc the `/lex-doc` agent maintains. Each entry decl
 
 - **`docs/API_SURFACE.md`** is generated (via `tools/extract_api_usage.py`), not maintained by drift-checking. Reclassified `external-managed`. Refreshed 2026-05-27 (files analyzed 66 -> 73; SIL imports 527 -> 569; unique classes 194 -> 233; factories 42 -> 74). Tool default code-dir was wrong (`../flexlibs/code` finds 0 files); use `--code-dir flexlibs2/code --all`.
 - **`docs/FUNCTION_REFERENCE.md`** is hand-maintained. Refreshed 2026-05-27 with Phase 5/6 additions in a "Recent Additions (Post-v2.0)" supersection (+47 method entries, +232 lines). Original 14 Phase sections preserved.
-- **`docs/LISTS_CONSOLIDATION_TEMPLATE.md`** was a one-time refactoring guide, not a reusable template. Refactor landed; per issue #54 the resulting `AgentOperations(PossibilityItemOperations)` inheritance turned out to be wrong, so the doc is partially superseded too. Reclassified `archived`. Not moved.
+- **`docs/internal/LISTS_CONSOLIDATION_TEMPLATE.md`** was a one-time refactoring guide, not a reusable template. Refactor landed; per issue #54 the resulting `AgentOperations(PossibilityItemOperations)` inheritance turned out to be wrong, so the doc is partially superseded too. Reclassified `archived`. Not moved.
 
 ### Open follow-ups for user decision
 

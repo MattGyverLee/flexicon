@@ -124,4 +124,4 @@ To add more checks:
 
 - `.pre-commit-config.yaml` - Hook configuration
 - `scripts/check_decorators.py` - Custom decorator checking script
-- This file: `docs/PRE_COMMIT_SETUP.md`
+- This file: `docs/internal/PRE_COMMIT_SETUP.md`

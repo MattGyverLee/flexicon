@@ -135,7 +135,7 @@ class _FLExTransaction:
             When the LCM rollback API (mark_fn / rollback_fn) is unavailable on a
             write-enabled project, this logs a warning and proceeds WITHOUT rollback
             capability rather than raising. The Phase-1 Mark/RollbackToMark API is
-            not yet discoverable in the shipped LCM build (see docs/RESEARCH_NEEDED.md),
+            not yet discoverable in the shipped LCM build (see docs/internal/RESEARCH_NEEDED.md),
             so failing fast here would make every write operation impossible. Until
             that API exists, degraded-but-functional is the only viable default; a
             strict opt-in mode is tracked separately (see issue #210).
