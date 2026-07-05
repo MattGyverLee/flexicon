@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Lexicon.ExampleOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.ExampleOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Lexicon.ExampleOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ExampleOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ExampleOperations</span>
+<span class="c1">#          Example sentence operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ILexExampleSentence</span><span class="p">,</span>
+    <span class="n">ILexExampleSentenceFactory</span><span class="p">,</span>
+    <span class="n">ILexSense</span><span class="p">,</span>
+    <span class="n">ICmTranslation</span><span class="p">,</span>
+    <span class="n">ICmTranslationFactory</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Import string utilities</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span>
+
+
+<div class="viewcode-block" id="ExampleOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.ExampleOperations.ExampleOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ExampleOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing example sentences in a FieldWorks project.</span>
+
+<span class="sd">    Example sentences illustrate the usage of lexical senses in context. Each example</span>
+<span class="sd">    can have vernacular text, translations in multiple analysis languages, references</span>
+<span class="sd">    to source texts, and associated media files.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject, ExampleOperations</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        exampleOps = ExampleOperations(project)</span>
+
+<span class="sd">        # Get first entry and sense</span>
+<span class="sd">        entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">        sense = entry.SensesOS[0] if entry.SensesOS.Count &gt; 0 else None</span>
+
+<span class="sd">        # Get all examples for a sense</span>
+<span class="sd">        for example in exampleOps.GetAll(sense):</span>
+<span class="sd">            text = exampleOps.GetExample(example)</span>
+<span class="sd">            trans = exampleOps.GetTranslation(example)</span>
+<span class="sd">            print(f&quot;Example: {text}&quot;)</span>
+<span class="sd">            print(f&quot;Translation: {trans}&quot;)</span>
+
+<span class="sd">        # Create a new example</span>
+<span class="sd">        example = exampleOps.Create(sense, &quot;The cat sat on the mat.&quot;)</span>
+<span class="sd">        exampleOps.SetTranslation(example, &quot;Le chat s&#39;est assis sur le tapis.&quot;)</span>
+<span class="sd">        exampleOps.SetReference(example, &quot;Example Corpus 1.23&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ExampleOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Specify which sequence to reorder for examples.</span>
+<span class="sd">        For Example, we reorder sense.ExamplesOS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">ExamplesOS</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense_or_hvo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get example sentences for a sense or all examples in the project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sense_or_hvo: Optional ILexSense object or HVO.</span>
+<span class="sd">                         If provided, returns examples for that sense only.</span>
+<span class="sd">                         If None, returns ALL examples in the entire project.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ILexExampleSentence: Each example sentence.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get examples for a specific sense</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; for example in exampleOps.GetAll(sense):</span>
+<span class="sd">            ...     text = exampleOps.GetExample(example)</span>
+<span class="sd">            ...     print(f&quot;Example: {text}&quot;)</span>
+<span class="sd">            Example: The dog ran quickly.</span>
+<span class="sd">            Example: Dogs run faster than cats.</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get ALL examples in entire project</span>
+<span class="sd">            &gt;&gt;&gt; for example in exampleOps.GetAll():</span>
+<span class="sd">            ...     text = exampleOps.GetExample(example)</span>
+<span class="sd">            ...     print(f&quot;Example: {text}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - When called with no argument, iterates all examples in project</span>
+<span class="sd">            - When called with sense, returns only that sense&#39;s examples</span>
+<span class="sd">            - Returns examples in the order they appear in FLEx</span>
+<span class="sd">            - Returns empty generator if no examples exist</span>
+<span class="sd">            - Examples are ordered collections (can be reordered)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, Reorder</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">sense_or_hvo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Iterate ALL examples in entire project</span>
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lexDB</span><span class="o">.</span><span class="n">Entries</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">sense</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">AllSenses</span><span class="p">:</span>  <span class="c1"># Includes subsenses</span>
+                    <span class="k">for</span> <span class="n">example</span> <span class="ow">in</span> <span class="n">sense</span><span class="o">.</span><span class="n">ExamplesOS</span><span class="p">:</span>
+                        <span class="k">yield</span> <span class="n">example</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Iterate examples for specific sense</span>
+            <span class="n">sense</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSenseObject</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">example</span> <span class="ow">in</span> <span class="n">sense</span><span class="o">.</span><span class="n">ExamplesOS</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">example</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense_or_hvo</span><span class="p">,</span> <span class="n">example_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new example sentence for a lexical sense.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sense_or_hvo: The ILexSense object or HVO.</span>
+<span class="sd">            example_text (str): The example sentence text.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexExampleSentence: The newly created example object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If sense_or_hvo or example_text is None.</span>
+<span class="sd">            FP_ParameterError: If example_text is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; example = exampleOps.Create(sense, &quot;The cat slept.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(exampleOps.GetExample(example))</span>
+<span class="sd">            The cat slept.</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; example = exampleOps.Create(sense, &quot;Le chat dort.&quot;,</span>
+<span class="sd">            ...                              project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - The example is added to the end of the sense&#39;s examples list</span>
+<span class="sd">            - You can add translations after creation using SetTranslation()</span>
+<span class="sd">            - References and media can also be added separately</span>
+<span class="sd">            - Use vernacular writing system for the example text</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, SetExample, SetTranslation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">,</span> <span class="s2">&quot;sense_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_text</span><span class="p">,</span> <span class="s2">&quot;example_text&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateStringNotEmpty</span><span class="p">(</span><span class="n">example_text</span><span class="p">,</span> <span class="s2">&quot;example_text&quot;</span><span class="p">)</span>
+
+        <span class="n">sense</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSenseObject</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Create the new example using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexExampleSentenceFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create example&quot;</span><span class="p">):</span>
+            <span class="c1"># factory.Create() is the first mutation; kept inside the transaction</span>
+            <span class="c1"># so the object is owned atomically with its Add() and property writes.</span>
+            <span class="n">example</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to sense&#39;s examples collection (must be done before setting properties)</span>
+            <span class="n">sense</span><span class="o">.</span><span class="n">ExamplesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">example</span><span class="p">)</span>
+
+            <span class="c1"># Set example text</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">example_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">example</span><span class="o">.</span><span class="n">Example</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">example</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if len(examples) &gt; 0:</span>
+<span class="sd">            ...     exampleOps.Delete(examples[-1])</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - All translations and associated data are also deleted</span>
+<span class="sd">            - Media file links are removed (but files themselves remain)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Removes the example from the owning sense&#39;s collection</span>
+<span class="sd">            - Automatically removes all translations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># ExamplesOS lives on ILexSense (the concrete owner), not on the</span>
+        <span class="c1"># base ICmObject that pythonnet returns from .Owner. The prior</span>
+        <span class="c1"># hasattr(owner, &quot;ExamplesOS&quot;) was always False on the base type</span>
+        <span class="c1"># and Delete silently no-op&#39;d. Route through _GetTypedOwner to</span>
+        <span class="c1"># recover the concrete ILexSense first. Same shape as #160 / #98.</span>
+        <span class="c1"># (issue #162)</span>
+        <span class="n">sense</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">example</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sense</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">&quot;ExamplesOS&quot;</span><span class="p">):</span>
+            <span class="n">sense</span><span class="o">.</span><span class="n">ExamplesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">example</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate an example sentence, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ILexExampleSentence object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source example.</span>
+<span class="sd">                                If False, insert at end of parent&#39;s examples list.</span>
+<span class="sd">            deep (bool): If True, also duplicate owned objects (translations).</span>
+<span class="sd">                        If False (default), only copy simple properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexExampleSentence: The newly created duplicate example with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     # Shallow duplicate (no translations)</span>
+<span class="sd">            ...     dup = exampleOps.Duplicate(examples[0])</span>
+<span class="sd">            ...     print(f&quot;Original: {exampleOps.GetGuid(examples[0])}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Duplicate: {exampleOps.GetGuid(dup)}&quot;)</span>
+<span class="sd">            Original: 12345678-1234-1234-1234-123456789abc</span>
+<span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
+<span class="sd">            ...</span>
+<span class="sd">            ...     # Deep duplicate (includes translations)</span>
+<span class="sd">            ...     deep_dup = exampleOps.Duplicate(examples[0], deep=True)</span>
+<span class="sd">            ...     trans = exampleOps.GetTranslation(deep_dup)</span>
+<span class="sd">            ...     print(f&quot;Translation: {trans}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original example&#39;s position/priority</span>
+<span class="sd">            - Simple properties copied: Example (MultiString), Reference</span>
+<span class="sd">            - Owned objects (deep=True): TranslationsOC</span>
+<span class="sd">            - LiftResidue is not copied (import-specific data)</span>
+<span class="sd">            - MediaFilesOS are not copied (would require file handling)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetGuid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source example and parent.  Cast owner to its concrete</span>
+        <span class="c1"># ILexSense (the only LCM owner of ILexExample) so ExamplesOS is</span>
+        <span class="c1"># reachable. Raw source.Owner is typed ICmObject; hasattr(...,</span>
+        <span class="c1"># &quot;ExamplesOS&quot;) returns False there, silently no-opping Duplicate.</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Example has no owning sense&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Create new example using factory (auto-generates new GUID)</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexExampleSentenceFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate example&quot;</span><span class="p">):</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Determine insertion position</span>
+            <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                <span class="c1"># Insert after source example</span>
+                <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ExamplesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">ExamplesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Insert at end</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">ExamplesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy simple MultiString properties (AFTER adding to parent)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Example</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Example</span><span class="p">)</span>
+
+            <span class="c1"># Skip copying Reference - it&#39;s complex and often empty</span>
+            <span class="c1"># Reference is an ITsString pointing to the source text location</span>
+            <span class="c1"># For duplicates, this reference doesn&#39;t make sense to copy</span>
+
+            <span class="c1"># Handle owned objects if deep=True</span>
+            <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+                <span class="c1"># Duplicate translations</span>
+                <span class="k">for</span> <span class="n">translation</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">translation</span><span class="o">.</span><span class="n">TypeRA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                            <span class="s2">&quot;Duplicate: skipping translation copy -- source TypeRA is null&quot;</span>
+                        <span class="p">)</span>
+                        <span class="k">continue</span>
+                    <span class="n">trans_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmTranslationFactory</span><span class="p">)</span>
+                    <span class="n">new_trans</span> <span class="o">=</span> <span class="n">trans_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">duplicate</span><span class="p">,</span> <span class="n">translation</span><span class="o">.</span><span class="n">TypeRA</span><span class="p">)</span>
+                    <span class="n">duplicate</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_trans</span><span class="p">)</span>
+
+                    <span class="c1"># Copy translation properties</span>
+                    <span class="n">new_trans</span><span class="o">.</span><span class="n">Translation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">translation</span><span class="o">.</span><span class="n">Translation</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all syncable properties of an example sentence for comparison.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The ILexExampleSentence object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary mapping property names to their values:</span>
+<span class="sd">                - MultiString properties as dicts {ws: text}</span>
+<span class="sd">                - Atomic properties as simple values</span>
+<span class="sd">                - Does NOT include Owning Sequence (OS) properties (translations)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties</span>
+        <span class="c1"># Example - the example sentence in various writing systems</span>
+        <span class="n">example_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Example&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span>
+                    <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Example</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                    <span class="n">example_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Example&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example_dict</span>
+
+        <span class="c1"># Reference - ILexExampleSentence.Reference is ITsString (single-string),</span>
+        <span class="c1"># NOT IMultiString. Treating it as IMultiString with a WS-handle loop would</span>
+        <span class="c1"># raise AttributeError at runtime because ITsString has no get_String(handle)</span>
+        <span class="c1"># method. Use _ReadTsString instead. (P0 bug fix -- Category 8 same-name</span>
+        <span class="c1"># field: ILexEtymology.Reference is IMultiString, ILexExampleSentence.Reference</span>
+        <span class="c1"># is ITsString.)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Reference&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Reference&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ReadTsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Reference</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Reference&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="c1"># TranslationsOC - owned collection of ICmTranslation objects.</span>
+        <span class="c1"># Each ICmTranslation has:</span>
+        <span class="c1">#   Translation: IMultiString (text per writing system)</span>
+        <span class="c1">#   TypeRA: ICmPossibility (e.g. &quot;Free translation&quot;) -- serialized as GUID string</span>
+        <span class="c1"># Serialize as a list of dicts (order-preserving, matching TranslationsOC order).</span>
+        <span class="n">translations_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;TranslationsOC&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">trans</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="p">:</span>
+                <span class="n">trans_text_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">trans</span><span class="p">,</span> <span class="s2">&quot;Translation&quot;</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+                        <span class="n">text</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span>
+                            <span class="n">ITsString</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">Translation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                            <span class="n">trans_text_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+                <span class="n">type_guid</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">trans</span><span class="p">,</span> <span class="s2">&quot;TypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">trans</span><span class="o">.</span><span class="n">TypeRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">type_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">TypeRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+                <span class="n">translations_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;Translation&quot;</span><span class="p">:</span> <span class="n">trans_text_dict</span><span class="p">,</span>
+                    <span class="s2">&quot;TypeRA&quot;</span><span class="p">:</span> <span class="n">type_guid</span><span class="p">,</span>
+                <span class="p">})</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;TranslationsOC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">translations_list</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply a syncable-properties dict onto an ILexExampleSentence item.</span>
+
+<span class="sd">        Extends the base implementation to handle:</span>
+<span class="sd">        - Reference: ITsString (not IMultiString) -- set via default analysis WS.</span>
+<span class="sd">        - TranslationsOC: owned collection of ICmTranslation objects. Strategy is</span>
+<span class="sd">          clear-and-rebuild (v1 choice: simpler than index-based reconciliation;</span>
+<span class="sd">          acceptable because the diff layer identifies examples by GUID and replaces</span>
+<span class="sd">          them as a unit). A comment marks where v2 could do smarter merging.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: Target ILexExampleSentence (must already exist in target project).</span>
+<span class="sd">            props: dict produced by GetSyncableProperties on a source example.</span>
+<span class="sd">            ws_map: Optional source-&gt;target writing-system Id mapping.</span>
+<span class="sd">            fill_gaps (bool): When True, only write fields whose current target</span>
+<span class="sd">                value is empty/absent; passed through to BaseOperations.</span>
+<span class="sd">                Reference/TranslationsOC are always applied regardless (domain</span>
+<span class="sd">                has not ruled on them).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_logging</span>
+        <span class="n">_log</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">_special_fields</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;Reference&quot;</span><span class="p">,</span> <span class="s2">&quot;TranslationsOC&quot;</span><span class="p">)</span>
+        <span class="n">remaining_props</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">special_props</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_special_fields</span><span class="p">:</span>
+                <span class="n">special_props</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">remaining_props</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Apply example sync properties&quot;</span><span class="p">):</span>
+            <span class="c1"># Apply plain / multistring fields via base class.</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">remaining_props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
+
+            <span class="c1"># --- Reference (ITsString, single-string) ---</span>
+            <span class="k">if</span> <span class="s2">&quot;Reference&quot;</span> <span class="ow">in</span> <span class="n">special_props</span><span class="p">:</span>
+                <span class="n">ref_text</span> <span class="o">=</span> <span class="n">special_props</span><span class="p">[</span><span class="s2">&quot;Reference&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">if</span> <span class="n">ref_text</span><span class="p">:</span>
+                    <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+                    <span class="n">item</span><span class="o">.</span><span class="n">Reference</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">ref_text</span><span class="p">,</span> <span class="n">ws_handle</span><span class="p">)</span>
+
+            <span class="c1"># --- TranslationsOC (owned collection -- clear-and-rebuild) ---</span>
+            <span class="c1"># V1 choice: clear all existing ICmTranslation objects and recreate from</span>
+            <span class="c1"># the serialized list. This is safe for cross-project sync where the target</span>
+            <span class="c1"># example was just created. A future v2 could reconcile by TypeRA GUID to</span>
+            <span class="c1"># preserve locally-authored translations not present in the source.</span>
+            <span class="k">if</span> <span class="s2">&quot;TranslationsOC&quot;</span> <span class="ow">in</span> <span class="n">special_props</span><span class="p">:</span>
+                <span class="n">translations_data</span> <span class="o">=</span> <span class="n">special_props</span><span class="p">[</span><span class="s2">&quot;TranslationsOC&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">translations_data</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">&quot;[WARN] ApplySyncableProperties: TranslationsOC expected list, &quot;</span>
+                        <span class="s2">&quot;got </span><span class="si">%s</span><span class="s2"> -- skipping&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">translations_data</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Resolve target writing systems once.</span>
+                    <span class="n">target_ws_by_id</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span>
+                        <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()</span>
+                    <span class="p">}</span>
+
+                    <span class="c1"># Build a GUID-&gt;object map for the translation type possibility list.</span>
+                    <span class="c1"># Translation types live in LangProject.TranslationTagsOA.</span>
+                    <span class="n">type_guid_map</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">tt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">TranslationTagsOA</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
+                            <span class="n">type_guid_map</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">tt</span><span class="o">.</span><span class="n">Guid</span><span class="p">)]</span> <span class="o">=</span> <span class="n">tt</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                        <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                            <span class="s2">&quot;[WARN] ApplySyncableProperties: could not enumerate &quot;</span>
+                            <span class="s2">&quot;TranslationTagsOA: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span>
+                        <span class="p">)</span>
+
+                    <span class="c1"># Clear existing translations on the target example.</span>
+                    <span class="n">item</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
+
+                    <span class="k">for</span> <span class="n">trans_dict</span> <span class="ow">in</span> <span class="n">translations_data</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">trans_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                                <span class="s2">&quot;[WARN] ApplySyncableProperties: TranslationsOC entry &quot;</span>
+                                <span class="s2">&quot;is not a dict -- skipped&quot;</span>
+                            <span class="p">)</span>
+                            <span class="k">continue</span>
+
+                        <span class="c1"># Resolve TypeRA by GUID before Create() -- factory requires a non-null possibility.</span>
+                        <span class="n">type_guid_str</span> <span class="o">=</span> <span class="n">trans_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;TypeRA&quot;</span><span class="p">)</span>
+                        <span class="n">type_obj</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="k">if</span> <span class="n">type_guid_str</span><span class="p">:</span>
+                            <span class="n">type_obj</span> <span class="o">=</span> <span class="n">type_guid_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">type_guid_str</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">type_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                                    <span class="s2">&quot;[WARN] ApplySyncableProperties: TranslationsOC &quot;</span>
+                                    <span class="s2">&quot;TypeRA GUID </span><span class="si">%s</span><span class="s2"> not found in target project&#39;s &quot;</span>
+                                    <span class="s2">&quot;TranslationTagsOA -- translation skipped&quot;</span><span class="p">,</span>
+                                    <span class="n">type_guid_str</span>
+                                <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">type_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                                <span class="s2">&quot;[WARN] ApplySyncableProperties: TranslationsOC entry &quot;</span>
+                                <span class="s2">&quot;has no resolvable TypeRA -- translation skipped&quot;</span>
+                            <span class="p">)</span>
+                            <span class="k">continue</span>
+
+                        <span class="c1"># Create a new ICmTranslation owned by this example.</span>
+                        <span class="n">new_trans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                            <span class="n">ICmTranslationFactory</span>
+                        <span class="p">)</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">type_obj</span><span class="p">)</span>
+                        <span class="n">item</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_trans</span><span class="p">)</span>
+
+                        <span class="c1"># Set Translation IMultiString per writing system.</span>
+                        <span class="n">trans_text_dict</span> <span class="o">=</span> <span class="n">trans_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Translation&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                        <span class="k">for</span> <span class="n">src_ws_id</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">trans_text_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
+                                <span class="k">continue</span>
+                            <span class="n">tgt_ws_id</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="n">ws_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">src_ws_id</span><span class="p">,</span> <span class="n">src_ws_id</span><span class="p">)</span> <span class="k">if</span> <span class="n">ws_map</span> <span class="k">else</span> <span class="n">src_ws_id</span>
+                            <span class="p">)</span>
+                            <span class="n">tgt_handle</span> <span class="o">=</span> <span class="n">target_ws_by_id</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tgt_ws_id</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">tgt_handle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="k">continue</span>
+                            <span class="n">new_trans</span><span class="o">.</span><span class="n">Translation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span>
+                                <span class="n">tgt_handle</span><span class="p">,</span>
+                                <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">tgt_handle</span><span class="p">)</span>
+                            <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two example sentences and return their differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: The first ILexExampleSentence object.</span>
+<span class="sd">            item2: The second ILexExampleSentence object.</span>
+<span class="sd">            ops1: Optional ExampleOperations instance for item1.</span>
+<span class="sd">            ops2: Optional ExampleOperations instance for item2.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ops1</span> <span class="o">=</span> <span class="n">ops1</span> <span class="ow">or</span> <span class="bp">self</span>
+        <span class="n">ops2</span> <span class="o">=</span> <span class="n">ops2</span> <span class="ow">or</span> <span class="bp">self</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Reorder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense_or_hvo</span><span class="p">,</span> <span class="n">example_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reorder the examples for a sense.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sense_or_hvo: The ILexSense object or HVO.</span>
+<span class="sd">            example_list: List of ILexExampleSentence objects or HVOs in desired order.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If sense_or_hvo or example_list is None.</span>
+<span class="sd">            FP_ParameterError: If example_list doesn&#39;t contain all examples or</span>
+<span class="sd">                contains examples not belonging to this sense.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; # Reverse the order</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps.Reorder(sense, reversed(examples))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - All examples must be provided in the new order</span>
+<span class="sd">            - Examples not in the list will be removed</span>
+<span class="sd">            - All examples must belong to the specified sense</span>
+<span class="sd">            - This is useful for organizing examples by frequency or importance</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">,</span> <span class="s2">&quot;sense_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_list</span><span class="p">,</span> <span class="s2">&quot;example_list&quot;</span><span class="p">)</span>
+
+        <span class="n">sense</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSenseObject</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Convert to list if it&#39;s an iterator</span>
+        <span class="n">example_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">example_list</span><span class="p">)</span>
+
+        <span class="c1"># Resolve all to objects</span>
+        <span class="n">examples</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">example_list</span><span class="p">]</span>
+
+        <span class="c1"># Verify all examples belong to this sense</span>
+        <span class="n">current_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sense</span><span class="o">.</span><span class="n">ExamplesOS</span><span class="p">)</span>
+        <span class="n">new_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">current_examples</span> <span class="o">!=</span> <span class="n">new_examples</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Example list must contain exactly the same examples as the sense&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Reorder examples&quot;</span><span class="p">):</span>
+            <span class="c1"># Clear and re-add in new order</span>
+            <span class="n">sense</span><span class="o">.</span><span class="n">ExamplesOS</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">example</span> <span class="ow">in</span> <span class="n">examples</span><span class="p">:</span>
+                <span class="n">sense</span><span class="o">.</span><span class="n">ExamplesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">example</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetExample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the example text of an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The example text, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     text = exampleOps.GetExample(examples[0])</span>
+<span class="sd">            ...     print(text)</span>
+<span class="sd">            The dog ran quickly.</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; text_fr = exampleOps.GetExample(examples[0],</span>
+<span class="sd">            ...                                   project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if text not set in specified writing system</span>
+<span class="sd">            - Use vernacular writing system for example sentences</span>
+<span class="sd">            - Different writing systems can contain different text</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetExample, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">Example</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="c1"># _NormalizeMultiString turns &quot;***&quot; into &quot;&quot; but leaves None alone.</span>
+        <span class="c1"># GetExample&#39;s docstring promises a str (empty when unset), so coerce</span>
+        <span class="c1"># the None-on-unset case to &quot;&quot; as well -- callers do not expect to</span>
+        <span class="c1"># have to .startswith()-guard the return value.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetExample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the example text of an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+<span class="sd">            text (str): The new example text.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo or text is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     exampleOps.SetExample(examples[0], &quot;The cat ran quickly.&quot;)</span>
+<span class="sd">            ...     print(exampleOps.GetExample(examples[0]))</span>
+<span class="sd">            The cat ran quickly.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Empty string is allowed (clears the text)</span>
+<span class="sd">            - Use different writing systems for different representations</span>
+<span class="sd">            - Does not affect translations (update those separately)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetExample, Create, SetTranslation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">example</span><span class="o">.</span><span class="n">Example</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetTranslations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all translation objects for an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmTranslation objects (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     translations = exampleOps.GetTranslations(examples[0])</span>
+<span class="sd">            ...     for trans in translations:</span>
+<span class="sd">            ...         wsHandle = project.project.DefaultAnalWs</span>
+<span class="sd">            ...         text = ITsString(trans.Translation.get_String(wsHandle)).Text</span>
+<span class="sd">            ...         print(f&quot;Translation: {text}&quot;)</span>
+<span class="sd">            Translation: The dog ran quickly.</span>
+<span class="sd">            Translation: El perro corrió rápidamente.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns ICmTranslation objects, not strings</span>
+<span class="sd">            - To get text, use GetTranslation() for a specific WS</span>
+<span class="sd">            - Translations are in analysis writing systems</span>
+<span class="sd">            - Multiple translations can exist for different languages</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetTranslation, SetTranslation, AddTranslation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the translation text for a specific writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The translation text, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     trans = exampleOps.GetTranslation(examples[0])</span>
+<span class="sd">            ...     print(trans)</span>
+<span class="sd">            The dog ran quickly.</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get Spanish translation</span>
+<span class="sd">            &gt;&gt;&gt; trans_es = exampleOps.GetTranslation(examples[0],</span>
+<span class="sd">            ...                                       project.WSHandle(&#39;es&#39;))</span>
+<span class="sd">            &gt;&gt;&gt; print(trans_es)</span>
+<span class="sd">            El perro corrió rápidamente.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if no translation in specified WS</span>
+<span class="sd">            - Use analysis writing system for translations</span>
+<span class="sd">            - Searches through all translation objects for matching WS</span>
+<span class="sd">            - Returns the first match found</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetTranslation, GetTranslations, GetExample</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Search through translations for this writing system</span>
+        <span class="k">for</span> <span class="n">translation</span> <span class="ow">in</span> <span class="n">example</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">translation</span><span class="o">.</span><span class="n">Translation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">text</span>
+
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the translation text for a specific writing system.</span>
+
+<span class="sd">        Creates a translation object if one doesn&#39;t exist for the writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+<span class="sd">            text (str): The translation text.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo or text is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; example = exampleOps.Create(sense, &quot;El gato durmió.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps.SetTranslation(example, &quot;The cat slept.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(exampleOps.GetTranslation(example))</span>
+<span class="sd">            The cat slept.</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set French translation</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps.SetTranslation(example, &quot;Le chat a dormi.&quot;,</span>
+<span class="sd">            ...                            project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Creates new translation object if needed</span>
+<span class="sd">            - Updates existing translation if already present</span>
+<span class="sd">            - Use analysis writing system for translations</span>
+<span class="sd">            - Empty string is allowed (clears the translation)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetTranslation, AddTranslation, RemoveTranslation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Find existing translation for this WS or create new one</span>
+        <span class="n">translation</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">trans</span> <span class="ow">in</span> <span class="n">example</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="p">:</span>
+            <span class="n">existing_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">Translation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">existing_text</span><span class="p">:</span>  <span class="c1"># This translation has content in our WS</span>
+                <span class="n">translation</span> <span class="o">=</span> <span class="n">trans</span>
+                <span class="k">break</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set translation&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">translation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Create new translation</span>
+                <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmTranslationFactory</span><span class="p">)</span>
+                <span class="n">translation</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="n">example</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">translation</span><span class="p">)</span>
+
+            <span class="c1"># Set the translation text</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">translation</span><span class="o">.</span><span class="n">Translation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a new translation to an example sentence.</span>
+
+<span class="sd">        This is an alias for SetTranslation() - both create or update translations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+<span class="sd">            text (str): The translation text.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo or text is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; example = exampleOps.Create(sense, &quot;Le chien a couru.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps.AddTranslation(example, &quot;The dog ran.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps.AddTranslation(example, &quot;El perro corrió.&quot;,</span>
+<span class="sd">            ...                            project.WSHandle(&#39;es&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Identical to SetTranslation() in functionality</span>
+<span class="sd">            - Creates new translation if needed, updates if exists</span>
+<span class="sd">            - Use for semantic clarity when adding first translation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetTranslation, GetTranslation, RemoveTranslation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetTranslation</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove the translation for a specific writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     # Remove English translation</span>
+<span class="sd">            ...     exampleOps.RemoveTranslation(examples[0])</span>
+<span class="sd">            ...     # Remove Spanish translation</span>
+<span class="sd">            ...     exampleOps.RemoveTranslation(examples[0],</span>
+<span class="sd">            ...                                   project.WSHandle(&#39;es&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Sets translation text to empty string for the WS</span>
+<span class="sd">            - Does not remove the translation object itself</span>
+<span class="sd">            - If translation has content in other WSs, those are preserved</span>
+<span class="sd">            - No error if translation doesn&#39;t exist</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetTranslation, AddTranslation, GetTranslation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Find and clear translation for this WS</span>
+        <span class="k">for</span> <span class="n">translation</span> <span class="ow">in</span> <span class="n">example</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">translation</span><span class="o">.</span><span class="n">Translation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                <span class="n">translation</span><span class="o">.</span><span class="n">Translation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">break</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetReference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the reference (source citation) for an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The reference text, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     ref = exampleOps.GetReference(examples[0])</span>
+<span class="sd">            ...     print(f&quot;Reference: {ref}&quot;)</span>
+<span class="sd">            Reference: Genesis 1:1</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Reference can be a corpus citation, biblical reference, etc.</span>
+<span class="sd">            - Format is free-form text</span>
+<span class="sd">            - Commonly used formats: &quot;Book Chapter:Verse&quot;, &quot;Corpus ID&quot;</span>
+<span class="sd">            - Returns empty string if no reference set</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetReference</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="s2">&quot;Reference&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">example</span><span class="o">.</span><span class="n">Reference</span><span class="p">:</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">Reference</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetReference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">reference_text</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the reference (source citation) for an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+<span class="sd">            reference_text (str): The reference text (e.g., &quot;Genesis 1:1&quot;).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo or reference_text is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; example = exampleOps.Create(sense, &quot;In the beginning...&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps.SetReference(example, &quot;Genesis 1:1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(exampleOps.GetReference(example))</span>
+<span class="sd">            Genesis 1:1</span>
+
+<span class="sd">            &gt;&gt;&gt; # Corpus reference</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps.SetReference(example, &quot;Corpus A, Text 3, Line 12&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Reference format is free-form</span>
+<span class="sd">            - Common formats: biblical citations, corpus IDs, page numbers</span>
+<span class="sd">            - Empty string is allowed (clears the reference)</span>
+<span class="sd">            - Use consistent format within a project</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetReference</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">reference_text</span><span class="p">,</span> <span class="s2">&quot;reference_text&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">reference_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">example</span><span class="o">.</span><span class="n">Reference</span> <span class="o">=</span> <span class="n">mkstr</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMediaFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all media files associated with an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of media file objects (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     media = exampleOps.GetMediaFiles(examples[0])</span>
+<span class="sd">            ...     print(f&quot;Media count: {len(media)}&quot;)</span>
+<span class="sd">            Media count: 2</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns media file objects from MediaFilesOS collection</span>
+<span class="sd">            - Media files can be audio, video, or image files</span>
+<span class="sd">            - File objects contain path and metadata information</span>
+<span class="sd">            - Empty list if no media files attached</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMediaCount</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMediaCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the count of media files associated with an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The number of media files.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     count = exampleOps.GetMediaCount(examples[0])</span>
+<span class="sd">            ...     print(f&quot;This example has {count} media files&quot;)</span>
+<span class="sd">            This example has 2 media files</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - More efficient than len(GetMediaFiles()) for just counting</span>
+<span class="sd">            - Returns 0 if no media files attached</span>
+<span class="sd">            - Includes all media types (audio, video, images)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMediaFiles</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">example</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Count</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a media file (typically audio) to an example sentence.</span>
+
+<span class="sd">        Copies the file to the project&#39;s LinkedFiles directory and creates</span>
+<span class="sd">        a media reference linked to the example.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+<span class="sd">            file_path (str): Path to the external media file to import.</span>
+<span class="sd">            label (str, optional): Descriptive label for the media file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmFile: The created media file object with proper path.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo or file_path is None.</span>
+<span class="sd">            FP_ParameterError: If file_path is empty or file doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; example = exampleOps.Create(sense, &quot;The dog barked loudly.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Add audio recording</span>
+<span class="sd">            &gt;&gt;&gt; media = exampleOps.AddMediaFile(</span>
+<span class="sd">            ...     example,</span>
+<span class="sd">            ...     &quot;/path/to/audio.wav&quot;,</span>
+<span class="sd">            ...     label=&quot;Native speaker pronunciation&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Added media file&quot;)</span>
+<span class="sd">            Added media file</span>
+
+<span class="sd">            &gt;&gt;&gt; # Verify the media was added</span>
+<span class="sd">            &gt;&gt;&gt; count = exampleOps.GetMediaCount(example)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Example now has {count} media file(s)&quot;)</span>
+<span class="sd">            Example now has 1 media file(s)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - File is copied to LinkedFiles/AudioVisual directory</span>
+<span class="sd">            - Unique filename generated if collision occurs (audio_1.wav, etc.)</span>
+<span class="sd">            - Creates ICmFile object with proper LinkedFiles path</span>
+<span class="sd">            - Supported formats: WAV, MP3, OGG, WMA (audio), MP4, AVI (video)</span>
+<span class="sd">            - Multiple media files can be added to one example</span>
+<span class="sd">            - Label is stored in the default analysis writing system</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RemoveMediaFile, MoveMediaFile, GetMediaFiles, GetMediaCount</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;file_path&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateStringNotEmpty</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;file_path&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add media file&quot;</span><span class="p">):</span>
+            <span class="c1"># Use MediaOperations to properly copy file and create ICmFile</span>
+            <span class="c1"># Copy file to project and get ICmFile reference</span>
+            <span class="n">media_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Media</span><span class="o">.</span><span class="n">CopyToProject</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">internal_subdir</span><span class="o">=</span><span class="s2">&quot;AudioVisual&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+
+            <span class="c1"># Add to example&#39;s media collection</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOS&quot;</span><span class="p">):</span>
+                <span class="n">example</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">media_file</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Example does not support media files&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">media_file</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a media file from an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+<span class="sd">            media_or_hvo: The ICmFile object or HVO to remove.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo or media_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     media_files = exampleOps.GetMediaFiles(examples[0])</span>
+<span class="sd">            ...     if media_files:</span>
+<span class="sd">            ...         exampleOps.RemoveMediaFile(examples[0], media_files[0])</span>
+<span class="sd">            ...         print(&quot;Media file removed&quot;)</span>
+<span class="sd">            Media file removed</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Removes the media file reference from the example</span>
+<span class="sd">            - Does NOT delete the actual file from disk</span>
+<span class="sd">            - The media file object is deleted from the database</span>
+<span class="sd">            - Cannot be undone</span>
+<span class="sd">            - If you need to delete the physical file, use project.Media methods</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This operation cannot be undone</span>
+<span class="sd">            - The media file reference is permanently removed</span>
+<span class="sd">            - Other examples may still reference the same physical file</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddMediaFile, MoveMediaFile, GetMediaFiles</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Resolve media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="c1"># Remove from collection</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOS&quot;</span><span class="p">):</span>
+            <span class="n">example</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media</span><span class="p">,</span> <span class="n">from_example_or_hvo</span><span class="p">,</span> <span class="n">to_example_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Move a media file from one example sentence to another example sentence.</span>
+
+<span class="sd">        This is useful when reorganizing examples or moving audio recordings to the</span>
+<span class="sd">        correct example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media: ICmFile object to move.</span>
+<span class="sd">            from_example_or_hvo: Source ILexExampleSentence object or HVO.</span>
+<span class="sd">            to_example_or_hvo: Destination ILexExampleSentence object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if media was moved, False if source and destination are same.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If any parameter is None.</span>
+<span class="sd">            FP_ParameterError: If media not in source example&#39;s collection.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Get two examples from the sense</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if len(examples) &gt;= 2:</span>
+<span class="sd">            ...     example1 = examples[0]</span>
+<span class="sd">            ...     example2 = examples[1]</span>
+<span class="sd">            ...</span>
+<span class="sd">            ...     # Get media from first example</span>
+<span class="sd">            ...     media_files = exampleOps.GetMediaFiles(example1)</span>
+<span class="sd">            ...     if media_files:</span>
+<span class="sd">            ...         # Move the first audio file</span>
+<span class="sd">            ...         moved = exampleOps.MoveMediaFile(media_files[0], example1, example2)</span>
+<span class="sd">            ...         if moved:</span>
+<span class="sd">            ...             print(&quot;Media file moved successfully&quot;)</span>
+<span class="sd">            ...</span>
+<span class="sd">            ...         # Verify the move</span>
+<span class="sd">            ...         count1 = exampleOps.GetMediaCount(example1)</span>
+<span class="sd">            ...         count2 = exampleOps.GetMediaCount(example2)</span>
+<span class="sd">            ...         print(f&quot;Example 1 media: {count1}&quot;)</span>
+<span class="sd">            ...         print(f&quot;Example 2 media: {count2}&quot;)</span>
+<span class="sd">            Media file moved successfully</span>
+<span class="sd">            Example 1 media: 0</span>
+<span class="sd">            Example 2 media: 1</span>
+
+<span class="sd">            &gt;&gt;&gt; # Can also move between different senses</span>
+<span class="sd">            &gt;&gt;&gt; other_sense = entry.SensesOS[1] if entry.SensesOS.Count &gt; 1 else None</span>
+<span class="sd">            &gt;&gt;&gt; if other_sense:</span>
+<span class="sd">            ...     other_examples = list(exampleOps.GetAll(other_sense))</span>
+<span class="sd">            ...     if other_examples:</span>
+<span class="sd">            ...         other_example = other_examples[0]</span>
+<span class="sd">            ...         media_files = exampleOps.GetMediaFiles(example2)</span>
+<span class="sd">            ...         if media_files:</span>
+<span class="sd">            ...             exampleOps.MoveMediaFile(media_files[0], example2, other_example)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Media is removed from source MediaFilesOS and added to destination</span>
+<span class="sd">            - File reference and description are preserved</span>
+<span class="sd">            - The physical media file is NOT moved/copied</span>
+<span class="sd">            - Cannot move to the same example (returns False)</span>
+<span class="sd">            - Media object&#39;s GUID remains the same</span>
+<span class="sd">            - No changes are made to the physical file location</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Moving media between different sense&#39;s examples is allowed</span>
+<span class="sd">            - Ensure the media is semantically appropriate for the target example</span>
+<span class="sd">            - The media will be associated with the new example</span>
+<span class="sd">            - Consider adding/updating labels to clarify context after moving</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddMediaFile, RemoveMediaFile, GetMediaFiles, GetMediaCount</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="s2">&quot;media&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">from_example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;from_example_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">to_example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;to_example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">from_example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">from_example_or_hvo</span><span class="p">)</span>
+        <span class="n">to_example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">to_example_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Can&#39;t move to same example</span>
+        <span class="k">if</span> <span class="n">from_example</span> <span class="o">==</span> <span class="n">to_example</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Source and destination are the same example&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Verify media is in source collection</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">from_example</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOS&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Source example does not support media files&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">media</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">from_example</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Media file not found in source example&#39;s media collection&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Verify destination supports media</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">to_example</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOS&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Destination example does not support media files&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Move media file&quot;</span><span class="p">):</span>
+            <span class="c1"># Move the media (remove from source, add to destination)</span>
+            <span class="n">from_example</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
+            <span class="n">to_example</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Moved media from example </span><span class="si">{</span><span class="n">from_example</span><span class="o">.</span><span class="n">Guid</span><span class="si">}</span><span class="s2"> to example </span><span class="si">{</span><span class="n">to_example</span><span class="o">.</span><span class="n">Guid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwningSense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the lexical sense that owns this example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexSense: The owning sense object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     owner = exampleOps.GetOwningSense(examples[0])</span>
+<span class="sd">            ...     gloss = project.LexiconGetSenseGloss(owner)</span>
+<span class="sd">            ...     print(f&quot;Example belongs to sense: {gloss}&quot;)</span>
+<span class="sd">            Example belongs to sense: run (verb)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns the ILexSense that contains this example</span>
+<span class="sd">            - Useful for navigation and context</span>
+<span class="sd">            - Examples always have exactly one owning sense</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ILexSense</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID of an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: The ILexExampleSentence object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.Guid: The GUID of the example.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; exampleOps = ExampleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries().__next__()</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = list(exampleOps.GetAll(sense))</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     guid = exampleOps.GetGuid(examples[0])</span>
+<span class="sd">            ...     print(f&quot;Example GUID: {guid}&quot;)</span>
+<span class="sd">            Example GUID: 12345678-1234-1234-1234-123456789abc</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUIDs are globally unique identifiers</span>
+<span class="sd">            - Persistent across project versions</span>
+<span class="sd">            - Use for external references and tracking</span>
+<span class="sd">            - Same GUID across different copies of the project</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetOwningSense</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">example</span><span class="o">.</span><span class="n">Guid</span>
+
+    <span class="c1"># --- Additional Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLiteralTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the literal translation of an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: Either an ILexExampleSentence object or its HVO</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The literal translation text</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; sense = list(project.Senses.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = project.Examples.GetAll(sense)</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     lit_trans = project.Examples.GetLiteralTranslation(examples[0])</span>
+<span class="sd">            ...     print(lit_trans)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLiteralTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the literal translation of an example sentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: Either an ILexExampleSentence object or its HVO</span>
+<span class="sd">            text (str): The literal translation text</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo or text is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; sense = list(project.Senses.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = project.Examples.GetAll(sense)</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     project.Examples.SetLiteralTranslation(examples[0], &quot;word-for-word translation&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">example</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDoNotPublishIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the publications this example should not be published in.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: Either an ILexExampleSentence object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of publication names</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; sense = list(project.Senses.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; examples = project.Examples.GetAll(sense)</span>
+<span class="sd">            &gt;&gt;&gt; if examples:</span>
+<span class="sd">            ...     pubs = project.Examples.GetDoNotPublishIn(examples[0])</span>
+<span class="sd">            ...     print(pubs)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">pub</span> <span class="ow">in</span> <span class="n">example</span><span class="o">.</span><span class="n">DoNotPublishInRC</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">pub</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">BestAnalysisAlternative</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span> <span class="k">if</span> <span class="n">pub</span><span class="o">.</span><span class="n">Name</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">pub</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddDoNotPublishIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">publication</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a publication to exclude this example from.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: Either an ILexExampleSentence object or its HVO</span>
+<span class="sd">            publication: Publication name (str) or ICmPossibility object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo or publication is None</span>
+<span class="sd">            FP_ParameterError: If publication name not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;publication&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Find publication object if string provided</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">pub_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">publication</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pub_obj</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Publication &#39;</span><span class="si">{</span><span class="n">publication</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">)</span>
+            <span class="n">publication</span> <span class="o">=</span> <span class="n">pub_obj</span>
+
+        <span class="k">if</span> <span class="n">publication</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">example</span><span class="o">.</span><span class="n">DoNotPublishInRC</span><span class="p">:</span>
+            <span class="n">example</span><span class="o">.</span><span class="n">DoNotPublishInRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">publication</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveDoNotPublishIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">,</span> <span class="n">publication</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a publication from the exclude list for this example.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: Either an ILexExampleSentence object or its HVO</span>
+<span class="sd">            publication: Publication name (str) or ICmPossibility object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If example_or_hvo or publication is None</span>
+<span class="sd">            FP_ParameterError: If publication name not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="s2">&quot;example_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;publication&quot;</span><span class="p">)</span>
+
+        <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetExampleObject</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Find publication object if string provided</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">pub_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">publication</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pub_obj</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Publication &#39;</span><span class="si">{</span><span class="n">publication</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">)</span>
+            <span class="n">publication</span> <span class="o">=</span> <span class="n">pub_obj</span>
+
+        <span class="k">if</span> <span class="n">publication</span> <span class="ow">in</span> <span class="n">example</span><span class="o">.</span><span class="n">DoNotPublishInRC</span><span class="p">:</span>
+            <span class="n">example</span><span class="o">.</span><span class="n">DoNotPublishInRC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">publication</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetSenseObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to ILexSense.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sense_or_hvo: Either an ILexSense object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexSense: The resolved sense object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sense_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetExampleObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to ILexExampleSentence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            example_or_hvo: Either an ILexExampleSentence object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexExampleSentence: The resolved example object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">example_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">example_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS for translations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleVern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to vernacular WS for example text.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.ExampleOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

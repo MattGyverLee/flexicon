@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.System.CheckOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.System.CheckOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.System.CheckOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   CheckOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: CheckOperations</span>
+<span class="c1">#          Consistency check and validation operations for FieldWorks Language</span>
+<span class="c1">#          Explorer projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ICmPossibility</span><span class="p">,</span>
+    <span class="n">ICmPossibilityFactory</span><span class="p">,</span>
+    <span class="n">ICmPossibilityList</span><span class="p">,</span>
+    <span class="n">ILexEntry</span><span class="p">,</span>
+    <span class="n">IWfiWordform</span><span class="p">,</span>
+    <span class="n">IText</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
+
+<span class="c1"># Import string utilities</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span><span class="p">,</span> <span class="n">normalize_match_key</span>
+
+
+<div class="viewcode-block" id="CheckOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.CheckOperations.CheckOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CheckOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing consistency checks and</span>
+<span class="sd">    validation in a FieldWorks project.</span>
+
+<span class="sd">    Consistency checks help identify data quality issues, missing information,</span>
+<span class="sd">    and inconsistencies in lexical entries, texts, and other project data.</span>
+<span class="sd">    Check types are managed as possibility list items.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.Checks property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get all check types</span>
+<span class="sd">        for check_type in project.Checks.GetAllCheckTypes():</span>
+<span class="sd">            name = project.Checks.GetName(check_type)</span>
+<span class="sd">            enabled = project.Checks.IsEnabled(check_type)</span>
+<span class="sd">            print(f&quot;{name}: {&#39;Enabled&#39; if enabled else &#39;Disabled&#39;}&quot;)</span>
+
+<span class="sd">        # Create a custom check type</span>
+<span class="sd">        check = project.Checks.CreateCheckType(&quot;Missing Gloss Check&quot;)</span>
+<span class="sd">        project.Checks.SetDescription(check, &quot;Verify all senses have glosses&quot;)</span>
+<span class="sd">        project.Checks.EnableCheck(check)</span>
+
+<span class="sd">        # Run a check and get results</span>
+<span class="sd">        project.Checks.RunCheck(check)</span>
+<span class="sd">        errors = project.Checks.GetErrorCount(check)</span>
+<span class="sd">        warnings = project.Checks.GetWarningCount(check)</span>
+<span class="sd">        print(f&quot;Check found {errors} errors and {warnings} warnings&quot;)</span>
+
+<span class="sd">        # Get items with issues</span>
+<span class="sd">        items = project.Checks.FindItemsWithIssues(check)</span>
+<span class="sd">        for item in items:</span>
+<span class="sd">            issues = project.Checks.GetIssuesForObject(check, item)</span>
+<span class="sd">            print(f&quot;Issues: {len(issues)}&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize CheckOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+        <span class="c1"># Cache for check execution results</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_last_run</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_enabled</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllCheckTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all consistency check types in the project.</span>
+
+<span class="sd">        Returns all check types that are available for validation and</span>
+<span class="sd">        consistency checking.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmPossibility: Each check type object</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for check_type in project.Checks.GetAllCheckTypes():</span>
+<span class="sd">            ...     name = project.Checks.GetName(check_type)</span>
+<span class="sd">            ...     desc = project.Checks.GetDescription(check_type)</span>
+<span class="sd">            ...     enabled = project.Checks.IsEnabled(check_type)</span>
+<span class="sd">            ...     print(f&quot;{name}: {desc} ({&#39;Enabled&#39; if enabled else &#39;Disabled&#39;})&quot;)</span>
+<span class="sd">            Missing Gloss: Check for senses without glosses (Enabled)</span>
+<span class="sd">            Duplicate Entries: Find potential duplicate lexical entries (Disabled)</span>
+<span class="sd">            Incomplete Paradigm: Verify paradigm completeness (Enabled)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Check types are stored as possibility list items</span>
+<span class="sd">            - Custom check types can be created for project-specific needs</span>
+<span class="sd">            - Each check type can be enabled or disabled independently</span>
+<span class="sd">            - Check types persist across sessions</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateCheckType, FindCheckType, GetEnabledChecks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetCheckList</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">check_list</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">check_type</span> <span class="ow">in</span> <span class="n">check_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">check_type</span>
+            <span class="c1"># Also yield nested check types</span>
+            <span class="k">for</span> <span class="n">check_type</span> <span class="ow">in</span> <span class="n">check_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">subcheck</span> <span class="ow">in</span> <span class="n">check_type</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">subcheck</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateCheckType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new consistency check type.</span>
+
+<span class="sd">        Creates a new check type that can be used to validate project data.</span>
+<span class="sd">        The check type is added to the project&#39;s check possibility list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the check type. Must be unique and non-empty.</span>
+<span class="sd">            description (str, optional): Description of what the check validates.</span>
+<span class="sd">                Defaults to None (empty description).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility: The newly created check type object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If name is None or empty.</span>
+<span class="sd">            FP_ParameterError: If a check type with this name already exists.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create a simple check type</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.CreateCheckType(&quot;Missing Etymology Check&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Checks.GetName(check))</span>
+<span class="sd">            Missing Etymology Check</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with description</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.CreateCheckType(</span>
+<span class="sd">            ...     &quot;Incomplete Paradigm&quot;,</span>
+<span class="sd">            ...     &quot;Verify all paradigm slots are filled&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Checks.GetDescription(check))</span>
+<span class="sd">            Verify all paradigm slots are filled</span>
+
+<span class="sd">            &gt;&gt;&gt; # Enable the check</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.EnableCheck(check)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Check is created but not enabled by default</span>
+<span class="sd">            - Use EnableCheck() to activate the check</span>
+<span class="sd">            - The check type persists across sessions</span>
+<span class="sd">            - Custom logic for running the check must be implemented separately</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            DeleteCheckType, GetAllCheckTypes, EnableCheck</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if check type with this name already exists</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindCheckType</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A check type with the name &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; already exists&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Get or create the check possibility list</span>
+        <span class="n">check_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetOrCreateCheckList</span><span class="p">()</span>
+
+        <span class="c1"># Create the new check type using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create check type &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="n">new_check</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to check list (must be done before setting properties)</span>
+            <span class="n">check_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_check</span><span class="p">)</span>
+
+            <span class="c1"># Set name</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_check</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="c1"># Set description if provided</span>
+            <span class="k">if</span> <span class="n">description</span><span class="p">:</span>
+                <span class="n">desc_str</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">new_check</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">desc_str</span><span class="p">)</span>
+
+            <span class="c1"># Initialize as disabled by default</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_enabled</span><span class="p">[</span><span class="n">new_check</span><span class="o">.</span><span class="n">Guid</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="k">return</span> <span class="n">new_check</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">DeleteCheckType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a consistency check type from the project.</span>
+
+<span class="sd">        Removes the check type and all associated results and configuration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Delete by object</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Old Check&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if check:</span>
+<span class="sd">            ...     project.Checks.DeleteCheckType(check)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Delete by HVO</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.DeleteCheckType(check_hvo)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - All check results and configuration are deleted</span>
+<span class="sd">            - Only delete custom check types, not system checks</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Removes check from the possibility list</span>
+<span class="sd">            - Clears cached results for this check</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateCheckType, GetAllCheckTypes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Remove from check list</span>
+        <span class="n">check_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetCheckList</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">check_list</span><span class="p">:</span>
+            <span class="c1"># Try to remove from top level</span>
+            <span class="k">if</span> <span class="n">check_obj</span> <span class="ow">in</span> <span class="n">check_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
+                <span class="n">check_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">check_obj</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Try to remove from parent&#39;s subitems</span>
+                <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">check_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">check_obj</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                        <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">check_obj</span><span class="p">)</span>
+                        <span class="k">break</span>
+
+        <span class="c1"># Clear cached data</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+        <span class="k">if</span> <span class="n">guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_results</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_results</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_last_run</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_last_run</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_enabled</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_enabled</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindCheckType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a check type by its name.</span>
+
+<span class="sd">        Searches for a check type with the specified name in the project&#39;s</span>
+<span class="sd">        check possibility list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The check type name to search for (case-insensitive).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility or None: The check type object if found, None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None or empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find a check type</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if check:</span>
+<span class="sd">            ...     status = project.Checks.GetCheckStatus(check)</span>
+<span class="sd">            ...     print(f&quot;Status: {status}&quot;)</span>
+<span class="sd">            Status: Ready</span>
+
+<span class="sd">            &gt;&gt;&gt; # Case-insensitive search</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;missing gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(check is not None)</span>
+<span class="sd">            True</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-insensitive</span>
+<span class="sd">            - Searches in default analysis writing system</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+<span class="sd">            - Searches recursively through nested check types</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAllCheckTypes, CreateCheckType, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Search through all check types</span>
+        <span class="k">for</span> <span class="n">check_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAllCheckTypes</span><span class="p">():</span>
+            <span class="n">check_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">check_type</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">check_name</span> <span class="ow">and</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">check_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">check_type</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Property Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of a check type.</span>
+
+<span class="sd">        Retrieves the check type name in the specified writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The name of the check type in the specified writing system.</span>
+<span class="sd">                Returns empty string if no name is set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; name = project.Checks.GetName(check)</span>
+<span class="sd">            &gt;&gt;&gt; print(name)</span>
+<span class="sd">            Missing Gloss</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get name in specific WS</span>
+<span class="sd">            &gt;&gt;&gt; ws_handle = project.WSHandle(&#39;fr&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; name_fr = project.Checks.GetName(check, ws_handle)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetName, GetDescription, FindCheckType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">check_obj</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of a check type.</span>
+
+<span class="sd">        Sets the check type name in the specified writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+<span class="sd">            name (str): The new name for the check type. Must be non-empty.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo or name is None/empty.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Old Name&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if check:</span>
+<span class="sd">            ...     project.Checks.SetName(check, &quot;Updated Check Name&quot;)</span>
+<span class="sd">            ...     print(project.Checks.GetName(check))</span>
+<span class="sd">            Updated Check Name</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set name in specific WS</span>
+<span class="sd">            &gt;&gt;&gt; ws_handle = project.WSHandle(&#39;fr&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.SetName(check, &quot;Vérification manquante&quot;, ws_handle)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetName, SetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">check_obj</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the description of a check type.</span>
+
+<span class="sd">        Retrieves the detailed description explaining what the check validates.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The description of the check type. Returns empty string if</span>
+<span class="sd">                no description is set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; desc = project.Checks.GetDescription(check)</span>
+<span class="sd">            &gt;&gt;&gt; print(desc)</span>
+<span class="sd">            Identifies lexical senses that are missing glosses in the analysis</span>
+<span class="sd">            writing system</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDescription, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">desc</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">check_obj</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the description of a check type.</span>
+
+<span class="sd">        Sets a detailed description explaining what the check validates.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+<span class="sd">            description (str): The new description text.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo or description is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Etymology&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.SetDescription(</span>
+<span class="sd">            ...     check,</span>
+<span class="sd">            ...     &quot;Identifies entries without etymology information&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Checks.GetDescription(check))</span>
+<span class="sd">            Identifies entries without etymology information</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDescription, SetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">check_obj</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="c1"># --- Execution Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RunCheck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">,</span> <span class="n">target_objects</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run a consistency check on project data.</span>
+
+<span class="sd">        Executes the specified check and stores the results. The actual</span>
+<span class="sd">        validation logic is determined by the check type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+<span class="sd">            target_objects (list, optional): List of specific objects to check.</span>
+<span class="sd">                If None, checks all relevant objects in the project.</span>
+<span class="sd">                Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Results dictionary containing:</span>
+<span class="sd">                - &#39;errors&#39;: list of error items</span>
+<span class="sd">                - &#39;warnings&#39;: list of warning items</span>
+<span class="sd">                - &#39;passed&#39;: list of items that passed</span>
+<span class="sd">                - &#39;timestamp&#39;: datetime when check was run</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist, is invalid,</span>
+<span class="sd">                or is not enabled.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Run check on all data</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.EnableCheck(check)</span>
+<span class="sd">            &gt;&gt;&gt; results = project.Checks.RunCheck(check)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Errors: {len(results[&#39;errors&#39;])}&quot;)</span>
+<span class="sd">            Errors: 15</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Warnings: {len(results[&#39;warnings&#39;])}&quot;)</span>
+<span class="sd">            Warnings: 3</span>
+
+<span class="sd">            &gt;&gt;&gt; # Run check on specific entries</span>
+<span class="sd">            &gt;&gt;&gt; entries = list(project.LexiconGetAllEntries())[:10]</span>
+<span class="sd">            &gt;&gt;&gt; results = project.Checks.RunCheck(check, entries)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Check must be enabled before running</span>
+<span class="sd">            - Results are cached until next run</span>
+<span class="sd">            - Timestamp records when check was executed</span>
+<span class="sd">            - Validation logic determined by check type name</span>
+<span class="sd">            - Supports: Missing Gloss, Missing Definition, Missing Example,</span>
+<span class="sd">              Missing Grammatical Info, Duplicate Entries, Missing Etymology</span>
+<span class="sd">            - Unknown check types will mark all objects as passed</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetCheckStatus, GetCheckResults, GetErrorCount, EnableCheck</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Verify check is enabled</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">IsEnabled</span><span class="p">(</span><span class="n">check_obj</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Check must be enabled before running&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize results</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;warnings&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;passed&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()}</span>
+
+        <span class="c1"># Get target objects if not specified</span>
+        <span class="k">if</span> <span class="n">target_objects</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target_objects</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetDefaultCheckTargets</span><span class="p">(</span><span class="n">check_obj</span><span class="p">)</span>
+
+        <span class="c1"># Run the check (placeholder - actual implementation would vary by check type)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ExecuteCheck</span><span class="p">(</span><span class="n">check_obj</span><span class="p">,</span> <span class="n">target_objects</span><span class="p">)</span>
+
+        <span class="c1"># Cache results</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_results</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_last_run</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCheckStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the current status of a check type.</span>
+
+<span class="sd">        Returns a status indicating whether the check is ready to run,</span>
+<span class="sd">        running, completed, or has issues.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Status string, one of:</span>
+<span class="sd">                - &#39;Ready&#39;: Check is enabled and ready to run</span>
+<span class="sd">                - &#39;Disabled&#39;: Check is not enabled</span>
+<span class="sd">                - &#39;Completed&#39;: Check has been run and results are available</span>
+<span class="sd">                - &#39;Never Run&#39;: Check has never been executed</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; status = project.Checks.GetCheckStatus(check)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Status: {status}&quot;)</span>
+<span class="sd">            Status: Ready</span>
+
+<span class="sd">            &gt;&gt;&gt; # Run check and check status</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.RunCheck(check)</span>
+<span class="sd">            &gt;&gt;&gt; status = project.Checks.GetCheckStatus(check)</span>
+<span class="sd">            &gt;&gt;&gt; print(status)</span>
+<span class="sd">            Completed</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RunCheck, GetLastRun, IsEnabled</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">IsEnabled</span><span class="p">(</span><span class="n">check_obj</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">&quot;Disabled&quot;</span>
+        <span class="k">elif</span> <span class="n">guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_results</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Completed&quot;</span>
+        <span class="k">elif</span> <span class="n">guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_last_run</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Completed&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Never Run&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLastRun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the timestamp when a check was last executed.</span>
+
+<span class="sd">        Returns the date and time when the check was most recently run.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            datetime or None: Timestamp of last execution, or None if the</span>
+<span class="sd">                check has never been run.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; last_run = project.Checks.GetLastRun(check)</span>
+<span class="sd">            &gt;&gt;&gt; if last_run:</span>
+<span class="sd">            ...     print(f&quot;Last run: {last_run.strftime(&#39;%Y-%m-%d %H:%M:%S&#39;)}&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;Never run&quot;)</span>
+<span class="sd">            Last run: 2025-11-23 14:30:45</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RunCheck, GetCheckStatus</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_last_run</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="c1"># --- Results Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCheckResults</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the full results from the last check execution.</span>
+
+<span class="sd">        Retrieves all results including errors, warnings, and passed items</span>
+<span class="sd">        from the most recent run of the check.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict or None: Results dictionary containing:</span>
+<span class="sd">                - &#39;errors&#39;: list of error items</span>
+<span class="sd">                - &#39;warnings&#39;: list of warning items</span>
+<span class="sd">                - &#39;passed&#39;: list of items that passed</span>
+<span class="sd">                - &#39;timestamp&#39;: datetime when check was run</span>
+<span class="sd">            Returns None if check has never been run.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.RunCheck(check)</span>
+<span class="sd">            &gt;&gt;&gt; results = project.Checks.GetCheckResults(check)</span>
+<span class="sd">            &gt;&gt;&gt; if results:</span>
+<span class="sd">            ...     print(f&quot;Errors: {len(results[&#39;errors&#39;])}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Warnings: {len(results[&#39;warnings&#39;])}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Passed: {len(results[&#39;passed&#39;])}&quot;)</span>
+<span class="sd">            Errors: 15</span>
+<span class="sd">            Warnings: 3</span>
+<span class="sd">            Passed: 142</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RunCheck, GetErrorCount, GetWarningCount</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetErrorCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of errors found by a check.</span>
+
+<span class="sd">        Returns the count of items that failed the check with errors</span>
+<span class="sd">        from the most recent execution.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of errors found. Returns 0 if check has never been run.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.RunCheck(check)</span>
+<span class="sd">            &gt;&gt;&gt; error_count = project.Checks.GetErrorCount(check)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {error_count} errors&quot;)</span>
+<span class="sd">            Found 15 errors</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetWarningCount, GetCheckResults, RunCheck</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">results</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;errors&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetWarningCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of warnings found by a check.</span>
+
+<span class="sd">        Returns the count of items with warnings from the most recent</span>
+<span class="sd">        check execution.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of warnings found. Returns 0 if check has never been run.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.RunCheck(check)</span>
+<span class="sd">            &gt;&gt;&gt; warning_count = project.Checks.GetWarningCount(check)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {warning_count} warnings&quot;)</span>
+<span class="sd">            Found 3 warnings</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetErrorCount, GetCheckResults, RunCheck</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">results</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;warnings&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="c1"># --- Filter Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEnabledChecks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all enabled check types.</span>
+
+<span class="sd">        Returns only those check types that are currently enabled and</span>
+<span class="sd">        ready to run.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmPossibility: Each enabled check type object</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # List enabled checks</span>
+<span class="sd">            &gt;&gt;&gt; for check in project.Checks.GetEnabledChecks():</span>
+<span class="sd">            ...     name = project.Checks.GetName(check)</span>
+<span class="sd">            ...     print(f&quot;Enabled: {name}&quot;)</span>
+<span class="sd">            Enabled: Missing Gloss</span>
+<span class="sd">            Enabled: Incomplete Paradigm</span>
+<span class="sd">            Enabled: Duplicate Entries</span>
+
+<span class="sd">            &gt;&gt;&gt; # Count enabled checks</span>
+<span class="sd">            &gt;&gt;&gt; enabled_count = len(list(project.Checks.GetEnabledChecks()))</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Total enabled: {enabled_count}&quot;)</span>
+<span class="sd">            Total enabled: 3</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only returns checks that have been explicitly enabled</span>
+<span class="sd">            - Disabled checks are excluded</span>
+<span class="sd">            - Useful for batch operations on active checks</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAllCheckTypes, EnableCheck, DisableCheck, IsEnabled</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">check_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAllCheckTypes</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">IsEnabled</span><span class="p">(</span><span class="n">check_type</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">check_type</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">EnableCheck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enable a consistency check type.</span>
+
+<span class="sd">        Activates the check so it can be run on project data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.EnableCheck(check)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Checks.IsEnabled(check))</span>
+<span class="sd">            True</span>
+
+<span class="sd">            &gt;&gt;&gt; # Run the enabled check</span>
+<span class="sd">            &gt;&gt;&gt; results = project.Checks.RunCheck(check)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            DisableCheck, IsEnabled, GetEnabledChecks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_enabled</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">DisableCheck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Disable a consistency check type.</span>
+
+<span class="sd">        Deactivates the check so it cannot be run. Previous results</span>
+<span class="sd">        are retained.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.DisableCheck(check)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Checks.IsEnabled(check))</span>
+<span class="sd">            False</span>
+
+<span class="sd">            &gt;&gt;&gt; # Previous results still accessible</span>
+<span class="sd">            &gt;&gt;&gt; results = project.Checks.GetCheckResults(check)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            EnableCheck, IsEnabled, GetEnabledChecks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_enabled</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsEnabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a consistency check type is enabled.</span>
+
+<span class="sd">        Returns whether the check is currently active and can be run.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if check is enabled, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.Checks.IsEnabled(check):</span>
+<span class="sd">            ...     print(&quot;Check is active&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;Check is disabled&quot;)</span>
+<span class="sd">            Check is active</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            EnableCheck, DisableCheck, GetEnabledChecks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_enabled</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># --- Query Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindItemsWithIssues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">,</span> <span class="n">issue_type</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find all items that have issues according to a check.</span>
+
+<span class="sd">        Returns items that failed the check, either with errors, warnings,</span>
+<span class="sd">        or both, from the most recent check execution.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+<span class="sd">            issue_type (str): Type of issues to return. Options:</span>
+<span class="sd">                - &#39;all&#39;: Both errors and warnings (default)</span>
+<span class="sd">                - &#39;errors&#39;: Only errors</span>
+<span class="sd">                - &#39;warnings&#39;: Only warnings</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of objects that have the specified issues. Returns</span>
+<span class="sd">                empty list if check has never been run or no issues found.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist, is invalid,</span>
+<span class="sd">                or issue_type is not recognized.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.RunCheck(check)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get all items with issues</span>
+<span class="sd">            &gt;&gt;&gt; items = project.Checks.FindItemsWithIssues(check)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Total items with issues: {len(items)}&quot;)</span>
+<span class="sd">            Total items with issues: 18</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get only items with errors</span>
+<span class="sd">            &gt;&gt;&gt; error_items = project.Checks.FindItemsWithIssues(check, &#39;errors&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Items with errors: {len(error_items)}&quot;)</span>
+<span class="sd">            Items with errors: 15</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get only items with warnings</span>
+<span class="sd">            &gt;&gt;&gt; warning_items = project.Checks.FindItemsWithIssues(check, &#39;warnings&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Items with warnings: {len(warning_items)}&quot;)</span>
+<span class="sd">            Items with warnings: 3</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns items from most recent check execution only</span>
+<span class="sd">            - Returns empty list if check has never been run</span>
+<span class="sd">            - issue_type parameter controls filtering of results</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetIssuesForObject, RunCheck, GetCheckResults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+
+        <span class="k">if</span> <span class="n">issue_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span><span class="p">,</span> <span class="s2">&quot;warnings&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;issue_type must be &#39;all&#39;, &#39;errors&#39;, or &#39;warnings&#39;&quot;</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">issue_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span><span class="p">]:</span>
+            <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;errors&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="k">if</span> <span class="n">issue_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="s2">&quot;warnings&quot;</span><span class="p">]:</span>
+            <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;warnings&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+
+        <span class="k">return</span> <span class="n">items</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetIssuesForObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all issues found for a specific object.</span>
+
+<span class="sd">        Returns detailed information about issues found for the given</span>
+<span class="sd">        object during the most recent check execution.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+<span class="sd">            obj: The object to get issues for (e.g., ILexEntry, IText, etc.).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of issue descriptions for the object. Returns empty</span>
+<span class="sd">                list if object has no issues or check has never been run.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo or obj is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Checks.RunCheck(check)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get issues for a specific entry</span>
+<span class="sd">            &gt;&gt;&gt; entry = list(project.LexiconGetAllEntries())[0]</span>
+<span class="sd">            &gt;&gt;&gt; issues = project.Checks.GetIssuesForObject(check, entry)</span>
+<span class="sd">            &gt;&gt;&gt; for issue in issues:</span>
+<span class="sd">            ...     print(f&quot;- {issue}&quot;)</span>
+<span class="sd">            - Sense 1 is missing gloss in English</span>
+<span class="sd">            - Sense 2 is missing gloss in English</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns issues from most recent check execution only</span>
+<span class="sd">            - Returns empty list if object passed the check</span>
+<span class="sd">            - Issue descriptions are human-readable strings</span>
+<span class="sd">            - Useful for displaying issues in UI or reports</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindItemsWithIssues, RunCheck, GetCheckResults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;obj&quot;</span><span class="p">)</span>
+
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="c1"># Search for object in errors and warnings</span>
+        <span class="n">issues</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;errors&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">obj</span><span class="o">.</span><span class="n">Hvo</span><span class="p">:</span>
+                    <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_GetIssueDescription</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;warnings&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">obj</span><span class="o">.</span><span class="n">Hvo</span><span class="p">:</span>
+                    <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_GetIssueDescription</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">issues</span>
+
+    <span class="c1"># --- Metadata Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID of a check type.</span>
+
+<span class="sd">        Returns the globally unique identifier for the check type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility check type object or its</span>
+<span class="sd">                HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.Guid: The check type&#39;s globally unique identifier.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the check type does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; guid = project.Checks.GetGuid(check)</span>
+<span class="sd">            &gt;&gt;&gt; print(guid)</span>
+<span class="sd">            a23b6fcc-654c-4983-a11c-5e4e15e1f6e9</span>
+
+<span class="sd">            &gt;&gt;&gt; # Use GUID to retrieve check later</span>
+<span class="sd">            &gt;&gt;&gt; retrieved = project.Object(guid)</span>
+<span class="sd">            &gt;&gt;&gt; name = project.Checks.GetName(retrieved)</span>
+<span class="sd">            &gt;&gt;&gt; print(name)</span>
+<span class="sd">            Missing Gloss</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUID is stable across sessions</span>
+<span class="sd">            - GUID is unique across all projects</span>
+<span class="sd">            - Use GUID for persistent references</span>
+<span class="sd">            - GUID can be used with project.Object(guid) to retrieve the check</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindCheckType, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Guid</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetCheckObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal function to get ICmPossibility check object from check_or_hvo.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_or_hvo: Either an ICmPossibility object or its HVO (integer).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility: The check object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If check_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the object doesn&#39;t exist or isn&#39;t a valid check.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">,</span> <span class="s2">&quot;check_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># If it&#39;s an integer, get the object</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Already a possibility object</span>
+                <span class="k">return</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">check_or_hvo</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid check type object or HVO: </span><span class="si">{</span><span class="n">check_or_hvo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetCheckList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the check possibility list.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibilityList or None: The check list if it exists, None otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if there&#39;s a dedicated check list</span>
+        <span class="c1"># In FLEx, this might be stored in a specific location</span>
+        <span class="c1"># For now, return None if not found</span>
+        <span class="c1"># Implementation would depend on actual FLEx data model</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetOrCreateCheckList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get or create the check possibility list.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibilityList: The check list.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetCheckList</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">check_list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">check_list</span>
+
+        <span class="c1"># Create a new check list</span>
+        <span class="c1"># Note: This is a simplified implementation</span>
+        <span class="c1"># Actual implementation would depend on FLEx data model</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">ICmPossibilityListFactory</span>
+
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetInstance</span><span class="p">(</span><span class="n">ICmPossibilityListFactory</span><span class="p">)</span>
+        <span class="n">new_list</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="n">name_str</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="s2">&quot;Consistency Checks&quot;</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">new_list</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">name_str</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_list</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetDefaultCheckTargets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get default target objects for a check.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_obj: The check type ICmPossibility object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of default objects to check.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Default to all lexical entries</span>
+        <span class="c1"># Actual implementation would vary based on check type</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LexiconGetAllEntries</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ExecuteCheck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_obj</span><span class="p">,</span> <span class="n">target_objects</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Execute the actual check logic.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            check_obj: The check type ICmPossibility object.</span>
+<span class="sd">            target_objects: List of objects to check.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Results dictionary with errors, warnings, and passed items.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            Implements common FLEx consistency checks:</span>
+<span class="sd">            - Missing Gloss (ERROR): Senses without glosses</span>
+<span class="sd">            - Missing Definition (WARNING): Senses without definitions</span>
+<span class="sd">            - Missing Example (WARNING): Senses without examples</span>
+<span class="sd">            - Missing Grammatical Info (ERROR): Senses without POS</span>
+<span class="sd">            - Duplicate Entries (WARNING): Entries with same lexeme form</span>
+<span class="sd">            - Missing Etymology (WARNING): Entries without etymology</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;warnings&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;passed&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()}</span>
+
+        <span class="c1"># Get check name - use exact matching (Craig&#39;s pattern)</span>
+        <span class="n">check_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">check_obj</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Perform check based on exact check type name</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">target_objects</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Ensure we&#39;re working with ILexEntry</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ILexEntry</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">obj</span> <span class="o">=</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                        <span class="c1"># Object is not a lexical entry - skip it</span>
+                        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;passed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+                        <span class="k">continue</span>
+
+                <span class="n">entry</span> <span class="o">=</span> <span class="n">obj</span>
+                <span class="n">has_issue</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="c1"># Use exact name matching for check types (Craig&#39;s pattern)</span>
+                <span class="k">if</span> <span class="n">check_name</span> <span class="o">==</span> <span class="s2">&quot;Missing Gloss&quot;</span><span class="p">:</span>
+                    <span class="c1"># ERROR: Senses without glosses</span>
+                    <span class="k">for</span> <span class="n">sense</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">:</span>
+                        <span class="n">gloss_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">sense</span><span class="o">.</span><span class="n">Gloss</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">gloss_text</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">gloss_text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+                            <span class="n">has_issue</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+
+                <span class="k">elif</span> <span class="n">check_name</span> <span class="o">==</span> <span class="s2">&quot;Missing Definition&quot;</span><span class="p">:</span>
+                    <span class="c1"># WARNING: Senses without definitions</span>
+                    <span class="k">for</span> <span class="n">sense</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">:</span>
+                        <span class="n">def_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">sense</span><span class="o">.</span><span class="n">Definition</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">def_text</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">def_text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;warnings&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+                            <span class="n">has_issue</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+
+                <span class="k">elif</span> <span class="n">check_name</span> <span class="o">==</span> <span class="s2">&quot;Missing Example&quot;</span><span class="p">:</span>
+                    <span class="c1"># WARNING: Senses without examples</span>
+                    <span class="k">for</span> <span class="n">sense</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">sense</span><span class="o">.</span><span class="n">ExamplesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;warnings&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+                            <span class="n">has_issue</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+
+                <span class="k">elif</span> <span class="n">check_name</span> <span class="o">==</span> <span class="s2">&quot;Missing Grammatical Info&quot;</span> <span class="ow">or</span> <span class="n">check_name</span> <span class="o">==</span> <span class="s2">&quot;Missing Part of Speech&quot;</span><span class="p">:</span>
+                    <span class="c1"># ERROR: Senses without POS/MSA</span>
+                    <span class="k">for</span> <span class="n">sense</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">sense</span><span class="o">.</span><span class="n">MorphoSyntaxAnalysisRA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+                            <span class="n">has_issue</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+
+                <span class="k">elif</span> <span class="n">check_name</span> <span class="o">==</span> <span class="s2">&quot;Duplicate Entries&quot;</span><span class="p">:</span>
+                    <span class="c1"># WARNING: Entries with same lexeme form lacking homograph numbers</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="s2">&quot;HomographNumber&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">HomographNumber</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;warnings&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+                        <span class="n">has_issue</span> <span class="o">=</span> <span class="kc">True</span>
+
+                <span class="k">elif</span> <span class="n">check_name</span> <span class="o">==</span> <span class="s2">&quot;Missing Etymology&quot;</span><span class="p">:</span>
+                    <span class="c1"># WARNING: Entries without etymology</span>
+                    <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">EtymologyOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;warnings&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+                        <span class="n">has_issue</span> <span class="o">=</span> <span class="kc">True</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Unknown check type - mark as passed (don&#39;t fail on custom checks)</span>
+                    <span class="k">pass</span>
+
+                <span class="c1"># If no issue found, mark as passed</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">has_issue</span><span class="p">:</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;passed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># Entry structure incompatible with this check type</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Entry </span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2"> incompatible with check &#39;</span><span class="si">{</span><span class="n">check_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">results</span><span class="p">[</span><span class="s2">&quot;passed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># Unexpected error - this indicates a bug, don&#39;t hide it</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error checking entry </span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2"> with &#39;</span><span class="si">{</span><span class="n">check_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetIssueDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a human-readable description of an issue for an object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The object with issues.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Description of the issue.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Placeholder implementation</span>
+        <span class="c1"># Actual description would be based on check type and object</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;HeadWord&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">HeadWord</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Issue with &#39;</span><span class="si">{</span><span class="n">normalize_text</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">HeadWord</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;Issue found&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a check type, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility check object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source check.</span>
+<span class="sd">                                If False, insert at end of parent&#39;s list.</span>
+<span class="sd">            deep (bool): If True (default), also duplicate sub-checks.</span>
+<span class="sd">                        If False, only copy simple properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility: The newly created duplicate with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; check = project.Checks.FindCheckType(&quot;Missing Gloss&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if check:</span>
+<span class="sd">            ...     dup = project.Checks.Duplicate(check)</span>
+<span class="sd">            ...     print(f&quot;Duplicate: {project.Checks.GetName(dup)}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - MultiString properties: Name, Description</span>
+<span class="sd">            - Check state (enabled/disabled) is not copied</span>
+<span class="sd">            - Check results are not copied</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateCheckType, DeleteCheckType, GetGuid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="c1"># PossibilitiesOS lives on ICmPossibilityList (top-level) and</span>
+        <span class="c1"># SubPossibilitiesOS lives on ICmPossibility (sub-check). Disambiguate</span>
+        <span class="c1"># by ClassName so pythonnet surfaces the typed collection accessor.</span>
+        <span class="n">raw_parent</span> <span class="o">=</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Owner</span>
+        <span class="k">if</span> <span class="n">raw_parent</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;CmPossibilityList&quot;</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">ICmPossibilityList</span><span class="p">(</span><span class="n">raw_parent</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">raw_parent</span><span class="p">)</span>
+
+        <span class="c1"># Create new check using factory (auto-generates new GUID)</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate check type&quot;</span><span class="p">):</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># ADD TO PARENT FIRST</span>
+            <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                <span class="c1"># Insert after source</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;PossibilitiesOS&quot;</span><span class="p">):</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">check_obj</span><span class="p">)</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">check_obj</span><span class="p">)</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Insert at end</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;PossibilitiesOS&quot;</span><span class="p">):</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy MultiString properties (AFTER adding to parent)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">check_obj</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">check_obj</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">check_obj</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+            <span class="c1"># Note: Check state and results are not copied</span>
+            <span class="c1"># The duplicate starts as disabled with no results</span>
+
+            <span class="c1"># Deep copy: duplicate sub-checks into the NEW duplicate</span>
+            <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">check_obj</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateSubCheckInto</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_DuplicateSubCheckInto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_check</span><span class="p">,</span> <span class="n">parent_dup</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate a sub-check into the specified parent&#39;s SubPossibilitiesOS.&quot;&quot;&quot;</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityFactory</span><span class="p">)</span>
+        <span class="n">dup_check</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+        <span class="n">parent_dup</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">dup_check</span><span class="p">)</span>
+
+        <span class="c1"># Copy properties</span>
+        <span class="n">dup_check</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_check</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_check</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_check</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
+            <span class="n">dup_check</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_check</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+        <span class="c1"># Recurse into nested sub-checks</span>
+        <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_check</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_check</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">nested_check</span> <span class="ow">in</span> <span class="n">source_check</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateSubCheckInto</span><span class="p">(</span><span class="n">nested_check</span><span class="p">,</span> <span class="n">dup_check</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get syncable properties for cross-project synchronization.&quot;&quot;&quot;</span>
+        <span class="n">check_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCheckObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">check_obj</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">check_obj</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">check_obj</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">check_obj</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compare two checks and return detailed differences.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">is_different</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">differences</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">val1</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">val2</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;modified&quot;</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.System.CheckOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

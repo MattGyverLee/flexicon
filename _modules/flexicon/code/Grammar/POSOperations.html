@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Grammar.POSOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.POSOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Grammar.POSOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   POSOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: POSOperations</span>
+<span class="c1">#          Parts of Speech operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class and decorators</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IPartOfSpeechFactory</span><span class="p">,</span> <span class="n">IPartOfSpeech</span><span class="p">,</span> <span class="n">ILexEntryRepository</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Import LCM casting utilities for pythonnet interface casting</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_pos_from_msa</span>
+
+<span class="c1"># Import string utilities</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+<span class="c1"># Catalog (GOLDEtic) parsing helpers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.catalog</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_etic_catalog</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.catalog_backed</span><span class="w"> </span><span class="kn">import</span> <span class="n">CatalogBackedMixin</span>
+
+
+<div class="viewcode-block" id="POSOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.POSOperations.POSOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">POSOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">,</span> <span class="n">CatalogBackedMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing Parts of Speech in a</span>
+<span class="sd">    FieldWorks project.</span>
+
+<span class="sd">    Parts of Speech are fundamental grammatical categories used in linguistic</span>
+<span class="sd">    analysis (e.g., Noun, Verb, Adjective, etc.).</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject, POSOperations</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        posOps = POSOperations(project)</span>
+
+<span class="sd">        # Get all parts of speech</span>
+<span class="sd">        for pos in posOps.GetAll():</span>
+<span class="sd">            print(posOps.GetName(pos), posOps.GetAbbreviation(pos))</span>
+
+<span class="sd">        # Create a new POS</span>
+<span class="sd">        noun = posOps.Create(&quot;Noun&quot;, &quot;N&quot;)</span>
+
+<span class="sd">        # Find and update</span>
+<span class="sd">        verb = posOps.Find(&quot;Verb&quot;)</span>
+<span class="sd">        if verb:</span>
+<span class="sd">            posOps.SetAbbreviation(verb, &quot;V&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># --- CatalogBackedMixin configuration ------------------------------</span>
+    <span class="c1"># The GOLDEtic catalog ships with FW under Templates/GOLDEtic.xml and</span>
+    <span class="c1"># is parsed by parse_etic_catalog. POSs are written with a</span>
+    <span class="c1"># &quot;GOLD:&lt;id&gt;&quot; CatalogSourceId so FixGuidsAgainstCatalog can find them</span>
+    <span class="c1"># later. POSs are hierarchical (SubPossibilitiesOS), so the mixin&#39;s</span>
+    <span class="c1"># recursive-entries flag is on.</span>
+    <span class="n">CATALOG_FILE</span> <span class="o">=</span> <span class="s2">&quot;GOLDEtic.xml&quot;</span>
+    <span class="n">CATALOG_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;Templates&quot;</span>
+    <span class="n">CATALOG_PARSER</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">parse_etic_catalog</span><span class="p">)</span>
+    <span class="n">CATALOG_PREFIX_WRITE</span> <span class="o">=</span> <span class="s2">&quot;GOLD&quot;</span>
+    <span class="n">DOMAIN_LABEL</span> <span class="o">=</span> <span class="s2">&quot;POS&quot;</span>
+    <span class="n">_supports_recursive_entries</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize POSOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Specify which sequence to reorder for POS.</span>
+<span class="sd">        For POS, we reorder parent.SubPossibilitiesOS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all parts of speech in the project.</span>
+
+<span class="sd">        Can be called two ways:</span>
+<span class="sd">            POSOperations.GetAll(project)         # Class-level, no instantiation</span>
+<span class="sd">            POSOperations(project).GetAll()       # Instance-level, traditional</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            recursive (bool): If True (default), yields every POS in the</span>
+<span class="sd">                hierarchy (depth-first, parents before children). If False,</span>
+<span class="sd">                yields only top-level POSs and the caller must descend via</span>
+<span class="sd">                GetSubcategories.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            IPartOfSpeech: Each part of speech object.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; for pos in posOps.GetAll():</span>
+<span class="sd">            ...     print(posOps.GetName(pos))      # Includes Proper Noun, Common Noun, etc.</span>
+
+<span class="sd">            &gt;&gt;&gt; # Top-level only</span>
+<span class="sd">            &gt;&gt;&gt; for pos in posOps.GetAll(recursive=False):</span>
+<span class="sd">            ...     print(posOps.GetName(pos))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSubcategories, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RejectLegacyKwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s2">&quot;flat&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recursive&quot;</span><span class="p">,</span> <span class="s2">&quot;semantics inverted: flat=True is now recursive=True&quot;</span><span class="p">),</span>
+        <span class="p">})</span>
+        <span class="n">pos_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span>
+        <span class="k">if</span> <span class="n">pos_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">pos</span>
+                <span class="k">if</span> <span class="n">recursive</span> <span class="ow">and</span> <span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">yield from</span> <span class="n">walk</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+
+        <span class="k">yield from</span> <span class="n">walk</span><span class="p">(</span><span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">catalogSourceId</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the POS (e.g., &quot;Noun&quot;, &quot;Verb&quot;).</span>
+<span class="sd">            abbreviation (str): Short abbreviation (e.g., &quot;N&quot;, &quot;V&quot;).</span>
+<span class="sd">            catalogSourceId (str, optional): Optional catalog identifier for</span>
+<span class="sd">                linguistic databases (e.g., &quot;GOLD:Noun&quot;). Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech: The newly created POS object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If name or abbreviation is None.</span>
+<span class="sd">            FP_ParameterError: If name or abbreviation is empty, or if a POS</span>
+<span class="sd">                with this name already exists.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; noun = posOps.Create(&quot;Noun&quot;, &quot;N&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(posOps.GetName(noun))</span>
+<span class="sd">            Noun</span>
+
+<span class="sd">            &gt;&gt;&gt; proper_noun = posOps.Create(&quot;Proper Noun&quot;, &quot;PN&quot;, &quot;GOLD:Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(posOps.GetAbbreviation(proper_noun))</span>
+<span class="sd">            PN</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Name must be unique within the project</span>
+<span class="sd">            - Abbreviations don&#39;t need to be unique but should be distinct</span>
+<span class="sd">            - CatalogSourceId links to linguistic ontologies (e.g., GOLD)</span>
+<span class="sd">            - The POS is created in the default analysis writing system</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Exists, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="s2">&quot;abbreviation&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">abbreviation</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">abbreviation</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Abbreviation cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># If the caller supplied a &quot;GOLD:...&quot; catalog id, defer to the</span>
+        <span class="c1"># catalog path so the POS gets the canonical GUID and any extra</span>
+        <span class="c1"># WS data the catalog provides. We then overlay the user&#39;s</span>
+        <span class="c1"># name/abbreviation on top so explicit args still win.</span>
+        <span class="k">if</span> <span class="n">catalogSourceId</span> <span class="ow">and</span> <span class="n">catalogSourceId</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;GOLD:&quot;</span><span class="p">):</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create part of speech &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+                <span class="n">new_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CreateFromCatalog</span><span class="p">(</span><span class="n">catalogSourceId</span><span class="p">)</span>
+                <span class="c1"># Overlay user-supplied name and abbreviation in the</span>
+                <span class="c1"># analysis WS (catalog values stay in other WSes).</span>
+                <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">new_pos</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+                <span class="n">mkstr_abbr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">new_pos</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">new_pos</span>
+
+        <span class="c1"># Check if POS already exists</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Part of Speech &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; already exists&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get the writing system handle</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Create the new POS using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPartOfSpeechFactory</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create part of speech &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="n">new_pos</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to the POS list (must be done before setting properties)</span>
+            <span class="n">pos_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span>
+            <span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_pos</span><span class="p">)</span>
+
+            <span class="c1"># Set name and abbreviation</span>
+            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_pos</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+            <span class="n">mkstr_abbr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_pos</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
+
+            <span class="c1"># Set catalog source ID if provided</span>
+            <span class="k">if</span> <span class="n">catalogSourceId</span><span class="p">:</span>
+                <span class="n">new_pos</span><span class="o">.</span><span class="n">CatalogSourceId</span> <span class="o">=</span> <span class="n">catalogSourceId</span>
+
+            <span class="k">return</span> <span class="n">new_pos</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the POS is in use and cannot be deleted.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; obsolete = posOps.Find(&quot;Obsolete&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if obsolete:</span>
+<span class="sd">            ...     posOps.Delete(obsolete)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deleting a POS that is in use may raise an error from FLEx</span>
+<span class="sd">            - Will also delete all subcategories recursively</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - Lexical entries using this POS should be updated first</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Exists, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to POS object</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Remove from the POS list</span>
+        <span class="n">pos_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span>
+        <span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a part of speech with the given name exists.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name to search for (case-insensitive).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if POS exists, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; if not posOps.Exists(&quot;Noun&quot;):</span>
+<span class="sd">            ...     posOps.Create(&quot;Noun&quot;, &quot;N&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Comparison is case-insensitive</span>
+<span class="sd">            - Searches recursively through all POS including subcategories</span>
+<span class="sd">            - Use Find() to get the actual object</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a part of speech by name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name to search for (case-insensitive).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech or None: The POS object if found, None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; noun = posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if noun:</span>
+<span class="sd">            ...     abbr = posOps.GetAbbreviation(noun)</span>
+<span class="sd">            ...     print(f&quot;Found: {abbr}&quot;)</span>
+<span class="sd">            Found: N</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Search is case-insensitive</span>
+<span class="sd">            - Searches recursively through all POS including subcategories</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Exists, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Search recursively through POS hierarchy</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">search_pos_list</span><span class="p">(</span><span class="n">pos_collection</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">pos_collection</span><span class="p">:</span>
+                <span class="n">pos_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">pos_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">pos</span>
+                <span class="c1"># Search subcategories</span>
+                <span class="k">if</span> <span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">found</span> <span class="o">=</span> <span class="n">search_pos_list</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">found</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">pos_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span>
+        <span class="k">if</span> <span class="n">pos_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">found</span> <span class="o">=</span> <span class="n">search_pos_list</span><span class="p">(</span><span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">)</span>
+        <span class="c1"># search_pos_list walks Possibilities/SubPossibilities collections</span>
+        <span class="c1"># which are typed ICmPossibility; cast the result so callers can</span>
+        <span class="c1"># access IPartOfSpeech-specific properties.</span>
+        <span class="k">return</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="k">if</span> <span class="n">found</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of a part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The POS name, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; noun = posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; name = posOps.GetName(noun)</span>
+<span class="sd">            &gt;&gt;&gt; print(name)</span>
+<span class="sd">            Noun</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get name in a specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; vern_name = posOps.GetName(noun, project.WSHandle(&#39;en&#39;))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetName, GetAbbreviation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of a part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO.</span>
+<span class="sd">            name (str): The new name.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo or name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; typo = posOps.Find(&quot;Nown&quot;)  # typo</span>
+<span class="sd">            &gt;&gt;&gt; if typo:</span>
+<span class="sd">            ...     posOps.SetName(typo, &quot;Noun&quot;)  # fix it</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetName, SetAbbreviation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">pos</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the abbreviation of a part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The POS abbreviation, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; noun = posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; abbr = posOps.GetAbbreviation(noun)</span>
+<span class="sd">            &gt;&gt;&gt; print(abbr)</span>
+<span class="sd">            N</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetAbbreviation, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">abbr</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">abbr</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the abbreviation of a part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO.</span>
+<span class="sd">            abbr (str): The new abbreviation.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo or abbr is None.</span>
+<span class="sd">            FP_ParameterError: If abbr is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; noun = posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; posOps.SetAbbreviation(noun, &quot;N&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAbbreviation, SetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbr</span><span class="p">,</span> <span class="s2">&quot;abbr&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">abbr</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Abbreviation cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbr</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">pos</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSubcategories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the subcategories of a part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO.</span>
+<span class="sd">            recursive (bool): If True (default), returns every descendant</span>
+<span class="sd">                (depth-first, parents before children). If False, returns only</span>
+<span class="sd">                direct children.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IPartOfSpeech subcategory objects (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; noun = posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for subcat in posOps.GetSubcategories(noun):</span>
+<span class="sd">            ...     print(posOps.GetName(subcat))       # All descendants</span>
+
+<span class="sd">            &gt;&gt;&gt; # Direct children only</span>
+<span class="sd">            &gt;&gt;&gt; for subcat in posOps.GetSubcategories(noun, recursive=False):</span>
+<span class="sd">            ...     print(posOps.GetName(subcat))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RejectLegacyKwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s2">&quot;flat&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recursive&quot;</span><span class="p">,</span> <span class="s2">&quot;semantics inverted: flat=True is now recursive=True&quot;</span><span class="p">),</span>
+        <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># SubPossibilitiesOS is typed ICmPossibility in C#; cast each child to</span>
+        <span class="c1"># IPartOfSpeech so callers can access POS-specific properties.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">]</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+                <span class="n">child</span> <span class="o">=</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">walk</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="n">walk</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddSubcategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a subcategory to a part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO to add subcategory to.</span>
+<span class="sd">            name (str): The name of the subcategory.</span>
+<span class="sd">            abbreviation (str): Short abbreviation for the subcategory.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech: The newly created subcategory object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo, name, or abbreviation is None.</span>
+<span class="sd">            FP_ParameterError: If name or abbreviation is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; noun = posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; proper_noun = posOps.AddSubcategory(noun, &quot;Proper Noun&quot;, &quot;PN&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(posOps.GetName(proper_noun))</span>
+<span class="sd">            Proper Noun</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - The subcategory is created as a child of the parent POS</span>
+<span class="sd">            - Subcategories inherit the parent&#39;s properties where applicable</span>
+<span class="sd">            - Can be nested to create multi-level POS hierarchies</span>
+<span class="sd">            - Uses default analysis writing system</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RemoveSubcategory, GetSubcategories, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="s2">&quot;abbreviation&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">abbreviation</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">abbreviation</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Abbreviation cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Create the subcategory using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPartOfSpeechFactory</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Add subcategory &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="n">subcat</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to parent&#39;s SubPossibilitiesOS (must be done before setting properties)</span>
+            <span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">subcat</span><span class="p">)</span>
+
+            <span class="c1"># Set name and abbreviation</span>
+            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">subcat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+            <span class="n">mkstr_abbr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">subcat</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">subcat</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveSubcategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">subcat_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a subcategory from a part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO (parent).</span>
+<span class="sd">            subcat_or_hvo: The subcategory IPartOfSpeech object or HVO to remove.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo or subcat_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the subcategory is in use and cannot be deleted.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; noun = posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; subcats = posOps.GetSubcategories(noun)</span>
+<span class="sd">            &gt;&gt;&gt; for subcat in subcats:</span>
+<span class="sd">            ...     if posOps.GetName(subcat) == &quot;Obsolete Subcategory&quot;:</span>
+<span class="sd">            ...         posOps.RemoveSubcategory(noun, subcat)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Removing a subcategory that is in use may raise an error from FLEx</span>
+<span class="sd">            - Will also delete all nested subcategories recursively</span>
+<span class="sd">            - Removal is permanent and cannot be undone</span>
+<span class="sd">            - Lexical entries using this subcategory should be updated first</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddSubcategory, GetSubcategories, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">subcat_or_hvo</span><span class="p">,</span> <span class="s2">&quot;subcat_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+        <span class="n">subcat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">subcat_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Remove from parent&#39;s SubPossibilitiesOS</span>
+        <span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">subcat</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCatalogSourceId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the catalog source ID of a part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The catalog source ID, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; noun = posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; catalog_id = posOps.GetCatalogSourceId(noun)</span>
+<span class="sd">            &gt;&gt;&gt; print(catalog_id)</span>
+<span class="sd">            GOLD:Noun</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Catalog source IDs link POS to linguistic ontologies (e.g., GOLD)</span>
+<span class="sd">            - Returns empty string if no catalog ID is set</span>
+<span class="sd">            - Used for cross-linguistic standardization and data sharing</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pos</span><span class="o">.</span><span class="n">CatalogSourceId</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetInflectionClasses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all inflection classes associated with a part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of inflection class objects (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; verb = posOps.Find(&quot;Verb&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; classes = posOps.GetInflectionClasses(verb)</span>
+<span class="sd">            &gt;&gt;&gt; for infl_class in classes:</span>
+<span class="sd">            ...     print(infl_class.Name)</span>
+<span class="sd">            Regular Verb</span>
+<span class="sd">            Irregular Verb</span>
+<span class="sd">            Modal Verb</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Inflection classes define morphological paradigms</span>
+<span class="sd">            - Each POS can have multiple inflection classes</span>
+<span class="sd">            - Returns empty list if no inflection classes are defined</span>
+<span class="sd">            - Used for morphological analysis and generation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAffixSlots</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># IPartOfSpeech has InflectionClassesOC</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">InflectionClassesOC</span><span class="p">)</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAffixSlots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all affix slots associated with a part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of affix slot objects (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; verb = posOps.Find(&quot;Verb&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; slots = posOps.GetAffixSlots(verb)</span>
+<span class="sd">            &gt;&gt;&gt; for slot in slots:</span>
+<span class="sd">            ...     print(slot.Name)</span>
+<span class="sd">            Tense</span>
+<span class="sd">            Aspect</span>
+<span class="sd">            Mood</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Affix slots define positions for affixes in morphological templates</span>
+<span class="sd">            - Each POS can have multiple affix slots</span>
+<span class="sd">            - Returns empty list if no affix slots are defined</span>
+<span class="sd">            - Used for morphological parsing and generation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetInflectionClasses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># IPartOfSpeech has AffixSlotsOC</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">AffixSlotsOC</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEntryCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Count the number of lexical entries using this part of speech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: The IPartOfSpeech object or HVO.</span>
+<span class="sd">            recursive (bool): If False (default), counts only entries</span>
+<span class="sd">                tagged with this POS exactly -- matches what FLEx&#39;s UI</span>
+<span class="sd">                shows in the Categories tool, Lexicon Browse view, and</span>
+<span class="sd">                Tools &gt; Statistics (every count column in FLEx is</span>
+<span class="sd">                direct-only). If True, rolls up entries tagged with</span>
+<span class="sd">                this POS OR any descendant POS (e.g., counting &quot;Noun&quot;</span>
+<span class="sd">                also picks up &quot;Proper Noun&quot;, &quot;Common Noun&quot;, etc.).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The count of entries using this POS (direct-only by</span>
+<span class="sd">            default; including descendants when ``recursive=True``).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pos_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; noun = posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; count = posOps.GetEntryCount(noun)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;There are {count} entries tagged exactly Noun&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Roll-up: include Proper Noun, Common Noun, etc.</span>
+<span class="sd">            &gt;&gt;&gt; rollup = posOps.GetEntryCount(noun, recursive=True)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            Counting queries default to ``recursive=False`` (FLEx UI</span>
+<span class="sd">            parity). Collection queries elsewhere in this codebase</span>
+<span class="sd">            (e.g. ``GetSubcategories``) default to ``recursive=True``;</span>
+<span class="sd">            the asymmetry is intentional -- counts answer &quot;what does</span>
+<span class="sd">            the user see in FLEx?&quot; while collections answer &quot;what&#39;s</span>
+<span class="sd">            in the subtree?&quot;</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, GetSubcategories</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pos_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Build the set of POS HVOs to match. With recursive=True this expands</span>
+        <span class="c1"># to include every descendant POS, so callers don&#39;t miss entries that</span>
+        <span class="c1"># are tagged with a subcategory of the requested POS.</span>
+        <span class="n">match_hvos</span> <span class="o">=</span> <span class="p">{</span><span class="n">pos</span><span class="o">.</span><span class="n">Hvo</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="n">match_hvos</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">Hvo</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetSubcategories</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">entry_repo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexEntryRepository</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">entry_repo</span><span class="o">.</span><span class="n">AllInstances</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">msa</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">MorphoSyntaxAnalysesOC</span><span class="p">:</span>
+                <span class="n">msa_pos</span> <span class="o">=</span> <span class="n">get_pos_from_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">msa_pos</span> <span class="ow">and</span> <span class="n">msa_pos</span><span class="o">.</span><span class="n">Hvo</span> <span class="ow">in</span> <span class="n">match_hvos</span><span class="p">:</span>
+                    <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">break</span>  <span class="c1"># Count each entry only once</span>
+
+        <span class="k">return</span> <span class="n">count</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a part of speech, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The IPartOfSpeech object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source POS.</span>
+<span class="sd">                                If False, insert at end of parent&#39;s possibilities list.</span>
+<span class="sd">            deep (bool): If True, recursively duplicate all subcategories.</span>
+<span class="sd">                        If False (default), only duplicate the POS itself.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech: The newly created duplicate POS with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; noun = posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Shallow copy (no subcategories)</span>
+<span class="sd">            &gt;&gt;&gt; noun_copy = posOps.Duplicate(noun)</span>
+<span class="sd">            &gt;&gt;&gt; print(posOps.GetName(noun_copy))</span>
+<span class="sd">            Noun</span>
+
+<span class="sd">            &gt;&gt;&gt; # Deep copy (includes all subcategories)</span>
+<span class="sd">            &gt;&gt;&gt; verb = posOps.Find(&quot;Verb&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; verb_copy = posOps.Duplicate(verb, deep=True)</span>
+<span class="sd">            &gt;&gt;&gt; orig_subs = posOps.GetSubcategories(verb)</span>
+<span class="sd">            &gt;&gt;&gt; copy_subs = posOps.GetSubcategories(verb_copy)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Original has {len(orig_subs)} subcategories&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Copy has {len(copy_subs)} subcategories&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original POS&#39;s position</span>
+<span class="sd">            - Simple properties copied: Name, Abbreviation, Description (MultiString)</span>
+<span class="sd">            - String property copied: CatalogSourceId</span>
+<span class="sd">            - deep=True recursively duplicates SubPossibilitiesOS hierarchy</span>
+<span class="sd">            - Inflection classes and affix slots are NOT copied (references)</span>
+<span class="sd">            - Use after copying to create variants of existing categories</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetSubcategories</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source POS and parent</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Create new POS using factory (auto-generates new GUID)</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPartOfSpeechFactory</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate POS&quot;</span><span class="p">):</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Determine parent and insertion position</span>
+            <span class="c1"># Check if source is a subcategory or top-level</span>
+            <span class="n">parent_is_possibility</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">parent_pos</span> <span class="o">=</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+                <span class="n">parent_is_possibility</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">parent_is_possibility</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="k">if</span> <span class="n">parent_is_possibility</span><span class="p">:</span>
+                <span class="c1"># Source is a subcategory</span>
+                <span class="n">parent_pos</span> <span class="o">=</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent_pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">parent_pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">parent_pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Source is top-level</span>
+                <span class="n">pos_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span>
+                <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy simple MultiString properties (AFTER adding to parent)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+            <span class="c1"># Copy string property</span>
+            <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">CatalogSourceId</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">CatalogSourceId</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">CatalogSourceId</span>
+
+            <span class="c1"># Deep copy: recursively duplicate subcategories</span>
+            <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">sub_pos</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                    <span class="c1"># Recursively duplicate each subcategory</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__DuplicateSubcategory</span><span class="p">(</span><span class="n">sub_pos</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__DuplicateSubcategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_sub</span><span class="p">,</span> <span class="n">parent_duplicate</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method to recursively duplicate a subcategory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_sub: The source IPartOfSpeech subcategory to duplicate.</span>
+<span class="sd">            parent_duplicate: The parent IPartOfSpeech to add the duplicate to.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech: The duplicated subcategory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create new subcategory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPartOfSpeechFactory</span><span class="p">)</span>
+        <span class="n">sub_duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+        <span class="c1"># Add to parent&#39;s SubPossibilitiesOS</span>
+        <span class="n">parent_duplicate</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">sub_duplicate</span><span class="p">)</span>
+
+        <span class="c1"># Copy properties</span>
+        <span class="n">sub_duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_sub</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+        <span class="n">sub_duplicate</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_sub</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+        <span class="n">sub_duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_sub</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">source_sub</span><span class="o">.</span><span class="n">CatalogSourceId</span><span class="p">:</span>
+            <span class="n">sub_duplicate</span><span class="o">.</span><span class="n">CatalogSourceId</span> <span class="o">=</span> <span class="n">source_sub</span><span class="o">.</span><span class="n">CatalogSourceId</span>
+
+        <span class="c1"># Recursively duplicate nested subcategories</span>
+        <span class="k">if</span> <span class="n">source_sub</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">nested_sub</span> <span class="ow">in</span> <span class="n">source_sub</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__DuplicateSubcategory</span><span class="p">(</span><span class="n">nested_sub</span><span class="p">,</span> <span class="n">sub_duplicate</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sub_duplicate</span>
+
+    <span class="c1"># ========== CATALOG (GOLDEtic) IMPORT METHODS ==========</span>
+    <span class="c1">#</span>
+    <span class="c1"># The public API (ImportCatalog / CreateFromCatalog /</span>
+    <span class="c1"># FixGuidsAgainstCatalog) and the catalog-walking helpers live on</span>
+    <span class="c1"># CatalogBackedMixin (extracted in Phase 5c). The hooks below tell</span>
+    <span class="c1"># the mixin how to talk to the POS-specific LCM types.</span>
+    <span class="c1">#</span>
+    <span class="c1"># The canonical FW pipeline for POS catalog import lives in</span>
+    <span class="c1"># SIL.FieldWorks.LexText.Controls.MasterCategory; we reimplement here</span>
+    <span class="c1"># via the mixin so we don&#39;t have to pull in the GUI-side</span>
+    <span class="c1"># LexTextControls.dll dependency.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Phase 2 ownership-ordering lesson applies: the mixin attaches via</span>
+    <span class="c1"># the 2-arg factory overload (POS placed into its owning list at</span>
+    <span class="c1"># creation) THEN sets the multistring properties; never sets</span>
+    <span class="c1"># properties on a free-floating POS.</span>
+
+    <span class="c1"># --- CatalogBackedMixin hooks --------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_root_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the top-level owner (PartsOfSpeechOA).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve the IPartOfSpeech factory for the mixin&#39;s Path B.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPartOfSpeechFactory</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_factory_create_attached</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Path A: try the 2-arg factory overload that creates and attaches</span>
+<span class="sd">        in one step. parent_obj is either an IPartOfSpeech (subcategory</span>
+<span class="sd">        case) or None (top-level; we pass the PartsOfSpeechOA list).</span>
+<span class="sd">        Returns the new LCM object on success, or None to let the mixin</span>
+<span class="sd">        fall back to Path B.</span>
+
+<span class="sd">        Per issue #14, pythonnet may not expose the 2-arg overload on</span>
+<span class="sd">        the interface variable -- it&#39;s an explicit interface impl. So we</span>
+<span class="sd">        try and let the mixin handle Path B on AttributeError /</span>
+<span class="sd">        MissingMethodException.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_factory</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">parent_obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_root_list</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_path_b_attach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_obj</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Path B fallback: attach a just-created free-floating POS to the</span>
+<span class="sd">        right owner. parent_obj is the IPartOfSpeech parent for a</span>
+<span class="sd">        subcategory, or None for a top-level POS (in which case we</span>
+<span class="sd">        attach to the PartsOfSpeechOA list).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parent_obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parent_obj</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_obj</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_root_list</span><span class="p">()</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_obj</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cast_to_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the IPartOfSpeech view of a raw LCM POS object.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_localized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">abbrev</span><span class="p">,</span> <span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-WS multistring writes for Name/Abbreviation/Description.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">,</span> <span class="n">abbrev</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Description</span><span class="p">,</span> <span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_walk_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Yield (IPartOfSpeech, parent_or_None) for every POS in the</span>
+<span class="sd">        project, walking SubPossibilitiesOS recursively. parent is None</span>
+<span class="sd">        for top-level POSs. Format matches the mixin&#39;s expectation of</span>
+<span class="sd">        either a 2-tuple or a bare object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pos_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span>
+        <span class="k">if</span> <span class="n">pos_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_walk</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">pos</span><span class="p">,</span> <span class="n">parent</span>
+                <span class="k">if</span> <span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">yield from</span> <span class="n">_walk</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+
+        <span class="k">yield from</span> <span class="n">_walk</span><span class="p">(</span><span class="n">pos_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_entry_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">created_obj</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        POS uses _supports_recursive_entries=True so the mixin recurses</span>
+<span class="sd">        on entry.children itself; this hook is a no-op.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IPartOfSpeech.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos_or_hvo: Either an IPartOfSpeech object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech: The resolved POS object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">pos_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pos_or_hvo</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The IPartOfSpeech object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary mapping property names to their values.</span>
+<span class="sd">                Keys are property names, values are the property values.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; posOps = POSOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; pos = list(posOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; props = posOps.GetSyncableProperties(pos)</span>
+<span class="sd">            &gt;&gt;&gt; print(props.keys())</span>
+<span class="sd">            dict_keys([&#39;Name&#39;, &#39;Abbreviation&#39;, &#39;Description&#39;, &#39;CatalogSourceId&#39;])</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns all MultiString properties (all writing systems)</span>
+<span class="sd">            - Returns CatalogSourceId string property</span>
+<span class="sd">            - Does not include SubPossibilitiesOS (subcategories)</span>
+<span class="sd">            - Does not include InflectionClassesOC or AffixSlotsOC</span>
+<span class="sd">            - Does not include GUID or HVO of the POS itself</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="c1"># Get all writing systems for MultiString properties</span>
+        <span class="c1"># Fix: ILgWritingSystemFactory does not expose a .WritingSystems</span>
+        <span class="c1"># property; enumerate via the wrapper&#39;s WritingSystemOperations.GetAll(),</span>
+        <span class="c1"># which returns CoreWritingSystemDefinition objects with .Id / .Handle.</span>
+        <span class="n">all_ws</span> <span class="o">=</span> <span class="p">{</span><span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()}</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties</span>
+        <span class="k">for</span> <span class="n">prop_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="s2">&quot;Abbreviation&quot;</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">):</span>
+                <span class="n">prop_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
+                <span class="n">ws_values</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">ws_id</span><span class="p">,</span> <span class="n">ws_handle</span> <span class="ow">in</span> <span class="n">all_ws</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">prop_obj</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                    <span class="k">if</span> <span class="n">text</span><span class="p">:</span>  <span class="c1"># Only include non-empty values</span>
+                        <span class="n">ws_values</span><span class="p">[</span><span class="n">ws_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+                <span class="k">if</span> <span class="n">ws_values</span><span class="p">:</span>  <span class="c1"># Only include property if it has values</span>
+                    <span class="n">props</span><span class="p">[</span><span class="n">prop_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ws_values</span>
+
+        <span class="c1"># String properties</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="s2">&quot;CatalogSourceId&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pos</span><span class="o">.</span><span class="n">CatalogSourceId</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;CatalogSourceId&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">CatalogSourceId</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply syncable properties (from GetSyncableProperties) onto a POS.</span>
+
+<span class="sd">        Inherited from BaseOperations; declared here so static API indexers</span>
+<span class="sd">        (e.g. the FLExToolsMCP validator) see it on the concrete class. The</span>
+<span class="sd">        BaseOperations implementation handles every property shape that</span>
+<span class="sd">        POSOperations.GetSyncableProperties emits (multi-WS Name/Abbreviation/</span>
+<span class="sd">        Description + plain-string CatalogSourceId), so no per-class</span>
+<span class="sd">        customisation is needed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two parts of speech and return detailed differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First POS to compare (from source project).</span>
+<span class="sd">            item2: Second POS to compare (from target project).</span>
+<span class="sd">            ops1: Optional POSOperations instance for item1&#39;s project.</span>
+<span class="sd">                 Defaults to self.</span>
+<span class="sd">            ops2: Optional POSOperations instance for item2&#39;s project.</span>
+<span class="sd">                 Defaults to self.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences) where:</span>
+<span class="sd">                - is_different (bool): True if items differ</span>
+<span class="sd">                - differences (dict): Maps property names to (value1, value2) tuples</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pos1 = project1_posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; pos2 = project2_posOps.Find(&quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = project1_posOps.CompareTo(</span>
+<span class="sd">            ...     pos1, pos2,</span>
+<span class="sd">            ...     ops1=project1_posOps,</span>
+<span class="sd">            ...     ops2=project2_posOps</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} -&gt; {val2}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Compares all MultiString properties across all writing systems</span>
+<span class="sd">            - Compares string properties</span>
+<span class="sd">            - Returns empty dict if items are identical</span>
+<span class="sd">            - Handles cross-project comparison via ops1/ops2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="c1"># Get syncable properties from both items</span>
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Compare each property</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">is_different</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.POSOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

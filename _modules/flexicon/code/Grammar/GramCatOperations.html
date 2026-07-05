@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Grammar.GramCatOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.GramCatOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Grammar.GramCatOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   GramCatOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: GramCatOperations</span>
+<span class="c1">#          Grammatical Category operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ICmPossibility</span><span class="p">,</span>
+    <span class="n">ICmPossibilityFactory</span><span class="p">,</span>
+    <span class="n">IFsFeatStrucTypeFactory</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="GramCatOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.GramCatOperations.GramCatOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GramCatOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing Grammatical Categories in a</span>
+<span class="sd">    FieldWorks project.</span>
+
+<span class="sd">    Grammatical categories are used to classify and describe grammatical</span>
+<span class="sd">    properties such as person, number, gender, tense, aspect, mood, case,</span>
+<span class="sd">    and other morphosyntactic features used in linguistic analysis.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject, GramCatOperations</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        gramCatOps = GramCatOperations(project)</span>
+
+<span class="sd">        # Get all grammatical categories</span>
+<span class="sd">        for cat in gramCatOps.GetAll():</span>
+<span class="sd">            print(gramCatOps.GetName(cat))</span>
+
+<span class="sd">        # Create a new category</span>
+<span class="sd">        person = gramCatOps.Create(&quot;person&quot;)</span>
+
+<span class="sd">        # Create subcategories</span>
+<span class="sd">        first = gramCatOps.Create(&quot;1st person&quot;, parent=person)</span>
+<span class="sd">        second = gramCatOps.Create(&quot;2nd person&quot;, parent=person)</span>
+<span class="sd">        third = gramCatOps.Create(&quot;3rd person&quot;, parent=person)</span>
+
+<span class="sd">        # Navigate hierarchy</span>
+<span class="sd">        parent = gramCatOps.GetParent(first)</span>
+<span class="sd">        subcats = gramCatOps.GetSubcategories(person)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize GramCatOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Specify which sequence to reorder for grammatical categories.</span>
+<span class="sd">        For GramCat, we reorder parent.SubPossibilitiesOS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all grammatical categories in the project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            recursive (bool): If True (default), yields every category in the</span>
+<span class="sd">                hierarchy (depth-first, parents before children). If False,</span>
+<span class="sd">                yields only top-level categories and the caller must descend</span>
+<span class="sd">                via GetSubcategories.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmPossibility: Each grammatical category.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps = GramCatOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; for cat in gramCatOps.GetAll():</span>
+<span class="sd">            ...     print(gramCatOps.GetName(cat))   # Includes subcategories</span>
+
+<span class="sd">            &gt;&gt;&gt; # Top-level only</span>
+<span class="sd">            &gt;&gt;&gt; for cat in gramCatOps.GetAll(recursive=False):</span>
+<span class="sd">            ...     print(gramCatOps.GetName(cat))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSubcategories, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RejectLegacyKwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s2">&quot;flat&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recursive&quot;</span><span class="p">,</span> <span class="s2">&quot;semantics inverted: flat=True is now recursive=True&quot;</span><span class="p">),</span>
+        <span class="p">})</span>
+        <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">MsFeatureSystemOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">feature_system</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">cat</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">cat</span>
+                <span class="k">if</span> <span class="n">recursive</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cat</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">cat</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">yield from</span> <span class="n">walk</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+
+        <span class="k">yield from</span> <span class="n">walk</span><span class="p">(</span><span class="n">feature_system</span><span class="o">.</span><span class="n">TypesOC</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new grammatical category.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the category (e.g., &quot;person&quot;, &quot;1st person&quot;).</span>
+<span class="sd">            parent (ICmPossibility or int, optional): Optional parent category</span>
+<span class="sd">                for creating subcategories. Can be an ICmPossibility object or</span>
+<span class="sd">                an HVO. Defaults to None (creates top-level category).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility: The newly created grammatical category object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty, or if a category with this</span>
+<span class="sd">                name already exists.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps = GramCatOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; # Create top-level category</span>
+<span class="sd">            &gt;&gt;&gt; person = gramCatOps.Create(&quot;person&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(gramCatOps.GetName(person))</span>
+<span class="sd">            person</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create subcategories</span>
+<span class="sd">            &gt;&gt;&gt; first = gramCatOps.Create(&quot;1st person&quot;, parent=person)</span>
+<span class="sd">            &gt;&gt;&gt; second = gramCatOps.Create(&quot;2nd person&quot;, parent=person)</span>
+<span class="sd">            &gt;&gt;&gt; third = gramCatOps.Create(&quot;3rd person&quot;, parent=person)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create nested hierarchy</span>
+<span class="sd">            &gt;&gt;&gt; number = gramCatOps.Create(&quot;number&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; singular = gramCatOps.Create(&quot;singular&quot;, parent=number)</span>
+<span class="sd">            &gt;&gt;&gt; plural = gramCatOps.Create(&quot;plural&quot;, parent=number)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - If parent is None, creates a top-level category</span>
+<span class="sd">            - If parent is provided, creates a subcategory</span>
+<span class="sd">            - Name must be unique within the project</span>
+<span class="sd">            - The category is created in the default analysis writing system</span>
+<span class="sd">            - Used for linguistic feature analysis in morphology</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, GetSubcategories, GetParent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get the writing system handle</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Dispatch the factory on the destination collection&#39;s typed</span>
+        <span class="c1"># element. MsFeatureSystemOA.TypesOC is</span>
+        <span class="c1"># LcmOwningCollection&lt;IFsFeatStrucType&gt; -- adding a bare</span>
+        <span class="c1"># ICmPossibility there violates the typed-collection invariant</span>
+        <span class="c1"># (the bug #163 calls out). SubPossibilitiesOS is the generic</span>
+        <span class="c1"># ICmPossibility sequence and accepts the base factory. So:</span>
+        <span class="c1"># top-level new categories go through IFsFeatStrucTypeFactory,</span>
+        <span class="c1"># subcategories stay with ICmPossibilityFactory.</span>
+        <span class="c1"># (issue #163)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create category &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">parent</span><span class="p">:</span>
+                <span class="n">parent_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+                <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityFactory</span><span class="p">)</span>
+                <span class="n">new_cat</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="n">parent_obj</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_cat</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">MsFeatureSystemOA</span>
+                <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IFsFeatStrucTypeFactory</span><span class="p">)</span>
+                <span class="n">new_cat</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="n">feature_system</span><span class="o">.</span><span class="n">TypesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_cat</span><span class="p">)</span>
+
+            <span class="c1"># Set name</span>
+            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_cat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_cat</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cat_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a grammatical category.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cat_or_hvo: The ICmPossibility object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If cat_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the category is in use and cannot be deleted.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps = GramCatOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; obsolete = gramCatOps.Create(&quot;obsolete_feature&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Later, if not needed...</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps.Delete(obsolete)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deleting a category that is in use may raise an error from FLEx</span>
+<span class="sd">            - Will also delete all subcategories recursively</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - Morphological rules or entries using this may be affected</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">,</span> <span class="s2">&quot;cat_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to category object</span>
+        <span class="n">cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Remove from the feature system TypesOC</span>
+        <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">MsFeatureSystemOA</span>
+        <span class="n">feature_system</span><span class="o">.</span><span class="n">TypesOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">cat</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cat_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of a grammatical category.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cat_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The category name, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If cat_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps = GramCatOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; person = gramCatOps.Create(&quot;person&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; name = gramCatOps.GetName(person)</span>
+<span class="sd">            &gt;&gt;&gt; print(name)</span>
+<span class="sd">            person</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get name in a specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; vern_name = gramCatOps.GetName(person, project.WSHandle(&#39;en&#39;))</span>
+
+<span class="sd">            &gt;&gt;&gt; # List all categories</span>
+<span class="sd">            &gt;&gt;&gt; for cat in gramCatOps.GetAll():</span>
+<span class="sd">            ...     print(gramCatOps.GetName(cat))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetName, GetSubcategories</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">,</span> <span class="s2">&quot;cat_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cat_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of a grammatical category.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cat_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            name (str): The new name.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If cat_or_hvo or name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps = GramCatOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; cat = gramCatOps.Create(&quot;prson&quot;)  # typo</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps.SetName(cat, &quot;person&quot;)  # fix it</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set name in vernacular WS</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps.SetName(cat, &quot;persona&quot;, project.WSHandle(&#39;es&#39;))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">,</span> <span class="s2">&quot;cat_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">cat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSubcategories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cat_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the subcategories of a grammatical category.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cat_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            recursive (bool): If True (default), returns every descendant</span>
+<span class="sd">                (depth-first, parents before children). If False, returns</span>
+<span class="sd">                only direct children.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmPossibility subcategory objects (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If cat_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps = GramCatOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; person = gramCatOps.Find(&quot;person&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for subcat in gramCatOps.GetSubcategories(person):</span>
+<span class="sd">            ...     print(gramCatOps.GetName(subcat))     # All descendants</span>
+
+<span class="sd">            &gt;&gt;&gt; # Direct children only</span>
+<span class="sd">            &gt;&gt;&gt; for subcat in gramCatOps.GetSubcategories(person, recursive=False):</span>
+<span class="sd">            ...     print(gramCatOps.GetName(subcat))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, GetParent, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RejectLegacyKwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s2">&quot;flat&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recursive&quot;</span><span class="p">,</span> <span class="s2">&quot;semantics inverted: flat=True is now recursive=True&quot;</span><span class="p">),</span>
+        <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">,</span> <span class="s2">&quot;cat_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">walk</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="n">walk</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cat_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the parent category of a grammatical category.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cat_or_hvo: The ICmPossibility object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility or None: Parent category, or None if top-level.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If cat_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps = GramCatOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; person = gramCatOps.Create(&quot;person&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; first = gramCatOps.Create(&quot;1st person&quot;, parent=person)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; parent = gramCatOps.GetParent(first)</span>
+<span class="sd">            &gt;&gt;&gt; print(gramCatOps.GetName(parent))</span>
+<span class="sd">            person</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Top-level categories have no parent</span>
+<span class="sd">            &gt;&gt;&gt; print(gramCatOps.GetParent(person))</span>
+<span class="sd">            None</span>
+
+<span class="sd">            &gt;&gt;&gt; # Traverse up the hierarchy</span>
+<span class="sd">            &gt;&gt;&gt; cat = first</span>
+<span class="sd">            &gt;&gt;&gt; while cat:</span>
+<span class="sd">            ...     print(gramCatOps.GetName(cat))</span>
+<span class="sd">            ...     cat = gramCatOps.GetParent(cat)</span>
+<span class="sd">            1st person</span>
+<span class="sd">            person</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None for top-level categories</span>
+<span class="sd">            - Use to traverse hierarchy upward</span>
+<span class="sd">            - Useful for determining category depth</span>
+<span class="sd">            - Parent-child relationships define category taxonomy</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSubcategories, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">,</span> <span class="s2">&quot;cat_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Check if this category has a parent</span>
+        <span class="c1"># The Owner property returns the owning object</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cat</span><span class="p">,</span> <span class="s2">&quot;Owner&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">cat</span><span class="o">.</span><span class="n">Owner</span><span class="p">:</span>
+            <span class="c1"># Check if the owner is also a possibility (not the feature system itself)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">owner</span> <span class="o">=</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">owner</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">InvalidCastException</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># If owner is not a possibility, it&#39;s a top-level category</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a grammatical category, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): For subcategories (SubPossibilitiesOS is</span>
+<span class="sd">                ordered), controls whether the duplicate is inserted</span>
+<span class="sd">                immediately after the source. Ignored for top-level</span>
+<span class="sd">                categories: TypesOC is an unordered ILcmOwningCollection, so</span>
+<span class="sd">                top-level duplicates are always appended via Add().</span>
+<span class="sd">            deep (bool): If True, recursively duplicate all subcategories.</span>
+<span class="sd">                        If False (default), only duplicate the category itself.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility: The newly created duplicate category with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps = GramCatOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; person = gramCatOps.Create(&quot;person&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Shallow copy (no subcategories)</span>
+<span class="sd">            &gt;&gt;&gt; person_copy = gramCatOps.Duplicate(person)</span>
+<span class="sd">            &gt;&gt;&gt; print(gramCatOps.GetName(person_copy))</span>
+<span class="sd">            person</span>
+
+<span class="sd">            &gt;&gt;&gt; # Deep copy (includes all subcategories)</span>
+<span class="sd">            &gt;&gt;&gt; number = gramCatOps.Create(&quot;number&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; singular = gramCatOps.Create(&quot;singular&quot;, parent=number)</span>
+<span class="sd">            &gt;&gt;&gt; plural = gramCatOps.Create(&quot;plural&quot;, parent=number)</span>
+<span class="sd">            &gt;&gt;&gt; number_copy = gramCatOps.Duplicate(number, deep=True)</span>
+<span class="sd">            &gt;&gt;&gt; orig_subs = gramCatOps.GetSubcategories(number)</span>
+<span class="sd">            &gt;&gt;&gt; copy_subs = gramCatOps.GetSubcategories(number_copy)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Original has {len(orig_subs)} subcategories&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Copy has {len(copy_subs)} subcategories&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original category&#39;s position</span>
+<span class="sd">            - Simple properties copied: Name, Abbreviation, Description (MultiString)</span>
+<span class="sd">            - deep=True recursively duplicates SubPossibilitiesOS hierarchy</span>
+<span class="sd">            - Used for creating variants of grammatical feature hierarchies</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetSubcategories</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source category</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Determine parent and insertion position. Top-level categories</span>
+        <span class="c1"># live in feature_system.TypesOC (LcmOwningCollection&lt;IFsFeatStrucType&gt;);</span>
+        <span class="c1"># subcategories live in their parent&#39;s SubPossibilitiesOS</span>
+        <span class="c1"># (LcmOwningSequence&lt;ICmPossibility&gt;). Dispatch the factory on</span>
+        <span class="c1"># the destination to satisfy each typed-collection invariant.</span>
+        <span class="c1"># (issue #163)</span>
+        <span class="n">parent_is_possibility</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">parent_cat</span> <span class="o">=</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+            <span class="n">parent_is_possibility</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">parent_is_possibility</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate category&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">parent_is_possibility</span><span class="p">:</span>
+                <span class="c1"># Source is a subcategory</span>
+                <span class="n">parent_cat</span> <span class="o">=</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+                <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityFactory</span><span class="p">)</span>
+                <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent_cat</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">parent_cat</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">parent_cat</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Source is top-level -- TypesOC requires IFsFeatStrucType.</span>
+                <span class="c1"># TypesOC is an unordered ILcmOwningCollection; insert_after has</span>
+                <span class="c1"># no semantic meaning here and is ignored.</span>
+                <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">MsFeatureSystemOA</span>
+                <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IFsFeatStrucTypeFactory</span><span class="p">)</span>
+                <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="n">feature_system</span><span class="o">.</span><span class="n">TypesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy simple MultiString properties (AFTER adding to parent)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+            <span class="c1"># Deep copy: recursively duplicate subcategories</span>
+            <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">sub_cat</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                    <span class="c1"># Recursively duplicate each subcategory</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__DuplicateSubcategory</span><span class="p">(</span><span class="n">sub_cat</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__DuplicateSubcategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_sub</span><span class="p">,</span> <span class="n">parent_duplicate</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method to recursively duplicate a subcategory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_sub: The source ICmPossibility subcategory to duplicate.</span>
+<span class="sd">            parent_duplicate: The parent ICmPossibility to add the duplicate to.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility: The duplicated subcategory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create new subcategory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityFactory</span><span class="p">)</span>
+        <span class="n">sub_duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+        <span class="c1"># Add to parent&#39;s SubPossibilitiesOS</span>
+        <span class="n">parent_duplicate</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">sub_duplicate</span><span class="p">)</span>
+
+        <span class="c1"># Copy properties</span>
+        <span class="n">sub_duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_sub</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+        <span class="n">sub_duplicate</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_sub</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+        <span class="n">sub_duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_sub</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+        <span class="c1"># Recursively duplicate nested subcategories</span>
+        <span class="k">if</span> <span class="n">source_sub</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">nested_sub</span> <span class="ow">in</span> <span class="n">source_sub</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__DuplicateSubcategory</span><span class="p">(</span><span class="n">nested_sub</span><span class="p">,</span> <span class="n">sub_duplicate</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sub_duplicate</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cat_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to ICmPossibility.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cat_or_hvo: Either an ICmPossibility object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility: The resolved category object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">cat_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cat_or_hvo</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The ICmPossibility (grammatical category) object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary mapping property names to their values.</span>
+<span class="sd">                Keys are property names, values are the property values.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; gramCatOps = GramCatOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; cat = list(gramCatOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; props = gramCatOps.GetSyncableProperties(cat)</span>
+<span class="sd">            &gt;&gt;&gt; print(props.keys())</span>
+<span class="sd">            dict_keys([&#39;Name&#39;, &#39;Abbreviation&#39;, &#39;Description&#39;])</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns all MultiString properties (all writing systems)</span>
+<span class="sd">            - Does not include SubPossibilitiesOS (child categories)</span>
+<span class="sd">            - Does not include GUID or HVO</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="c1"># Get all writing systems for MultiString properties</span>
+        <span class="c1"># Fix: ILgWritingSystemFactory does not expose a .WritingSystems</span>
+        <span class="c1"># property; enumerate via the wrapper&#39;s WritingSystemOperations.GetAll(),</span>
+        <span class="c1"># which returns CoreWritingSystemDefinition objects with .Id / .Handle.</span>
+        <span class="n">all_ws</span> <span class="o">=</span> <span class="p">{</span><span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()}</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties</span>
+        <span class="k">for</span> <span class="n">prop_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="s2">&quot;Abbreviation&quot;</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">]:</span>
+            <span class="n">prop_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cat</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
+            <span class="n">ws_values</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">ws_id</span><span class="p">,</span> <span class="n">ws_handle</span> <span class="ow">in</span> <span class="n">all_ws</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">prop_obj</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                <span class="k">if</span> <span class="n">text</span><span class="p">:</span>  <span class="c1"># Only include non-empty values</span>
+                    <span class="n">ws_values</span><span class="p">[</span><span class="n">ws_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+            <span class="k">if</span> <span class="n">ws_values</span><span class="p">:</span>  <span class="c1"># Only include property if it has values</span>
+                <span class="n">props</span><span class="p">[</span><span class="n">prop_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ws_values</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply syncable properties (from GetSyncableProperties) onto an item.</span>
+
+<span class="sd">        Inherited from BaseOperations; declared on the concrete class so static</span>
+<span class="sd">        API indexers see it. The base implementation handles every property</span>
+<span class="sd">        shape this class&#39;s GetSyncableProperties emits.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two grammatical categories and return detailed differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First category to compare (from source project).</span>
+<span class="sd">            item2: Second category to compare (from target project).</span>
+<span class="sd">            ops1: Optional GramCatOperations instance for item1&#39;s project.</span>
+<span class="sd">                 Defaults to self.</span>
+<span class="sd">            ops2: Optional GramCatOperations instance for item2&#39;s project.</span>
+<span class="sd">                 Defaults to self.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences) where:</span>
+<span class="sd">                - is_different (bool): True if items differ</span>
+<span class="sd">                - differences (dict): Maps property names to (value1, value2) tuples</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; cat1 = project1_gramCatOps.Find(&quot;person&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; cat2 = project2_gramCatOps.Find(&quot;person&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = project1_gramCatOps.CompareTo(</span>
+<span class="sd">            ...     cat1, cat2,</span>
+<span class="sd">            ...     ops1=project1_gramCatOps,</span>
+<span class="sd">            ...     ops2=project2_gramCatOps</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} -&gt; {val2}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Compares all MultiString properties across all writing systems</span>
+<span class="sd">            - Returns empty dict if items are identical</span>
+<span class="sd">            - Handles cross-project comparison via ops1/ops2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="c1"># Get syncable properties from both items</span>
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Compare each property</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="c1"># For MultiString properties, compare the dictionaries</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">is_different</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.GramCatOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

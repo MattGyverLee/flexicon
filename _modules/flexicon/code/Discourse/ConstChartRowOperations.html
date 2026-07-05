@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Discourse.ConstChartRowOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Discourse.ConstChartRowOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Discourse.ConstChartRowOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ConstChartRowOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ConstChartRowOperations</span>
+<span class="c1">#          Constituent chart row operations for discourse analysis in FieldWorks</span>
+<span class="c1">#          Language Explorer projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IConstChartRow</span><span class="p">,</span>
+    <span class="n">IConstChartRowFactory</span><span class="p">,</span>
+    <span class="n">IDsConstChart</span><span class="p">,</span>
+    <span class="n">IConstChartWordGroup</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ConstChartRowOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Discourse.html#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConstChartRowOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing constituent chart rows in a</span>
+<span class="sd">    FieldWorks project for discourse analysis.</span>
+
+<span class="sd">    Chart rows represent segments or units of analyzed text within a constituent</span>
+<span class="sd">    chart. Each row can contain word groups, labels, and notes describing the</span>
+<span class="sd">    discourse structure.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.ConstChartRows property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get a chart</span>
+<span class="sd">        chart = project.ConstCharts.Find(&quot;Genesis 1 Analysis&quot;)</span>
+
+<span class="sd">        # Create a new row</span>
+<span class="sd">        row = project.ConstChartRows.Create(chart, label=&quot;Verse 1&quot;)</span>
+
+<span class="sd">        # Get all rows in a chart</span>
+<span class="sd">        for row in project.ConstChartRows.GetAll(chart):</span>
+<span class="sd">            label = project.ConstChartRows.GetLabel(row)</span>
+<span class="sd">            print(f&quot;Row: {label}&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ConstChartRowOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart_or_hvo</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new row in a constituent chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chart_or_hvo: Either an IDsConstChart object or its HVO</span>
+<span class="sd">            label (str, optional): Label for the row (e.g., &quot;Verse 1&quot;, &quot;Line 3&quot;)</span>
+<span class="sd">            notes (str, optional): Notes describing the row</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartRow: The newly created row object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If chart_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; chart = project.ConstCharts.Find(&quot;Genesis 1 Analysis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Create(chart, label=&quot;Verse 1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.ConstChartRows.GetLabel(row))</span>
+<span class="sd">            Verse 1</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with label and notes</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Create(chart,</span>
+<span class="sd">            ...     label=&quot;Verse 2&quot;,</span>
+<span class="sd">            ...     notes=&quot;Complex sentence structure&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Row is appended to the end of the chart&#39;s row list</span>
+<span class="sd">            - Label and notes are optional</span>
+<span class="sd">            - Label and notes use default analysis writing system</span>
+<span class="sd">            - Factory.Create() automatically adds row to repository</span>
+<span class="sd">            - Row starts with no word groups - add using ConstChartWordGroups</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Find, GetAll, SetLabel, SetNotes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">,</span> <span class="s2">&quot;chart_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveChart</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create chart row&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the new row using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IConstChartRowFactory</span><span class="p">)</span>
+            <span class="n">new_row</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to chart&#39;s rows collection</span>
+            <span class="n">chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_row</span><span class="p">)</span>
+
+            <span class="c1"># Set label if provided</span>
+            <span class="k">if</span> <span class="n">label</span><span class="p">:</span>
+                <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">new_row</span><span class="o">.</span><span class="n">Label</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="c1"># Set notes if provided</span>
+            <span class="k">if</span> <span class="n">notes</span><span class="p">:</span>
+                <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">notes</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">new_row</span><span class="o">.</span><span class="n">Notes</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_row</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a row from its constituent chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or its HVO (database ID)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If row_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 0)</span>
+<span class="sd">            &gt;&gt;&gt; if row:</span>
+<span class="sd">            ...     project.ConstChartRows.Delete(row)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Delete by HVO</span>
+<span class="sd">            &gt;&gt;&gt; project.ConstChartRows.Delete(12345)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - All word groups and markers in the row will be deleted</span>
+<span class="sd">            - Cannot be undone</span>
+<span class="sd">            - Row will be removed from the chart</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Deletion cascades to all owned objects (word groups, markers, etc.)</span>
+<span class="sd">            - Remaining rows maintain their order</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to row object</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Delete the row (LCM handles removal from repository)</span>
+        <span class="n">row</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a row in a chart by its index position.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chart_or_hvo: Either an IDsConstChart object or its HVO</span>
+<span class="sd">            index (int): Zero-based index of the row to find</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartRow or None: The row object if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If chart_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; chart = project.ConstCharts.Find(&quot;Genesis 1 Analysis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 0)  # First row</span>
+<span class="sd">            &gt;&gt;&gt; if row:</span>
+<span class="sd">            ...     label = project.ConstChartRows.GetLabel(row)</span>
+<span class="sd">            ...     print(f&quot;First row: {label}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Index is zero-based (0 = first row)</span>
+<span class="sd">            - Returns None if index out of range (doesn&#39;t raise exception)</span>
+<span class="sd">            - More efficient than iterating GetAll()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">,</span> <span class="s2">&quot;chart_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveChart</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="n">chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="o">.</span><span class="n">Count</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all rows in a constituent chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chart_or_hvo: Either an IDsConstChart object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IConstChartRow objects (empty list if none)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If chart_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; chart = project.ConstCharts.Find(&quot;Genesis 1 Analysis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; rows = project.ConstChartRows.GetAll(chart)</span>
+<span class="sd">            &gt;&gt;&gt; for i, row in enumerate(rows):</span>
+<span class="sd">            ...     label = project.ConstChartRows.GetLabel(row)</span>
+<span class="sd">            ...     print(f&quot;Row {i}: {label}&quot;)</span>
+<span class="sd">            Row 0: Verse 1</span>
+<span class="sd">            Row 1: Verse 2</span>
+<span class="sd">            Row 2: Verse 3</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if chart has no rows</span>
+<span class="sd">            - Rows are in chart order</span>
+<span class="sd">            - Each row can contain word groups for analysis</span>
+<span class="sd">            - Equivalent to chart.RowsOS but returns Python list</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">,</span> <span class="s2">&quot;chart_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveChart</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="p">)</span>
+
+    <span class="c1"># --- Row Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the label of a chart row.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or its HVO</span>
+<span class="sd">            ws: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The row label (empty string if not set)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If row_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 0)</span>
+<span class="sd">            &gt;&gt;&gt; label = project.ConstChartRows.GetLabel(row)</span>
+<span class="sd">            &gt;&gt;&gt; print(label)</span>
+<span class="sd">            Verse 1</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if label not set</span>
+<span class="sd">            - Uses default analysis writing system unless specified</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetLabel, GetNotes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Label</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the label of a chart row.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or its HVO</span>
+<span class="sd">            text (str): The new label text</span>
+<span class="sd">            ws: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If row_or_hvo or text is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 0)</span>
+<span class="sd">            &gt;&gt;&gt; project.ConstChartRows.SetLabel(row, &quot;Verse 1a&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.ConstChartRows.GetLabel(row))</span>
+<span class="sd">            Verse 1a</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Label can be empty to clear</span>
+<span class="sd">            - Uses default analysis writing system unless specified</span>
+<span class="sd">            - Changes are immediately persisted</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetLabel, SetNotes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">row</span><span class="o">.</span><span class="n">Label</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetNotes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the notes of a chart row.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or its HVO</span>
+<span class="sd">            ws: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The row notes (empty string if not set)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If row_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 0)</span>
+<span class="sd">            &gt;&gt;&gt; notes = project.ConstChartRows.GetNotes(row)</span>
+<span class="sd">            &gt;&gt;&gt; print(notes)</span>
+<span class="sd">            Complex sentence with embedded clause</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if notes not set</span>
+<span class="sd">            - Uses default analysis writing system unless specified</span>
+<span class="sd">            - Notes can contain detailed analysis information</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetNotes, GetLabel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Notes</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetNotes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the notes of a chart row.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or its HVO</span>
+<span class="sd">            text (str): The new notes text</span>
+<span class="sd">            ws: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If row_or_hvo or text is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 0)</span>
+<span class="sd">            &gt;&gt;&gt; project.ConstChartRows.SetNotes(row,</span>
+<span class="sd">            ...     &quot;Subject-predicate structure with modifier&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Notes can be empty to clear</span>
+<span class="sd">            - Uses default analysis writing system unless specified</span>
+<span class="sd">            - Notes are for analyst commentary and observations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetNotes, SetLabel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">row</span><span class="o">.</span><span class="n">Notes</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetWordGroups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all word groups in a chart row.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IConstChartWordGroup objects (empty list if none)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If row_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 0)</span>
+<span class="sd">            &gt;&gt;&gt; word_groups = project.ConstChartRows.GetWordGroups(row)</span>
+<span class="sd">            &gt;&gt;&gt; for wg in word_groups:</span>
+<span class="sd">            ...     # Process word group</span>
+<span class="sd">            ...     pass</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if row has no word groups</span>
+<span class="sd">            - Word groups are in database order</span>
+<span class="sd">            - Word groups represent segments of text being analyzed</span>
+<span class="sd">            - Use ConstChartWordGroups operations to manipulate word groups</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            ConstChartWordGroupOperations, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">,</span> <span class="n">chart_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Move a row to a specific position in a chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or its HVO</span>
+<span class="sd">            chart_or_hvo: Target chart (can be same or different chart)</span>
+<span class="sd">            index (int): Target index position (zero-based)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If row_or_hvo or chart_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If index is out of range</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Move row to beginning of same chart</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 5)</span>
+<span class="sd">            &gt;&gt;&gt; project.ConstChartRows.MoveTo(row, chart, 0)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Move row to different chart</span>
+<span class="sd">            &gt;&gt;&gt; other_chart = project.ConstCharts.Find(&quot;Other Analysis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.ConstChartRows.MoveTo(row, other_chart, 0)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Can move to same or different chart</span>
+<span class="sd">            - Index must be valid for target chart</span>
+<span class="sd">            - Other rows shift to accommodate</span>
+<span class="sd">            - All word groups move with the row</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Moving between charts may break discourse structure</span>
+<span class="sd">            - Ensure the move is linguistically appropriate</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            MoveUp, MoveDown, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">,</span> <span class="s2">&quot;chart_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+        <span class="n">target_chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveChart</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Validate index</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="n">target_chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="o">.</span><span class="n">Count</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> out of range [0, </span><span class="si">{</span><span class="n">target_chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="o">.</span><span class="n">Count</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source chart. row.Owner is typed as ICmObject and does</span>
+        <span class="c1"># not expose RowsOS; cast to IDsConstChart so the typed</span>
+        <span class="c1"># collection is reachable for both the same-chart reorder path</span>
+        <span class="c1"># and the cross-chart Remove/Insert path.</span>
+        <span class="n">source_chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">source_chart</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Row has no owning chart&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Move row to index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="c1"># If moving within same chart, use reordering</span>
+            <span class="k">if</span> <span class="n">source_chart</span> <span class="o">==</span> <span class="n">target_chart</span><span class="p">:</span>
+                <span class="n">current_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">source_chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="o">.</span><span class="n">Count</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">source_chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">row</span><span class="p">:</span>
+                        <span class="n">current_index</span> <span class="o">=</span> <span class="n">i</span>
+                        <span class="k">break</span>
+
+                <span class="k">if</span> <span class="n">current_index</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">current_index</span> <span class="o">!=</span> <span class="n">index</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">current_index</span> <span class="o">&lt;</span> <span class="n">index</span><span class="p">:</span>
+                        <span class="c1"># Moving forward - use index + 1</span>
+                        <span class="n">source_chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="o">.</span><span class="n">MoveTo</span><span class="p">(</span><span class="n">current_index</span><span class="p">,</span> <span class="n">current_index</span><span class="p">,</span> <span class="n">source_chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="p">,</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># Moving backward - use index directly</span>
+                        <span class="n">source_chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="o">.</span><span class="n">MoveTo</span><span class="p">(</span><span class="n">current_index</span><span class="p">,</span> <span class="n">current_index</span><span class="p">,</span> <span class="n">source_chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Moving to different chart - remove from source and add to target</span>
+                <span class="n">source_chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+                <span class="n">target_chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IConstChartRow.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartRow: The resolved row object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a chart row</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IConstChartRow</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a chart row&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">row_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveChart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IDsConstChart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chart_or_hvo: Either an IDsConstChart object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IDsConstChart: The resolved chart object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a constituent chart</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IDsConstChart</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a constituent chart&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">chart_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws: Optional writing system handle</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ws</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle for analysis writing system.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The analysis writing system handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+    <span class="c1"># --- Reordering Support ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the owning sequence for word groups in a row.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent: The parent IConstChartRow object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILcmOwningSequence: The CellsOS sequence</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Required for BaseOperations reordering methods</span>
+<span class="sd">            - Returns the CellsOS collection from the row</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">CellsOS</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Discourse.ConstChartRowOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

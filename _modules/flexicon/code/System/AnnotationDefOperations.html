@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.System.AnnotationDefOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.System.AnnotationDefOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.System.AnnotationDefOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   AnnotationDefOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: AnnotationDefOperations</span>
+<span class="c1">#          Annotation definition management operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ICmAnnotationDefn</span><span class="p">,</span>
+    <span class="n">ICmAnnotationDefnRepository</span><span class="p">,</span>
+    <span class="n">ICmAnnotationDefnFactory</span><span class="p">,</span>
+    <span class="n">ICmPossibility</span><span class="p">,</span>
+    <span class="n">ICmPossibilityList</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">Guid</span><span class="p">,</span> <span class="n">DateTime</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+
+<div class="viewcode-block" id="AnnotationDefOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.AnnotationDefOperations.AnnotationDefOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AnnotationDefOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing annotation type definitions</span>
+<span class="sd">    in a FieldWorks project.</span>
+
+<span class="sd">    Annotation definitions specify the types and characteristics of annotations</span>
+<span class="sd">    (notes, comments) that can be created in FLEx. They define properties such</span>
+<span class="sd">    as name, help text, whether users can create instances, and whether multiple</span>
+<span class="sd">    annotations of this type are allowed.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.AnnotationDef property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get all annotation definitions</span>
+<span class="sd">        for anno_def in project.AnnotationDef.GetAll():</span>
+<span class="sd">            name = project.AnnotationDef.GetName(anno_def)</span>
+<span class="sd">            anno_type = project.AnnotationDef.GetAnnotationType(anno_def)</span>
+<span class="sd">            print(f&quot;{name}: {anno_type}&quot;)</span>
+
+<span class="sd">        # Find a specific annotation definition</span>
+<span class="sd">        todo_def = project.AnnotationDef.Find(&quot;To Do&quot;)</span>
+<span class="sd">        if todo_def:</span>
+<span class="sd">            # Get properties</span>
+<span class="sd">            help_text = project.AnnotationDef.GetHelpString(todo_def)</span>
+<span class="sd">            user_can_create = project.AnnotationDef.GetUserCanCreate(todo_def)</span>
+<span class="sd">            print(f&quot;Help: {help_text}&quot;)</span>
+<span class="sd">            print(f&quot;User creatable: {user_can_create}&quot;)</span>
+
+<span class="sd">        # Create a new annotation definition</span>
+<span class="sd">        custom_def = project.AnnotationDef.Create(</span>
+<span class="sd">            &quot;Review Required&quot;,</span>
+<span class="sd">            CmAnnotationType.katGeneralNote,</span>
+<span class="sd">            &quot;en&quot;</span>
+<span class="sd">        )</span>
+<span class="sd">        project.AnnotationDef.SetHelpString(custom_def,</span>
+<span class="sd">            &quot;Mark entries that need review&quot;, &quot;en&quot;)</span>
+<span class="sd">        project.AnnotationDef.SetUserCanCreate(custom_def, True)</span>
+
+<span class="sd">        # Get annotation definitions by type</span>
+<span class="sd">        for note_def in project.AnnotationDef.FindByType(</span>
+<span class="sd">                CmAnnotationType.katGeneralNote):</span>
+<span class="sd">            name = project.AnnotationDef.GetName(note_def)</span>
+<span class="sd">            print(f&quot;Note type: {name}&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize AnnotationDefOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all annotation definitions in the project.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmAnnotationDefn: Each annotation definition in the project.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for anno_def in project.AnnotationDef.GetAll():</span>
+<span class="sd">            ...     name = project.AnnotationDef.GetName(anno_def)</span>
+<span class="sd">            ...     anno_type = project.AnnotationDef.GetAnnotationType(anno_def)</span>
+<span class="sd">            ...     user_create = project.AnnotationDef.GetUserCanCreate(anno_def)</span>
+<span class="sd">            ...     print(f&quot;{name} ({anno_type}): user_create={user_create}&quot;)</span>
+<span class="sd">            To Do (katGeneralNote): user_create=True</span>
+<span class="sd">            Question (katGeneralNote): user_create=True</span>
+<span class="sd">            Resolved (katGeneralNote): user_create=False</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns all annotation definitions regardless of type</span>
+<span class="sd">            - Includes both system-defined and custom definitions</span>
+<span class="sd">            - Definitions may be organized hierarchically (with sub-types)</span>
+<span class="sd">            - Use FindByType() to filter by annotation type</span>
+<span class="sd">            - Results are in no particular order</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, FindByType, GetUserCreatableTypes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">repo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetInstance</span><span class="p">(</span><span class="n">ICmAnnotationDefnRepository</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">anno_def</span> <span class="ow">in</span> <span class="n">repo</span><span class="o">.</span><span class="n">AllInstances</span><span class="p">():</span>
+            <span class="k">yield</span> <span class="n">anno_def</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">annotation_type</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new annotation definition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the annotation definition.</span>
+<span class="sd">            annotation_type (CmAnnotationType): The annotation type enumeration.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+<span class="sd">            parent (ICmAnnotationDefn, optional): Parent definition for creating</span>
+<span class="sd">                a sub-type. If None, creates a top-level definition.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnnotationDefn: The newly created annotation definition.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If name or annotation_type is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty or already exists.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create a top-level annotation definition</span>
+<span class="sd">            &gt;&gt;&gt; custom_def = project.AnnotationDef.Create(</span>
+<span class="sd">            ...     &quot;Review Required&quot;,</span>
+<span class="sd">            ...     CmAnnotationType.katGeneralNote,</span>
+<span class="sd">            ...     &quot;en&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; print(project.AnnotationDef.GetName(custom_def))</span>
+<span class="sd">            Review Required</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create a sub-type under an existing definition</span>
+<span class="sd">            &gt;&gt;&gt; todo_def = project.AnnotationDef.Find(&quot;To Do&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; urgent_def = project.AnnotationDef.Create(</span>
+<span class="sd">            ...     &quot;Urgent&quot;,</span>
+<span class="sd">            ...     CmAnnotationType.katGeneralNote,</span>
+<span class="sd">            ...     &quot;en&quot;,</span>
+<span class="sd">            ...     parent=todo_def</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set properties for new definition</span>
+<span class="sd">            &gt;&gt;&gt; project.AnnotationDef.SetUserCanCreate(custom_def, True)</span>
+<span class="sd">            &gt;&gt;&gt; project.AnnotationDef.SetHelpString(custom_def,</span>
+<span class="sd">            ...     &quot;Marks entries requiring review&quot;, &quot;en&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Annotation type determines how the definition is used</span>
+<span class="sd">            - Common types: katGeneralNote, katQuestionNote, katResolvedNote</span>
+<span class="sd">            - Name should be unique within the project</span>
+<span class="sd">            - Parent creates hierarchical organization of types</span>
+<span class="sd">            - New definitions default to user_can_create=False</span>
+<span class="sd">            - Use SetUserCanCreate() to make user-creatable</span>
+<span class="sd">            - GUID is auto-generated</span>
+<span class="sd">            - DateCreated is set automatically</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Find, SetUserCanCreate, SetHelpString</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">annotation_type</span><span class="p">,</span> <span class="s2">&quot;annotation_type&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if annotation definition with this name already exists</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Annotation definition &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; already exists&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create annotation definition &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="c1"># Get the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmAnnotationDefnFactory</span><span class="p">)</span>
+
+            <span class="c1"># Create the annotation definition</span>
+            <span class="n">anno_def</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to the annotation definitions list (must be done before setting properties)</span>
+            <span class="n">anno_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnnotationDefsOA</span>
+            <span class="k">if</span> <span class="n">anno_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">parent</span><span class="p">:</span>
+                    <span class="c1"># Add as sub-possibility under parent</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+                        <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">anno_def</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Add as top-level possibility</span>
+                    <span class="n">anno_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">anno_def</span><span class="p">)</span>
+
+            <span class="c1"># Set the name</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">anno_def</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="c1"># Set the annotation type</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;AnnotationType&quot;</span><span class="p">):</span>
+                <span class="n">anno_def</span><span class="o">.</span><span class="n">AnnotationType</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">annotation_type</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">anno_def</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete an annotation definition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If anno_def is None.</span>
+<span class="sd">            FP_ParameterError: If trying to delete a system definition.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Delete a custom annotation definition</span>
+<span class="sd">            &gt;&gt;&gt; custom = project.AnnotationDef.Find(&quot;Old Custom Type&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if custom:</span>
+<span class="sd">            ...     project.AnnotationDef.Delete(custom)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - DO NOT delete system annotation definitions</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - Any annotations using this definition will be affected</span>
+<span class="sd">            - Deletes all sub-definitions recursively</span>
+<span class="sd">            - Only delete custom definitions you created</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Best practice: only delete custom definitions</span>
+<span class="sd">            - Deletion cascades to sub-definitions</span>
+<span class="sd">            - Existing annotations may become orphaned</span>
+<span class="sd">            - Use with extreme caution on shared projects</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Find, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete annotation definition&quot;</span><span class="p">):</span>
+            <span class="c1"># Remove from parent&#39;s collection</span>
+            <span class="n">owner</span> <span class="o">=</span> <span class="n">anno_def</span><span class="o">.</span><span class="n">Owner</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;PossibilitiesOS&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">anno_def</span> <span class="ow">in</span> <span class="n">owner</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">anno_def</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">anno_def</span> <span class="ow">in</span> <span class="n">owner</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">anno_def</span><span class="p">)</span>
+
+            <span class="c1"># Delete the object</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;Delete&quot;</span><span class="p">):</span>
+                <span class="n">anno_def</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find an annotation definition by name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name to search for (case-sensitive).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnnotationDefn or None: The annotation definition if found,</span>
+<span class="sd">                None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find by name</span>
+<span class="sd">            &gt;&gt;&gt; todo_def = project.AnnotationDef.Find(&quot;To Do&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if todo_def:</span>
+<span class="sd">            ...     print(f&quot;Found: {project.AnnotationDef.GetName(todo_def)}&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;Not found&quot;)</span>
+<span class="sd">            Found: To Do</span>
+
+<span class="sd">            &gt;&gt;&gt; # Use to check if definition exists</span>
+<span class="sd">            &gt;&gt;&gt; if not project.AnnotationDef.Find(&quot;Custom Type&quot;):</span>
+<span class="sd">            ...     # Create it</span>
+<span class="sd">            ...     custom = project.AnnotationDef.Create(</span>
+<span class="sd">            ...         &quot;Custom Type&quot;,</span>
+<span class="sd">            ...         CmAnnotationType.katGeneralNote</span>
+<span class="sd">            ...     )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-sensitive</span>
+<span class="sd">            - Searches in specified writing system</span>
+<span class="sd">            - Returns first match only (names should be unique)</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+<span class="sd">            - Use Exists() for simple existence check</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Exists, GetAll, FindByType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Search through all annotation definitions</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">anno_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="n">def_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">def_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">anno_def</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if an annotation definition with the given name exists.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name to check.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the annotation definition exists, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; if project.AnnotationDef.Exists(&quot;To Do&quot;):</span>
+<span class="sd">            ...     print(&quot;To Do annotation type exists&quot;)</span>
+<span class="sd">            To Do annotation type exists</span>
+
+<span class="sd">            &gt;&gt;&gt; if not project.AnnotationDef.Exists(&quot;Custom&quot;):</span>
+<span class="sd">            ...     print(&quot;Custom type does not exist&quot;)</span>
+<span class="sd">            Custom type does not exist</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Convenience method equivalent to Find(name) is not None</span>
+<span class="sd">            - Case-sensitive check</span>
+<span class="sd">            - Checks in specified writing system</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Property Getters and Setters ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of an annotation definition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The name, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If anno_def is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for anno_def in project.AnnotationDef.GetAll():</span>
+<span class="sd">            ...     name = project.AnnotationDef.GetName(anno_def)</span>
+<span class="sd">            ...     print(f&quot;Definition: {name}&quot;)</span>
+<span class="sd">            Definition: To Do</span>
+<span class="sd">            Definition: Question</span>
+<span class="sd">            Definition: Resolved</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetName, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of an annotation definition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+<span class="sd">            name (str): The new name.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If anno_def or name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; custom = project.AnnotationDef.Find(&quot;Custom&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if custom:</span>
+<span class="sd">            ...     project.AnnotationDef.SetName(custom, &quot;Custom Review&quot;, &quot;en&quot;)</span>
+<span class="sd">            ...     print(project.AnnotationDef.GetName(custom))</span>
+<span class="sd">            Custom Review</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Renaming system definitions is not recommended</span>
+<span class="sd">            - Only rename custom definitions you created</span>
+<span class="sd">            - Changes affect display throughout FLEx</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetName, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">anno_def</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetHelpString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the help string (description) of an annotation definition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The help string, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If anno_def is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; todo_def = project.AnnotationDef.Find(&quot;To Do&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if todo_def:</span>
+<span class="sd">            ...     help_text = project.AnnotationDef.GetHelpString(todo_def)</span>
+<span class="sd">            ...     print(f&quot;Help: {help_text}&quot;)</span>
+<span class="sd">            Help: Marks items that need to be done</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Help strings provide user guidance</span>
+<span class="sd">            - Displayed as tooltips or help text in FLEx UI</span>
+<span class="sd">            - Can be set in multiple writing systems</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetHelpString, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;HelpString&quot;</span><span class="p">):</span>
+            <span class="n">help_str</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">HelpString</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">return</span> <span class="n">help_str</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetHelpString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">,</span> <span class="n">help_string</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the help string (description) of an annotation definition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+<span class="sd">            help_string (str): The help text to set.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If anno_def or help_string is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; custom_def = project.AnnotationDef.Create(</span>
+<span class="sd">            ...     &quot;Review Required&quot;,</span>
+<span class="sd">            ...     CmAnnotationType.katGeneralNote</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; project.AnnotationDef.SetHelpString(</span>
+<span class="sd">            ...     custom_def,</span>
+<span class="sd">            ...     &quot;Marks entries that require linguistic review&quot;,</span>
+<span class="sd">            ...     &quot;en&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; print(project.AnnotationDef.GetHelpString(custom_def))</span>
+<span class="sd">            Marks entries that require linguistic review</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Empty string is allowed (clears the help string)</span>
+<span class="sd">            - Help strings guide users on when to use this type</span>
+<span class="sd">            - Can provide different help in different languages</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetHelpString, SetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">help_string</span><span class="p">,</span> <span class="s2">&quot;help_string&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;HelpString&quot;</span><span class="p">):</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">help_string</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">anno_def</span><span class="o">.</span><span class="n">HelpString</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="c1"># --- Type and Instance Information ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAnnotationType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the annotation type of an annotation definition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The annotation type enumeration value (CmAnnotationType).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If anno_def is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; from SIL.LCModel import CmAnnotationType</span>
+<span class="sd">            &gt;&gt;&gt; todo_def = project.AnnotationDef.Find(&quot;To Do&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if todo_def:</span>
+<span class="sd">            ...     anno_type = project.AnnotationDef.GetAnnotationType(todo_def)</span>
+<span class="sd">            ...     if anno_type == int(CmAnnotationType.katGeneralNote):</span>
+<span class="sd">            ...         print(&quot;This is a general note type&quot;)</span>
+<span class="sd">            This is a general note type</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns integer value of CmAnnotationType enum</span>
+<span class="sd">            - Common types:</span>
+<span class="sd">              * katGeneralNote: General purpose notes</span>
+<span class="sd">              * katQuestionNote: Question annotations</span>
+<span class="sd">              * katResolvedNote: Resolved items</span>
+<span class="sd">              * katTranslationNote: Translation notes</span>
+<span class="sd">            - Annotation type determines usage context</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindByType, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;AnnotationType&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">anno_def</span><span class="o">.</span><span class="n">AnnotationType</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetInstanceOf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the class that this annotation definition is an instance of.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The class ID that this definition instantiates.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If anno_def is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; todo_def = project.AnnotationDef.Find(&quot;To Do&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if todo_def:</span>
+<span class="sd">            ...     class_id = project.AnnotationDef.GetInstanceOf(todo_def)</span>
+<span class="sd">            ...     print(f&quot;Instance of class: {class_id}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns the class ID that annotations of this type will be</span>
+<span class="sd">            - Used internally by FLEx to create annotation instances</span>
+<span class="sd">            - Most annotation definitions are instances of ICmBaseAnnotation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAnnotationType, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;InstanceOf&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">anno_def</span><span class="o">.</span><span class="n">InstanceOf</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="c1"># --- User Control Fields ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetUserCanCreate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if users can create annotations of this type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if users can create this type, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If anno_def is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for anno_def in project.AnnotationDef.GetAll():</span>
+<span class="sd">            ...     name = project.AnnotationDef.GetName(anno_def)</span>
+<span class="sd">            ...     can_create = project.AnnotationDef.GetUserCanCreate(anno_def)</span>
+<span class="sd">            ...     print(f&quot;{name}: user_can_create={can_create}&quot;)</span>
+<span class="sd">            To Do: user_can_create=True</span>
+<span class="sd">            Question: user_can_create=True</span>
+<span class="sd">            System Only: user_can_create=False</span>
+
+<span class="sd">            &gt;&gt;&gt; # Filter to user-creatable types only</span>
+<span class="sd">            &gt;&gt;&gt; user_types = [d for d in project.AnnotationDef.GetAll()</span>
+<span class="sd">            ...     if project.AnnotationDef.GetUserCanCreate(d)]</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Controls whether this type appears in user UI</span>
+<span class="sd">            - False = system use only, not shown to users</span>
+<span class="sd">            - True = users can select this type when creating annotations</span>
+<span class="sd">            - Useful for hiding internal or deprecated types</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetUserCanCreate, GetUserCreatableTypes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;UserCanCreate&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">UserCanCreate</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetUserCanCreate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">,</span> <span class="n">can_create</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set whether users can create annotations of this type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+<span class="sd">            can_create (bool): True to allow user creation, False to restrict.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If anno_def or can_create is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Make a custom type user-creatable</span>
+<span class="sd">            &gt;&gt;&gt; custom = project.AnnotationDef.Find(&quot;Custom Review&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if custom:</span>
+<span class="sd">            ...     project.AnnotationDef.SetUserCanCreate(custom, True)</span>
+<span class="sd">            ...     print(f&quot;Can create: {project.AnnotationDef.GetUserCanCreate(custom)}&quot;)</span>
+<span class="sd">            Can create: True</span>
+
+<span class="sd">            &gt;&gt;&gt; # Hide a deprecated type from users</span>
+<span class="sd">            &gt;&gt;&gt; old_type = project.AnnotationDef.Find(&quot;Old Type&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if old_type:</span>
+<span class="sd">            ...     project.AnnotationDef.SetUserCanCreate(old_type, False)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - True: Type appears in user&#39;s annotation type menu</span>
+<span class="sd">            - False: Type hidden from users (system use only)</span>
+<span class="sd">            - Useful for phasing out old types without deleting</span>
+<span class="sd">            - Does not affect existing annotations of this type</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetUserCanCreate, GetUserCreatableTypes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">can_create</span><span class="p">,</span> <span class="s2">&quot;can_create&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;UserCanCreate&quot;</span><span class="p">):</span>
+            <span class="n">anno_def</span><span class="o">.</span><span class="n">UserCanCreate</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">can_create</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMultiple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if multiple annotations of this type are allowed.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if multiple annotations allowed, False if only one.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If anno_def is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; todo_def = project.AnnotationDef.Find(&quot;To Do&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if todo_def:</span>
+<span class="sd">            ...     allows_multiple = project.AnnotationDef.GetMultiple(todo_def)</span>
+<span class="sd">            ...     if allows_multiple:</span>
+<span class="sd">            ...         print(&quot;Can have multiple To Do notes per item&quot;)</span>
+<span class="sd">            ...     else:</span>
+<span class="sd">            ...         print(&quot;Only one To Do note allowed per item&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - True: Multiple annotations of this type can exist per object</span>
+<span class="sd">            - False: Only one annotation of this type allowed per object</span>
+<span class="sd">            - Enforced by FLEx UI when creating annotations</span>
+<span class="sd">            - Useful for ensuring unique status markers</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetMultiple, GetUserCanCreate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;AllowsMultiple&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">AllowsMultiple</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># Default to allowing multiple</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetMultiple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">,</span> <span class="n">allow_multiple</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set whether multiple annotations of this type are allowed.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+<span class="sd">            allow_multiple (bool): True to allow multiple, False for one only.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If anno_def or allow_multiple is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Allow multiple review notes</span>
+<span class="sd">            &gt;&gt;&gt; review_def = project.AnnotationDef.Find(&quot;Review&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if review_def:</span>
+<span class="sd">            ...     project.AnnotationDef.SetMultiple(review_def, True)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Allow only one status annotation</span>
+<span class="sd">            &gt;&gt;&gt; status_def = project.AnnotationDef.Find(&quot;Status&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if status_def:</span>
+<span class="sd">            ...     project.AnnotationDef.SetMultiple(status_def, False)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - True: Users can add multiple annotations of this type</span>
+<span class="sd">            - False: Only one annotation of this type per object</span>
+<span class="sd">            - Useful for status markers that should be unique</span>
+<span class="sd">            - Setting affects future annotation creation only</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMultiple, SetUserCanCreate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allow_multiple</span><span class="p">,</span> <span class="s2">&quot;allow_multiple&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;AllowsMultiple&quot;</span><span class="p">):</span>
+            <span class="n">anno_def</span><span class="o">.</span><span class="n">AllowsMultiple</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">allow_multiple</span><span class="p">)</span>
+
+    <span class="c1"># --- Prompt and Copy/Paste Settings ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetPrompt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the prompt text for an annotation definition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The prompt text, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If anno_def is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; todo_def = project.AnnotationDef.Find(&quot;To Do&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if todo_def:</span>
+<span class="sd">            ...     prompt = project.AnnotationDef.GetPrompt(todo_def)</span>
+<span class="sd">            ...     print(f&quot;Prompt: {prompt}&quot;)</span>
+<span class="sd">            Prompt: Enter what needs to be done</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Prompt appears when user creates annotation of this type</span>
+<span class="sd">            - Guides user on what information to enter</span>
+<span class="sd">            - Can be localized in multiple writing systems</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetPrompt, GetHelpString</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;Prompt&quot;</span><span class="p">):</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">Prompt</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">return</span> <span class="n">prompt</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetPrompt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">,</span> <span class="n">prompt_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the prompt text for an annotation definition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+<span class="sd">            prompt_text (str): The prompt text to set.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If anno_def or prompt_text is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; custom_def = project.AnnotationDef.Create(</span>
+<span class="sd">            ...     &quot;Review&quot;,</span>
+<span class="sd">            ...     CmAnnotationType.katGeneralNote</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; project.AnnotationDef.SetPrompt(</span>
+<span class="sd">            ...     custom_def,</span>
+<span class="sd">            ...     &quot;Describe what needs to be reviewed&quot;,</span>
+<span class="sd">            ...     &quot;en&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Empty string is allowed (clears the prompt)</span>
+<span class="sd">            - Prompt helps users understand what to enter</span>
+<span class="sd">            - Can provide different prompts in different languages</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetPrompt, SetHelpString</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">prompt_text</span><span class="p">,</span> <span class="s2">&quot;prompt_text&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;Prompt&quot;</span><span class="p">):</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">prompt_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">anno_def</span><span class="o">.</span><span class="n">Prompt</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCopyCutPasteAllowed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if copy/cut/paste operations are allowed for this type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if copy/cut/paste allowed, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If anno_def is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; todo_def = project.AnnotationDef.Find(&quot;To Do&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if todo_def:</span>
+<span class="sd">            ...     can_copy = project.AnnotationDef.GetCopyCutPasteAllowed(todo_def)</span>
+<span class="sd">            ...     if can_copy:</span>
+<span class="sd">            ...         print(&quot;Can copy/paste To Do annotations&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Controls whether users can copy/cut/paste annotations</span>
+<span class="sd">            - True: Standard clipboard operations enabled</span>
+<span class="sd">            - False: Copy/cut/paste disabled for this type</span>
+<span class="sd">            - Useful for restricting certain annotation types</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetUserCanCreate, GetMultiple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;CopyCutPasteAllowed&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">CopyCutPasteAllowed</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># Default to allowing copy/paste</span>
+
+    <span class="c1"># --- Query Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annotation_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find all annotation definitions of a specific type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            annotation_type (CmAnnotationType): The annotation type to search for.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmAnnotationDefn: Each annotation definition matching the type.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If annotation_type is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; from SIL.LCModel import CmAnnotationType</span>
+<span class="sd">            &gt;&gt;&gt; # Get all general note types</span>
+<span class="sd">            &gt;&gt;&gt; for note_def in project.AnnotationDef.FindByType(</span>
+<span class="sd">            ...         CmAnnotationType.katGeneralNote):</span>
+<span class="sd">            ...     name = project.AnnotationDef.GetName(note_def)</span>
+<span class="sd">            ...     print(f&quot;Note type: {name}&quot;)</span>
+<span class="sd">            Note type: To Do</span>
+<span class="sd">            Note type: Question</span>
+<span class="sd">            Note type: Review Required</span>
+
+<span class="sd">            &gt;&gt;&gt; # Count question types</span>
+<span class="sd">            &gt;&gt;&gt; question_types = list(project.AnnotationDef.FindByType(</span>
+<span class="sd">            ...     CmAnnotationType.katQuestionNote))</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(question_types)} question types&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Filters all definitions by annotation type</span>
+<span class="sd">            - Returns empty generator if no matches</span>
+<span class="sd">            - Use to find related annotation definition groups</span>
+<span class="sd">            - Common types: katGeneralNote, katQuestionNote, katResolvedNote</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAnnotationType, GetUserCreatableTypes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">annotation_type</span><span class="p">,</span> <span class="s2">&quot;annotation_type&quot;</span><span class="p">)</span>
+
+        <span class="n">type_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">annotation_type</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">anno_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAnnotationType</span><span class="p">(</span><span class="n">anno_def</span><span class="p">)</span> <span class="o">==</span> <span class="n">type_value</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">anno_def</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetUserCreatableTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all annotation definitions that users can create.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmAnnotationDefn: Each user-creatable annotation definition.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get types available to users</span>
+<span class="sd">            &gt;&gt;&gt; for anno_def in project.AnnotationDef.GetUserCreatableTypes():</span>
+<span class="sd">            ...     name = project.AnnotationDef.GetName(anno_def)</span>
+<span class="sd">            ...     anno_type = project.AnnotationDef.GetAnnotationType(anno_def)</span>
+<span class="sd">            ...     print(f&quot;Available: {name} (type={anno_type})&quot;)</span>
+<span class="sd">            Available: To Do (type=0)</span>
+<span class="sd">            Available: Question (type=1)</span>
+<span class="sd">            Available: Custom Review (type=0)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Count user-creatable types</span>
+<span class="sd">            &gt;&gt;&gt; count = len(list(project.AnnotationDef.GetUserCreatableTypes()))</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Users can create {count} annotation types&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Filters to definitions where UserCanCreate is True</span>
+<span class="sd">            - These are the types shown in FLEx UI annotation menus</span>
+<span class="sd">            - System-only types are excluded</span>
+<span class="sd">            - Useful for UI generation and validation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetUserCanCreate, SetUserCanCreate, FindByType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">anno_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetUserCanCreate</span><span class="p">(</span><span class="n">anno_def</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">anno_def</span>
+
+    <span class="c1"># --- Metadata Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID of an annotation definition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.Guid: The GUID of the annotation definition.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If anno_def is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; todo_def = project.AnnotationDef.Find(&quot;To Do&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if todo_def:</span>
+<span class="sd">            ...     guid = project.AnnotationDef.GetGuid(todo_def)</span>
+<span class="sd">            ...     print(f&quot;GUID: {guid}&quot;)</span>
+<span class="sd">            GUID: 12345678-1234-1234-1234-123456789abc</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUIDs are globally unique identifiers</span>
+<span class="sd">            - Persistent across project versions</span>
+<span class="sd">            - Use for external references and tracking</span>
+<span class="sd">            - Same GUID across different copies of the project</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">anno_def</span><span class="o">.</span><span class="n">Guid</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anno_def</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the creation date of an annotation definition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anno_def: The ICmAnnotationDefn object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.DateTime: The creation date/time, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If anno_def is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; custom = project.AnnotationDef.Find(&quot;Custom Review&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if custom:</span>
+<span class="sd">            ...     date = project.AnnotationDef.GetDateCreated(custom)</span>
+<span class="sd">            ...     if date:</span>
+<span class="sd">            ...         print(f&quot;Created: {date}&quot;)</span>
+<span class="sd">            Created: 11/23/2025 10:30:45 AM</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - DateCreated is set automatically when definition is created</span>
+<span class="sd">            - Returns System.DateTime object</span>
+<span class="sd">            - May be None for older definitions</span>
+<span class="sd">            - Use for tracking when custom types were added</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetGuid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;anno_def&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;DateCreated&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">anno_def</span><span class="o">.</span><span class="n">DateCreated</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate an annotation definition, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnnotationDefn object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source definition.</span>
+<span class="sd">                                If False, insert at end of parent&#39;s list.</span>
+<span class="sd">            deep (bool): If True (default), also duplicate sub-possibilities.</span>
+<span class="sd">                        If False, only copy simple properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnnotationDefn: The newly created duplicate with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; todo = project.AnnotationDef.Find(&quot;To Do&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if todo:</span>
+<span class="sd">            ...     dup = project.AnnotationDef.Duplicate(todo)</span>
+<span class="sd">            ...     print(f&quot;Duplicate GUID: {project.AnnotationDef.GetGuid(dup)}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - MultiString properties: Name, HelpString, Prompt</span>
+<span class="sd">            - Simple properties: AnnotationType, InstanceOf, UserCanCreate, AllowsMultiple</span>
+<span class="sd">            - Sub-possibilities duplicated only if deep=True</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetGuid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source object</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">ICmAnnotationDefn</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">ICmAnnotationDefn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="c1"># PossibilitiesOS lives on ICmPossibilityList (top-level list owner) and</span>
+        <span class="c1"># SubPossibilitiesOS lives on ICmAnnotationDefn (sub-item owner).</span>
+        <span class="c1"># Disambiguate by ClassName so pythonnet surfaces the typed accessor.</span>
+        <span class="n">raw_parent</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Owner</span>
+        <span class="k">if</span> <span class="n">raw_parent</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;CmPossibilityList&quot;</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">ICmPossibilityList</span><span class="p">(</span><span class="n">raw_parent</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">ICmAnnotationDefn</span><span class="p">(</span><span class="n">raw_parent</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate annotation definition&quot;</span><span class="p">):</span>
+            <span class="c1"># Create new annotation definition using factory (auto-generates new GUID)</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmAnnotationDefnFactory</span><span class="p">)</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># ADD TO PARENT FIRST</span>
+            <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                <span class="c1"># Insert after source</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;PossibilitiesOS&quot;</span><span class="p">):</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Insert at end</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;PossibilitiesOS&quot;</span><span class="p">):</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy MultiString properties (AFTER adding to parent)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;HelpString&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">HelpString</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">HelpString</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">HelpString</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;Prompt&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">Prompt</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">Prompt</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Prompt</span><span class="p">)</span>
+
+            <span class="c1"># Copy simple properties</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;AnnotationType&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">AnnotationType</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">AnnotationType</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;InstanceOf&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">InstanceOf</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">InstanceOf</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;UserCanCreate&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">UserCanCreate</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">UserCanCreate</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;AllowsMultiple&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">AllowsMultiple</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">AllowsMultiple</span>
+
+            <span class="c1"># Deep copy: duplicate sub-possibilities into the NEW duplicate</span>
+            <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateSubDefInto</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_DuplicateSubDefInto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_def</span><span class="p">,</span> <span class="n">parent_dup</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate an annotation sub-definition into the specified parent.&quot;&quot;&quot;</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmAnnotationDefnFactory</span><span class="p">)</span>
+        <span class="n">dup_def</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+        <span class="n">parent_dup</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">dup_def</span><span class="p">)</span>
+
+        <span class="c1"># Copy properties</span>
+        <span class="n">dup_def</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_def</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_def</span><span class="p">,</span> <span class="s2">&quot;HelpString&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_def</span><span class="o">.</span><span class="n">HelpString</span><span class="p">:</span>
+            <span class="n">dup_def</span><span class="o">.</span><span class="n">HelpString</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_def</span><span class="o">.</span><span class="n">HelpString</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_def</span><span class="p">,</span> <span class="s2">&quot;Prompt&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_def</span><span class="o">.</span><span class="n">Prompt</span><span class="p">:</span>
+            <span class="n">dup_def</span><span class="o">.</span><span class="n">Prompt</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_def</span><span class="o">.</span><span class="n">Prompt</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_def</span><span class="p">,</span> <span class="s2">&quot;AnnotationType&quot;</span><span class="p">):</span>
+            <span class="n">dup_def</span><span class="o">.</span><span class="n">AnnotationType</span> <span class="o">=</span> <span class="n">source_def</span><span class="o">.</span><span class="n">AnnotationType</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_def</span><span class="p">,</span> <span class="s2">&quot;InstanceOf&quot;</span><span class="p">):</span>
+            <span class="n">dup_def</span><span class="o">.</span><span class="n">InstanceOf</span> <span class="o">=</span> <span class="n">source_def</span><span class="o">.</span><span class="n">InstanceOf</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_def</span><span class="p">,</span> <span class="s2">&quot;UserCanCreate&quot;</span><span class="p">):</span>
+            <span class="n">dup_def</span><span class="o">.</span><span class="n">UserCanCreate</span> <span class="o">=</span> <span class="n">source_def</span><span class="o">.</span><span class="n">UserCanCreate</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_def</span><span class="p">,</span> <span class="s2">&quot;AllowsMultiple&quot;</span><span class="p">):</span>
+            <span class="n">dup_def</span><span class="o">.</span><span class="n">AllowsMultiple</span> <span class="o">=</span> <span class="n">source_def</span><span class="o">.</span><span class="n">AllowsMultiple</span>
+
+        <span class="c1"># Recurse into nested sub-definitions</span>
+        <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_def</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_def</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">nested_def</span> <span class="ow">in</span> <span class="n">source_def</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateSubDefInto</span><span class="p">(</span><span class="n">nested_def</span><span class="p">,</span> <span class="n">dup_def</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get syncable properties for cross-project synchronization.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;item&quot;</span><span class="p">)</span>
+
+        <span class="n">anno_def</span> <span class="o">=</span> <span class="n">item</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;HelpString&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;HelpString&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">HelpString</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;Prompt&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Prompt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">Prompt</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;AnnotationType&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;AnnotationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">AnnotationType</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;InstanceOf&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;InstanceOf&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">InstanceOf</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;UserCanCreate&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;UserCanCreate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">UserCanCreate</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_def</span><span class="p">,</span> <span class="s2">&quot;AllowsMultiple&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;AllowsMultiple&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">anno_def</span><span class="o">.</span><span class="n">AllowsMultiple</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compare two annotation definitions and return detailed differences.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">is_different</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">differences</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">val1</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">val2</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;modified&quot;</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.System.AnnotationDefOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

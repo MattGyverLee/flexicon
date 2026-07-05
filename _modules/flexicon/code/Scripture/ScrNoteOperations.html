@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Scripture.ScrNoteOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Scripture.ScrNoteOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Scripture.ScrNoteOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ScrNoteOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ScrNoteOperations</span>
+<span class="c1">#          Scripture note operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IScrBook</span><span class="p">,</span>
+    <span class="n">IScrBookAnnotations</span><span class="p">,</span>
+    <span class="n">IScrScriptureNote</span><span class="p">,</span>
+    <span class="n">IScrScriptureNoteFactory</span><span class="p">,</span>
+    <span class="n">IScrTxtPara</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ScrNoteOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Scripture.html#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ScrNoteOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing Scripture notes in a</span>
+<span class="sd">    FieldWorks project.</span>
+
+<span class="sd">    Scripture notes are annotations attached to specific paragraphs or</span>
+<span class="sd">    locations in Scripture text. They can be translator notes, consultant</span>
+<span class="sd">    notes, checking questions, etc.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.ScrNotes property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get a book</span>
+<span class="sd">        genesis = project.ScrBooks.Find(1)</span>
+
+<span class="sd">        # Get a paragraph</span>
+<span class="sd">        section = project.ScrSections.Find(genesis, 0)</span>
+<span class="sd">        para = project.ScrTxtParas.Find(section, 0)</span>
+
+<span class="sd">        # Create a note</span>
+<span class="sd">        note = project.ScrNotes.Create(</span>
+<span class="sd">            genesis,</span>
+<span class="sd">            para,</span>
+<span class="sd">            &quot;Check: Is &#39;beginning&#39; the best translation?&quot;,</span>
+<span class="sd">            &quot;translator_note&quot;</span>
+<span class="sd">        )</span>
+
+<span class="sd">        # Get all notes for a book</span>
+<span class="sd">        notes = project.ScrNotes.GetAll(genesis)</span>
+
+<span class="sd">        # Get note text</span>
+<span class="sd">        text = project.ScrNotes.GetText(note)</span>
+
+<span class="sd">        # Resolve a note</span>
+<span class="sd">        project.ScrNotes.Resolve(note)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ScrNoteOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;translator_note&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new Scripture note attached to a paragraph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or its HVO</span>
+<span class="sd">            paragraph_or_hvo: Either an IScrTxtPara object or its HVO</span>
+<span class="sd">            text (str): The note text content</span>
+<span class="sd">            type (str, optional): Note type. Defaults to &quot;translator_note&quot;.</span>
+<span class="sd">                Types: &quot;translator_note&quot;, &quot;consultant_note&quot;, &quot;checking_question&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrScriptureNote: The newly created note object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If any parameter is None</span>
+<span class="sd">            FP_ParameterError: If book or paragraph doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.Find(1)</span>
+<span class="sd">            &gt;&gt;&gt; section = project.ScrSections.Find(genesis, 0)</span>
+<span class="sd">            &gt;&gt;&gt; para = project.ScrTxtParas.Find(section, 0)</span>
+<span class="sd">            &gt;&gt;&gt; note = project.ScrNotes.Create(</span>
+<span class="sd">            ...     genesis,</span>
+<span class="sd">            ...     para,</span>
+<span class="sd">            ...     &quot;Check: Is &#39;beginning&#39; the best translation?&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create consultant note</span>
+<span class="sd">            &gt;&gt;&gt; note = project.ScrNotes.Create(</span>
+<span class="sd">            ...     genesis,</span>
+<span class="sd">            ...     para,</span>
+<span class="sd">            ...     &quot;Good translation. Consider alternate word order.&quot;,</span>
+<span class="sd">            ...     &quot;consultant_note&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Note is added to book&#39;s annotations container</span>
+<span class="sd">            - Creates annotations container if it doesn&#39;t exist</span>
+<span class="sd">            - Note GUID is auto-generated</span>
+<span class="sd">            - Type parameter is for categorization</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Find, GetText, SetText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="s2">&quot;book_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;paragraph_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to book and paragraph objects</span>
+        <span class="n">book</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveBook</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+        <span class="n">paragraph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveParagraph</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create note&quot;</span><span class="p">):</span>
+            <span class="c1"># Ensure book has annotations container</span>
+            <span class="k">if</span> <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IScrBookAnnotationsFactory</span>
+
+                <span class="n">annotations_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IScrBookAnnotationsFactory</span><span class="p">)</span>
+                <span class="n">annotations</span> <span class="o">=</span> <span class="n">annotations_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">annotations</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">annotations</span> <span class="o">=</span> <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># Create the new note using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IScrScriptureNoteFactory</span><span class="p">)</span>
+            <span class="n">new_note</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to annotations container</span>
+            <span class="n">annotations</span><span class="o">.</span><span class="n">NotesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_note</span><span class="p">)</span>
+
+            <span class="c1"># Set the note text</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+            <span class="c1"># Create discussion paragraph if needed</span>
+            <span class="c1"># Note: Contents is ITsString, assign directly</span>
+            <span class="k">if</span> <span class="n">new_note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">new_note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">para_obj</span> <span class="o">=</span> <span class="n">new_note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">para_obj</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Create paragraph</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IStTxtParaFactory</span>
+
+                    <span class="n">para_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTxtParaFactory</span><span class="p">)</span>
+                    <span class="n">para_obj</span> <span class="o">=</span> <span class="n">para_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                    <span class="n">new_note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">para_obj</span><span class="p">)</span>
+                    <span class="n">para_obj</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Create discussion StText</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IStTextFactory</span><span class="p">,</span> <span class="n">IStTxtParaFactory</span>
+
+                <span class="n">text_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTextFactory</span><span class="p">)</span>
+                <span class="n">new_note</span><span class="o">.</span><span class="n">DiscussionOA</span> <span class="o">=</span> <span class="n">text_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="n">para_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTxtParaFactory</span><span class="p">)</span>
+                <span class="n">para_obj</span> <span class="o">=</span> <span class="n">para_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="n">new_note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">para_obj</span><span class="p">)</span>
+                <span class="n">para_obj</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
+
+            <span class="c1"># Set beginning reference to the paragraph</span>
+            <span class="c1"># Note: This is a simplified approach - full implementation would set</span>
+            <span class="c1"># BeginRef and EndRef properly with BCVRef references</span>
+            <span class="c1"># For now, we just create the note without precise reference</span>
+
+            <span class="k">return</span> <span class="n">new_note</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a Scripture note from the FLEx project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note_or_hvo: Either an IScrScriptureNote object or its HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If note_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If note doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; note = project.ScrNotes.Find(genesis, 0)</span>
+<span class="sd">            &gt;&gt;&gt; if note:</span>
+<span class="sd">            ...     project.ScrNotes.Delete(note)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Note is removed from annotations container</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">,</span> <span class="s2">&quot;note_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to note object</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Delete the note (LCM handles removal from repository)</span>
+        <span class="n">note</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a Scripture note by index within a book.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or its HVO</span>
+<span class="sd">            index (int): The zero-based index of the note in the book</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrScriptureNote or None: The note object if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If book_or_hvo or index is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.Find(1)</span>
+<span class="sd">            &gt;&gt;&gt; # Get first note</span>
+<span class="sd">            &gt;&gt;&gt; note = project.ScrNotes.Find(genesis, 0)</span>
+<span class="sd">            &gt;&gt;&gt; if note:</span>
+<span class="sd">            ...     text = project.ScrNotes.GetText(note)</span>
+<span class="sd">            ...     print(f&quot;Note: {text}&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get third note</span>
+<span class="sd">            &gt;&gt;&gt; note3 = project.ScrNotes.Find(genesis, 2)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if index out of range</span>
+<span class="sd">            - Index is zero-based (0 = first note)</span>
+<span class="sd">            - Use GetAll() to get all notes</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="s2">&quot;book_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to book object</span>
+        <span class="n">book</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveBook</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get annotations container</span>
+        <span class="k">if</span> <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">annotations</span> <span class="o">=</span> <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Check if index is valid</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="n">annotations</span><span class="o">.</span><span class="n">NotesOS</span><span class="o">.</span><span class="n">Count</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">annotations</span><span class="o">.</span><span class="n">NotesOS</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all Scripture notes in a book.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IScrScriptureNote objects (empty list if none)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If book_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.Find(1)</span>
+<span class="sd">            &gt;&gt;&gt; notes = project.ScrNotes.GetAll(genesis)</span>
+<span class="sd">            &gt;&gt;&gt; for i, note in enumerate(notes):</span>
+<span class="sd">            ...     text = project.ScrNotes.GetText(note)</span>
+<span class="sd">            ...     resolved = project.ScrNotes.IsResolved(note)</span>
+<span class="sd">            ...     status = &quot;Resolved&quot; if resolved else &quot;Open&quot;</span>
+<span class="sd">            ...     print(f&quot;{i+1}. [{status}] {text}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if book has no notes</span>
+<span class="sd">            - Notes are in database order</span>
+<span class="sd">            - Includes both resolved and unresolved notes</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="s2">&quot;book_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to book object</span>
+        <span class="n">book</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveBook</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get annotations container</span>
+        <span class="k">if</span> <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="n">annotations</span> <span class="o">=</span> <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">annotations</span><span class="o">.</span><span class="n">NotesOS</span><span class="p">)</span>
+
+    <span class="c1"># --- Note Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the text content of a Scripture note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note_or_hvo: Either an IScrScriptureNote object or its HVO</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The note text (empty string if not set)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If note_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; note = project.ScrNotes.Find(genesis, 0)</span>
+<span class="sd">            &gt;&gt;&gt; text = project.ScrNotes.GetText(note)</span>
+<span class="sd">            &gt;&gt;&gt; print(text)</span>
+<span class="sd">            Check: Is &#39;beginning&#39; the best translation?</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; text_fr = project.ScrNotes.GetText(note,</span>
+<span class="sd">            ...                                     project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if text not set</span>
+<span class="sd">            - Text can be in multiple writing systems</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetText, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">,</span> <span class="s2">&quot;note_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="c1"># Get the discussion text from the first paragraph</span>
+        <span class="k">if</span> <span class="n">note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="n">para</span> <span class="o">=</span> <span class="n">note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Note: Contents is ITsString, not IMultiUnicode</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">Text</span> <span class="k">if</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the text content of a Scripture note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note_or_hvo: Either an IScrScriptureNote object or its HVO</span>
+<span class="sd">            text (str): The new note text</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If note_or_hvo or text is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; note = project.ScrNotes.Find(genesis, 0)</span>
+<span class="sd">            &gt;&gt;&gt; project.ScrNotes.SetText(</span>
+<span class="sd">            ...     note,</span>
+<span class="sd">            ...     &quot;Updated: Consider using &#39;origin&#39; instead of &#39;beginning&#39;&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; project.ScrNotes.SetText(</span>
+<span class="sd">            ...     note,</span>
+<span class="sd">            ...     &quot;Vérifier: Utiliser &#39;commencement&#39; ou &#39;origine&#39;?&quot;,</span>
+<span class="sd">            ...     project.WSHandle(&#39;fr&#39;)</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Creates discussion StText if it doesn&#39;t exist</span>
+<span class="sd">            - Creates discussion paragraph if it doesn&#39;t exist</span>
+<span class="sd">            - Empty text is allowed</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetText, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">,</span> <span class="s2">&quot;note_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set note text&quot;</span><span class="p">):</span>
+            <span class="c1"># Ensure DiscussionOA exists</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IStTextFactory</span>
+
+                <span class="n">text_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTextFactory</span><span class="p">)</span>
+                <span class="n">note</span><span class="o">.</span><span class="n">DiscussionOA</span> <span class="o">=</span> <span class="n">text_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Ensure discussion has at least one paragraph</span>
+            <span class="k">if</span> <span class="n">note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IStTxtParaFactory</span>
+
+                <span class="n">para_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTxtParaFactory</span><span class="p">)</span>
+                <span class="n">para</span> <span class="o">=</span> <span class="n">para_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="n">note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">para</span><span class="p">)</span>
+
+            <span class="c1"># Set the discussion text (Contents is ITsString, assign directly)</span>
+            <span class="n">para</span> <span class="o">=</span> <span class="n">note</span><span class="o">.</span><span class="n">DiscussionOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the type of a Scripture note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note_or_hvo: Either an IScrScriptureNote object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The note type (empty string if not determinable)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If note_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; note = project.ScrNotes.Find(genesis, 0)</span>
+<span class="sd">            &gt;&gt;&gt; note_type = project.ScrNotes.GetType(note)</span>
+<span class="sd">            &gt;&gt;&gt; print(note_type)</span>
+<span class="sd">            translator_note</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Type is inferred from note properties</span>
+<span class="sd">            - May return empty string if type cannot be determined</span>
+<span class="sd">            - Common types: translator_note, consultant_note, checking_question</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">,</span> <span class="s2">&quot;note_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Note type is typically stored in annotation definition</span>
+        <span class="c1"># For simplicity, return generic &quot;note&quot; type</span>
+        <span class="c1"># A full implementation would check note.AnnotationTypeRA</span>
+        <span class="k">return</span> <span class="s2">&quot;note&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Mark a Scripture note as resolved.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note_or_hvo: Either an IScrScriptureNote object or its HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If note_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; note = project.ScrNotes.Find(genesis, 0)</span>
+<span class="sd">            &gt;&gt;&gt; # Check if already resolved</span>
+<span class="sd">            &gt;&gt;&gt; if not project.ScrNotes.IsResolved(note):</span>
+<span class="sd">            ...     project.ScrNotes.Resolve(note)</span>
+<span class="sd">            ...     print(&quot;Note resolved&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Resolved notes are marked as complete</span>
+<span class="sd">            - Typically hidden in note displays</span>
+<span class="sd">            - Can be un-resolved by clearing the resolved flag</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsResolved, Unresolve</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">,</span> <span class="s2">&quot;note_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Mark as resolved (set ResolutionStatus)</span>
+        <span class="c1"># Note: The exact property for resolution may vary</span>
+        <span class="c1"># For now, we set a simple flag approach</span>
+        <span class="c1"># A full implementation would use note.ResolutionStatus</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;ResolutionStatus&quot;</span><span class="p">):</span>
+            <span class="n">note</span><span class="o">.</span><span class="n">ResolutionStatus</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Resolved</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsResolved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a Scripture note is marked as resolved.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note_or_hvo: Either an IScrScriptureNote object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if note is resolved, False otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If note_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; note = project.ScrNotes.Find(genesis, 0)</span>
+<span class="sd">            &gt;&gt;&gt; if project.ScrNotes.IsResolved(note):</span>
+<span class="sd">            ...     print(&quot;Note is resolved&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;Note is still open&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Resolved notes are marked as complete</span>
+<span class="sd">            - Use Resolve() to mark as resolved</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Resolve</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">,</span> <span class="s2">&quot;note_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Check resolution status</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;ResolutionStatus&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">note</span><span class="o">.</span><span class="n">ResolutionStatus</span> <span class="o">==</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IScrScriptureNote.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note_or_hvo: Either an IScrScriptureNote object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrScriptureNote: The resolved note object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a Scripture note</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">note_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrScriptureNote</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a Scripture note&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">note_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveBook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IScrBook.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrBook: The resolved book object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a Scripture book</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrBook</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a Scripture book&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">book_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveParagraph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IScrTxtPara.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            para_or_hvo: Either an IScrTxtPara object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrTxtPara: The resolved paragraph object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a Scripture paragraph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrTxtPara</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a Scripture paragraph&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">para_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Scripture.ScrNoteOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

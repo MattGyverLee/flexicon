@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Scripture.ScrBookOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Scripture.ScrBookOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Scripture.ScrBookOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ScrBookOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ScrBookOperations</span>
+<span class="c1">#          Scripture book operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IScrBook</span><span class="p">,</span>
+    <span class="n">IScrBookFactory</span><span class="p">,</span>
+    <span class="n">IScrBookRepository</span><span class="p">,</span>
+    <span class="n">IScrSection</span><span class="p">,</span>
+    <span class="n">IScripture</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Import string utilities</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+
+<div class="viewcode-block" id="ScrBookOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Scripture.html#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ScrBookOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing Scripture books in a</span>
+<span class="sd">    FieldWorks project.</span>
+
+<span class="sd">    Scripture books represent individual books of the Bible (Genesis, Matthew,</span>
+<span class="sd">    etc.) identified by canonical numbers (1-66 for standard Protestant canon).</span>
+<span class="sd">    Each book contains sections with headings and paragraph content.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.ScrBooks property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get all Scripture books</span>
+<span class="sd">        for book in project.ScrBooks.GetAll():</span>
+<span class="sd">            title = project.ScrBooks.GetTitle(book)</span>
+<span class="sd">            print(f&quot;Book: {title}&quot;)</span>
+
+<span class="sd">        # Create a new book (Genesis = 1)</span>
+<span class="sd">        genesis = project.ScrBooks.Create(1, &quot;Genesis&quot;)</span>
+
+<span class="sd">        # Find book by canonical number</span>
+<span class="sd">        matthew = project.ScrBooks.Find(40)  # Matthew = 40</span>
+
+<span class="sd">        # Get sections in a book</span>
+<span class="sd">        sections = project.ScrBooks.GetSections(genesis)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ScrBookOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all Scripture books in the project.</span>
+
+<span class="sd">        This method returns an iterator over all IScrBook objects in the</span>
+<span class="sd">        project, allowing iteration over all Scripture books.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            IScrBook: Each Scripture book object in the project</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for book in project.ScrBooks.GetAll():</span>
+<span class="sd">            ...     title = project.ScrBooks.GetTitle(book)</span>
+<span class="sd">            ...     num = project.ScrBooks.GetCanonicalNum(book)</span>
+<span class="sd">            ...     print(f&quot;{num}: {title}&quot;)</span>
+<span class="sd">            1: Genesis</span>
+<span class="sd">            2: Exodus</span>
+<span class="sd">            40: Matthew</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns an iterator for memory efficiency</span>
+<span class="sd">            - Books are returned in database order (not canonical order)</span>
+<span class="sd">            - Use GetCanonicalNum() to get the book number</span>
+<span class="sd">            - For sorted books, sort by canonical number</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create, GetCanonicalNum</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scripture</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetScripture</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">scripture</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">iter</span><span class="p">([])</span>
+
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">scripture</span><span class="o">.</span><span class="n">ScriptureBooksOS</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canonical_num</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new Scripture book with the specified canonical number.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            canonical_num (int): The canonical book number (1-66 for Protestant canon)</span>
+<span class="sd">                1=Genesis, 2=Exodus, ... 40=Matthew, 41=Mark, ... 66=Revelation</span>
+<span class="sd">            title (str, optional): Book title. If None, uses default title for</span>
+<span class="sd">                the canonical number.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrBook: The newly created Scripture book object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If canonical_num is None</span>
+<span class="sd">            FP_ParameterError: If canonical_num is invalid or book already exists</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create Genesis</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.Create(1, &quot;Genesis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.ScrBooks.GetTitle(genesis))</span>
+<span class="sd">            Genesis</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create Matthew (canonical number 40)</span>
+<span class="sd">            &gt;&gt;&gt; matthew = project.ScrBooks.Create(40, &quot;Matthew&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with default title</span>
+<span class="sd">            &gt;&gt;&gt; exodus = project.ScrBooks.Create(2)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Canonical numbers: 1-39 = OT, 40-66 = NT (Protestant canon)</span>
+<span class="sd">            - Each canonical number can only be used once</span>
+<span class="sd">            - Book is added to Scripture.ScriptureBooksOS</span>
+<span class="sd">            - Book GUID is auto-generated</span>
+<span class="sd">            - Title defaults to English name if not specified</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Find, GetCanonicalNum</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">canonical_num</span><span class="p">,</span> <span class="s2">&quot;canonical_num&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">canonical_num</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">canonical_num</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">canonical_num</span> <span class="o">&gt;</span> <span class="mi">66</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Canonical number must be an integer between 1 and 66, got </span><span class="si">{</span><span class="n">canonical_num</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">scripture</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetScripture</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">scripture</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Project does not have Scripture enabled&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if book already exists</span>
+        <span class="n">existing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">canonical_num</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">existing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Book with canonical number </span><span class="si">{</span><span class="n">canonical_num</span><span class="si">}</span><span class="s2"> already exists&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create book </span><span class="si">{</span><span class="n">canonical_num</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the new book using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IScrBookFactory</span><span class="p">)</span>
+            <span class="n">new_book</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">scripture</span><span class="o">.</span><span class="n">ScriptureBooksOS</span><span class="p">,</span> <span class="n">canonical_num</span><span class="p">)</span>
+
+            <span class="c1"># Set title if provided</span>
+            <span class="k">if</span> <span class="n">title</span><span class="p">:</span>
+                <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+                <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">new_book</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_book</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a Scripture book from the FLEx project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or its HVO (database ID)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If book_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If book doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; book = project.ScrBooks.Find(1)  # Genesis</span>
+<span class="sd">            &gt;&gt;&gt; if book:</span>
+<span class="sd">            ...     project.ScrBooks.Delete(book)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Delete by HVO</span>
+<span class="sd">            &gt;&gt;&gt; project.ScrBooks.Delete(12345)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - All sections and paragraphs will be deleted</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Deletion cascades to all owned objects (sections, paragraphs, etc.)</span>
+<span class="sd">            - The canonical number becomes available for reuse</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="s2">&quot;book_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to book object</span>
+        <span class="n">book</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Delete the book (LCM handles removal from repository)</span>
+        <span class="n">book</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canonical_num</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a Scripture book by its canonical number.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            canonical_num (int): The canonical book number (1-66)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrBook or None: The book object if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If canonical_num is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.Find(1)</span>
+<span class="sd">            &gt;&gt;&gt; if genesis:</span>
+<span class="sd">            ...     title = project.ScrBooks.GetTitle(genesis)</span>
+<span class="sd">            ...     print(f&quot;Found: {title}&quot;)</span>
+<span class="sd">            Found: Genesis</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find Matthew (canonical number 40)</span>
+<span class="sd">            &gt;&gt;&gt; matthew = project.ScrBooks.Find(40)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns first match only (should be unique)</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+<span class="sd">            - Canonical numbers: 1-39 = OT, 40-66 = NT</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindByName, GetAll, GetCanonicalNum</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">canonical_num</span><span class="p">,</span> <span class="s2">&quot;canonical_num&quot;</span><span class="p">)</span>
+
+        <span class="n">scripture</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetScripture</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">scripture</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Search through all books</span>
+        <span class="k">for</span> <span class="n">book</span> <span class="ow">in</span> <span class="n">scripture</span><span class="o">.</span><span class="n">ScriptureBooksOS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">book</span><span class="o">.</span><span class="n">CanonicalNum</span> <span class="o">==</span> <span class="n">canonical_num</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">book</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a Scripture book by its title/name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The book title to search for (case-insensitive)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrBook or None: The book object if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.FindByName(&quot;Genesis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if genesis:</span>
+<span class="sd">            ...     num = project.ScrBooks.GetCanonicalNum(genesis)</span>
+<span class="sd">            ...     print(f&quot;Canonical number: {num}&quot;)</span>
+<span class="sd">            Canonical number: 1</span>
+
+<span class="sd">            &gt;&gt;&gt; # Case-insensitive search</span>
+<span class="sd">            &gt;&gt;&gt; matthew = project.ScrBooks.FindByName(&quot;matthew&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-insensitive</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Returns None if not found</span>
+<span class="sd">            - Searches in default vernacular writing system</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, GetTitle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">scripture</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetScripture</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">scripture</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Search through all books</span>
+        <span class="k">for</span> <span class="n">book</span> <span class="ow">in</span> <span class="n">scripture</span><span class="o">.</span><span class="n">ScriptureBooksOS</span><span class="p">:</span>
+            <span class="n">book_title</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">book</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">book_title</span> <span class="ow">and</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">book_title</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">book</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Book Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCanonicalNum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the canonical number of a Scripture book.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The canonical book number (1-66)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If book_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.Find(1)</span>
+<span class="sd">            &gt;&gt;&gt; num = project.ScrBooks.GetCanonicalNum(genesis)</span>
+<span class="sd">            &gt;&gt;&gt; print(num)</span>
+<span class="sd">            1</span>
+
+<span class="sd">            &gt;&gt;&gt; matthew = project.ScrBooks.FindByName(&quot;Matthew&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.ScrBooks.GetCanonicalNum(matthew))</span>
+<span class="sd">            40</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Canonical numbers: 1-39 = OT, 40-66 = NT (Protestant canon)</span>
+<span class="sd">            - Number is immutable (set at creation)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="s2">&quot;book_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">book</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">book</span><span class="o">.</span><span class="n">CanonicalNum</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the title of a Scripture book.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or its HVO</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The book title (empty string if not set)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If book_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.Find(1)</span>
+<span class="sd">            &gt;&gt;&gt; title = project.ScrBooks.GetTitle(genesis)</span>
+<span class="sd">            &gt;&gt;&gt; print(title)</span>
+<span class="sd">            Genesis</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; title_fr = project.ScrBooks.GetTitle(genesis,</span>
+<span class="sd">            ...                                       project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if title not set</span>
+<span class="sd">            - Title can be in multiple writing systems</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetTitle, FindByName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="s2">&quot;book_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">book</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">title</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">book</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">title</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the title of a Scripture book.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or its HVO</span>
+<span class="sd">            title (str): The new book title</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If book_or_hvo or title is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.Find(1)</span>
+<span class="sd">            &gt;&gt;&gt; project.ScrBooks.SetTitle(genesis, &quot;Genesis&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; project.ScrBooks.SetTitle(genesis, &quot;Genèse&quot;,</span>
+<span class="sd">            ...                            project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Title can be set in multiple writing systems</span>
+<span class="sd">            - Empty title is allowed</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetTitle, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="s2">&quot;book_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">)</span>
+
+        <span class="n">book</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">book</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="c1"># --- Section Management ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all sections in a Scripture book.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IScrSection objects (empty list if none)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If book_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.Find(1)</span>
+<span class="sd">            &gt;&gt;&gt; sections = project.ScrBooks.GetSections(genesis)</span>
+<span class="sd">            &gt;&gt;&gt; for section in sections:</span>
+<span class="sd">            ...     heading = project.ScrSections.GetHeading(section)</span>
+<span class="sd">            ...     print(f&quot;Section: {heading}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if book has no sections</span>
+<span class="sd">            - Sections are in database order</span>
+<span class="sd">            - Use ScrSectionOperations for section-level operations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            ScrSectionOperations.GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="s2">&quot;book_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">book</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">book</span><span class="o">.</span><span class="n">SectionsOS</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IScrBook.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrBook: The resolved book object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a Scripture book</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrBook</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a Scripture book&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">book_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to vernacular WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetScripture</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the Scripture object from the project.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScripture or None: The Scripture object if available</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s2">&quot;lp&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">TranslatedScriptureOA</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Scripture.ScrBookOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

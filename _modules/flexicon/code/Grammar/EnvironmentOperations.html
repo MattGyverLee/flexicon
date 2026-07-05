@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Grammar.EnvironmentOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.EnvironmentOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Grammar.EnvironmentOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   EnvironmentOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: EnvironmentOperations</span>
+<span class="c1">#          Phonological environment operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IPhEnvironmentFactory</span><span class="p">,</span> <span class="n">IPhEnvironment</span><span class="p">,</span> <span class="n">ICmObjectRepository</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="EnvironmentOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.EnvironmentOperations.EnvironmentOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EnvironmentOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing phonological environments in a</span>
+<span class="sd">    FieldWorks project.</span>
+
+<span class="sd">    Phonological environments specify the context in which phonological rules</span>
+<span class="sd">    apply. They describe what precedes and follows a segment, using notation</span>
+<span class="sd">    like V_V (between vowels), #_ (word-initially), _# (word-finally), etc.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject, EnvironmentOperations</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        envOps = EnvironmentOperations(project)</span>
+
+<span class="sd">        # Get all environments</span>
+<span class="sd">        for env in envOps.GetAll():</span>
+<span class="sd">            name = envOps.GetName(env)</span>
+<span class="sd">            notation = envOps.GetStringRepresentation(env)</span>
+<span class="sd">            print(f&quot;{name}: {notation}&quot;)</span>
+
+<span class="sd">        # Create a new environment</span>
+<span class="sd">        word_initial = envOps.Create(&quot;Word Initial&quot;, &quot;At the beginning of a word&quot;)</span>
+<span class="sd">        envOps.SetStringRepresentation(word_initial, &quot;#_&quot;)</span>
+
+<span class="sd">        # Create more environments</span>
+<span class="sd">        between_vowels = envOps.Create(&quot;Between Vowels&quot;)</span>
+<span class="sd">        envOps.SetStringRepresentation(between_vowels, &quot;V_V&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize EnvironmentOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Specify which sequence to reorder for environments.</span>
+<span class="sd">        For Environment, we reorder parent.EnvironmentsOA.PossibilitiesOS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">EnvironmentsOA</span><span class="o">.</span><span class="n">PossibilitiesOS</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all phonological environments in the project.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            IPhEnvironment: Each environment object in the project&#39;s environment list.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; for env in envOps.GetAll():</span>
+<span class="sd">            ...     name = envOps.GetName(env)</span>
+<span class="sd">            ...     notation = envOps.GetStringRepresentation(env)</span>
+<span class="sd">            ...     print(f&quot;{name}: {notation}&quot;)</span>
+<span class="sd">            Word Initial: #_</span>
+<span class="sd">            Word Final: _#</span>
+<span class="sd">            Between Vowels: V_V</span>
+<span class="sd">            Before Consonant: _C</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns environments in their defined order</span>
+<span class="sd">            - Environments are reusable across phonological rules</span>
+<span class="sd">            - Returns empty if no phonological data defined</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetName, GetStringRepresentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="n">phon_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">env</span> <span class="ow">in</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">EnvironmentsOS</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">env</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new phonological environment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the environment (e.g., &quot;Word Initial&quot;,</span>
+<span class="sd">                &quot;Between Vowels&quot;).</span>
+<span class="sd">            description (str, optional): Optional description of when this</span>
+<span class="sd">                environment applies. Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhEnvironment: The newly created environment object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; word_initial = envOps.Create(&quot;Word Initial&quot;, &quot;At word start&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; envOps.SetStringRepresentation(word_initial, &quot;#_&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(envOps.GetName(word_initial))</span>
+<span class="sd">            Word Initial</span>
+
+<span class="sd">            &gt;&gt;&gt; between_vowels = envOps.Create(&quot;Between Vowels&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; envOps.SetStringRepresentation(between_vowels, &quot;V_V&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Name should be descriptive of the phonological context</span>
+<span class="sd">            - Use SetStringRepresentation() to set formal notation (e.g., &quot;V_V&quot;)</span>
+<span class="sd">            - Description is optional but helpful for documentation</span>
+<span class="sd">            - Environment is created in the default analysis writing system</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, GetName, SetStringRepresentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get the writing system handle</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Create the new environment using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPhEnvironmentFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create environment&quot;</span><span class="p">):</span>
+            <span class="n">new_env</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to the environments list (must be done before setting properties)</span>
+            <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+            <span class="n">phon_data</span><span class="o">.</span><span class="n">EnvironmentsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_env</span><span class="p">)</span>
+
+            <span class="c1"># Set name</span>
+            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_env</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+            <span class="c1"># Set description if provided</span>
+            <span class="k">if</span> <span class="n">description</span><span class="p">:</span>
+                <span class="n">mkstr_desc</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">new_env</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_desc</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_env</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a phonological environment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env_or_hvo: The IPhEnvironment object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If env_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the environment is in use and cannot be deleted.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; obsolete = envOps.Create(&quot;Obsolete Environment&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # ... realize it&#39;s not needed</span>
+<span class="sd">            &gt;&gt;&gt; envOps.Delete(obsolete)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deleting an environment that is in use may raise an error from FLEx</span>
+<span class="sd">            - This includes environments used in phonological rules and allomorph</span>
+<span class="sd">              conditions</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - Consider checking usage before deletion</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">,</span> <span class="s2">&quot;env_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to environment object</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Remove from the environments list</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="n">phon_data</span><span class="o">.</span><span class="n">EnvironmentsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of a phonological environment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env_or_hvo: The IPhEnvironment object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The environment name, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If env_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; for env in envOps.GetAll():</span>
+<span class="sd">            ...     name = envOps.GetName(env)</span>
+<span class="sd">            ...     print(name)</span>
+<span class="sd">            Word Initial</span>
+<span class="sd">            Word Final</span>
+<span class="sd">            Between Vowels</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get name in a specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; env = list(envOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; name = envOps.GetName(env, project.WSHandle(&#39;en&#39;))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetName, GetStringRepresentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">,</span> <span class="s2">&quot;env_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of a phonological environment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env_or_hvo: The IPhEnvironment object or HVO.</span>
+<span class="sd">            name (str): The new name.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If env_or_hvo or name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; env = list(envOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; envOps.SetName(env, &quot;Word Initial Position&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Use standard terminology</span>
+<span class="sd">            &gt;&gt;&gt; envOps.SetName(env, &quot;Intervocalic&quot;)  # Better than custom names</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Use clear, descriptive names</span>
+<span class="sd">            - Standard terminology aids cross-linguistic comparison</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetName, SetStringRepresentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">,</span> <span class="s2">&quot;env_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">env</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetStringRepresentation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the string representation (notation) of a phonological environment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env_or_hvo: The IPhEnvironment object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The environment&#39;s string representation (e.g., &quot;V_V&quot;, &quot;#_&quot;, &quot;_#&quot;),</span>
+<span class="sd">                or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If env_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; for env in envOps.GetAll():</span>
+<span class="sd">            ...     name = envOps.GetName(env)</span>
+<span class="sd">            ...     notation = envOps.GetStringRepresentation(env)</span>
+<span class="sd">            ...     print(f&quot;{name:20} {notation}&quot;)</span>
+<span class="sd">            Word Initial         #_</span>
+<span class="sd">            Word Final           _#</span>
+<span class="sd">            Between Vowels       V_V</span>
+<span class="sd">            After Nasal          N_</span>
+<span class="sd">            Before Stop          _P</span>
+
+<span class="sd">            &gt;&gt;&gt; # Use in rule description</span>
+<span class="sd">            &gt;&gt;&gt; env = list(envOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; notation = envOps.GetStringRepresentation(env)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Rule applies in: {notation}&quot;)</span>
+<span class="sd">            Rule applies in: V_V</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - String representation uses formal phonological notation</span>
+<span class="sd">            - Underscore (_) marks the position of the target segment</span>
+<span class="sd">            - # marks word boundaries</span>
+<span class="sd">            - $ marks syllable boundaries</span>
+<span class="sd">            - Capital letters (V, C, N, etc.) reference natural classes</span>
+
+<span class="sd">        Common Environment Notation:</span>
+<span class="sd">            #_      - Word-initial (e.g., #_at)</span>
+<span class="sd">            _#      - Word-final (e.g., ca_#)</span>
+<span class="sd">            V_V     - Between vowels (intervocalic)</span>
+<span class="sd">            C_C     - Between consonants</span>
+<span class="sd">            N_      - After nasal</span>
+<span class="sd">            _P      - Before stop</span>
+<span class="sd">            $._     - Syllable-initial</span>
+<span class="sd">            _.$     - Syllable-final</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetStringRepresentation, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">,</span> <span class="s2">&quot;env_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
+        <span class="c1"># Note: StringRepresentation is ITsString, not IMultiUnicode</span>
+        <span class="c1"># so we access .Text directly (wsHandle is unused for this property)</span>
+        <span class="n">notation</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">StringRepresentation</span><span class="o">.</span><span class="n">Text</span> <span class="k">if</span> <span class="n">env</span><span class="o">.</span><span class="n">StringRepresentation</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">notation</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetStringRepresentation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">,</span> <span class="n">notation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the string representation (notation) of a phonological environment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env_or_hvo: The IPhEnvironment object or HVO.</span>
+<span class="sd">            notation (str): The environment representation (e.g., &quot;V_V&quot;, &quot;#_&quot;, &quot;_#&quot;).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If env_or_hvo or notation is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; # Create and define common environments</span>
+<span class="sd">            &gt;&gt;&gt; word_initial = envOps.Create(&quot;Word Initial&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; envOps.SetStringRepresentation(word_initial, &quot;#_&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; word_final = envOps.Create(&quot;Word Final&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; envOps.SetStringRepresentation(word_final, &quot;_#&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; between_vowels = envOps.Create(&quot;Between Vowels&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; envOps.SetStringRepresentation(between_vowels, &quot;V_V&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Complex environment: after nasal, before stop</span>
+<span class="sd">            &gt;&gt;&gt; env = envOps.Create(&quot;Nasal-Stop Cluster&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; envOps.SetStringRepresentation(env, &quot;N_P&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Use standard phonological environment notation</span>
+<span class="sd">            - Underscore (_) marks the target position</span>
+<span class="sd">            - Reference natural classes using their abbreviations (V, C, N, P)</span>
+<span class="sd">            - Can specify complex environments with multiple contexts</span>
+<span class="sd">            - Empty string is allowed for unrestricted environment</span>
+
+<span class="sd">        Notation Guide:</span>
+<span class="sd">            _       - Target position (required)</span>
+<span class="sd">            #       - Word boundary</span>
+<span class="sd">            $       - Syllable boundary</span>
+<span class="sd">            V       - Vowel (natural class)</span>
+<span class="sd">            C       - Consonant (natural class)</span>
+<span class="sd">            N       - Nasal (natural class)</span>
+<span class="sd">            P       - Stop (natural class)</span>
+<span class="sd">            |       - Disjunction (or)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetStringRepresentation, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">,</span> <span class="s2">&quot;env_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">notation</span><span class="p">,</span> <span class="s2">&quot;notation&quot;</span><span class="p">)</span>
+
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Note: StringRepresentation is ITsString, assign directly (not set_String)</span>
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">notation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">env</span><span class="o">.</span><span class="n">StringRepresentation</span> <span class="o">=</span> <span class="n">mkstr</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLeftContextPattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the left context pattern of a phonological environment (READ-ONLY).</span>
+
+<span class="sd">        This is a computed property that returns the left context specification</span>
+<span class="sd">        of the environment, representing what must precede the target position.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env_or_hvo: The IPhEnvironment object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object or None: The left context object (IPhPhonContext) if set,</span>
+<span class="sd">                None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If env_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; env = envOps.Create(&quot;After Vowel&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; left_ctx = envOps.GetLeftContextPattern(env)</span>
+<span class="sd">            &gt;&gt;&gt; if left_ctx:</span>
+<span class="sd">            ...     print(f&quot;Has left context: {left_ctx}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; else:</span>
+<span class="sd">            ...     print(&quot;No left context constraint&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check all environments for left context</span>
+<span class="sd">            &gt;&gt;&gt; for env in envOps.GetAll():</span>
+<span class="sd">            ...     name = envOps.GetName(env)</span>
+<span class="sd">            ...     left_ctx = envOps.GetLeftContextPattern(env)</span>
+<span class="sd">            ...     if left_ctx:</span>
+<span class="sd">            ...         print(f&quot;{name} has left context&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is a READ-ONLY property (no setter)</span>
+<span class="sd">            - Returns the LeftContextOA object if present</span>
+<span class="sd">            - Left context specifies what must precede the target</span>
+<span class="sd">            - Returns None if no left context is defined</span>
+<span class="sd">            - The returned object is typically an IPhPhonContext</span>
+<span class="sd">            - Use this to inspect or analyze environment structure</span>
+<span class="sd">            - Not intended for modification (use SetLeftContext for that)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetRightContextPattern, GetStringRepresentation, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">,</span> <span class="s2">&quot;env_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Return the left context if it exists</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s2">&quot;LeftContextOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">env</span><span class="o">.</span><span class="n">LeftContextOA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">env</span><span class="o">.</span><span class="n">LeftContextOA</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetRightContextPattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the right context pattern of a phonological environment (READ-ONLY).</span>
+
+<span class="sd">        This is a computed property that returns the right context specification</span>
+<span class="sd">        of the environment, representing what must follow the target position.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env_or_hvo: The IPhEnvironment object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object or None: The right context object (IPhPhonContext) if set,</span>
+<span class="sd">                None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If env_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; env = envOps.Create(&quot;Before Consonant&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; right_ctx = envOps.GetRightContextPattern(env)</span>
+<span class="sd">            &gt;&gt;&gt; if right_ctx:</span>
+<span class="sd">            ...     print(f&quot;Has right context: {right_ctx}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; else:</span>
+<span class="sd">            ...     print(&quot;No right context constraint&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check all environments for right context</span>
+<span class="sd">            &gt;&gt;&gt; for env in envOps.GetAll():</span>
+<span class="sd">            ...     name = envOps.GetName(env)</span>
+<span class="sd">            ...     right_ctx = envOps.GetRightContextPattern(env)</span>
+<span class="sd">            ...     if right_ctx:</span>
+<span class="sd">            ...         print(f&quot;{name} has right context&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is a READ-ONLY property (no setter)</span>
+<span class="sd">            - Returns the RightContextOA object if present</span>
+<span class="sd">            - Right context specifies what must follow the target</span>
+<span class="sd">            - Returns None if no right context is defined</span>
+<span class="sd">            - The returned object is typically an IPhPhonContext</span>
+<span class="sd">            - Use this to inspect or analyze environment structure</span>
+<span class="sd">            - Not intended for modification (use SetRightContext for that)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetLeftContextPattern, GetStringRepresentation, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">,</span> <span class="s2">&quot;env_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Return the right context if it exists</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s2">&quot;RightContextOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">env</span><span class="o">.</span><span class="n">RightContextOA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">env</span><span class="o">.</span><span class="n">RightContextOA</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a phonological environment, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The IPhEnvironment object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source environment.</span>
+<span class="sd">                                If False, insert at end of environments list.</span>
+<span class="sd">            deep (bool): If True (default), deep copy owned context objects (LeftContextOA, RightContextOA).</span>
+<span class="sd">                        If False, contexts are not copied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhEnvironment: The newly created duplicate environment with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; word_initial = envOps.Create(&quot;Word Initial&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; envOps.SetStringRepresentation(word_initial, &quot;#_&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Deep copy (default - includes owned context objects)</span>
+<span class="sd">            &gt;&gt;&gt; copy = envOps.Duplicate(word_initial)</span>
+<span class="sd">            &gt;&gt;&gt; print(envOps.GetName(copy))</span>
+<span class="sd">            Word Initial</span>
+
+<span class="sd">            &gt;&gt;&gt; # Shallow copy (no context objects)</span>
+<span class="sd">            &gt;&gt;&gt; between_vowels = envOps.Create(&quot;Between Vowels&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; copy = envOps.Duplicate(between_vowels, deep=False)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original environment&#39;s position</span>
+<span class="sd">            - Simple properties copied: Name, Description, StringRepresentation (MultiString)</span>
+<span class="sd">            - deep=True copies owned context objects (LeftContextOA, RightContextOA)</span>
+<span class="sd">            - Contexts are complex structures with their own owned objects</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source environment</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Create new environment using factory (auto-generates new GUID)</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPhEnvironmentFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate environment&quot;</span><span class="p">):</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to environments list</span>
+            <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+            <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                <span class="n">source_index</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">EnvironmentsOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                <span class="n">phon_data</span><span class="o">.</span><span class="n">EnvironmentsOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">phon_data</span><span class="o">.</span><span class="n">EnvironmentsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy simple MultiString properties (AFTER adding to parent)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+            <span class="c1"># Copy StringRepresentation (ITsString, not MultiString)</span>
+            <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">StringRepresentation</span><span class="p">:</span>
+                <span class="n">notation</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">StringRepresentation</span><span class="o">.</span><span class="n">Text</span>
+                <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">notation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">StringRepresentation</span> <span class="o">=</span> <span class="n">mkstr</span>
+
+            <span class="c1"># Deep copy: owned context objects</span>
+            <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">clone_properties</span>
+
+                <span class="c1"># Copy LeftContextOA if exists</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;LeftContextOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">LeftContextOA</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="c1"># Create new context object of the same type</span>
+                        <span class="n">src_context</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">LeftContextOA</span>
+                        <span class="n">new_context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">ObjectRepository</span><span class="o">.</span><span class="n">NewObject</span><span class="p">(</span><span class="n">src_context</span><span class="o">.</span><span class="n">ClassID</span><span class="p">)</span>
+                        <span class="c1"># Deep clone all properties</span>
+                        <span class="n">clone_properties</span><span class="p">(</span><span class="n">src_context</span><span class="p">,</span> <span class="n">new_context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
+                        <span class="n">duplicate</span><span class="o">.</span><span class="n">LeftContextOA</span> <span class="o">=</span> <span class="n">new_context</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="k">pass</span>
+
+                <span class="c1"># Copy RightContextOA if exists</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;RightContextOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">RightContextOA</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="c1"># Create new context object of the same type</span>
+                        <span class="n">src_context</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">RightContextOA</span>
+                        <span class="n">new_context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">ObjectRepository</span><span class="o">.</span><span class="n">NewObject</span><span class="p">(</span><span class="n">src_context</span><span class="o">.</span><span class="n">ClassID</span><span class="p">)</span>
+                        <span class="c1"># Deep clone all properties</span>
+                        <span class="n">clone_properties</span><span class="p">(</span><span class="n">src_context</span><span class="p">,</span> <span class="n">new_context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
+                        <span class="n">duplicate</span><span class="o">.</span><span class="n">RightContextOA</span> <span class="o">=</span> <span class="n">new_context</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="k">pass</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IPhEnvironment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env_or_hvo: Either an IPhEnvironment object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhEnvironment: The resolved environment object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">env_or_hvo</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The IPhEnvironment object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary mapping property names to their values.</span>
+<span class="sd">                Keys are property names, values are the property values.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; envOps = EnvironmentOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; env = list(envOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; props = envOps.GetSyncableProperties(env)</span>
+<span class="sd">            &gt;&gt;&gt; print(props.keys())</span>
+<span class="sd">            dict_keys([&#39;Name&#39;, &#39;Description&#39;, &#39;StringRepresentation&#39;])</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns all MultiString properties (all writing systems)</span>
+<span class="sd">            - Does not include owned objects (LeftContextOA, RightContextOA)</span>
+<span class="sd">            - Does not include GUID or HVO</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="c1"># Get all writing systems for MultiString properties</span>
+        <span class="c1"># Fix: ILgWritingSystemFactory does not expose a .WritingSystems</span>
+        <span class="c1"># property; enumerate via the wrapper&#39;s WritingSystemOperations.GetAll(),</span>
+        <span class="c1"># which returns CoreWritingSystemDefinition objects with .Id / .Handle.</span>
+        <span class="n">all_ws</span> <span class="o">=</span> <span class="p">{</span><span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()}</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties</span>
+        <span class="k">for</span> <span class="n">prop_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">,</span> <span class="s2">&quot;StringRepresentation&quot;</span><span class="p">]:</span>
+            <span class="n">prop_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
+            <span class="n">ws_values</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">ws_id</span><span class="p">,</span> <span class="n">ws_handle</span> <span class="ow">in</span> <span class="n">all_ws</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">prop_obj</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                <span class="k">if</span> <span class="n">text</span><span class="p">:</span>  <span class="c1"># Only include non-empty values</span>
+                    <span class="n">ws_values</span><span class="p">[</span><span class="n">ws_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+            <span class="k">if</span> <span class="n">ws_values</span><span class="p">:</span>  <span class="c1"># Only include property if it has values</span>
+                <span class="n">props</span><span class="p">[</span><span class="n">prop_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ws_values</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply syncable properties (from GetSyncableProperties) onto an item.</span>
+
+<span class="sd">        Inherited from BaseOperations; declared on the concrete class so static</span>
+<span class="sd">        API indexers see it. The base implementation handles every property</span>
+<span class="sd">        shape this class&#39;s GetSyncableProperties emits.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two environments and return detailed differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First environment to compare (from source project).</span>
+<span class="sd">            item2: Second environment to compare (from target project).</span>
+<span class="sd">            ops1: Optional EnvironmentOperations instance for item1&#39;s project.</span>
+<span class="sd">                 Defaults to self.</span>
+<span class="sd">            ops2: Optional EnvironmentOperations instance for item2&#39;s project.</span>
+<span class="sd">                 Defaults to self.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences) where:</span>
+<span class="sd">                - is_different (bool): True if items differ</span>
+<span class="sd">                - differences (dict): Maps property names to (value1, value2) tuples</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; env1 = project1_envOps.Find(&quot;Word Initial&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; env2 = project2_envOps.Find(&quot;Word Initial&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = project1_envOps.CompareTo(</span>
+<span class="sd">            ...     env1, env2,</span>
+<span class="sd">            ...     ops1=project1_envOps,</span>
+<span class="sd">            ...     ops2=project2_envOps</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} -&gt; {val2}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Compares all MultiString properties across all writing systems</span>
+<span class="sd">            - Returns empty dict if items are identical</span>
+<span class="sd">            - Handles cross-project comparison via ops1/ops2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="c1"># Get syncable properties from both items</span>
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Compare each property</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="c1"># For MultiString properties, compare the dictionaries</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">is_different</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.EnvironmentOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

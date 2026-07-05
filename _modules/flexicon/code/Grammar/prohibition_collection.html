@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Grammar.prohibition_collection &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.prohibition_collection</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Grammar.prohibition_collection</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   prohibition_collection.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ProhibitionCollection</span>
+<span class="c1">#          Smart collection for ad hoc prohibition objects with type-aware</span>
+<span class="c1">#          filtering and unified access across multiple concrete types.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Smart collection class for ad hoc morphosyntactic prohibitions.</span>
+
+<span class="sd">This module provides ProhibitionCollection, a smart collection that manages</span>
+<span class="sd">ad hoc prohibitions while showing type diversity and supporting unified</span>
+<span class="sd">operations across the three concrete types:</span>
+<span class="sd">- MoAdhocProhibGr (Grammatical feature prohibitions)</span>
+<span class="sd">- MoAdhocProhibMorph (Morpheme co-occurrence prohibitions)</span>
+<span class="sd">- MoAdhocProhibAllomorph (Allomorph co-occurrence prohibitions)</span>
+
+<span class="sd">Problem:</span>
+<span class="sd">    GetAllAdhocCoProhibitions() returns objects with multiple concrete</span>
+<span class="sd">    implementations. Users need to:</span>
+
+<span class="sd">    - See which types are in the collection</span>
+<span class="sd">    - Filter by type if they want to</span>
+<span class="sd">    - Work with all types together without manual casting</span>
+<span class="sd">    - Filter by common properties that work across all types</span>
+
+<span class="sd">Solution:</span>
+<span class="sd">    ProhibitionCollection provides:</span>
+
+<span class="sd">    - __str__() showing type breakdown</span>
+<span class="sd">    - by_type() filtering to specific concrete types</span>
+<span class="sd">    - filter() for filtering by prohibition type</span>
+<span class="sd">    - grammatical_prohibitions(), morpheme_prohibitions(),</span>
+<span class="sd">      allomorph_prohibitions() convenience filters</span>
+<span class="sd">    - where() for custom filtering</span>
+<span class="sd">    - Chainable filtering: prohibitions.morpheme_prohibitions()</span>
+
+<span class="sd">Example::</span>
+
+<span class="sd">    from flexlibs2.code.Grammar.prohibition_collection import ProhibitionCollection</span>
+
+<span class="sd">    # GetAllAdhocCoProhibitions() now returns ProhibitionCollection</span>
+<span class="sd">    prohibitions = morphRuleOps.GetAllAdhocCoProhibitions()</span>
+<span class="sd">    print(prohibitions)  # Shows type breakdown</span>
+<span class="sd">    # ProhibitionCollection (12 total)</span>
+<span class="sd">    #   MoAdhocProhibGr: 5 (42%)</span>
+<span class="sd">    #   MoAdhocProhibMorph: 4 (33%)</span>
+<span class="sd">    #   MoAdhocProhibAllomorph: 3 (25%)</span>
+
+<span class="sd">    # Filter by type</span>
+<span class="sd">    morph_only = prohibitions.morpheme_prohibitions()</span>
+<span class="sd">    print(len(morph_only))  # 4</span>
+
+<span class="sd">    # Filter by custom predicate</span>
+<span class="sd">    named_prohibitions = prohibitions.where(lambda p: p.guid is not None)</span>
+
+<span class="sd">    # Chain filters</span>
+<span class="sd">    morph_with_guid = prohibitions.morpheme_prohibitions().where(</span>
+<span class="sd">        lambda p: p.guid is not None</span>
+<span class="sd">    )</span>
+
+<span class="sd">    # Iterate</span>
+<span class="sd">    for prohib in prohibitions:</span>
+<span class="sd">        print(prohib.prohibition_type)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.smart_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmartCollection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.adhoc_prohibition</span><span class="w"> </span><span class="kn">import</span> <span class="n">AdhocProhibition</span>
+
+
+<div class="viewcode-block" id="ProhibitionCollection">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.prohibition_collection.ProhibitionCollection">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProhibitionCollection</span><span class="p">(</span><span class="n">SmartCollection</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Smart collection for ad hoc prohibitions with type-aware filtering.</span>
+
+<span class="sd">    Manages collections of AdhocProhibition wrapper objects with type-aware</span>
+<span class="sd">    display and filtering capabilities. Supports filtering by prohibition</span>
+<span class="sd">    type and custom predicates.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        _items: List of AdhocProhibition wrapper objects</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        prohibitions = morphRuleOps.GetAllAdhocCoProhibitions()</span>
+<span class="sd">        print(prohibitions)  # Shows type breakdown</span>
+<span class="sd">        morph = prohibitions.morpheme_prohibitions()  # Type filter</span>
+<span class="sd">        custom = prohibitions.where(lambda p: p.is_morpheme_prohibition)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize a ProhibitionCollection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            items: Iterable of AdhocProhibition objects, or None for empty.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            collection = ProhibitionCollection()</span>
+<span class="sd">            collection = ProhibitionCollection([prohib1, prohib2, prohib3])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ProhibitionCollection.filter">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.prohibition_collection.ProhibitionCollection.filter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prohibition_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter the collection by prohibition type.</span>
+
+<span class="sd">        Supports filtering by prohibition type (grammatical, morpheme,</span>
+<span class="sd">        allomorph). For complex filtering, use where().</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            prohibition_type (str, optional): Filter by type. Accepts:</span>
+<span class="sd">                - &quot;Grammatical&quot; or &quot;grammatical&quot;</span>
+<span class="sd">                - &quot;Morpheme&quot; or &quot;morpheme&quot;</span>
+<span class="sd">                - &quot;Allomorph&quot; or &quot;allomorph&quot;</span>
+<span class="sd">                - &quot;Gr&quot; (abbreviation for Grammatical)</span>
+<span class="sd">                - &quot;Morph&quot; (abbreviation for Morpheme)</span>
+<span class="sd">                - &quot;Allo&quot; (abbreviation for Allomorph)</span>
+<span class="sd">            where (callable, optional): Custom predicate function. If provided,</span>
+<span class="sd">                prohibition_type is ignored.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ProhibitionCollection: New collection with filtered items.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            # Filter by type name</span>
+<span class="sd">            morph_prohibitions = prohibitions.filter(prohibition_type=&quot;Morpheme&quot;)</span>
+
+<span class="sd">            # Filter by abbreviation</span>
+<span class="sd">            gr_prohibitions = prohibitions.filter(prohibition_type=&quot;Gr&quot;)</span>
+
+<span class="sd">            # Custom filtering</span>
+<span class="sd">            has_guid = prohibitions.where(lambda p: p.guid is not None)</span>
+
+<span class="sd">            # Chain filters</span>
+<span class="sd">            morph_with_guid = prohibitions.filter(</span>
+<span class="sd">                prohibition_type=&quot;Morpheme&quot;</span>
+<span class="sd">            ).where(lambda p: p.guid is not None)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - prohibition_type is case-insensitive</span>
+<span class="sd">            - Abbreviations: &quot;Gr&quot;, &quot;Morph&quot;, &quot;Allo&quot;</span>
+<span class="sd">            - where() takes precedence over prohibition_type</span>
+<span class="sd">            - Returns new collection (doesn&#39;t modify original)</span>
+<span class="sd">            - Use where() for complex custom filtering</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If custom predicate provided, use it</span>
+        <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">where</span><span class="p">(</span><span class="n">item</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="n">ProhibitionCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span>
+
+        <span class="c1"># Apply prohibition_type filter</span>
+        <span class="k">if</span> <span class="n">prohibition_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Normalize prohibition_type for comparison</span>
+            <span class="n">prohib_type_lower</span> <span class="o">=</span> <span class="n">prohibition_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">prohib</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
+                <span class="n">prohib_type_norm</span> <span class="o">=</span> <span class="n">prohib</span><span class="o">.</span><span class="n">prohibition_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+                <span class="c1"># Check against full name</span>
+                <span class="k">if</span> <span class="n">prohib_type_norm</span> <span class="o">==</span> <span class="n">prohib_type_lower</span><span class="p">:</span>
+                    <span class="n">filtered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prohib</span><span class="p">)</span>
+                <span class="c1"># Check against abbreviations</span>
+                <span class="k">elif</span> <span class="n">prohib_type_lower</span> <span class="o">==</span> <span class="s2">&quot;gr&quot;</span> <span class="ow">and</span> <span class="n">prohib_type_norm</span> <span class="o">==</span> <span class="s2">&quot;grammatical&quot;</span><span class="p">:</span>
+                    <span class="n">filtered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prohib</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">prohib_type_lower</span> <span class="o">==</span> <span class="s2">&quot;morph&quot;</span> <span class="ow">and</span> <span class="n">prohib_type_norm</span> <span class="o">==</span> <span class="s2">&quot;morpheme&quot;</span><span class="p">:</span>
+                    <span class="n">filtered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prohib</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">prohib_type_lower</span> <span class="o">==</span> <span class="s2">&quot;allo&quot;</span> <span class="ow">and</span> <span class="n">prohib_type_norm</span> <span class="o">==</span> <span class="s2">&quot;allomorph&quot;</span><span class="p">:</span>
+                    <span class="n">filtered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prohib</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">ProhibitionCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span>
+
+        <span class="c1"># No filter applied, return copy of all items</span>
+        <span class="k">return</span> <span class="n">ProhibitionCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProhibitionCollection.where">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.prohibition_collection.ProhibitionCollection.where">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predicate</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter using a custom predicate function.</span>
+
+<span class="sd">        For filtering by complex criteria or properties not supported by</span>
+<span class="sd">        filter().</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            predicate (callable): Function that takes an AdhocProhibition</span>
+<span class="sd">                and returns True to include it in the result.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ProhibitionCollection: New collection with items matching the</span>
+<span class="sd">                predicate.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            # Prohibitions with non-empty GUID</span>
+<span class="sd">            has_guid = prohibitions.where(lambda p: p.guid is not None)</span>
+
+<span class="sd">            # Combining conditions</span>
+<span class="sd">            morph_with_guid = prohibitions.where(</span>
+<span class="sd">                lambda p: p.is_morpheme_prohibition and p.guid is not None</span>
+<span class="sd">            )</span>
+
+<span class="sd">            # Type checking combined with other criteria</span>
+<span class="sd">            non_grammatical = prohibitions.where(</span>
+<span class="sd">                lambda p: p.class_type != &quot;MoAdhocProhibGr&quot;</span>
+<span class="sd">            )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Predicate receives each AdhocProhibition object</span>
+<span class="sd">            - Return True to include in result, False to exclude</span>
+<span class="sd">            - For simple filters (type), use filter() instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">prohib</span> <span class="k">for</span> <span class="n">prohib</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">predicate</span><span class="p">(</span><span class="n">prohib</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">ProhibitionCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProhibitionCollection.grammatical_prohibitions">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.prohibition_collection.ProhibitionCollection.grammatical_prohibitions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">grammatical_prohibitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the grammatical feature prohibitions from the collection.</span>
+
+<span class="sd">        Convenience method for filtering to MoAdhocProhibGr objects only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ProhibitionCollection: New collection with only MoAdhocProhibGr</span>
+<span class="sd">                objects.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            grammatical = prohibitions.grammatical_prohibitions()</span>
+<span class="sd">            print(f&quot;Found {len(grammatical)} grammatical prohibitions&quot;)</span>
+
+<span class="sd">            # Chain with other filters</span>
+<span class="sd">            with_guid = prohibitions.grammatical_prohibitions().where(</span>
+<span class="sd">                lambda p: p.guid is not None</span>
+<span class="sd">            )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to filter(prohibition_type=&quot;Grammatical&quot;)</span>
+<span class="sd">            - Use is_grammatical_prohibition on individual items to check type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">prohibition_type</span><span class="o">=</span><span class="s2">&quot;Grammatical&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProhibitionCollection.morpheme_prohibitions">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.prohibition_collection.ProhibitionCollection.morpheme_prohibitions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">morpheme_prohibitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the morpheme co-occurrence prohibitions from the collection.</span>
+
+<span class="sd">        Convenience method for filtering to MoAdhocProhibMorph objects only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ProhibitionCollection: New collection with only MoAdhocProhibMorph</span>
+<span class="sd">                objects.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            morpheme = prohibitions.morpheme_prohibitions()</span>
+<span class="sd">            print(f&quot;Found {len(morpheme)} morpheme prohibitions&quot;)</span>
+
+<span class="sd">            # Chain with other filters</span>
+<span class="sd">            morph_subset = prohibitions.morpheme_prohibitions().where(</span>
+<span class="sd">                lambda p: p.MorphemeRA is not None</span>
+<span class="sd">            )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to filter(prohibition_type=&quot;Morpheme&quot;)</span>
+<span class="sd">            - Use is_morpheme_prohibition on individual items to check type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">prohibition_type</span><span class="o">=</span><span class="s2">&quot;Morpheme&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProhibitionCollection.allomorph_prohibitions">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.prohibition_collection.ProhibitionCollection.allomorph_prohibitions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">allomorph_prohibitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the allomorph variant prohibitions from the collection.</span>
+
+<span class="sd">        Convenience method for filtering to MoAdhocProhibAllomorph objects</span>
+<span class="sd">        only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ProhibitionCollection: New collection with only</span>
+<span class="sd">                MoAdhocProhibAllomorph objects.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            allomorph = prohibitions.allomorph_prohibitions()</span>
+<span class="sd">            print(f&quot;Found {len(allomorph)} allomorph prohibitions&quot;)</span>
+
+<span class="sd">            # Chain with other filters</span>
+<span class="sd">            allo_subset = prohibitions.allomorph_prohibitions().where(</span>
+<span class="sd">                lambda p: p.AllomorphRA is not None</span>
+<span class="sd">            )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to filter(prohibition_type=&quot;Allomorph&quot;)</span>
+<span class="sd">            - Use is_allomorph_prohibition on individual items to check type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">prohibition_type</span><span class="o">=</span><span class="s2">&quot;Allomorph&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Technical representation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;ProhibitionCollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items)&quot;</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.prohibition_collection</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

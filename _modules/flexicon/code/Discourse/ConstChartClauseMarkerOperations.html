@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Discourse.ConstChartClauseMarkerOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Discourse.ConstChartClauseMarkerOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Discourse.ConstChartClauseMarkerOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ConstChartClauseMarkerOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ConstChartClauseMarkerOperations</span>
+<span class="c1">#          Clause marker operations for constituent charts in FieldWorks</span>
+<span class="c1">#          Language Explorer projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IConstChartClauseMarker</span><span class="p">,</span>
+    <span class="n">IConstChartClauseMarkerFactory</span><span class="p">,</span>
+    <span class="n">IConstChartRow</span><span class="p">,</span>
+    <span class="n">IConstChartWordGroup</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ConstChartClauseMarkerOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Discourse.html#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConstChartClauseMarkerOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing clause markers in constituent</span>
+<span class="sd">    charts for discourse analysis in FieldWorks projects.</span>
+
+<span class="sd">    Clause markers identify clausal relationships and dependencies within the</span>
+<span class="sd">    discourse structure. They link word groups and mark clause boundaries.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.ConstChartClauseMarkers property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get a row and word group</span>
+<span class="sd">        chart = project.ConstCharts.Find(&quot;Genesis 1 Analysis&quot;)</span>
+<span class="sd">        row = project.ConstChartRows.Find(chart, 0)</span>
+<span class="sd">        wg = project.ConstChartWordGroups.Find(row, 0)</span>
+
+<span class="sd">        # Create a clause marker</span>
+<span class="sd">        marker = project.ConstChartClauseMarkers.Create(row, wg)</span>
+
+<span class="sd">        # Get all markers in a row</span>
+<span class="sd">        for marker in project.ConstChartClauseMarkers.GetAll(row):</span>
+<span class="sd">            # Process clause marker</span>
+<span class="sd">            pass</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ConstChartClauseMarkerOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">,</span> <span class="n">word_group</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new clause marker in a chart row.</span>
+
+<span class="sd">        Clause markers mark clausal boundaries and dependencies in the discourse</span>
+<span class="sd">        analysis. They associate with word groups to identify clause structure.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or its HVO</span>
+<span class="sd">            word_group: IConstChartWordGroup object this marker refers to</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartClauseMarker: The newly created clause marker object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If row_or_hvo or word_group is None</span>
+<span class="sd">            FP_ParameterError: If word_group is invalid type</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 0)</span>
+<span class="sd">            &gt;&gt;&gt; wg = project.ConstChartWordGroups.Find(row, 0)</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartClauseMarkers.Create(row, wg)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Marker is appended to the row&#39;s clause markers collection</span>
+<span class="sd">            - Each marker identifies a clause boundary or relationship</span>
+<span class="sd">            - Factory.Create() automatically adds marker to repository</span>
+<span class="sd">            - Markers can have dependent clauses attached</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Find, GetWordGroup, AddDependentClause</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">word_group</span><span class="p">,</span> <span class="s2">&quot;word_group&quot;</span><span class="p">)</span>
+
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRow</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Validate word group</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">word_group</span><span class="p">,</span> <span class="n">IConstChartWordGroup</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;word_group must be an IConstChartWordGroup object&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create clause marker&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the new clause marker using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IConstChartClauseMarkerFactory</span><span class="p">)</span>
+            <span class="n">new_marker</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to row&#39;s clause markers collection</span>
+            <span class="c1"># Note: In FLEx, clause markers may be stored in different collections</span>
+            <span class="c1"># depending on the chart structure. This assumes a ClauseMarkersOS collection.</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s2">&quot;ClauseMarkersOS&quot;</span><span class="p">):</span>
+                <span class="n">row</span><span class="o">.</span><span class="n">ClauseMarkersOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_marker</span><span class="p">)</span>
+
+            <span class="c1"># Set the word group reference</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_marker</span><span class="p">,</span> <span class="s2">&quot;WordGroupRA&quot;</span><span class="p">):</span>
+                <span class="n">new_marker</span><span class="o">.</span><span class="n">WordGroupRA</span> <span class="o">=</span> <span class="n">word_group</span>
+
+            <span class="k">return</span> <span class="n">new_marker</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a clause marker from its row.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_or_hvo: Either an IConstChartClauseMarker object or its HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If marker_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartClauseMarkers.Find(row, 0)</span>
+<span class="sd">            &gt;&gt;&gt; if marker:</span>
+<span class="sd">            ...     project.ConstChartClauseMarkers.Delete(marker)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - Dependent clause references will be lost</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Deletion cascades to all owned relationships</span>
+<span class="sd">            - Remaining markers maintain their order</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to marker object</span>
+        <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Delete the marker (LCM handles removal from repository)</span>
+        <span class="n">marker</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a clause marker in a row by its index position.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or its HVO</span>
+<span class="sd">            index (int): Zero-based index of the marker to find</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartClauseMarker or None: The marker if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If row_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 0)</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartClauseMarkers.Find(row, 0)</span>
+<span class="sd">            &gt;&gt;&gt; if marker:</span>
+<span class="sd">            ...     wg = project.ConstChartClauseMarkers.GetWordGroup(marker)</span>
+<span class="sd">            ...     print(f&quot;Marker references word group {wg.Hvo}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Index is zero-based (0 = first marker)</span>
+<span class="sd">            - Returns None if index out of range</span>
+<span class="sd">            - More efficient than iterating GetAll()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRow</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s2">&quot;ClauseMarkersOS&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="n">row</span><span class="o">.</span><span class="n">ClauseMarkersOS</span><span class="o">.</span><span class="n">Count</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="n">row</span><span class="o">.</span><span class="n">ClauseMarkersOS</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all clause markers in a chart row.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IConstChartClauseMarker objects (empty list if none)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If row_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 0)</span>
+<span class="sd">            &gt;&gt;&gt; markers = project.ConstChartClauseMarkers.GetAll(row)</span>
+<span class="sd">            &gt;&gt;&gt; for marker in markers:</span>
+<span class="sd">            ...     wg = project.ConstChartClauseMarkers.GetWordGroup(marker)</span>
+<span class="sd">            ...     print(f&quot;Marker for word group {wg.Hvo}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if row has no clause markers</span>
+<span class="sd">            - Markers are in row order</span>
+<span class="sd">            - Each marker identifies a clause boundary</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRow</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s2">&quot;ClauseMarkersOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">ClauseMarkersOS</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># --- Marker Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetWordGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the word group associated with a clause marker.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_or_hvo: Either an IConstChartClauseMarker object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartWordGroup or None: The word group, or None if not set</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If marker_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartClauseMarkers.Find(row, 0)</span>
+<span class="sd">            &gt;&gt;&gt; wg = project.ConstChartClauseMarkers.GetWordGroup(marker)</span>
+<span class="sd">            &gt;&gt;&gt; if wg:</span>
+<span class="sd">            ...     print(f&quot;Marker references word group {wg.Hvo}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if word group reference not set</span>
+<span class="sd">            - Word group is from the same or related row</span>
+<span class="sd">            - Each marker should reference a word group</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetDependentClauses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">marker</span><span class="o">.</span><span class="n">WordGroupRA</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">marker</span><span class="p">,</span> <span class="s2">&quot;WordGroupRA&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDependentClauses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the dependent clauses associated with a clause marker.</span>
+
+<span class="sd">        Dependent clauses show the hierarchical structure of clausal relationships</span>
+<span class="sd">        in the discourse.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_or_hvo: Either an IConstChartClauseMarker object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of dependent clause markers (empty list if none)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If marker_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartClauseMarkers.Find(row, 0)</span>
+<span class="sd">            &gt;&gt;&gt; dependents = project.ConstChartClauseMarkers.GetDependentClauses(marker)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Marker has {len(dependents)} dependent clauses&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if no dependent clauses</span>
+<span class="sd">            - Dependent clauses form a hierarchy</span>
+<span class="sd">            - Used to mark embedded or subordinate clauses</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddDependentClause, GetWordGroup</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">marker</span><span class="p">,</span> <span class="s2">&quot;DependentClausesRS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">DependentClausesRS</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddDependentClause</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">,</span> <span class="n">clause_marker</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a dependent clause to a clause marker.</span>
+
+<span class="sd">        Creates a hierarchical relationship showing that one clause is dependent</span>
+<span class="sd">        on another in the discourse structure.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_or_hvo: Either an IConstChartClauseMarker object or its HVO</span>
+<span class="sd">            clause_marker: IConstChartClauseMarker object to add as dependent</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If marker_or_hvo or clause_marker is None</span>
+<span class="sd">            FP_ParameterError: If clause_marker is invalid type</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create main clause marker</span>
+<span class="sd">            &gt;&gt;&gt; main_marker = project.ConstChartClauseMarkers.Create(row, main_wg)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Create dependent clause marker</span>
+<span class="sd">            &gt;&gt;&gt; dep_marker = project.ConstChartClauseMarkers.Create(row, dep_wg)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Add as dependent</span>
+<span class="sd">            &gt;&gt;&gt; project.ConstChartClauseMarkers.AddDependentClause(</span>
+<span class="sd">            ...     main_marker, dep_marker)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Creates hierarchical clause structure</span>
+<span class="sd">            - Dependent clause is subordinate to main clause</span>
+<span class="sd">            - Multiple dependents can be added to one marker</span>
+<span class="sd">            - Circular dependencies should be avoided</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDependentClauses, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">clause_marker</span><span class="p">,</span> <span class="s2">&quot;clause_marker&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">clause_marker</span><span class="p">,</span> <span class="n">IConstChartClauseMarker</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;clause_marker must be an IConstChartClauseMarker object&quot;</span><span class="p">)</span>
+
+        <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Add to dependent clauses collection</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">marker</span><span class="p">,</span> <span class="s2">&quot;DependentClausesRS&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">clause_marker</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">marker</span><span class="o">.</span><span class="n">DependentClausesRS</span><span class="p">:</span>
+                <span class="n">marker</span><span class="o">.</span><span class="n">DependentClausesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">clause_marker</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IConstChartClauseMarker.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_or_hvo: Either an IConstChartClauseMarker object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartClauseMarker: The resolved marker object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a clause marker</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IConstChartClauseMarker</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a clause marker&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">marker_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveRow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IConstChartRow.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: Either an IConstChartRow object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartRow: The resolved row object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a chart row</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IConstChartRow</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a chart row&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">row_or_hvo</span>
+
+    <span class="c1"># --- Reordering Support ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the owning sequence for clause markers.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent: The parent IConstChartRow object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILcmOwningSequence: The ClauseMarkersOS sequence</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Required for BaseOperations reordering methods</span>
+<span class="sd">            - Returns the ClauseMarkersOS collection from the row</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;ClauseMarkersOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">ClauseMarkersOS</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Row does not have a ClauseMarkersOS collection. &quot;</span>
+            <span class="s2">&quot;Clause marker reordering may not be applicable to this row structure.&quot;</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Discourse.ConstChartClauseMarkerOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

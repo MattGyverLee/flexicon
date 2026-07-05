@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.TextsWords.SegmentOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.TextsWords.SegmentOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.TextsWords.SegmentOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   SegmentOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: SegmentOperations</span>
+<span class="c1">#          Segment operations for FieldWorks Language Explorer projects</span>
+<span class="c1">#          via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ISegment</span><span class="p">,</span>
+    <span class="n">ISegmentFactory</span><span class="p">,</span>
+    <span class="n">IStTxtPara</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_NullParameterError</span><span class="p">,</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+    <span class="n">FP_ReadOnlyError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># MergeSegments translation_policy constants</span>
+<span class="c1"># Use these instead of bare strings to avoid silent routing to the wrong branch.</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="n">TRANSLATION_POLICY_MIGRATE</span> <span class="o">=</span> <span class="s2">&quot;migrate&quot;</span>
+<span class="n">TRANSLATION_POLICY_DISCARD</span> <span class="o">=</span> <span class="s2">&quot;discard&quot;</span>
+<span class="n">TRANSLATION_POLICY_REJECT</span> <span class="o">=</span> <span class="s2">&quot;reject&quot;</span>
+
+<span class="n">_VALID_TRANSLATION_POLICIES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">TRANSLATION_POLICY_MIGRATE</span><span class="p">,</span>
+    <span class="n">TRANSLATION_POLICY_DISCARD</span><span class="p">,</span>
+    <span class="n">TRANSLATION_POLICY_REJECT</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="SegmentOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.SegmentOperations.SegmentOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SegmentOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing segments in a FieldWorks project.</span>
+
+<span class="sd">    Segments represent the units of text analysis in FLEx, typically sentences</span>
+<span class="sd">    or clauses within paragraphs. Each segment can have baseline text, analyses,</span>
+<span class="sd">    translations (free and literal), and notes.</span>
+
+<span class="sd">    The write path follows the LCM idiom:</span>
+
+<span class="sd">    1. Edit IStTxtPara.Contents (via TsStringBuilder) first.</span>
+<span class="sd">    2. Assign builder.GetString() to para.Contents - this fires ContentsSideEffects</span>
+<span class="sd">       which triggers AnalysisAdjuster to reconcile segment offsets automatically.</span>
+<span class="sd">    3. Then update SegmentsOS (Add/Insert/Remove) as needed.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get all segments in a paragraph</span>
+<span class="sd">        para = project.Object(para_hvo)</span>
+<span class="sd">        for segment in project.Segments.GetAll(para):</span>
+<span class="sd">            baseline = project.Segments.GetBaselineText(segment)</span>
+<span class="sd">            print(baseline)</span>
+
+<span class="sd">        # Append a new sentence to a paragraph</span>
+<span class="sd">        new_seg = project.Segments.AppendSentence(para, &quot;A new sentence.&quot;)</span>
+
+<span class="sd">        # Split a segment at a character offset within that segment</span>
+<span class="sd">        seg1, seg2 = project.Segments.SplitSegment(new_seg, 5)</span>
+
+<span class="sd">        # Merge two adjacent segments (migrates translations by default)</span>
+<span class="sd">        merged = project.Segments.MergeSegments(seg1, seg2)</span>
+
+<span class="sd">        # Set translations on a segment</span>
+<span class="sd">        project.Segments.SetFreeTranslation(merged, &quot;In the beginning...&quot;)</span>
+<span class="sd">        project.Segments.SetLiteralTranslation(merged, &quot;In-the beginning...&quot;)</span>
+
+<span class="sd">        # Reparse a paragraph from its Contents (use only to repair corruption)</span>
+<span class="sd">        project.Segments.ReparseParagraph(para)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize SegmentOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Specify which sequence to reorder for segment analyses (reference sequence).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">AnalysesRS</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper for writing system handles (analysis).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Writing system handle or None for default analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleVern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper for writing system handles (vernacular).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Writing system handle or None for default vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetParagraphObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper to get paragraph object from HVO or object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            para_or_hvo: IStTxtPara object or HVO integer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IStTxtPara: The paragraph object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">para_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetSegmentObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper to get segment object from HVO or object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: ISegment object or HVO integer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ISegment: The segment object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">segment_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetSegmentFactory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the ISegmentFactory from the service locator.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ISegmentFactory</span><span class="p">)</span>
+
+    <span class="c1"># ========== READ METHODS ==========</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all segments in a paragraph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paragraph_or_hvo: The IStTxtPara object or HVO.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ISegment: Each segment in the paragraph.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If paragraph_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = project.Object(para_hvo)</span>
+<span class="sd">            &gt;&gt;&gt; for segment in project.Segments.GetAll(para):</span>
+<span class="sd">            ...     text = project.Segments.GetBaselineText(segment)</span>
+<span class="sd">            ...     print(text)</span>
+<span class="sd">            In the beginning God created the heavens and the earth.</span>
+<span class="sd">            Now the earth was formless and empty.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetBaselineText, GetFreeTranslation, GetAnalyses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;paragraph_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">para_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
+        <span class="n">segments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">para_obj</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">segments</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">segment</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAnalyses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all analyses (wordforms and their linguistic analyses) for a segment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IAnalysis objects representing the wordforms in the segment.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; analyses = project.Segments.GetAnalyses(segment)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Segment has {len(analyses)} wordforms&quot;)</span>
+<span class="sd">            Segment has 5 wordforms</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, GetBaselineText</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            Each analysis can be an IWfiWordform, IWfiGloss, or IWfiAnalysis object.</span>
+<span class="sd">            These represent different levels of linguistic analysis for each word.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+        <span class="n">analyses</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">segment_obj</span><span class="o">.</span><span class="n">AnalysesRS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">analyses</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetBaselineText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the baseline text of a segment (the original text in the vernacular language).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The baseline text, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Segments.GetBaselineText(segment)</span>
+<span class="sd">            &gt;&gt;&gt; print(text)</span>
+<span class="sd">            In the beginning God created the heavens and the earth.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetFreeTranslation, GetLiteralTranslation, GetAnalyses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+        <span class="c1"># ISegment.BaselineText is ITsString (WS already resolved by LCM),</span>
+        <span class="c1"># not ITsMultiString.  Calling .get_String(ws) on it raises</span>
+        <span class="c1"># AttributeError at runtime.  See issue #170.</span>
+        <span class="k">return</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">BaselineText</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetBaselineText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the baseline text of a segment by editing the owning paragraph Contents.</span>
+
+<span class="sd">        The correct write idiom is to edit IStTxtPara.Contents via a TsStrBldr;</span>
+<span class="sd">        ContentsSideEffects then fires AnalysisAdjuster.AdjustAnalysis which</span>
+<span class="sd">        reconciles segment offsets automatically.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+<span class="sd">            text: The baseline text to set.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If segment has no owning paragraph.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; project.Segments.SetBaselineText(segment, &quot;In the beginning...&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetBaselineText, SetFreeTranslation, SetLiteralTranslation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">para</span> <span class="o">=</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">Paragraph</span>
+        <span class="k">if</span> <span class="n">para</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Segment has no owning paragraph; cannot write BaselineText&quot;</span><span class="p">)</span>
+        <span class="n">begin</span> <span class="o">=</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">BeginOffset</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">EndOffset</span>
+        <span class="n">bldr</span> <span class="o">=</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">GetBldr</span><span class="p">()</span>
+        <span class="n">new_run</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+        <span class="n">bldr</span><span class="o">.</span><span class="n">ReplaceTsString</span><span class="p">(</span><span class="n">begin</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">new_run</span><span class="p">)</span>
+        <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">bldr</span><span class="o">.</span><span class="n">GetString</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFreeTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the free translation for a segment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The free translation text, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; trans = project.Segments.GetFreeTranslation(segment)</span>
+<span class="sd">            &gt;&gt;&gt; print(trans)</span>
+<span class="sd">            In the beginning God created the heavens and the earth.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetFreeTranslation, GetLiteralTranslation, GetBaselineText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">FreeTranslation</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">segment_obj</span><span class="o">.</span><span class="n">FreeTranslation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">return</span> <span class="n">text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetFreeTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the free translation for a segment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+<span class="sd">            text: The free translation text to set.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; project.Segments.SetFreeTranslation(segment, &quot;In the beginning God created...&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetFreeTranslation, SetLiteralTranslation, SetBaselineText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+        <span class="n">segment_obj</span><span class="o">.</span><span class="n">FreeTranslation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLiteralTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the literal (word-for-word) translation of a segment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The literal translation text, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; trans = project.Segments.GetLiteralTranslation(segment)</span>
+<span class="sd">            &gt;&gt;&gt; print(trans)</span>
+<span class="sd">            In-the beginning God created the-heavens and-the-earth</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetLiteralTranslation, GetFreeTranslation, GetBaselineText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">segment_obj</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">return</span> <span class="n">text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLiteralTranslation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the literal (word-for-word) translation of a segment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+<span class="sd">            text: The literal translation text to set.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; project.Segments.SetLiteralTranslation(segment, &quot;In-the beginning God created...&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetLiteralTranslation, SetFreeTranslation, SetBaselineText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+        <span class="n">segment_obj</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetNotes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all notes associated with a segment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of note objects associated with the segment.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; notes = project.Segments.GetNotes(segment)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Segment has {len(notes)} notes&quot;)</span>
+<span class="sd">            Segment has 2 notes</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, GetBaselineText, GetFreeTranslation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">segment_obj</span><span class="p">,</span> <span class="s2">&quot;NotesOS&quot;</span><span class="p">):</span>
+            <span class="n">notes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">segment_obj</span><span class="o">.</span><span class="n">NotesOS</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">notes</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># ========== WRITE METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AppendSentence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Append a new sentence to a paragraph, creating a new segment.</span>
+
+<span class="sd">        Edits IStTxtPara.Contents first (firing AnalysisAdjuster on existing</span>
+<span class="sd">        segments), then adds the new ISegment to SegmentsOS.</span>
+
+<span class="sd">        A sentence terminator (&#39;. &#39;) is automatically inserted before the new</span>
+<span class="sd">        text when the current paragraph Contents is non-empty and does not</span>
+<span class="sd">        already end with one of {. ! ?}. When the paragraph is empty, the</span>
+<span class="sd">        text is written directly.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paragraph_or_hvo: The IStTxtPara object or HVO.</span>
+<span class="sd">            text: The sentence text to append. Must be non-empty.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to project</span>
+<span class="sd">                      default vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ISegment: The newly created segment object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If paragraph_or_hvo or text is None.</span>
+<span class="sd">            FP_ParameterError: If text is empty or paragraph is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = project.Object(para_hvo)</span>
+<span class="sd">            &gt;&gt;&gt; seg = project.Segments.AppendSentence(para, &quot;A new sentence.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Segments.GetBaselineText(seg))</span>
+<span class="sd">            A new sentence.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SplitSegment, MergeSegments, ReparseParagraph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;paragraph_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">text_str</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">text_str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;text cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Append sentence&quot;</span><span class="p">):</span>
+            <span class="c1"># --- Step 1: edit Contents ---</span>
+            <span class="n">bldr</span> <span class="o">=</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">GetBldr</span><span class="p">()</span>
+            <span class="n">current_length</span> <span class="o">=</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">Length</span>
+
+            <span class="k">if</span> <span class="n">current_length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Check the last character of the current contents</span>
+                <span class="n">last_char_pos</span> <span class="o">=</span> <span class="n">current_length</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="n">last_char</span> <span class="o">=</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">Text</span><span class="p">[</span><span class="n">last_char_pos</span><span class="p">]</span> <span class="k">if</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">Text</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+
+                <span class="k">if</span> <span class="n">last_char</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">):</span>
+                    <span class="c1"># Insert &quot;. &quot; as sentence terminator</span>
+                    <span class="n">terminator</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="s2">&quot;. &quot;</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+                    <span class="n">bldr</span><span class="o">.</span><span class="n">ReplaceTsString</span><span class="p">(</span><span class="n">current_length</span><span class="p">,</span> <span class="n">current_length</span><span class="p">,</span> <span class="n">terminator</span><span class="p">)</span>
+                    <span class="c1"># Recalculate insertion point after terminator</span>
+                    <span class="n">insert_at</span> <span class="o">=</span> <span class="n">current_length</span> <span class="o">+</span> <span class="mi">2</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Already terminated — just insert a space separator</span>
+                    <span class="n">sep</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+                    <span class="n">bldr</span><span class="o">.</span><span class="n">ReplaceTsString</span><span class="p">(</span><span class="n">current_length</span><span class="p">,</span> <span class="n">current_length</span><span class="p">,</span> <span class="n">sep</span><span class="p">)</span>
+                    <span class="n">insert_at</span> <span class="o">=</span> <span class="n">current_length</span> <span class="o">+</span> <span class="mi">1</span>
+
+                <span class="n">new_text_ts</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text_str</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+                <span class="n">bldr</span><span class="o">.</span><span class="n">ReplaceTsString</span><span class="p">(</span><span class="n">insert_at</span><span class="p">,</span> <span class="n">insert_at</span><span class="p">,</span> <span class="n">new_text_ts</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Paragraph is empty — write text directly</span>
+                <span class="n">new_text_ts</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text_str</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+                <span class="n">bldr</span><span class="o">.</span><span class="n">ReplaceTsString</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">new_text_ts</span><span class="p">)</span>
+
+            <span class="c1"># Assign Contents — fires ContentsSideEffects -&gt; AnalysisAdjuster on</span>
+            <span class="c1"># existing segments, setting their BeginOffset/EndOffset correctly.</span>
+            <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">bldr</span><span class="o">.</span><span class="n">GetString</span><span class="p">()</span>
+
+            <span class="c1"># --- Step 2: add new segment to SegmentsOS ---</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentFactory</span><span class="p">()</span>
+            <span class="n">seg</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">seg</span><span class="p">)</span>
+            <span class="c1"># AnalysisAdjuster (fired by the Contents setter above) will set</span>
+            <span class="c1"># seg.BeginOffset / seg.EndOffset when the paragraph is re-parsed.</span>
+
+            <span class="k">return</span> <span class="n">seg</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a segment from its paragraph.</span>
+
+<span class="sd">        Removes the segment from its parent paragraph&#39;s segment collection.</span>
+<span class="sd">        All analyses, translations, and notes associated with the segment</span>
+<span class="sd">        are also deleted.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If segment has no owning paragraph.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; project.Segments.Delete(segment)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AppendSentence, Exists, MergeSegments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+
+        <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">segment_obj</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Segment has no owning paragraph&quot;</span><span class="p">)</span>
+        <span class="n">owner</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">segment_obj</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SplitSegment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">offset_within_segment</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Split a segment at a character offset measured from the start of the segment.</span>
+
+<span class="sd">        Inserts a sentence terminator (&#39;. &#39;) into IStTxtPara.Contents at the</span>
+<span class="sd">        absolute position corresponding to the split, then adds the new ISegment</span>
+<span class="sd">        to SegmentsOS. AnalysisAdjuster (fired by the Contents setter) shifts</span>
+<span class="sd">        all subsequent segment offsets right by 2.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO to split.</span>
+<span class="sd">            offset_within_segment: Character offset from the segment&#39;s BeginOffset</span>
+<span class="sd">                where the split occurs. Must satisfy:</span>
+<span class="sd">                0 &lt; offset_within_segment &lt; (seg.EndOffset - seg.BeginOffset).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (seg, new_seg) - the original (now shorter) segment and the</span>
+<span class="sd">                   newly inserted segment that follows it.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If offset_within_segment is out of range or</span>
+<span class="sd">                               segment has no owning paragraph.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; seg = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Segments.GetBaselineText(seg))</span>
+<span class="sd">            In the beginning God created the heavens.</span>
+<span class="sd">            &gt;&gt;&gt; seg1, seg2 = project.Segments.SplitSegment(seg, 17)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Segments.GetBaselineText(seg1))</span>
+<span class="sd">            In the beginning</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Segments.GetBaselineText(seg2))</span>
+<span class="sd">            God created the heavens.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            MergeSegments, AppendSentence, ReparseParagraph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">seg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+
+        <span class="n">seg_len</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">EndOffset</span> <span class="o">-</span> <span class="n">seg</span><span class="o">.</span><span class="n">BeginOffset</span>
+        <span class="k">if</span> <span class="n">offset_within_segment</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;</span> <span class="n">offset_within_segment</span> <span class="o">&lt;</span> <span class="n">seg_len</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;offset_within_segment must be between 1 and </span><span class="si">{</span><span class="n">seg_len</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(exclusive); got </span><span class="si">{</span><span class="n">offset_within_segment</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">para</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">Paragraph</span>
+        <span class="k">if</span> <span class="n">para</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Segment has no owning paragraph&quot;</span><span class="p">)</span>
+
+        <span class="n">absolute_offset</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">BeginOffset</span> <span class="o">+</span> <span class="n">offset_within_segment</span>
+
+        <span class="c1"># --- Step 1: edit Contents ---</span>
+        <span class="c1"># Resolve the paragraph&#39;s vernacular WS from the existing text run so</span>
+        <span class="c1"># the inserted terminator uses the same writing system as its neighbours.</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Split segment&quot;</span><span class="p">):</span>
+            <span class="n">bldr</span> <span class="o">=</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">GetBldr</span><span class="p">()</span>
+            <span class="n">terminator</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="s2">&quot;. &quot;</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+            <span class="n">bldr</span><span class="o">.</span><span class="n">ReplaceTsString</span><span class="p">(</span><span class="n">absolute_offset</span><span class="p">,</span> <span class="n">absolute_offset</span><span class="p">,</span> <span class="n">terminator</span><span class="p">)</span>
+            <span class="c1"># Assign — fires AnalysisAdjuster which shifts seg3+ offsets right by 2</span>
+            <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">bldr</span><span class="o">.</span><span class="n">GetString</span><span class="p">()</span>
+
+            <span class="c1"># --- Step 2: insert new segment into SegmentsOS ---</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">seg</span><span class="p">)</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentFactory</span><span class="p">()</span>
+            <span class="n">new_seg</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">new_seg</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="p">(</span><span class="n">seg</span><span class="p">,</span> <span class="n">new_seg</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MergeSegments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seg1_or_hvo</span><span class="p">,</span> <span class="n">seg2_or_hvo</span><span class="p">,</span> <span class="n">translation_policy</span><span class="o">=</span><span class="s2">&quot;migrate&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Merge two adjacent segments into one, removing the inter-segment boundary.</span>
+
+<span class="sd">        Edits IStTxtPara.Contents first (removing the terminator+whitespace</span>
+<span class="sd">        between the two segments), then removes seg2 from SegmentsOS.</span>
+<span class="sd">        AnalysisAdjuster (fired by the Contents setter) shifts all subsequent</span>
+<span class="sd">        segment offsets left automatically.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            seg1_or_hvo: The first (earlier) ISegment object or HVO.</span>
+<span class="sd">            seg2_or_hvo: The second (later) ISegment object or HVO. Must be</span>
+<span class="sd">                         immediately after seg1 in SegmentsOS.</span>
+<span class="sd">            translation_policy (str): One of:</span>
+<span class="sd">                - TRANSLATION_POLICY_MIGRATE / &#39;migrate&#39; (default): Concatenate</span>
+<span class="sd">                  seg2&#39;s FreeTranslation and LiteralTranslation into seg1&#39;s,</span>
+<span class="sd">                  joined by &#39; / &#39; per writing system that has content. Also moves</span>
+<span class="sd">                  all Notes from seg2.NotesOS into seg1.NotesOS via re-parenting.</span>
+<span class="sd">                  Migration happens BEFORE seg2 is removed.</span>
+<span class="sd">                - TRANSLATION_POLICY_DISCARD / &#39;discard&#39;: Drop seg2&#39;s</span>
+<span class="sd">                  translations and notes silently.</span>
+<span class="sd">                - TRANSLATION_POLICY_REJECT / &#39;reject&#39;: Raise FP_ParameterError</span>
+<span class="sd">                  if seg2 has any non-empty FreeTranslation, LiteralTranslation</span>
+<span class="sd">                  (across ALL writing systems), or Notes. Caller must explicitly</span>
+<span class="sd">                  pass &#39;migrate&#39; or &#39;discard&#39; to proceed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ISegment: seg1 (the survivor segment).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If either segment is None.</span>
+<span class="sd">            FP_ParameterError: If segments are not adjacent, not in the same</span>
+<span class="sd">                paragraph, or &#39;reject&#39; policy triggered.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; seg1 = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; seg2 = segments[1]</span>
+<span class="sd">            &gt;&gt;&gt; merged = project.Segments.MergeSegments(seg1, seg2)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Segments.GetBaselineText(merged))</span>
+<span class="sd">            In the beginning God created the heavens and the earth.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SplitSegment, AppendSentence, ReparseParagraph</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            All wordform analyses on seg2 are lost. Prefer &#39;migrate&#39; (default)</span>
+<span class="sd">            to preserve translations across the merge.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">seg1_or_hvo</span><span class="p">,</span> <span class="s2">&quot;seg1_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">seg2_or_hvo</span><span class="p">,</span> <span class="s2">&quot;seg2_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">seg1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">seg1_or_hvo</span><span class="p">)</span>
+        <span class="n">seg2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">seg2_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Validate translation_policy early — before any LCM calls — so a</span>
+        <span class="c1"># typo like &#39;Migrate&#39; raises immediately on a plain mock without needing</span>
+        <span class="c1"># a real SegmentsOS collection.</span>
+        <span class="k">if</span> <span class="n">translation_policy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_VALID_TRANSLATION_POLICIES</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;translation_policy must be one of </span><span class="si">{</span><span class="n">_VALID_TRANSLATION_POLICIES</span><span class="si">!r}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">translation_policy</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">seg1</span><span class="o">.</span><span class="n">Owner</span> <span class="o">!=</span> <span class="n">seg2</span><span class="o">.</span><span class="n">Owner</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Segments must be in the same paragraph&quot;</span><span class="p">)</span>
+
+        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">seg1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">para</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Segments have no valid owner paragraph&quot;</span><span class="p">)</span>
+
+        <span class="n">segments_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">)</span>
+        <span class="n">idx1</span> <span class="o">=</span> <span class="n">segments_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">seg1</span><span class="p">)</span>
+        <span class="n">idx2</span> <span class="o">=</span> <span class="n">segments_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">seg2</span><span class="p">)</span>
+
+        <span class="c1"># Ensure seg1 is the earlier segment</span>
+        <span class="k">if</span> <span class="n">idx1</span> <span class="o">&gt;</span> <span class="n">idx2</span><span class="p">:</span>
+            <span class="n">seg1</span><span class="p">,</span> <span class="n">seg2</span> <span class="o">=</span> <span class="n">seg2</span><span class="p">,</span> <span class="n">seg1</span>
+            <span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span> <span class="o">=</span> <span class="n">idx2</span><span class="p">,</span> <span class="n">idx1</span>
+
+        <span class="k">if</span> <span class="n">idx2</span> <span class="o">!=</span> <span class="n">idx1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Segments must be adjacent; seg1 is at index </span><span class="si">{</span><span class="n">idx1</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;seg2 is at index </span><span class="si">{</span><span class="n">idx2</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Enforce translation_policy</span>
+        <span class="k">if</span> <span class="n">translation_policy</span> <span class="o">==</span> <span class="n">TRANSLATION_POLICY_REJECT</span><span class="p">:</span>
+            <span class="n">has_content</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="c1"># Check ALL writing systems in both FreeTranslation and LiteralTranslation,</span>
+            <span class="c1"># not just the default WS, to honour the docstring promise.</span>
+            <span class="c1"># IMultiString.GetStringFromIndex(i) returns (ITsString, ws_int) tuple.</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;FreeTranslation&quot;</span><span class="p">,</span> <span class="s2">&quot;LiteralTranslation&quot;</span><span class="p">):</span>
+                <span class="n">ms</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">seg2</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ms</span><span class="o">.</span><span class="n">StringCount</span><span class="p">):</span>
+                    <span class="n">ts</span><span class="p">,</span> <span class="n">_ws</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">GetStringFromIndex</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="n">text_val</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">Text</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="s2">&quot;Text&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+                    <span class="k">if</span> <span class="n">text_val</span><span class="p">:</span>
+                        <span class="n">has_content</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">has_content</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="c1"># Also check Notes</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">has_content</span><span class="p">:</span>
+                <span class="n">notes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">seg2</span><span class="o">.</span><span class="n">NotesOS</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">seg2</span><span class="p">,</span> <span class="s2">&quot;NotesOS&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="p">[]</span>
+                <span class="k">if</span> <span class="n">notes</span><span class="p">:</span>
+                    <span class="n">has_content</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">has_content</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;seg2 has non-empty translations/notes and translation_policy=&#39;reject&#39;. &quot;</span>
+                    <span class="s2">&quot;Pass translation_policy=&#39;migrate&#39; to concatenate into seg1, or &quot;</span>
+                    <span class="s2">&quot;&#39;discard&#39; to drop them.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Merge segments&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">translation_policy</span> <span class="o">==</span> <span class="n">TRANSLATION_POLICY_MIGRATE</span><span class="p">:</span>
+                <span class="c1"># Migrate FreeTranslation, LiteralTranslation, and Notes for all WS</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__MigrateTranslations</span><span class="p">(</span><span class="n">seg1</span><span class="p">,</span> <span class="n">seg2</span><span class="p">)</span>
+
+            <span class="c1"># TRANSLATION_POLICY_DISCARD: do nothing — seg2&#39;s data is lost on removal</span>
+
+            <span class="c1"># --- Step 1: edit Contents to remove the inter-segment boundary ---</span>
+            <span class="n">bldr</span> <span class="o">=</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">GetBldr</span><span class="p">()</span>
+            <span class="c1"># Remove characters from end of seg1 (the terminator) through start of seg2</span>
+            <span class="c1"># seg1.EndOffset is the position just after seg1&#39;s last char (includes terminator)</span>
+            <span class="c1"># seg2.BeginOffset is the first char of seg2&#39;s text</span>
+            <span class="n">bldr</span><span class="o">.</span><span class="n">Replace</span><span class="p">(</span><span class="n">seg1</span><span class="o">.</span><span class="n">EndOffset</span><span class="p">,</span> <span class="n">seg2</span><span class="o">.</span><span class="n">BeginOffset</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="c1"># Assign — fires AnalysisAdjuster which shifts seg3+ offsets left</span>
+            <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">bldr</span><span class="o">.</span><span class="n">GetString</span><span class="p">()</span>
+
+            <span class="c1"># --- Step 2: remove seg2 from SegmentsOS if it still exists ---</span>
+            <span class="k">if</span> <span class="n">seg2</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">):</span>
+                <span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">seg2</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">seg1</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__MigrateTranslations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seg1</span><span class="p">,</span> <span class="n">seg2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Concatenate seg2&#39;s FreeTranslation and LiteralTranslation into seg1</span>
+<span class="sd">        per writing system that has content, joined by &#39; / &#39;. Also moves all</span>
+<span class="sd">        Notes from seg2&#39;s NotesOS into seg1&#39;s NotesOS (re-parenting ownership).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            seg1: The survivor segment.</span>
+<span class="sd">            seg2: The segment being merged away.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Collect all WS handles present in either FreeTranslation or LiteralTranslation.</span>
+        <span class="c1"># IMultiString.GetStringFromIndex(i) returns (ITsString, ws_int) tuple.</span>
+        <span class="n">ws_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="p">(</span><span class="n">seg1</span><span class="p">,</span> <span class="n">seg2</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;FreeTranslation&quot;</span><span class="p">,</span> <span class="s2">&quot;LiteralTranslation&quot;</span><span class="p">):</span>
+                <span class="n">ms</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">seg</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ms</span><span class="o">.</span><span class="n">StringCount</span><span class="p">):</span>
+                        <span class="n">_ts</span><span class="p">,</span> <span class="n">ws</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">GetStringFromIndex</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                        <span class="n">ws_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="n">ws_set</span><span class="p">:</span>
+            <span class="c1"># FreeTranslation</span>
+            <span class="k">if</span> <span class="n">seg1</span><span class="o">.</span><span class="n">FreeTranslation</span> <span class="ow">and</span> <span class="n">seg2</span><span class="o">.</span><span class="n">FreeTranslation</span><span class="p">:</span>
+                <span class="n">t1</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">seg1</span><span class="o">.</span><span class="n">FreeTranslation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+                <span class="n">t2</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">seg2</span><span class="o">.</span><span class="n">FreeTranslation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">if</span> <span class="n">t2</span><span class="p">:</span>
+                    <span class="n">merged_text</span> <span class="o">=</span> <span class="p">(</span><span class="n">t1</span> <span class="o">+</span> <span class="s2">&quot; / &quot;</span> <span class="o">+</span> <span class="n">t2</span><span class="p">)</span> <span class="k">if</span> <span class="n">t1</span> <span class="k">else</span> <span class="n">t2</span>
+                    <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">merged_text</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+                    <span class="n">seg1</span><span class="o">.</span><span class="n">FreeTranslation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="c1"># LiteralTranslation</span>
+            <span class="k">if</span> <span class="n">seg1</span><span class="o">.</span><span class="n">LiteralTranslation</span> <span class="ow">and</span> <span class="n">seg2</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="p">:</span>
+                <span class="n">t1</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">seg1</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+                <span class="n">t2</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">seg2</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">if</span> <span class="n">t2</span><span class="p">:</span>
+                    <span class="n">merged_text</span> <span class="o">=</span> <span class="p">(</span><span class="n">t1</span> <span class="o">+</span> <span class="s2">&quot; / &quot;</span> <span class="o">+</span> <span class="n">t2</span><span class="p">)</span> <span class="k">if</span> <span class="n">t1</span> <span class="k">else</span> <span class="n">t2</span>
+                    <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">merged_text</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+                    <span class="n">seg1</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="c1"># Notes: move all ICmBaseAnnotation objects from seg2.NotesOS to seg1.NotesOS.</span>
+        <span class="c1"># ILcmOwningSequence.MoveTo(srcStart, srcEnd, dest, destStart) re-parents</span>
+        <span class="c1"># ownership without creating new objects.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">seg2</span><span class="p">,</span> <span class="s2">&quot;NotesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">seg1</span><span class="p">,</span> <span class="s2">&quot;NotesOS&quot;</span><span class="p">):</span>
+            <span class="n">notes2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">seg2</span><span class="o">.</span><span class="n">NotesOS</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">notes2</span><span class="p">:</span>
+                <span class="n">dest_index</span> <span class="o">=</span> <span class="n">seg1</span><span class="o">.</span><span class="n">NotesOS</span><span class="o">.</span><span class="n">Count</span>
+                <span class="n">seg2</span><span class="o">.</span><span class="n">NotesOS</span><span class="o">.</span><span class="n">MoveTo</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">notes2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">seg1</span><span class="o">.</span><span class="n">NotesOS</span><span class="p">,</span> <span class="n">dest_index</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ReparseParagraph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Re-derive segment offsets and wordform analyses for a paragraph by</span>
+<span class="sd">        reassigning para.Contents to itself; FreeTranslation, LiteralTranslation,</span>
+<span class="sd">        and Notes on surviving segments are preserved.</span>
+
+<span class="sd">        Implementation: assigns para.Contents back to itself. That single setter</span>
+<span class="sd">        assignment fires ContentsSideEffects -&gt; AnalysisAdjuster, which is an</span>
+<span class="sd">        offset reconciler -- it rebuilds AnalysesRS (wordform analyses) but does</span>
+<span class="sd">        NOT touch FreeTranslation, LiteralTranslation, or NotesOS on surviving</span>
+<span class="sd">        segments (those are independently-owned LCM objects with no dependency</span>
+<span class="sd">        on Contents). When the assignment is a self-assignment (the only path</span>
+<span class="sd">        through this method), segment objects survive with identical offsets,</span>
+<span class="sd">        so their translations are never cleared. No regex, no manual</span>
+<span class="sd">        SegmentsOS.Clear(), no factory.Create() calls are needed or used.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paragraph_or_hvo: The IStTxtPara object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The freshly rebuilt SegmentsOS collection (ILcmOwningSequence).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If paragraph_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = project.Object(para_hvo)</span>
+<span class="sd">            &gt;&gt;&gt; segs = project.Segments.ReparseParagraph(para)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Rebuilt {segs.Count} segments&quot;)</span>
+<span class="sd">            Rebuilt 3 segments</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SplitSegment, MergeSegments, AppendSentence</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            This destroys all existing wordform analyses (AnalysesRS) on the</span>
+<span class="sd">            paragraph. FreeTranslation, LiteralTranslation, and Notes are NOT</span>
+<span class="sd">            cleared. Use SplitSegment or MergeSegments for non-destructive</span>
+<span class="sd">            structural edits.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;paragraph_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Snapshot the current Contents and reassign. The setter fires</span>
+        <span class="c1"># ContentsSideEffects -&gt; AnalysisAdjuster which re-derives SegmentsOS</span>
+        <span class="c1"># entirely from the punctuation pattern in the text.</span>
+        <span class="n">snapshot</span> <span class="o">=</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span>
+        <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">snapshot</span>
+
+        <span class="k">return</span> <span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span>
+
+    <span class="c1"># ========== QUERY/VALIDATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a segment exists in a paragraph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paragraph_or_hvo: The IStTxtPara object or HVO.</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO to check for.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the segment exists in the paragraph, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If paragraph_or_hvo or segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = project.Object(para_hvo)</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; exists = project.Segments.Exists(para, segment)</span>
+<span class="sd">            &gt;&gt;&gt; print(exists)</span>
+<span class="sd">            True</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AppendSentence, Delete, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;paragraph_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">para_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+
+        <span class="n">segments_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">para_obj</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">segment_obj</span> <span class="ow">in</span> <span class="n">segments_list</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetBeginOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the beginning character offset of a segment within its paragraph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The beginning offset (0-based character position).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; offset = project.Segments.GetBeginOffset(segment)</span>
+<span class="sd">            &gt;&gt;&gt; print(offset)</span>
+<span class="sd">            0</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetEndOffset</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">segment_obj</span><span class="p">,</span> <span class="s2">&quot;BeginOffset&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">BeginOffset</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEndOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the ending character offset of a segment within its paragraph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The ending offset (0-based character position).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; offset = project.Segments.GetEndOffset(segment)</span>
+<span class="sd">            &gt;&gt;&gt; print(offset)</span>
+<span class="sd">            45</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetBeginOffset</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">segment_obj</span><span class="p">,</span> <span class="s2">&quot;EndOffset&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">EndOffset</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a segment is marked as a label (section header).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the segment is a label, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; is_header = project.Segments.IsLabel(segment)</span>
+<span class="sd">            &gt;&gt;&gt; print(is_header)</span>
+<span class="sd">            False</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetIsLabel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">segment_obj</span><span class="p">,</span> <span class="s2">&quot;IsLabel&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">segment_obj</span><span class="o">.</span><span class="n">IsLabel</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetIsLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment_or_hvo</span><span class="p">,</span> <span class="n">is_label</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set whether a segment is a label (section header).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            segment_or_hvo: The ISegment object or HVO.</span>
+<span class="sd">            is_label: Boolean value - True to mark as label, False for regular segment.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If segment_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; segment = segments[0]</span>
+<span class="sd">            &gt;&gt;&gt; project.Segments.SetIsLabel(segment, True)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsLabel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">,</span> <span class="s2">&quot;segment_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">segment_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSegmentObject</span><span class="p">(</span><span class="n">segment_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">segment_obj</span><span class="p">,</span> <span class="s2">&quot;IsLabel&quot;</span><span class="p">):</span>
+            <span class="n">segment_obj</span><span class="o">.</span><span class="n">IsLabel</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">is_label</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ValidateSegments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate the integrity of all segments in a paragraph.</span>
+
+<span class="sd">        Checks that segments are properly structured with valid offsets,</span>
+<span class="sd">        non-overlapping ranges, and complete coverage of the paragraph text.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paragraph_or_hvo: The IStTxtPara object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Validation results with keys:</span>
+<span class="sd">                - &#39;valid&#39;: bool - Overall validity</span>
+<span class="sd">                - &#39;errors&#39;: list - List of error messages</span>
+<span class="sd">                - &#39;warnings&#39;: list - List of warning messages</span>
+<span class="sd">                - &#39;segment_count&#39;: int - Number of segments checked</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If paragraph_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = project.Object(para_hvo)</span>
+<span class="sd">            &gt;&gt;&gt; result = project.Segments.ValidateSegments(para)</span>
+<span class="sd">            &gt;&gt;&gt; if result[&#39;valid&#39;]:</span>
+<span class="sd">            ...     print(&quot;All segments are valid&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     for error in result[&#39;errors&#39;]:</span>
+<span class="sd">            ...         print(f&quot;Error: {error}&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            ReparseParagraph, GetBeginOffset, GetEndOffset</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;paragraph_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">para_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
+        <span class="n">segments_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">para_obj</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">)</span>
+
+        <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">warnings</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">segments_list</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Paragraph has no segments&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="n">errors</span><span class="p">,</span> <span class="s2">&quot;warnings&quot;</span><span class="p">:</span> <span class="n">warnings</span><span class="p">,</span> <span class="s2">&quot;segment_count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+
+        <span class="n">prev_end</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">segment</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">segments_list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">segment</span><span class="p">,</span> <span class="s2">&quot;BeginOffset&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">segment</span><span class="p">,</span> <span class="s2">&quot;EndOffset&quot;</span><span class="p">):</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Segment </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> missing offset attributes&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="n">begin</span> <span class="o">=</span> <span class="n">segment</span><span class="o">.</span><span class="n">BeginOffset</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">segment</span><span class="o">.</span><span class="n">EndOffset</span>
+
+            <span class="k">if</span> <span class="n">begin</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">end</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Segment </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> has negative offset (begin=</span><span class="si">{</span><span class="n">begin</span><span class="si">}</span><span class="s2">, end=</span><span class="si">{</span><span class="n">end</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">begin</span> <span class="o">&gt;=</span> <span class="n">end</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Segment </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> has invalid offsets (begin=</span><span class="si">{</span><span class="n">begin</span><span class="si">}</span><span class="s2"> &gt;= end=</span><span class="si">{</span><span class="n">end</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">prev_end</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">begin</span> <span class="o">&gt;</span> <span class="n">prev_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Gap between segment </span><span class="si">{</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;(prev_end=</span><span class="si">{</span><span class="n">prev_end</span><span class="si">}</span><span class="s2">, begin=</span><span class="si">{</span><span class="n">begin</span><span class="si">}</span><span class="s2">)&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="n">begin</span> <span class="o">&lt;</span> <span class="n">prev_end</span><span class="p">:</span>
+                    <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Overlap between segment </span><span class="si">{</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;(prev_end=</span><span class="si">{</span><span class="n">prev_end</span><span class="si">}</span><span class="s2">, begin=</span><span class="si">{</span><span class="n">begin</span><span class="si">}</span><span class="s2">)&quot;</span>
+                    <span class="p">)</span>
+
+            <span class="n">baseline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetBaselineText</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">baseline</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Segment </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> has empty baseline text&quot;</span><span class="p">)</span>
+
+            <span class="n">prev_end</span> <span class="o">=</span> <span class="n">end</span>
+
+        <span class="n">valid</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="n">valid</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="n">errors</span><span class="p">,</span> <span class="s2">&quot;warnings&quot;</span><span class="p">:</span> <span class="n">warnings</span><span class="p">,</span> <span class="s2">&quot;segment_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">segments_list</span><span class="p">)}</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all syncable properties of a segment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The ISegment object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary of syncable properties with their values.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; props = project.Segments.GetSyncableProperties(segment)</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;BaselineText&#39;])</span>
+<span class="sd">            {&#39;en&#39;: &#39;In the beginning...&#39;}</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;IsLabel&#39;])</span>
+<span class="sd">            False</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;BeginOffset&#39;])</span>
+<span class="sd">            0</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - MultiString properties: FreeTranslation, LiteralTranslation</span>
+<span class="sd">            - BaselineText is ITsString (single-WS, read-only computed from para Contents)</span>
+<span class="sd">            - Boolean property: IsLabel</span>
+<span class="sd">            - Integer properties: BeginOffset, EndOffset</span>
+<span class="sd">            - Does NOT include analyses (those are children)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># BaselineText is ITsString (single-WS, read-only computed from para Contents).</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;BaselineText&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">BaselineText</span><span class="p">:</span>
+            <span class="n">bt</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">BaselineText</span>
+            <span class="n">ws_handle</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get_Properties</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">GetIntPropValues</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;BaselineText&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ws_handle</span><span class="p">:</span> <span class="n">bt</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">}</span>
+
+        <span class="c1"># FreeTranslation and LiteralTranslation are genuine IMultiString fields.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;FreeTranslation&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">FreeTranslation</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;FreeTranslation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">FreeTranslation</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;LiteralTranslation&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;LiteralTranslation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">LiteralTranslation</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;IsLabel&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;IsLabel&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">IsLabel</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;BeginOffset&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;BeginOffset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">BeginOffset</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;EndOffset&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;EndOffset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">EndOffset</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two segments for differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First segment object (from project 1)</span>
+<span class="sd">            item2: Second segment object (from project 2)</span>
+<span class="sd">            ops1: Optional SegmentOperations instance for project 1 (defaults to self)</span>
+<span class="sd">            ops2: Optional SegmentOperations instance for project 2 (defaults to self)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict)</span>
+<span class="sd">                - is_different (bool): True if segments differ, False if identical</span>
+<span class="sd">                - differences_dict (dict): Maps property names to (value1, value2) tuples</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = ops1.CompareTo(seg1, seg2, ops1, ops2)</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} != {val2}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_CompareValues</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">):</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.TextsWords.SegmentOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

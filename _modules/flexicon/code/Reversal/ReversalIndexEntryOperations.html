@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Reversal.ReversalIndexEntryOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Reversal.ReversalIndexEntryOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Reversal.ReversalIndexEntryOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ReversalIndexEntryOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ReversalIndexEntryOperations</span>
+<span class="c1">#          Reversal index entry operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IReversalIndex</span><span class="p">,</span>
+    <span class="n">IReversalIndexEntry</span><span class="p">,</span>
+    <span class="n">IReversalIndexEntryFactory</span><span class="p">,</span>
+    <span class="n">ILexSense</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ReversalIndexEntryOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Reversal.html#flexicon.code.Reversal.ReversalIndexEntryOperations.ReversalIndexEntryOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReversalIndexEntryOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing reversal index entries in a FieldWorks project.</span>
+
+<span class="sd">    Reversal index entries are the individual entries within a reversal index. Each entry</span>
+<span class="sd">    has a form (the reverse headword) and links to one or more lexical senses. Entries can</span>
+<span class="sd">    be organized hierarchically with subentries.</span>
+
+<span class="sd">    Reversal entries enable users to look up words in the analysis language and find</span>
+<span class="sd">    corresponding vernacular entries.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get reversal index</span>
+<span class="sd">        en_ws = project.WSHandle(&#39;en&#39;)</span>
+<span class="sd">        idx = project.ReversalIndexes.FindByWritingSystem(en_ws)</span>
+
+<span class="sd">        # Create reversal entry</span>
+<span class="sd">        entry = project.ReversalEntries.Create(idx, &quot;run&quot;)</span>
+
+<span class="sd">        # Link to lexical sense</span>
+<span class="sd">        lex_entry = list(project.LexiconAllEntries())[0]</span>
+<span class="sd">        sense = list(lex_entry.SensesOS)[0]</span>
+<span class="sd">        project.ReversalEntries.AddSense(entry, sense)</span>
+
+<span class="sd">        # Get all entries</span>
+<span class="sd">        for rev_entry in project.ReversalEntries.GetAll(idx):</span>
+<span class="sd">            form = project.ReversalEntries.GetForm(rev_entry)</span>
+<span class="sd">            print(f&quot;Reversal: {form}&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ReversalIndexEntryOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Specify which sequence to reorder for reversal entries.</span>
+<span class="sd">        For ReversalIndexEntry, we reorder parent.SubentriesOS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubentriesOS</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all reversal entries in a reversal index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index_or_hvo: Either an IReversalIndex object or its HVO</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            IReversalIndexEntry: Each reversal entry in the index</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If index_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.Find(&quot;English&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for entry in project.ReversalEntries.GetAll(idx):</span>
+<span class="sd">            ...     form = project.ReversalEntries.GetForm(entry)</span>
+<span class="sd">            ...     sense_count = len(list(project.ReversalEntries.GetSenses(entry)))</span>
+<span class="sd">            ...     print(f&quot;{form}: {sense_count} senses&quot;)</span>
+<span class="sd">            run: 3 senses</span>
+<span class="sd">            walk: 2 senses</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns top-level entries only (not subentries)</span>
+<span class="sd">            - Use GetSubentries() to access hierarchical subentries</span>
+<span class="sd">            - Returns empty iterator if index has no entries</span>
+<span class="sd">            - Entries are in database order</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetSubentries, FindByHvo</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">,</span> <span class="s2">&quot;index_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetIndexObject</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">index</span><span class="o">.</span><span class="n">EntriesOC</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">entry</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">sense</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new reversal index entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index_or_hvo: Either an IReversalIndex object or its HVO</span>
+<span class="sd">            form (str): The reversal form (headword in analysis language)</span>
+<span class="sd">            sense: Optional ILexSense object to link to</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to index&#39;s WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IReversalIndexEntry: The newly created reversal entry</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If index_or_hvo or form is None</span>
+<span class="sd">            FP_ParameterError: If form is empty</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.Find(&quot;English&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.ReversalEntries.Create(idx, &quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.ReversalEntries.GetForm(entry))</span>
+<span class="sd">            run</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with linked sense</span>
+<span class="sd">            &gt;&gt;&gt; lex_entry = project.LexEntry.Find(&quot;hlauka&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; sense = list(lex_entry.SensesOS)[0]</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.ReversalEntries.Create(idx, &quot;run&quot;, sense)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Entry is added to the reversal index</span>
+<span class="sd">            - If sense provided, it&#39;s automatically linked</span>
+<span class="sd">            - Form is stored in the index&#39;s writing system</span>
+<span class="sd">            - Entry can link to multiple senses via AddSense()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Find, AddSense</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">,</span> <span class="s2">&quot;index_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">form</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">form</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Reversal entry form cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetIndexObject</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get writing system from index if not provided</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ws_str</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">WritingSystem</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WSHandle</span><span class="p">(</span><span class="n">ws_str</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create reversal entry &#39;</span><span class="si">{</span><span class="n">form</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the reversal entry using factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IReversalIndexEntryFactory</span><span class="p">)</span>
+            <span class="n">new_entry</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to index&#39;s entries collection</span>
+            <span class="n">index</span><span class="o">.</span><span class="n">EntriesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_entry</span><span class="p">)</span>
+
+            <span class="c1"># Set the reversal form</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_entry</span><span class="o">.</span><span class="n">ReversalForm</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="c1"># Link to sense if provided</span>
+            <span class="k">if</span> <span class="n">sense</span><span class="p">:</span>
+                <span class="n">new_entry</span><span class="o">.</span><span class="n">SensesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">sense</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_entry</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a reversal index entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: Either an IReversalIndexEntry object or its HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If entry_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.ReversalEntries.Find(idx, &quot;obsolete&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if entry:</span>
+<span class="sd">            ...     project.ReversalEntries.Delete(entry)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - All subentries will be deleted</span>
+<span class="sd">            - Links to lexical senses will be removed</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Deletion cascades to all subentries</span>
+<span class="sd">            - Links from lexical senses are automatically cleaned up</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Delete the entry (LCM handles removal from collections)</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a reversal entry by its form.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index_or_hvo: Either an IReversalIndex object or its HVO</span>
+<span class="sd">            form (str): The reversal form to search for</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to index&#39;s WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IReversalIndexEntry or None: The entry object if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If index_or_hvo or form is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.Find(&quot;English&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.ReversalEntries.Find(idx, &quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if entry:</span>
+<span class="sd">            ...     senses = list(project.ReversalEntries.GetSenses(entry))</span>
+<span class="sd">            ...     print(f&quot;Found &#39;run&#39; with {len(senses)} senses&quot;)</span>
+<span class="sd">            Found &#39;run&#39; with 3 senses</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Search is case-sensitive</span>
+<span class="sd">            - Searches top-level entries only (not subentries)</span>
+<span class="sd">            - Returns None if not found</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindByHvo, Create, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">,</span> <span class="s2">&quot;index_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">form</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">form</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetIndexObject</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get writing system from index if not provided</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ws_str</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">WritingSystem</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WSHandle</span><span class="p">(</span><span class="n">ws_str</span><span class="p">)</span>
+
+        <span class="c1"># Search through all entries</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+            <span class="n">entry_form</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">ReversalForm</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">entry_form</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">entry</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByHvo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a reversal entry by its HVO (database ID).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            hvo (int): The HVO of the reversal entry</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IReversalIndexEntry or None: The entry object if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.ReversalEntries.FindByHvo(12345)</span>
+<span class="sd">            &gt;&gt;&gt; if entry:</span>
+<span class="sd">            ...     form = project.ReversalEntries.GetForm(entry)</span>
+<span class="sd">            ...     print(f&quot;Found entry: {form}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Direct HVO lookup is faster than searching by form</span>
+<span class="sd">            - Returns None if HVO doesn&#39;t exist or isn&#39;t a reversal entry</span>
+<span class="sd">            - HVO is the internal database identifier</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">hvo</span><span class="p">,</span> <span class="s2">&quot;hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IReversalIndexEntry</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Property Access ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the reversal form of a reversal entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: Either an IReversalIndexEntry object or its HVO</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to entry&#39;s index WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The reversal form text (empty string if not set)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If entry_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.ReversalEntries.Find(idx, &quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; form = project.ReversalEntries.GetForm(entry)</span>
+<span class="sd">            &gt;&gt;&gt; print(form)</span>
+<span class="sd">            run</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetForm, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Use entry&#39;s index writing system if not provided</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryWS</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+
+        <span class="n">form</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">ReversalForm</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">form</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the reversal form of a reversal entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: Either an IReversalIndexEntry object or its HVO</span>
+<span class="sd">            text (str): The new reversal form text</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to entry&#39;s index WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If entry_or_hvo or text is None</span>
+<span class="sd">            FP_ParameterError: If text is empty</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.ReversalEntries.Find(idx, &quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.ReversalEntries.SetForm(entry, &quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.ReversalEntries.GetForm(entry))</span>
+<span class="sd">            running</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetForm</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Reversal entry form cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Use entry&#39;s index writing system if not provided</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryWS</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">ReversalForm</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="c1"># --- Sense Linking ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSenses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all lexical senses linked to this reversal entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: Either an IReversalIndexEntry object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ILexSense objects</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If entry_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.ReversalEntries.Find(idx, &quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; senses = project.ReversalEntries.GetSenses(entry)</span>
+<span class="sd">            &gt;&gt;&gt; for sense in senses:</span>
+<span class="sd">            ...     gloss = project.Senses.GetGloss(sense)</span>
+<span class="sd">            ...     print(f&quot;Linked sense: {gloss}&quot;)</span>
+<span class="sd">            Linked sense: to move rapidly</span>
+<span class="sd">            Linked sense: to flow</span>
+<span class="sd">            Linked sense: to operate</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if no senses linked</span>
+<span class="sd">            - One reversal entry can link to multiple senses</span>
+<span class="sd">            - Links are bidirectional (sense also knows about reversal entry)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddSense, RemoveSense</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">SensesRS</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddSense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">sense</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Link a lexical sense to this reversal entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: Either an IReversalIndexEntry object or its HVO</span>
+<span class="sd">            sense: ILexSense object to link</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If entry_or_hvo or sense is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.ReversalEntries.Find(idx, &quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; lex_entry = project.LexEntry.Find(&quot;hlauka&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; sense = list(lex_entry.SensesOS)[0]</span>
+<span class="sd">            &gt;&gt;&gt; project.ReversalEntries.AddSense(entry, sense)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Multiple senses can be linked to one reversal entry</span>
+<span class="sd">            - Duplicate links are automatically prevented</span>
+<span class="sd">            - Link is bidirectional</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RemoveSense, GetSenses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">&quot;sense&quot;</span><span class="p">)</span>
+
+        <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Add sense if not already linked</span>
+        <span class="k">if</span> <span class="n">sense</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">SensesRS</span><span class="p">:</span>
+            <span class="n">entry</span><span class="o">.</span><span class="n">SensesRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">sense</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveSense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">sense</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Unlink a lexical sense from this reversal entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: Either an IReversalIndexEntry object or its HVO</span>
+<span class="sd">            sense: ILexSense object to unlink</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If entry_or_hvo or sense is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.ReversalEntries.Find(idx, &quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; sense = list(project.ReversalEntries.GetSenses(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; project.ReversalEntries.RemoveSense(entry, sense)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Safe to call even if sense not linked</span>
+<span class="sd">            - Doesn&#39;t delete the sense, only removes the link</span>
+<span class="sd">            - Link removal is bidirectional</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddSense, GetSenses</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense</span><span class="p">,</span> <span class="s2">&quot;sense&quot;</span><span class="p">)</span>
+
+        <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Remove sense if linked</span>
+        <span class="k">if</span> <span class="n">sense</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">SensesRS</span><span class="p">:</span>
+            <span class="n">entry</span><span class="o">.</span><span class="n">SensesRS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">sense</span><span class="p">)</span>
+
+    <span class="c1"># --- Hierarchical Structure ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSubentries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all subentries of a reversal entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: Either an IReversalIndexEntry object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IReversalIndexEntry objects (subentries)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If entry_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.ReversalEntries.Find(idx, &quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; subentries = project.ReversalEntries.GetSubentries(entry)</span>
+<span class="sd">            &gt;&gt;&gt; for sub in subentries:</span>
+<span class="sd">            ...     form = project.ReversalEntries.GetForm(sub)</span>
+<span class="sd">            ...     print(f&quot;Subentry: {form}&quot;)</span>
+<span class="sd">            Subentry: run away</span>
+<span class="sd">            Subentry: run out</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if no subentries</span>
+<span class="sd">            - Subentries enable hierarchical organization</span>
+<span class="sd">            - Common for phrasal verbs, compounds, etc.</span>
+<span class="sd">            - Use _GetSequence() for reordering subentries</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">SubentriesOS</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IReversalIndexEntry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: Either an IReversalIndexEntry object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IReversalIndexEntry: The resolved entry object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a reversal entry</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IReversalIndexEntry</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a reversal index entry&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">entry_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetIndexObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IReversalIndex.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index_or_hvo: Either an IReversalIndex object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IReversalIndex: The resolved index object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a reversal index</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IReversalIndex</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a reversal index&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">index_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetEntryWS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the writing system handle for a reversal entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry: IReversalIndexEntry object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Writing system handle from the entry&#39;s parent index</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get the owning reversal index</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">ReversalIndex</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;ReversalIndex is None for entry &#39;</span><span class="si">{</span><span class="n">entry</span><span class="o">.</span><span class="n">Hvo</span><span class="si">}</span><span class="s2">&#39; -- &quot;</span>
+                <span class="s2">&quot;entry may be orphaned or cascade-deleted.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">ws_str</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">WritingSystem</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WSHandle</span><span class="p">(</span><span class="n">ws_str</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Reversal.ReversalIndexEntryOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

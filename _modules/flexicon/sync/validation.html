@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.sync.validation &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.sync.validation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.sync.validation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Linguistic Validation Framework</span>
+
+<span class="sd">Validates linguistic data integrity before sync operations.</span>
+<span class="sd">Prevents orphaned references, broken hierarchies, and data corruption.</span>
+
+<span class="sd">Author: FlexTools Development Team</span>
+<span class="sd">Date: 2025-11-27</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ValidationSeverity">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.validation.ValidationSeverity">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ValidationSeverity</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Severity levels for validation issues.&quot;&quot;&quot;</span>
+
+    <span class="n">CRITICAL</span> <span class="o">=</span> <span class="s2">&quot;critical&quot;</span>  <span class="c1"># Blocks operation</span>
+    <span class="n">WARNING</span> <span class="o">=</span> <span class="s2">&quot;warning&quot;</span>  <span class="c1"># User should review</span>
+    <span class="n">INFO</span> <span class="o">=</span> <span class="s2">&quot;info&quot;</span>  <span class="c1"># Informational only</span></div>
+
+
+
+<div class="viewcode-block" id="ValidationIssue">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.validation.ValidationIssue">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ValidationIssue</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single validation issue found during pre-sync checks.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        severity: How serious the issue is</span>
+<span class="sd">        category: Type of issue (reference, hierarchy, etc.)</span>
+<span class="sd">        object_type: Type of object with issue</span>
+<span class="sd">        object_guid: GUID of problematic object</span>
+<span class="sd">        message: Human-readable description</span>
+<span class="sd">        details: Additional context</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">severity</span><span class="p">:</span> <span class="n">ValidationSeverity</span>
+    <span class="n">category</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">object_guid</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">details</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">severity</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_guid</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="ValidationResult">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.validation.ValidationResult">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ValidationResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Results from validation checks.</span>
+
+<span class="sd">    Tracks all issues found and provides summary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">issues</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ValidationIssue</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_critical</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if any critical issues found.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">severity</span> <span class="o">==</span> <span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">CRITICAL</span> <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">issues</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_warnings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if any warnings found.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">severity</span> <span class="o">==</span> <span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">WARNING</span> <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">issues</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_critical</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count critical issues.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">issues</span> <span class="k">if</span> <span class="n">issue</span><span class="o">.</span><span class="n">severity</span> <span class="o">==</span> <span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_warnings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count warnings.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">issues</span> <span class="k">if</span> <span class="n">issue</span><span class="o">.</span><span class="n">severity</span> <span class="o">==</span> <span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count info messages.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">issues</span> <span class="k">if</span> <span class="n">issue</span><span class="o">.</span><span class="n">severity</span> <span class="o">==</span> <span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ValidationResult.add_issue">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.validation.ValidationResult.add_issue">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_issue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">ValidationIssue</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a validation issue.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">issue</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation issue: </span><span class="si">{</span><span class="n">issue</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ValidationResult.summary">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.validation.ValidationResult.summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate summary report.&quot;&quot;&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;VALIDATION RESULTS&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Critical Issues: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_critical</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Warnings: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_warnings</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Info: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_info</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Total: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">issues</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_critical</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;❌ CRITICAL ISSUES - OPERATION BLOCKED&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_warnings</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;⚠️  WARNINGS - REVIEW RECOMMENDED&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;✅ VALIDATION PASSED&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ValidationResult.detailed_report">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.validation.ValidationResult.detailed_report">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">detailed_report</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate detailed report with all issues.&quot;&quot;&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="p">(),</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;ISSUES:&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">issues</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">severity</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">i</span><span class="o">.</span><span class="n">category</span><span class="p">)):</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">issue</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">issue</span><span class="o">.</span><span class="n">details</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">issue</span><span class="o">.</span><span class="n">details</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LinguisticValidator">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.validation.LinguisticValidator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LinguisticValidator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validates linguistic data integrity before sync operations.</span>
+
+<span class="sd">    Checks for:</span>
+<span class="sd">    - Missing reference targets (POS, semantic domains, etc.)</span>
+<span class="sd">    - Orphaned owned objects (phonological environments, etc.)</span>
+<span class="sd">    - Broken hierarchical relationships</span>
+<span class="sd">    - Invalid linguistic constraints</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">        &gt;&gt;&gt; validator = LinguisticValidator(target_project)</span>
+<span class="sd">        &gt;&gt;&gt; result = validator.validate_before_create(source_obj, source_project)</span>
+<span class="sd">        &gt;&gt;&gt; if result.has_critical:</span>
+<span class="sd">        ...     raise ValidationError(result.summary())</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize validator.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            target_project: Target FLEx project to validate against</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_project</span> <span class="o">=</span> <span class="n">target_project</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="LinguisticValidator.validate_before_create">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.validation.LinguisticValidator.validate_before_create">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_before_create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValidationResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate object before creating in target.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_obj: Object to be created</span>
+<span class="sd">            source_project: Source project</span>
+<span class="sd">            object_type: Type of object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ValidationResult with any issues found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ValidationResult</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Get object GUID for reporting</span>
+            <span class="n">guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">source_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="s2">&quot;Guid&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;unknown&quot;</span>
+
+            <span class="c1"># Check references</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_references</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">object_type</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+
+            <span class="c1"># Check owned objects</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_owned_objects</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">object_type</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+
+            <span class="c1"># Check hierarchical relationships</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_hierarchy</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">source_project</span><span class="p">,</span> <span class="n">object_type</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+
+            <span class="c1"># Type-specific validation</span>
+            <span class="k">if</span> <span class="n">object_type</span> <span class="o">==</span> <span class="s2">&quot;LexSense&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validate_sense</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">object_type</span> <span class="o">==</span> <span class="s2">&quot;Allomorph&quot;</span> <span class="ow">or</span> <span class="n">object_type</span> <span class="o">==</span> <span class="s2">&quot;MoForm&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validate_allomorph</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">object_type</span> <span class="o">==</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validate_entry</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+                    <span class="n">category</span><span class="o">=</span><span class="s2">&quot;validation_error&quot;</span><span class="p">,</span>
+                    <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+                    <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                    <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Validation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_references</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">ValidationResult</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if referenced objects exist in target.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Check MorphoSyntaxAnalysis (POS) reference</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;MorphoSyntaxAnalysisRA&quot;</span><span class="p">):</span>
+            <span class="n">msa</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">MorphoSyntaxAnalysisRA</span>
+            <span class="k">if</span> <span class="n">msa</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists_in_target</span><span class="p">(</span><span class="n">msa</span><span class="p">):</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                    <span class="n">ValidationIssue</span><span class="p">(</span>
+                        <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span>
+                        <span class="n">category</span><span class="o">=</span><span class="s2">&quot;missing_reference&quot;</span><span class="p">,</span>
+                        <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+                        <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                        <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Referenced POS/MSA does not exist in target project&quot;</span><span class="p">,</span>
+                        <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;reference_guid&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">msa</span><span class="o">.</span><span class="n">Guid</span><span class="p">)},</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Check SemanticDomains</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;SemanticDomainsRC&quot;</span><span class="p">):</span>
+            <span class="n">domains</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">SemanticDomainsRC</span>
+            <span class="k">if</span> <span class="n">domains</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">domain</span> <span class="ow">in</span> <span class="n">domains</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists_in_target</span><span class="p">(</span><span class="n">domain</span><span class="p">):</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                            <span class="n">ValidationIssue</span><span class="p">(</span>
+                                <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span>
+                                <span class="n">category</span><span class="o">=</span><span class="s2">&quot;missing_reference&quot;</span><span class="p">,</span>
+                                <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+                                <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                                <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Semantic domain not found in target&quot;</span><span class="p">,</span>
+                                <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;domain_guid&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">Guid</span><span class="p">)},</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+
+        <span class="c1"># Check MorphType reference</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;MorphTypeRA&quot;</span><span class="p">):</span>
+            <span class="n">morph_type</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">MorphTypeRA</span>
+            <span class="k">if</span> <span class="n">morph_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists_in_target</span><span class="p">(</span><span class="n">morph_type</span><span class="p">):</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                    <span class="n">ValidationIssue</span><span class="p">(</span>
+                        <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span>
+                        <span class="n">category</span><span class="o">=</span><span class="s2">&quot;missing_reference&quot;</span><span class="p">,</span>
+                        <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+                        <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                        <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Morph type does not exist in target project&quot;</span><span class="p">,</span>
+                        <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;morph_type_guid&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">morph_type</span><span class="o">.</span><span class="n">Guid</span><span class="p">)},</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_owned_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">ValidationResult</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Warn about owned objects that won&#39;t be copied.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Check PhonologicalEnvironments</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;PhonologicalEnvironments&quot;</span><span class="p">):</span>
+            <span class="n">envs</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">PhonologicalEnvironments</span>
+            <span class="k">if</span> <span class="n">envs</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">envs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                    <span class="n">ValidationIssue</span><span class="p">(</span>
+                        <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+                        <span class="n">category</span><span class="o">=</span><span class="s2">&quot;owned_objects&quot;</span><span class="p">,</span>
+                        <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+                        <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                        <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Object has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">envs</span><span class="p">)</span><span class="si">}</span><span class="s2"> phonological environment(s) that will NOT be copied&quot;</span><span class="p">,</span>
+                        <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;num_environments&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">envs</span><span class="p">)},</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Check Examples</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ExamplesOS&quot;</span><span class="p">):</span>
+            <span class="n">examples</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">ExamplesOS</span>
+            <span class="k">if</span> <span class="n">examples</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                    <span class="n">ValidationIssue</span><span class="p">(</span>
+                        <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+                        <span class="n">category</span><span class="o">=</span><span class="s2">&quot;owned_objects&quot;</span><span class="p">,</span>
+                        <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+                        <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                        <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Sense has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span><span class="si">}</span><span class="s2"> example(s) that will NOT be copied&quot;</span><span class="p">,</span>
+                        <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;num_examples&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">examples</span><span class="p">)},</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Check Subsenses</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;SensesOS&quot;</span><span class="p">):</span>
+            <span class="n">subsenses</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">SensesOS</span>
+            <span class="k">if</span> <span class="n">subsenses</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">subsenses</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                    <span class="n">ValidationIssue</span><span class="p">(</span>
+                        <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+                        <span class="n">category</span><span class="o">=</span><span class="s2">&quot;owned_objects&quot;</span><span class="p">,</span>
+                        <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+                        <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                        <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Sense has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">subsenses</span><span class="p">)</span><span class="si">}</span><span class="s2"> subsense(s) that will NOT be copied&quot;</span><span class="p">,</span>
+                        <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;num_subsenses&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">subsenses</span><span class="p">)},</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_hierarchy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">ValidationResult</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate hierarchical relationships.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Check if object requires parent</span>
+        <span class="k">if</span> <span class="n">object_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Allomorph&quot;</span><span class="p">,</span> <span class="s2">&quot;MoForm&quot;</span><span class="p">]:</span>
+            <span class="c1"># Allomorphs must belong to an entry</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Owner&quot;</span><span class="p">):</span>
+                <span class="n">owner</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">Owner</span>
+                <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">owner_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">owner</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists_in_target_by_guid</span><span class="p">(</span><span class="n">owner_guid</span><span class="p">):</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                            <span class="n">ValidationIssue</span><span class="p">(</span>
+                                <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span>
+                                <span class="n">category</span><span class="o">=</span><span class="s2">&quot;missing_parent&quot;</span><span class="p">,</span>
+                                <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+                                <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                                <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Parent entry does not exist in target project&quot;</span><span class="p">,</span>
+                                <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;parent_guid&quot;</span><span class="p">:</span> <span class="n">owner_guid</span><span class="p">},</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">object_type</span> <span class="o">==</span> <span class="s2">&quot;LexSense&quot;</span><span class="p">:</span>
+            <span class="c1"># Senses must belong to entry or parent sense</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Owner&quot;</span><span class="p">):</span>
+                <span class="n">owner</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">Owner</span>
+                <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">owner_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">owner</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists_in_target_by_guid</span><span class="p">(</span><span class="n">owner_guid</span><span class="p">):</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                            <span class="n">ValidationIssue</span><span class="p">(</span>
+                                <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span>
+                                <span class="n">category</span><span class="o">=</span><span class="s2">&quot;missing_parent&quot;</span><span class="p">,</span>
+                                <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+                                <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                                <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Parent entry/sense does not exist in target project&quot;</span><span class="p">,</span>
+                                <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;parent_guid&quot;</span><span class="p">:</span> <span class="n">owner_guid</span><span class="p">},</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_sense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">ValidationResult</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sense-specific validation.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Check if sense has gloss or definition</span>
+        <span class="n">has_content</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Gloss&quot;</span><span class="p">):</span>
+            <span class="n">gloss</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">Gloss</span>
+            <span class="k">if</span> <span class="n">gloss</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="s2">&quot;AnalysisDefaultWritingSystem&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">gloss</span><span class="o">.</span><span class="n">AnalysisDefaultWritingSystem</span><span class="p">:</span>
+                    <span class="n">has_content</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_content</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Definition&quot;</span><span class="p">):</span>
+            <span class="n">definition</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">Definition</span>
+            <span class="k">if</span> <span class="n">definition</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">definition</span><span class="p">,</span> <span class="s2">&quot;AnalysisDefaultWritingSystem&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">definition</span><span class="o">.</span><span class="n">AnalysisDefaultWritingSystem</span><span class="p">:</span>
+                    <span class="n">has_content</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_content</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                    <span class="n">category</span><span class="o">=</span><span class="s2">&quot;data_quality&quot;</span><span class="p">,</span>
+                    <span class="n">object_type</span><span class="o">=</span><span class="s2">&quot;LexSense&quot;</span><span class="p">,</span>
+                    <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                    <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Sense has no gloss or definition&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_allomorph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">ValidationResult</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Allomorph-specific validation.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Check if allomorph has form</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Form&quot;</span><span class="p">):</span>
+            <span class="n">form</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">Form</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">form</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;VernacularDefaultWritingSystem&quot;</span><span class="p">):</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                    <span class="n">ValidationIssue</span><span class="p">(</span>
+                        <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+                        <span class="n">category</span><span class="o">=</span><span class="s2">&quot;data_quality&quot;</span><span class="p">,</span>
+                        <span class="n">object_type</span><span class="o">=</span><span class="s2">&quot;Allomorph&quot;</span><span class="p">,</span>
+                        <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                        <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Allomorph has no vernacular form&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">ValidationResult</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Entry-specific validation.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Check if entry has lexeme form</span>
+        <span class="n">has_lexeme</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;LexemeFormOA&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">LexemeFormOA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">has_lexeme</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_lexeme</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+                    <span class="n">category</span><span class="o">=</span><span class="s2">&quot;data_quality&quot;</span><span class="p">,</span>
+                    <span class="n">object_type</span><span class="o">=</span><span class="s2">&quot;LexEntry&quot;</span><span class="p">,</span>
+                    <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                    <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Entry has no lexeme form&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Check if entry has at least one sense</span>
+        <span class="n">has_senses</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;SensesOS&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">SensesOS</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">has_senses</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_senses</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="n">severity</span><span class="o">=</span><span class="n">ValidationSeverity</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                    <span class="n">category</span><span class="o">=</span><span class="s2">&quot;data_quality&quot;</span><span class="p">,</span>
+                    <span class="n">object_type</span><span class="o">=</span><span class="s2">&quot;LexEntry&quot;</span><span class="p">,</span>
+                    <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                    <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Entry has no senses&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_exists_in_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if object exists in target project.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists_in_target_by_guid</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_exists_in_target_by_guid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if object with GUID exists in target.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">target_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">target_obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="ValidationError">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.validation.ValidationError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ValidationError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when validation fails with critical issues.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">validation_result</span><span class="p">:</span> <span class="n">ValidationResult</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">validation_result</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">validation_result</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.sync.validation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

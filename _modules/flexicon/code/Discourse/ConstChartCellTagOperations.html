@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Discourse.ConstChartCellTagOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Discourse.ConstChartCellTagOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Discourse.ConstChartCellTagOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ConstChartCellTagOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ConstChartCellTagOperations</span>
+<span class="c1">#          Per-cell tag (IConstChartTag) operations for constituent</span>
+<span class="c1">#          charts in FieldWorks Language Explorer projects via SIL</span>
+<span class="c1">#          Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2026</span>
+<span class="c1">#</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IConstChartTag</span><span class="p">,</span>
+    <span class="n">IConstChartTagFactory</span><span class="p">,</span>
+    <span class="n">IConstChartRow</span><span class="p">,</span>
+    <span class="n">ICmPossibility</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ConstChartCellTagOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Discourse.html#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConstChartCellTagOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Operations for managing per-cell chart tags (``IConstChartTag``)</span>
+<span class="sd">    -- the annotation surface in a constituent chart.</span>
+
+<span class="sd">    Each chart row owns a sequence of cell-parts; a ``IConstChartTag``</span>
+<span class="sd">    is one cell-part subtype. Each tag is positioned in a column</span>
+<span class="sd">    (``ColumnRA``) and references a marker from the project-wide</span>
+<span class="sd">    vocabulary (``TagRA``). The vocabulary itself is managed by</span>
+<span class="sd">    ``ConstChartMarkerOperations``.</span>
+
+<span class="sd">    Typical workflow::</span>
+
+<span class="sd">        row    = list(chart.RowsOS)[0]</span>
+<span class="sd">        col    = list(template.ColumnsOS)[1]</span>
+<span class="sd">        topic  = project.ConstChartMarkers.Find(&quot;Topic&quot;)</span>
+
+<span class="sd">        tag = project.ConstChartCellTags.Create(row, col, topic)</span>
+<span class="sd">        assert project.ConstChartCellTags.GetMarker(tag) is topic</span>
+
+<span class="sd">    Access via ``FLExProject.ConstChartCellTags``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ------------------------------------------</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">marker</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a new IConstChartTag cell-part to ``row.CellsOS``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: The ``IConstChartRow`` (or HVO) that will own</span>
+<span class="sd">                the new cell-part.</span>
+<span class="sd">            column: The ``ICmPossibility`` representing the column</span>
+<span class="sd">                this tag occupies. Stored as ``ColumnRA``.</span>
+<span class="sd">            marker: The ``ICmPossibility`` from the project&#39;s</span>
+<span class="sd">                ChartMarkers vocabulary. Stored as ``TagRA``.</span>
+<span class="sd">            index (int, optional): Position to insert at within</span>
+<span class="sd">                ``row.CellsOS``. When None (default) the tag is</span>
+<span class="sd">                appended at the end.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartTag: The newly created cell-part.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not writeEnabled.</span>
+<span class="sd">            FP_NullParameterError: If any of row_or_hvo / column /</span>
+<span class="sd">                marker is None.</span>
+<span class="sd">            FP_ParameterError: If index is out of range.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="s2">&quot;column&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker</span><span class="p">,</span> <span class="s2">&quot;marker&quot;</span><span class="p">)</span>
+
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRow</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+        <span class="n">cell_count</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span><span class="o">.</span><span class="n">Count</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">cell_count</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="n">cell_count</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> out of range for CellsOS of size </span><span class="si">{</span><span class="n">cell_count</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+            <span class="n">IConstChartTagFactory</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">marker</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a cell-tag from its owning row.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_or_hvo: ``IConstChartTag`` or its HVO.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">tag_or_hvo</span><span class="p">,</span> <span class="s2">&quot;tag_or_hvo&quot;</span><span class="p">)</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveTag</span><span class="p">(</span><span class="n">tag_or_hvo</span><span class="p">)</span>
+        <span class="n">tag</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">,</span> <span class="n">column</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find the first cell-tag in ``row`` positioned in ``column``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: ``IConstChartRow`` or HVO.</span>
+<span class="sd">            column: ``ICmPossibility`` representing the column.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartTag or None: First matching tag, or None when</span>
+<span class="sd">            the row has no tag in that column.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="s2">&quot;column&quot;</span><span class="p">)</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRow</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+        <span class="n">column_hvo</span> <span class="o">=</span> <span class="n">column</span><span class="o">.</span><span class="n">Hvo</span>
+        <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">IConstChartTag</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">ColumnRA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cell</span><span class="o">.</span><span class="n">ColumnRA</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">column_hvo</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">cell</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Iterate every IConstChartTag in ``row.CellsOS`` (other</span>
+<span class="sd">        cell-part subtypes are filtered out).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row_or_hvo: ``IConstChartRow`` or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[IConstChartTag]: Tags in CellsOS order.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRow</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">IConstChartTag</span><span class="p">)]</span>
+
+    <span class="c1"># --- Tag Properties ------------------------------------------------</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMarker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return ``tag.TagRA`` -- the referenced marker (or None).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">tag_or_hvo</span><span class="p">,</span> <span class="s2">&quot;tag_or_hvo&quot;</span><span class="p">)</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveTag</span><span class="p">(</span><span class="n">tag_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tag</span><span class="o">.</span><span class="n">TagRA</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetMarker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_or_hvo</span><span class="p">,</span> <span class="n">marker</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set ``tag.TagRA`` to a marker from the project vocabulary.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">tag_or_hvo</span><span class="p">,</span> <span class="s2">&quot;tag_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker</span><span class="p">,</span> <span class="s2">&quot;marker&quot;</span><span class="p">)</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveTag</span><span class="p">(</span><span class="n">tag_or_hvo</span><span class="p">)</span>
+        <span class="n">tag</span><span class="o">.</span><span class="n">TagRA</span> <span class="o">=</span> <span class="n">marker</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetColumn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return ``tag.ColumnRA`` -- the column the tag occupies.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">tag_or_hvo</span><span class="p">,</span> <span class="s2">&quot;tag_or_hvo&quot;</span><span class="p">)</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveTag</span><span class="p">(</span><span class="n">tag_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tag</span><span class="o">.</span><span class="n">ColumnRA</span>
+
+    <span class="c1"># --- Private Helpers -----------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveRow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IConstChartRow</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;HVO does not refer to an IConstChartRow&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">row_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveTag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_or_hvo</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tag_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">tag_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IConstChartTag</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;HVO does not refer to an IConstChartTag&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">tag_or_hvo</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Discourse.ConstChartCellTagOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

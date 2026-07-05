@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.FLExGlobals &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.FLExGlobals</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.FLExGlobals</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   FLExGlobals.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Module: FieldWorks Language Explorer path initialisation.</span>
+<span class="c1">#</span>
+<span class="c1">#           This module sets up the path for import of the</span>
+<span class="c1">#           FieldWorks Assemblies.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET &amp; IRONPython</span>
+<span class="c1">#             FieldWorks Version 9.0, 9.1</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright Craig Farrow, 2011 - 2022</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System.Data&quot;</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">Environment</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">System.Reflection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Assembly</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Microsoft.Win32</span><span class="w"> </span><span class="kn">import</span> <span class="n">Registry</span><span class="p">,</span> <span class="n">RegistryKey</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># ----------------------------------------------------------------</span>
+<span class="c1"># Public globals</span>
+
+<span class="n">FWCodeDir</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">FWProjectsDir</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">FWExecutable</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">FWShortVersion</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">FWLongVersion</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="c1"># (Double dirname() goes up a directory)</span>
+<span class="n">APIHelpFile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span> <span class="sa">r</span><span class="s2">&quot;docs\flexlibsAPI\flexlibs2.html&quot;</span><span class="p">)</span>
+
+<span class="c1"># ----------------------------------------------------------------</span>
+<span class="c1"># FieldWorks registry constants</span>
+
+<span class="n">FW_SUPPORTED_VERSIONS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;9&quot;</span><span class="p">]</span>
+<span class="n">FWREG_CODEDIR</span> <span class="o">=</span> <span class="s2">&quot;RootCodeDir&quot;</span>
+<span class="n">FWREG_PROJECTSDIR</span> <span class="o">=</span> <span class="s2">&quot;ProjectsDir&quot;</span>
+
+<span class="n">FWRegKeys</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;9&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;SOFTWARE\SIL\FieldWorks\9&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="c1"># ----------------------------------------------------------------</span>
+<div class="viewcode-block" id="GetFWRegKey">
+<a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.FLExGlobals.GetFWRegKey">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">GetFWRegKey</span><span class="p">():</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;.NET version: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">Environment</span><span class="o">.</span><span class="n">Version</span><span class="p">)</span>
+
+    <span class="c1"># Note: The registry looks up 32bit (via WOW3264Node) if we are</span>
+    <span class="c1"># running 32 bit Python, so no need for special handling.</span>
+
+    <span class="n">python32or64</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">architecture</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># &quot;32bit&quot;/&quot;64bit&quot;</span>
+
+    <span class="k">for</span> <span class="n">fwVersion</span> <span class="ow">in</span> <span class="n">FW_SUPPORTED_VERSIONS</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Looking for FieldWorks </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">...&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fwVersion</span><span class="p">,</span> <span class="n">python32or64</span><span class="p">))</span>
+
+        <span class="n">RegKey</span> <span class="o">=</span> <span class="n">FWRegKeys</span><span class="p">[</span><span class="n">fwVersion</span><span class="p">]</span>
+        <span class="n">rKey</span> <span class="o">=</span> <span class="n">Registry</span><span class="o">.</span><span class="n">CurrentUser</span><span class="o">.</span><span class="n">OpenSubKey</span><span class="p">(</span><span class="n">RegKey</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GetFWRegKey: </span><span class="si">%s</span><span class="s2"> =&gt; </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">RegKey</span><span class="p">,</span> <span class="n">rKey</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">rKey</span> <span class="ow">and</span> <span class="n">rKey</span><span class="o">.</span><span class="n">GetValue</span><span class="p">(</span><span class="n">FWREG_CODEDIR</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">rKey</span>
+
+        <span class="n">rKey</span> <span class="o">=</span> <span class="n">Registry</span><span class="o">.</span><span class="n">LocalMachine</span><span class="o">.</span><span class="n">OpenSubKey</span><span class="p">(</span><span class="n">RegKey</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GetFWRegKey: </span><span class="si">%s</span><span class="s2"> =&gt; </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">RegKey</span><span class="p">,</span> <span class="n">rKey</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">rKey</span> <span class="ow">and</span> <span class="n">rKey</span><span class="o">.</span><span class="n">GetValue</span><span class="p">(</span><span class="n">FWREG_CODEDIR</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">rKey</span>
+
+    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> FieldWorks </span><span class="si">%s</span><span class="s2"> not found&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">python32or64</span><span class="p">,</span> <span class="s2">&quot; or &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FW_SUPPORTED_VERSIONS</span><span class="p">))</span>
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># -------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="InitialiseFWGlobals">
+<a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.FLExGlobals.InitialiseFWGlobals">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">InitialiseFWGlobals</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">FWCodeDir</span>
+    <span class="k">global</span> <span class="n">FWProjectsDir</span>
+    <span class="k">global</span> <span class="n">FWExecutable</span>
+    <span class="k">global</span> <span class="n">FWShortVersion</span>
+    <span class="k">global</span> <span class="n">FWLongVersion</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">rKey</span> <span class="o">=</span> <span class="n">GetFWRegKey</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t find FieldWorks registry entry&quot;</span><span class="p">)</span>
+        <span class="k">raise</span>
+
+    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Linux&quot;</span><span class="p">:</span>
+        <span class="c1"># Linux support is incomplete: as of Apr2024 FW uses flatpak and</span>
+        <span class="c1"># this path no longer works. On installed Linux FW,</span>
+        <span class="c1"># FWREG_CODEDIR points to /usr/share/fieldworks,</span>
+        <span class="c1"># but FieldWorks.exe resides in /usr/lib/fieldworks.</span>
+        <span class="c1"># I can&#39;t find any registry keys/values that point to</span>
+        <span class="c1"># the correct location.</span>
+        <span class="c1"># For installed version, the app calls /bin/fieldworks-flex</span>
+        <span class="c1"># from /usr/share/applications/fieldworks-applicatoins.desktop,</span>
+        <span class="c1"># which in turn calls /usr/lib/fieldworks/run-app FieldWorks.exe etc.</span>
+        <span class="c1">#</span>
+        <span class="c1"># The following is based on the logic in /usr/lib/fieldworks/environ</span>
+        <span class="n">FWCodeDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rKey</span><span class="o">.</span><span class="n">GetValue</span><span class="p">(</span><span class="n">FWREG_CODEDIR</span><span class="p">),</span> <span class="s2">&quot;../../lib/fieldworks&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># On windows, FWREG_CODEDIR is correct.</span>
+        <span class="n">FWCodeDir</span> <span class="o">=</span> <span class="n">rKey</span><span class="o">.</span><span class="n">GetValue</span><span class="p">(</span><span class="n">FWREG_CODEDIR</span><span class="p">)</span>
+
+    <span class="c1"># FWREG_PROJECTSDIR is correct on Windows and Linux.</span>
+    <span class="n">FWProjectsDir</span> <span class="o">=</span> <span class="n">rKey</span><span class="o">.</span><span class="n">GetValue</span><span class="p">(</span><span class="n">FWREG_PROJECTSDIR</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FWCodeDir</span><span class="p">,</span> <span class="s2">&quot;FieldWorks.exe&quot;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">F_OK</span><span class="p">):</span>
+        <span class="c1"># On developer&#39;s machines we also check the build directories</span>
+        <span class="c1"># for FieldWorks.exe</span>
+        <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Linux&quot;</span><span class="p">:</span>
+            <span class="n">devPaths</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">rKey</span><span class="o">.</span><span class="n">GetValue</span><span class="p">(</span><span class="n">FWREG_CODEDIR</span><span class="p">)),</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Windows</span>
+            <span class="n">devPaths</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FWCodeDir</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;..\Output\Release</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">),</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FWCodeDir</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;..\Output\Debug</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">),</span>
+            <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">devPaths</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;FieldWorks.exe&quot;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">F_OK</span><span class="p">):</span>
+                <span class="n">FWCodeDir</span> <span class="o">=</span> <span class="n">p</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># This can happen if there is a ghost registry entry for</span>
+            <span class="c1"># an uninstalled FLEx</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;FieldWorks.exe not found in </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">FWCodeDir</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">FWExecutable</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FWCodeDir</span><span class="p">,</span> <span class="s2">&quot;FieldWorks.exe&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Add the FW code directory to the search path for importing FW libs.</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">FWCodeDir</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;sys.path = </span><span class="se">\n\t</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+
+    <span class="c1"># These can&#39;t be imported until the path is set:</span>
+    <span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FwUtils&quot;</span><span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.FieldWorks.Common.FwUtils</span><span class="w"> </span><span class="kn">import</span> <span class="n">VersionInfoProvider</span>
+
+    <span class="c1"># Get the full version information out of FW itself</span>
+    <span class="n">vip</span> <span class="o">=</span> <span class="n">VersionInfoProvider</span><span class="p">(</span><span class="n">Assembly</span><span class="o">.</span><span class="n">GetAssembly</span><span class="p">(</span><span class="n">VersionInfoProvider</span><span class="p">),</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">FWShortVersion</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Version</span><span class="p">(</span><span class="n">vip</span><span class="o">.</span><span class="n">ShortNumericAppVersion</span><span class="p">)</span>  <span class="c1"># e.g. 8.1.3</span>
+    <span class="n">FWLongVersion</span> <span class="o">=</span> <span class="n">vip</span><span class="o">.</span><span class="n">ApplicationVersion</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found FieldWorks installation&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;FWCodeDir = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">FWCodeDir</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;FWProjectsDir = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">FWProjectsDir</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;FWShortVersion = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">FWShortVersion</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;FWLongVersion = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">FWLongVersion</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.FLExGlobals</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

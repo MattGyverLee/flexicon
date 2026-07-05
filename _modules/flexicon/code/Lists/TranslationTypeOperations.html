@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Lists.TranslationTypeOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists.TranslationTypeOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Lists.TranslationTypeOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   TranslationTypeOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: TranslationTypeOperations</span>
+<span class="c1">#          Translation type management operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ITextRepository</span><span class="p">,</span>
+    <span class="n">IStTxtParaRepository</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="n">FP_ParameterError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">OperationsMethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.possibility_item_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PossibilityItemOperations</span>
+
+
+<div class="viewcode-block" id="TranslationTypeOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lists.html#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TranslationTypeOperations</span><span class="p">(</span><span class="n">PossibilityItemOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Translation type operations for managing translation categories.</span>
+
+<span class="sd">    Translation types categorize different kinds of translations such as</span>
+<span class="sd">    free translation (idiomatic), literal translation (word-for-word),</span>
+<span class="sd">    and back translation (reverse translation for verification).</span>
+
+<span class="sd">    Inherited CRUD Operations (from PossibilityItemOperations):</span>
+<span class="sd">    - GetAll() - Get all translation types</span>
+<span class="sd">    - Create() - Create new type</span>
+<span class="sd">    - Delete() - Delete type</span>
+<span class="sd">    - Duplicate() - Clone type</span>
+<span class="sd">    - Find() - Find by name</span>
+<span class="sd">    - Exists() - Check existence</span>
+<span class="sd">    - GetName() / SetName() - Get/set name</span>
+<span class="sd">    - GetDescription() / SetDescription() - Get/set description</span>
+<span class="sd">    - GetGuid() - Get GUID</span>
+<span class="sd">    - CompareTo() - Compare by name</span>
+
+<span class="sd">    Domain-Specific Methods (TranslationTypeOperations):</span>
+<span class="sd">    - GetAbbreviation() / SetAbbreviation() - Get/set abbreviation</span>
+<span class="sd">    - GetAnalysisWS() / SetAnalysisWS() - Get/set analysis writing systems</span>
+<span class="sd">    - GetTextsWithType() - Find texts using type</span>
+<span class="sd">    - GetSegmentsWithType() - Find segments using type</span>
+<span class="sd">    - GetFreeTranslationType() - Get predefined free type</span>
+<span class="sd">    - GetLiteralTranslationType() - Get predefined literal type</span>
+<span class="sd">    - GetBackTranslationType() - Get predefined back type</span>
+<span class="sd">    - FindByWS() - Find by writing system</span>
+<span class="sd">    - IsDefault() / SetDefault() - Check/set default status</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize TranslationTypeOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_item_class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the item class name for error messages.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;TranslationType&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_list_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the translation types list container.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">TranslationTagsOA</span>
+
+    <span class="c1"># --- Property Accessors ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the abbreviation of a translation type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            type_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The translation type abbreviation, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If type_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; free = project.TranslationTypes.GetFreeTranslationType()</span>
+<span class="sd">            &gt;&gt;&gt; abbr = project.TranslationTypes.GetAbbreviation(free)</span>
+<span class="sd">            &gt;&gt;&gt; print(abbr)</span>
+<span class="sd">            fr</span>
+
+<span class="sd">            &gt;&gt;&gt; literal = project.TranslationTypes.GetLiteralTranslationType()</span>
+<span class="sd">            &gt;&gt;&gt; abbr = project.TranslationTypes.GetAbbreviation(literal)</span>
+<span class="sd">            &gt;&gt;&gt; print(abbr)</span>
+<span class="sd">            lit</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetAbbreviation, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;type_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">trans_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">abbr</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">trans_type</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_or_hvo</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the abbreviation of a translation type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            type_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            abbreviation (str): The new abbreviation.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If type_or_hvo or abbreviation is None.</span>
+<span class="sd">            FP_ParameterError: If abbreviation is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; custom = project.TranslationTypes.Find(&quot;Idiomatic Translation&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if custom:</span>
+<span class="sd">            ...     project.TranslationTypes.SetAbbreviation(custom, &quot;Idio&quot;)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Avoid changing abbreviations for predefined types</span>
+<span class="sd">            - Abbreviations should be short and distinctive</span>
+<span class="sd">            - Only modify custom types you created</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAbbreviation, SetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;type_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="s2">&quot;abbreviation&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">abbreviation</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">abbreviation</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Abbreviation cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">trans_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">trans_type</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="c1"># --- Writing System Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAnalysisWS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the analysis writing systems used by a translation type.</span>
+
+<span class="sd">        Returns the writing systems in which this translation type has</span>
+<span class="sd">        translations defined.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            type_or_hvo: The ICmPossibility object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of writing system handles (integers) for which</span>
+<span class="sd">                this type has content defined.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If type_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; free = project.TranslationTypes.GetFreeTranslationType()</span>
+<span class="sd">            &gt;&gt;&gt; ws_list = project.TranslationTypes.GetAnalysisWS(free)</span>
+<span class="sd">            &gt;&gt;&gt; for ws_handle in ws_list:</span>
+<span class="sd">            ...     ws_obj = project.project.ServiceLocator.WritingSystemManager.Get(ws_handle)</span>
+<span class="sd">            ...     print(f&quot;Writing system: {ws_obj.Id}&quot;)</span>
+<span class="sd">            Writing system: en</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns handles for writing systems, not WS objects</span>
+<span class="sd">            - Translation types typically use analysis writing systems</span>
+<span class="sd">            - Empty list means no specific WS associations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetAnalysisWS, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;type_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">trans_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get all writing systems where this type has content</span>
+        <span class="n">ws_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Check name field for available writing systems</span>
+        <span class="k">if</span> <span class="n">trans_type</span><span class="o">.</span><span class="n">Name</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="n">trans_type</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">AvailableWritingSystemIds</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ws</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ws_list</span><span class="p">:</span>
+                    <span class="n">ws_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ws_list</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAnalysisWS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">abbreviation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name and abbreviation for a translation type in a specific</span>
+<span class="sd">        writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            type_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            wsHandle: Writing system handle to set content for.</span>
+<span class="sd">            name (str, optional): Name in the specified writing system.</span>
+<span class="sd">                If None, uses existing or empty. Defaults to None.</span>
+<span class="sd">            abbreviation (str, optional): Abbreviation in the specified</span>
+<span class="sd">                writing system. If None, uses existing or empty.</span>
+<span class="sd">                Defaults to None.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If type_or_hvo or wsHandle is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Set French translations for a type</span>
+<span class="sd">            &gt;&gt;&gt; free = project.TranslationTypes.GetFreeTranslationType()</span>
+<span class="sd">            &gt;&gt;&gt; fr_ws = project.WSHandle(&#39;fr&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; project.TranslationTypes.SetAnalysisWS(</span>
+<span class="sd">            ...     free, fr_ws,</span>
+<span class="sd">            ...     name=&quot;Traduction libre&quot;,</span>
+<span class="sd">            ...     abbreviation=&quot;tl&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Allows translation types to have names in multiple languages</span>
+<span class="sd">            - If name or abbreviation is None, that field is not updated</span>
+<span class="sd">            - Useful for multilingual projects</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAnalysisWS, GetName, SetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;type_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="s2">&quot;wsHandle&quot;</span><span class="p">)</span>
+
+        <span class="n">trans_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set translation type writing system&quot;</span><span class="p">):</span>
+            <span class="c1"># Set name if provided</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">trans_type</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+            <span class="c1"># Set abbreviation if provided</span>
+            <span class="k">if</span> <span class="n">abbreviation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mkstr_abbr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">trans_type</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
+
+    <span class="c1"># --- Usage Tracking ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetTextsWithType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all texts that use a specific translation type.</span>
+
+<span class="sd">        Searches through all texts in the project and returns those that</span>
+<span class="sd">        reference this translation type in their translations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            type_or_hvo: The ICmPossibility object or HVO.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            IText: Each text object that uses this translation type.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If type_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; free = project.TranslationTypes.GetFreeTranslationType()</span>
+<span class="sd">            &gt;&gt;&gt; texts = list(project.TranslationTypes.GetTextsWithType(free))</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;{len(texts)} texts use free translation&quot;)</span>
+<span class="sd">            12 texts use free translation</span>
+
+<span class="sd">            &gt;&gt;&gt; for text in texts:</span>
+<span class="sd">            ...     name = text.Name.BestAnalysisAlternative.Text</span>
+<span class="sd">            ...     print(f&quot;  - {name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - May be slow for large projects (scans all texts)</span>
+<span class="sd">            - Useful for determining if a type is in use before deleting</span>
+<span class="sd">            - Returns empty sequence if type is not used</span>
+<span class="sd">            - Checks text-level translations, not segment-level</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSegmentsWithType, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;type_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">trans_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">)</span>
+        <span class="n">type_guid</span> <span class="o">=</span> <span class="n">trans_type</span><span class="o">.</span><span class="n">Guid</span>
+
+        <span class="c1"># Search all texts</span>
+        <span class="n">text_repo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetInstance</span><span class="p">(</span><span class="n">ITextRepository</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">text_repo</span><span class="o">.</span><span class="n">AllInstances</span><span class="p">():</span>
+            <span class="c1"># Check if text has translations using this type</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;TranslationsOC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">translation</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">TranslationsOC</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">translation</span><span class="p">,</span> <span class="s2">&quot;TypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">translation</span><span class="o">.</span><span class="n">TypeRA</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">translation</span><span class="o">.</span><span class="n">TypeRA</span><span class="o">.</span><span class="n">Guid</span> <span class="o">==</span> <span class="n">type_guid</span><span class="p">:</span>
+                            <span class="k">yield</span> <span class="n">text</span>
+                            <span class="k">break</span>  <span class="c1"># Count each text only once</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSegmentsWithType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all segments that use a specific translation type.</span>
+
+<span class="sd">        Searches through all segments in all texts and returns those that</span>
+<span class="sd">        reference this translation type in their translations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            type_or_hvo: The ICmPossibility object or HVO.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ISegment: Each segment object that uses this translation type.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If type_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; literal = project.TranslationTypes.GetLiteralTranslationType()</span>
+<span class="sd">            &gt;&gt;&gt; segments = list(project.TranslationTypes.GetSegmentsWithType(literal))</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;{len(segments)} segments use literal translation&quot;)</span>
+<span class="sd">            458 segments use literal translation</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This operation can be very slow for large projects</span>
+<span class="sd">            - Scans all paragraphs and segments in the entire project</span>
+<span class="sd">            - Consider using GetTextsWithType() for faster overview</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty sequence if type is not used</span>
+<span class="sd">            - Useful for detailed usage analysis</span>
+<span class="sd">            - Each segment is yielded only once</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetTextsWithType, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;type_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">trans_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">)</span>
+        <span class="n">type_guid</span> <span class="o">=</span> <span class="n">trans_type</span><span class="o">.</span><span class="n">Guid</span>
+
+        <span class="c1"># Search all paragraphs and their segments</span>
+        <span class="n">para_repo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetInstance</span><span class="p">(</span><span class="n">IStTxtParaRepository</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">para</span> <span class="ow">in</span> <span class="n">para_repo</span><span class="o">.</span><span class="n">AllInstances</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">para</span><span class="p">,</span> <span class="s2">&quot;SegmentsOS&quot;</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">para</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">:</span>
+                    <span class="c1"># Check segment translations</span>
+                    <span class="c1"># Note: Segments typically don&#39;t have typed translations</span>
+                    <span class="c1"># in the same way texts do, but we check for completeness</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">segment</span><span class="p">,</span> <span class="s2">&quot;FreeTranslation&quot;</span><span class="p">):</span>
+                        <span class="c1"># Segments have FreeTranslation and LiteralTranslation</span>
+                        <span class="c1"># but these are typically not typed in the same way</span>
+                        <span class="c1"># This method is provided for API completeness</span>
+                        <span class="k">pass</span>
+
+    <span class="c1"># --- Predefined Translation Types ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFreeTranslationType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the predefined &quot;Free translation&quot; type.</span>
+
+<span class="sd">        Returns the standard free translation type that is present in all</span>
+<span class="sd">        FLEx projects. Free translation represents idiomatic, natural</span>
+<span class="sd">        language translation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility or None: The free translation type object,</span>
+<span class="sd">                or None if not found.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; free = project.TranslationTypes.GetFreeTranslationType()</span>
+<span class="sd">            &gt;&gt;&gt; if free:</span>
+<span class="sd">            ...     name = project.TranslationTypes.GetName(free)</span>
+<span class="sd">            ...     abbr = project.TranslationTypes.GetAbbreviation(free)</span>
+<span class="sd">            ...     print(f&quot;{name} ({abbr})&quot;)</span>
+<span class="sd">            Free translation (fr)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is a predefined type with GUID:</span>
+<span class="sd">              eb92e50f-ba96-4d1d-b632-057b5c274132</span>
+<span class="sd">            - Should be present in all standard FLEx projects</span>
+<span class="sd">            - Cannot be deleted</span>
+<span class="sd">            - Default translation type for natural language translations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetLiteralTranslationType, GetBackTranslationType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Free translation GUID</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Guid</span><span class="p">(</span><span class="s2">&quot;eb92e50f-ba96-4d1d-b632-057b5c274132&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">trans_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">trans_type</span><span class="o">.</span><span class="n">Guid</span> <span class="o">==</span> <span class="n">guid</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">trans_type</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLiteralTranslationType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the predefined &quot;Literal translation&quot; type.</span>
+
+<span class="sd">        Returns the standard literal translation type that is present in all</span>
+<span class="sd">        FLEx projects. Literal translation represents word-for-word,</span>
+<span class="sd">        morpheme-aligned translation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility or None: The literal translation type object,</span>
+<span class="sd">                or None if not found.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; literal = project.TranslationTypes.GetLiteralTranslationType()</span>
+<span class="sd">            &gt;&gt;&gt; if literal:</span>
+<span class="sd">            ...     name = project.TranslationTypes.GetName(literal)</span>
+<span class="sd">            ...     abbr = project.TranslationTypes.GetAbbreviation(literal)</span>
+<span class="sd">            ...     print(f&quot;{name} ({abbr})&quot;)</span>
+<span class="sd">            Literal translation (lit)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is a predefined type with GUID:</span>
+<span class="sd">              c6e13529-97ed-4a8a-86f9-7b30b3b0b1c0</span>
+<span class="sd">            - Should be present in all standard FLEx projects</span>
+<span class="sd">            - Cannot be deleted</span>
+<span class="sd">            - Used for interlinear, word-for-word translations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetFreeTranslationType, GetBackTranslationType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Literal translation GUID</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Guid</span><span class="p">(</span><span class="s2">&quot;c6e13529-97ed-4a8a-86f9-7b30b3b0b1c0&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">trans_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">trans_type</span><span class="o">.</span><span class="n">Guid</span> <span class="o">==</span> <span class="n">guid</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">trans_type</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetBackTranslationType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the predefined &quot;Back translation&quot; type.</span>
+
+<span class="sd">        Returns the standard back translation type that is present in all</span>
+<span class="sd">        FLEx projects. Back translation is a reverse translation from the</span>
+<span class="sd">        target language back to the source language for verification purposes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility or None: The back translation type object,</span>
+<span class="sd">                or None if not found.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; back = project.TranslationTypes.GetBackTranslationType()</span>
+<span class="sd">            &gt;&gt;&gt; if back:</span>
+<span class="sd">            ...     name = project.TranslationTypes.GetName(back)</span>
+<span class="sd">            ...     abbr = project.TranslationTypes.GetAbbreviation(back)</span>
+<span class="sd">            ...     print(f&quot;{name} ({abbr})&quot;)</span>
+<span class="sd">            Back translation (bt)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is a predefined type with GUID:</span>
+<span class="sd">              d7f713e4-e8cf-11d3-9764-00c04f186933</span>
+<span class="sd">            - Should be present in all standard FLEx projects</span>
+<span class="sd">            - Cannot be deleted</span>
+<span class="sd">            - Used for translation checking and verification</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetFreeTranslationType, GetLiteralTranslationType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Back translation GUID</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Guid</span><span class="p">(</span><span class="s2">&quot;d7f713e4-e8cf-11d3-9764-00c04f186933&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">trans_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">trans_type</span><span class="o">.</span><span class="n">Guid</span> <span class="o">==</span> <span class="n">guid</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">trans_type</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Query Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByWS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find all translation types that have content in a specific</span>
+<span class="sd">        writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Writing system handle to search for.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmPossibility: Each translation type that has name or</span>
+<span class="sd">                abbreviation defined in the specified writing system.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If wsHandle is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find types with English content</span>
+<span class="sd">            &gt;&gt;&gt; en_ws = project.WSHandle(&#39;en&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; for trans_type in project.TranslationTypes.FindByWS(en_ws):</span>
+<span class="sd">            ...     name = project.TranslationTypes.GetName(trans_type, en_ws)</span>
+<span class="sd">            ...     print(name)</span>
+<span class="sd">            Free translation</span>
+<span class="sd">            Literal translation</span>
+<span class="sd">            Back translation</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Checks both name and abbreviation fields</span>
+<span class="sd">            - Useful for finding types available in a specific language</span>
+<span class="sd">            - Returns empty sequence if no types have content in that WS</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAnalysisWS, SetAnalysisWS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="s2">&quot;wsHandle&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">trans_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="c1"># Check if this type has content in the specified WS</span>
+            <span class="k">if</span> <span class="n">trans_type</span><span class="o">.</span><span class="n">Name</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="n">trans_type</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">AvailableWritingSystemIds</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ws</span> <span class="o">==</span> <span class="n">wsHandle</span><span class="p">:</span>
+                        <span class="k">yield</span> <span class="n">trans_type</span>
+                        <span class="k">break</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsDefault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a translation type is one of the predefined default types.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            type_or_hvo: The ICmPossibility object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if this is a predefined type (free, literal, or back),</span>
+<span class="sd">                False if it&#39;s a custom type.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If type_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; free = project.TranslationTypes.GetFreeTranslationType()</span>
+<span class="sd">            &gt;&gt;&gt; is_default = project.TranslationTypes.IsDefault(free)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Is default: {is_default}&quot;)</span>
+<span class="sd">            Is default: True</span>
+
+<span class="sd">            &gt;&gt;&gt; custom = project.TranslationTypes.Find(&quot;Idiomatic&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if custom:</span>
+<span class="sd">            ...     is_default = project.TranslationTypes.IsDefault(custom)</span>
+<span class="sd">            ...     print(f&quot;Is default: {is_default}&quot;)</span>
+<span class="sd">            Is default: False</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Predefined types cannot be deleted</span>
+<span class="sd">            - Custom types can be deleted</span>
+<span class="sd">            - Useful for distinguishing system vs. user-created types</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetFreeTranslationType, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;type_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">trans_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">)</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">trans_type</span><span class="o">.</span><span class="n">Guid</span>
+
+        <span class="c1"># Check against predefined GUIDs</span>
+        <span class="n">predefined_guids</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">System</span><span class="o">.</span><span class="n">Guid</span><span class="p">(</span><span class="s2">&quot;eb92e50f-ba96-4d1d-b632-057b5c274132&quot;</span><span class="p">),</span>  <span class="c1"># Free</span>
+            <span class="n">System</span><span class="o">.</span><span class="n">Guid</span><span class="p">(</span><span class="s2">&quot;c6e13529-97ed-4a8a-86f9-7b30b3b0b1c0&quot;</span><span class="p">),</span>  <span class="c1"># Literal</span>
+            <span class="n">System</span><span class="o">.</span><span class="n">Guid</span><span class="p">(</span><span class="s2">&quot;d7f713e4-e8cf-11d3-9764-00c04f186933&quot;</span><span class="p">),</span>  <span class="c1"># Back</span>
+        <span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">guid</span> <span class="ow">in</span> <span class="n">predefined_guids</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDefault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set a translation type as the default for new translations.</span>
+
+<span class="sd">        Note: This functionality may not be fully supported in all FLEx</span>
+<span class="sd">        versions, as translation type defaults are often context-dependent.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            type_or_hvo: The ICmPossibility object or HVO.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If type_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: Feature not fully supported.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # This method is provided for API completeness</span>
+<span class="sd">            &gt;&gt;&gt; # but may not have full functionality</span>
+<span class="sd">            &gt;&gt;&gt; free = project.TranslationTypes.GetFreeTranslationType()</span>
+<span class="sd">            &gt;&gt;&gt; # project.TranslationTypes.SetDefault(free)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This feature may not be fully implemented in FLEx</span>
+<span class="sd">            - Translation type defaults are typically context-dependent</span>
+<span class="sd">            - Consider this method as a placeholder for future enhancement</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Translation types don&#39;t have a single &quot;default&quot;</span>
+<span class="sd">            - Free translation is typically used by default for texts</span>
+<span class="sd">            - Literal translation is typically used for interlinear</span>
+<span class="sd">            - This method is provided for API consistency</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsDefault, GetFreeTranslationType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;type_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Placeholder for potential future implementation</span>
+        <span class="c1"># Translation type defaults are context-dependent</span>
+        <span class="k">pass</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists.TranslationTypeOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Scripture.ScrAnnotationsOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Scripture.ScrAnnotationsOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Scripture.ScrAnnotationsOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ScrAnnotationsOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ScrAnnotationsOperations</span>
+<span class="c1">#          Scripture book annotations operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IScrBook</span><span class="p">,</span>
+    <span class="n">IScrBookAnnotations</span><span class="p">,</span>
+    <span class="n">IScrBookAnnotationsFactory</span><span class="p">,</span>
+    <span class="n">IScrScriptureNote</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ScrAnnotationsOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Scripture.html#flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ScrAnnotationsOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing Scripture book annotations in a</span>
+<span class="sd">    FieldWorks project.</span>
+
+<span class="sd">    Scripture book annotations are containers for notes (translator notes,</span>
+<span class="sd">    consultant notes, etc.) associated with a Scripture book.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.ScrAnnotations property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get a book</span>
+<span class="sd">        genesis = project.ScrBooks.Find(1)</span>
+
+<span class="sd">        # Create annotations container</span>
+<span class="sd">        annotations = project.ScrAnnotations.Create(genesis, &quot;note&quot;)</span>
+
+<span class="sd">        # Get annotations for a book</span>
+<span class="sd">        annotations = project.ScrAnnotations.GetForBook(genesis)</span>
+
+<span class="sd">        # Get notes in annotations</span>
+<span class="sd">        notes = project.ScrAnnotations.GetNotes(annotations)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ScrAnnotationsOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;note&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new Scripture book annotations container.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or its HVO</span>
+<span class="sd">            type (str, optional): Annotation type. Defaults to &quot;note&quot;.</span>
+<span class="sd">                Types: &quot;note&quot;, &quot;translator_note&quot;, &quot;consultant_note&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrBookAnnotations: The newly created annotations object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If book_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If book doesn&#39;t exist or annotations already exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.Find(1)</span>
+<span class="sd">            &gt;&gt;&gt; annotations = project.ScrAnnotations.Create(genesis)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create consultant notes container</span>
+<span class="sd">            &gt;&gt;&gt; annotations = project.ScrAnnotations.Create(</span>
+<span class="sd">            ...     genesis,</span>
+<span class="sd">            ...     &quot;consultant_note&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Annotations container is created per book</span>
+<span class="sd">            - Each book can have one annotations container</span>
+<span class="sd">            - Container holds all notes for the book</span>
+<span class="sd">            - Type parameter is for categorization</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, GetForBook</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="s2">&quot;book_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to book object</span>
+        <span class="n">book</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveBook</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Check if annotations already exist</span>
+        <span class="k">if</span> <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Book already has annotations container. Use GetForBook() instead.&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create annotations&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the new annotations using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IScrBookAnnotationsFactory</span><span class="p">)</span>
+            <span class="n">new_annotations</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to book&#39;s footnotes (annotations are stored in FootnotesOS)</span>
+            <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_annotations</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_annotations</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annotations_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a Scripture book annotations container from the FLEx project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            annotations_or_hvo: Either an IScrBookAnnotations object or its HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If annotations_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If annotations doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; annotations = project.ScrAnnotations.GetForBook(genesis)</span>
+<span class="sd">            &gt;&gt;&gt; if annotations:</span>
+<span class="sd">            ...     project.ScrAnnotations.Delete(annotations)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - All notes in the container will be deleted</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Deletion cascades to all owned notes</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">annotations_or_hvo</span><span class="p">,</span> <span class="s2">&quot;annotations_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to annotations object</span>
+        <span class="n">annotations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">annotations_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Delete the annotations (LCM handles removal from repository)</span>
+        <span class="n">annotations</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetForBook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the annotations container for a Scripture book.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrBookAnnotations or None: The annotations object if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If book_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genesis = project.ScrBooks.Find(1)</span>
+<span class="sd">            &gt;&gt;&gt; annotations = project.ScrAnnotations.GetForBook(genesis)</span>
+<span class="sd">            &gt;&gt;&gt; if annotations:</span>
+<span class="sd">            ...     notes = project.ScrAnnotations.GetNotes(annotations)</span>
+<span class="sd">            ...     print(f&quot;Book has {len(notes)} notes&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if book has no annotations container</span>
+<span class="sd">            - Each book can have one annotations container</span>
+<span class="sd">            - Container holds all notes for the book</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetNotes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="s2">&quot;book_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to book object</span>
+        <span class="n">book</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveBook</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get first annotations (typically there&#39;s only one per book)</span>
+        <span class="k">if</span> <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">book</span><span class="o">.</span><span class="n">FootnotesOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Annotations Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetNotes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annotations_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all notes in a Scripture book annotations container.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            annotations_or_hvo: Either an IScrBookAnnotations object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IScrScriptureNote objects (empty list if none)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If annotations_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; annotations = project.ScrAnnotations.GetForBook(genesis)</span>
+<span class="sd">            &gt;&gt;&gt; if annotations:</span>
+<span class="sd">            ...     notes = project.ScrAnnotations.GetNotes(annotations)</span>
+<span class="sd">            ...     for note in notes:</span>
+<span class="sd">            ...         text = project.ScrNotes.GetText(note)</span>
+<span class="sd">            ...         print(f&quot;Note: {text}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if container has no notes</span>
+<span class="sd">            - Notes are in database order</span>
+<span class="sd">            - Use ScrNoteOperations for note-level operations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetForBook, ScrNoteOperations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">annotations_or_hvo</span><span class="p">,</span> <span class="s2">&quot;annotations_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">annotations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">annotations_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">annotations</span><span class="o">.</span><span class="n">NotesOS</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annotations_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IScrBookAnnotations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            annotations_or_hvo: Either an IScrBookAnnotations object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrBookAnnotations: The resolved annotations object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to Scripture annotations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">annotations_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">annotations_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrBookAnnotations</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to Scripture annotations&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">annotations_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveBook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">book_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IScrBook.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            book_or_hvo: Either an IScrBook object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrBook: The resolved book object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a Scripture book</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">book_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrBook</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a Scripture book&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">book_or_hvo</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Scripture.ScrAnnotationsOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Scripture.ScrTxtParaOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Scripture.ScrTxtParaOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Scripture.ScrTxtParaOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ScrTxtParaOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ScrTxtParaOperations</span>
+<span class="c1">#          Scripture text paragraph operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IScrSection</span><span class="p">,</span>
+    <span class="n">IScrTxtPara</span><span class="p">,</span>
+    <span class="n">IScrTxtParaFactory</span><span class="p">,</span>
+    <span class="n">IStStyle</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ScrTxtParaOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Scripture.html#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ScrTxtParaOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing Scripture text paragraphs in a</span>
+<span class="sd">    FieldWorks project.</span>
+
+<span class="sd">    Scripture paragraphs are the basic text units within sections, each with</span>
+<span class="sd">    text content and a paragraph style (Normal, Poetry, Quote, etc.).</span>
+
+<span class="sd">    This class should be accessed via FLExProject.ScrTxtParas property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get a section</span>
+<span class="sd">        genesis = project.ScrBooks.Find(1)</span>
+<span class="sd">        section = project.ScrSections.Find(genesis, 0)</span>
+
+<span class="sd">        # Create a paragraph</span>
+<span class="sd">        para = project.ScrTxtParas.Create(</span>
+<span class="sd">            section,</span>
+<span class="sd">            &quot;In the beginning God created the heavens and the earth.&quot;,</span>
+<span class="sd">            &quot;Normal&quot;</span>
+<span class="sd">        )</span>
+
+<span class="sd">        # Get paragraph text</span>
+<span class="sd">        text = project.ScrTxtParas.GetText(para)</span>
+
+<span class="sd">        # Set paragraph style</span>
+<span class="sd">        project.ScrTxtParas.SetStyleName(para, &quot;Poetry&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ScrTxtParaOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">style_name</span><span class="o">=</span><span class="s2">&quot;Normal&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new Scripture paragraph in a section.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            section_or_hvo: Either an IScrSection object or its HVO</span>
+<span class="sd">            text (str): The paragraph text content</span>
+<span class="sd">            style_name (str, optional): Paragraph style name. Defaults to &quot;Normal&quot;.</span>
+<span class="sd">                Common styles: &quot;Normal&quot;, &quot;Poetry&quot;, &quot;Quote&quot;, &quot;List Item&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrTxtPara: The newly created paragraph object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If section_or_hvo or text is None</span>
+<span class="sd">            FP_ParameterError: If section doesn&#39;t exist or style not found</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; section = project.ScrSections.Find(genesis, 0)</span>
+<span class="sd">            &gt;&gt;&gt; para = project.ScrTxtParas.Create(</span>
+<span class="sd">            ...     section,</span>
+<span class="sd">            ...     &quot;In the beginning God created the heavens and the earth.&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create poetry paragraph</span>
+<span class="sd">            &gt;&gt;&gt; para2 = project.ScrTxtParas.Create(</span>
+<span class="sd">            ...     section,</span>
+<span class="sd">            ...     &quot;The LORD is my shepherd&quot;,</span>
+<span class="sd">            ...     &quot;Poetry&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Paragraph is appended to section content</span>
+<span class="sd">            - Paragraph GUID is auto-generated</span>
+<span class="sd">            - Default style is &quot;Normal&quot;</span>
+<span class="sd">            - Text can be empty string</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Find, GetText, SetText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">section_or_hvo</span><span class="p">,</span> <span class="s2">&quot;section_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to section object</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSection</span><span class="p">(</span><span class="n">section_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create paragraph&quot;</span><span class="p">):</span>
+            <span class="c1"># Ensure section has content StText</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">section</span><span class="o">.</span><span class="n">ContentOA</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IStTextFactory</span>
+
+                <span class="n">text_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTextFactory</span><span class="p">)</span>
+                <span class="n">section</span><span class="o">.</span><span class="n">ContentOA</span> <span class="o">=</span> <span class="n">text_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Find the style</span>
+            <span class="n">style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__FindStyle</span><span class="p">(</span><span class="n">style_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">style</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Paragraph style &#39;</span><span class="si">{</span><span class="n">style_name</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Create the new paragraph using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IScrTxtParaFactory</span><span class="p">)</span>
+            <span class="n">new_para</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to section content (must be done before setting properties)</span>
+            <span class="n">section</span><span class="o">.</span><span class="n">ContentOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_para</span><span class="p">)</span>
+
+            <span class="c1"># Set the text (Contents is ITsString, assign directly)</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
+
+            <span class="c1"># Set the style</span>
+            <span class="n">new_para</span><span class="o">.</span><span class="n">StyleRules</span> <span class="o">=</span> <span class="n">style</span>
+
+            <span class="k">return</span> <span class="n">new_para</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a Scripture paragraph from the FLEx project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            para_or_hvo: Either an IScrTxtPara object or its HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If para_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If paragraph doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = project.ScrTxtParas.Find(section, 0)</span>
+<span class="sd">            &gt;&gt;&gt; if para:</span>
+<span class="sd">            ...     project.ScrTxtParas.Delete(para)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Paragraph is removed from its parent section</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="s2">&quot;para_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to paragraph object</span>
+        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Delete the paragraph (LCM handles removal from repository)</span>
+        <span class="n">para</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a Scripture paragraph by index within a section.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            section_or_hvo: Either an IScrSection object or its HVO</span>
+<span class="sd">            index (int): The zero-based index of the paragraph in the section</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrTxtPara or None: The paragraph object if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If section_or_hvo or index is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; section = project.ScrSections.Find(genesis, 0)</span>
+<span class="sd">            &gt;&gt;&gt; # Get first paragraph</span>
+<span class="sd">            &gt;&gt;&gt; para = project.ScrTxtParas.Find(section, 0)</span>
+<span class="sd">            &gt;&gt;&gt; if para:</span>
+<span class="sd">            ...     text = project.ScrTxtParas.GetText(para)</span>
+<span class="sd">            ...     print(f&quot;Paragraph: {text}&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get third paragraph</span>
+<span class="sd">            &gt;&gt;&gt; para3 = project.ScrTxtParas.Find(section, 2)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if index out of range</span>
+<span class="sd">            - Index is zero-based (0 = first paragraph)</span>
+<span class="sd">            - Use GetAll() to get all paragraphs</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">section_or_hvo</span><span class="p">,</span> <span class="s2">&quot;section_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to section object</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSection</span><span class="p">(</span><span class="n">section_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">section</span><span class="o">.</span><span class="n">ContentOA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Check if index is valid</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="n">section</span><span class="o">.</span><span class="n">ContentOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Count</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">section</span><span class="o">.</span><span class="n">ContentOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all Scripture paragraphs in a section.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            section_or_hvo: Either an IScrSection object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IScrTxtPara objects (empty list if none)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If section_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; section = project.ScrSections.Find(genesis, 0)</span>
+<span class="sd">            &gt;&gt;&gt; paras = project.ScrTxtParas.GetAll(section)</span>
+<span class="sd">            &gt;&gt;&gt; for i, para in enumerate(paras):</span>
+<span class="sd">            ...     text = project.ScrTxtParas.GetText(para)</span>
+<span class="sd">            ...     print(f&quot;{i+1}. {text}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if section has no paragraphs</span>
+<span class="sd">            - Paragraphs are in database order</span>
+<span class="sd">            - Same as project.ScrSections.GetContent(section)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">section_or_hvo</span><span class="p">,</span> <span class="s2">&quot;section_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to section object</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSection</span><span class="p">(</span><span class="n">section_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">section</span><span class="o">.</span><span class="n">ContentOA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">section</span><span class="o">.</span><span class="n">ContentOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">)</span>
+
+    <span class="c1"># --- Paragraph Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the text content of a Scripture paragraph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            para_or_hvo: Either an IScrTxtPara object or its HVO</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The paragraph text (empty string if not set)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If para_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = project.ScrTxtParas.Find(section, 0)</span>
+<span class="sd">            &gt;&gt;&gt; text = project.ScrTxtParas.GetText(para)</span>
+<span class="sd">            &gt;&gt;&gt; print(text)</span>
+<span class="sd">            In the beginning God created the heavens and the earth.</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; text_fr = project.ScrTxtParas.GetText(para,</span>
+<span class="sd">            ...                                        project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if text not set</span>
+<span class="sd">            - Text can be in multiple writing systems</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetText, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="s2">&quot;para_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
+        <span class="c1"># Note: Contents is ITsString, not IMultiUnicode</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">Text</span> <span class="k">if</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the text content of a Scripture paragraph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            para_or_hvo: Either an IScrTxtPara object or its HVO</span>
+<span class="sd">            text (str): The new paragraph text</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If para_or_hvo or text is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = project.ScrTxtParas.Find(section, 0)</span>
+<span class="sd">            &gt;&gt;&gt; project.ScrTxtParas.SetText(</span>
+<span class="sd">            ...     para,</span>
+<span class="sd">            ...     &quot;In the beginning God created the heavens and the earth.&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; project.ScrTxtParas.SetText(</span>
+<span class="sd">            ...     para,</span>
+<span class="sd">            ...     &quot;Au commencement, Dieu créa les cieux et la terre.&quot;,</span>
+<span class="sd">            ...     project.WSHandle(&#39;fr&#39;)</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Empty text is allowed</span>
+<span class="sd">            - Text can be set in multiple writing systems</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetText, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="s2">&quot;para_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Contents is ITsString, assign directly</span>
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetStyleName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the style name of a Scripture paragraph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            para_or_hvo: Either an IScrTxtPara object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The paragraph style name (empty string if not set)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If para_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = project.ScrTxtParas.Find(section, 0)</span>
+<span class="sd">            &gt;&gt;&gt; style = project.ScrTxtParas.GetStyleName(para)</span>
+<span class="sd">            &gt;&gt;&gt; print(style)</span>
+<span class="sd">            Normal</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if style not set</span>
+<span class="sd">            - Common styles: Normal, Poetry, Quote, List Item</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetStyleName, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="s2">&quot;para_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">para</span><span class="o">.</span><span class="n">StyleRules</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">para</span><span class="o">.</span><span class="n">StyleRules</span><span class="o">.</span><span class="n">Name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetStyleName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">,</span> <span class="n">style_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the style name of a Scripture paragraph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            para_or_hvo: Either an IScrTxtPara object or its HVO</span>
+<span class="sd">            style_name (str): The paragraph style name</span>
+<span class="sd">                Common styles: &quot;Normal&quot;, &quot;Poetry&quot;, &quot;Quote&quot;, &quot;List Item&quot;</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If para_or_hvo or style_name is None</span>
+<span class="sd">            FP_ParameterError: If style not found</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = project.ScrTxtParas.Find(section, 0)</span>
+<span class="sd">            &gt;&gt;&gt; project.ScrTxtParas.SetStyleName(para, &quot;Poetry&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check new style</span>
+<span class="sd">            &gt;&gt;&gt; print(project.ScrTxtParas.GetStyleName(para))</span>
+<span class="sd">            Poetry</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Style must exist in the project</span>
+<span class="sd">            - Common styles: Normal, Poetry, Quote, List Item</span>
+<span class="sd">            - Style affects paragraph formatting</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetStyleName, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="s2">&quot;para_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">style_name</span><span class="p">,</span> <span class="s2">&quot;style_name&quot;</span><span class="p">)</span>
+
+        <span class="n">para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Find the style</span>
+        <span class="n">style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__FindStyle</span><span class="p">(</span><span class="n">style_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">style</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Paragraph style &#39;</span><span class="si">{</span><span class="n">style_name</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">)</span>
+
+        <span class="n">para</span><span class="o">.</span><span class="n">StyleRules</span> <span class="o">=</span> <span class="n">style</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IScrTxtPara.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            para_or_hvo: Either an IScrTxtPara object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrTxtPara: The resolved paragraph object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a Scripture paragraph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrTxtPara</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a Scripture paragraph&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">para_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveSection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IScrSection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            section_or_hvo: Either an IScrSection object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IScrSection: The resolved section object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a Scripture section</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">section_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">section_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrSection</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a Scripture section&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">section_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to vernacular WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__FindStyle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">style_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a paragraph style by name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            style_name (str): The style name to search for</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IStStyle or None: The style object if found, None otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">style_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Get the style repository</span>
+        <span class="n">style_sheet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">StylesOC</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">style_sheet</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Search for the style</span>
+        <span class="k">for</span> <span class="n">style</span> <span class="ow">in</span> <span class="n">style_sheet</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">style</span><span class="o">.</span><span class="n">Name</span> <span class="o">==</span> <span class="n">style_name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">style</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Scripture.ScrTxtParaOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

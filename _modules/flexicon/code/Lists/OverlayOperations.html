@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Lists.OverlayOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists.OverlayOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Lists.OverlayOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   OverlayOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: OverlayOperations</span>
+<span class="c1">#          Discourse chart overlay and layer management operations for FieldWorks</span>
+<span class="c1">#          Language Explorer projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IDsConstChart</span><span class="p">,</span>
+    <span class="n">IDsConstChartFactory</span><span class="p">,</span>
+    <span class="n">ICmPossibility</span><span class="p">,</span>
+    <span class="n">ICmPossibilityFactory</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">DsConstChartTags</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="c1"># Mock for testing without FieldWorks installed</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">DsConstChartTags</span><span class="p">:</span>
+        <span class="n">kClassId</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+    <span class="n">FP_NullParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">OperationsMethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.possibility_item_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PossibilityItemOperations</span>
+
+
+<div class="viewcode-block" id="OverlayOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lists.html#flexicon.code.Lists.OverlayOperations.OverlayOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OverlayOperations</span><span class="p">(</span><span class="n">PossibilityItemOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Discourse chart overlay and layer management operations for FLEx projects.</span>
+
+<span class="sd">    This class provides methods for creating and managing overlays (layers) in</span>
+<span class="sd">    discourse constituent charts. Overlays allow multiple levels of analysis to</span>
+<span class="sd">    be displayed in the same chart, with each overlay representing a different</span>
+<span class="sd">    analytical perspective or feature set.</span>
+
+<span class="sd">    Overlays can be toggled on/off for visibility and have customizable display</span>
+<span class="sd">    order. They are used to organize complex chart analyses by separating different</span>
+<span class="sd">    aspects of discourse structure into manageable layers.</span>
+
+<span class="sd">    Inherited CRUD Operations (from PossibilityItemOperations):</span>
+<span class="sd">    - GetAll() - Get all overlays (NOTE: requires chart context, see special handling)</span>
+<span class="sd">    - Create() - Create a new overlay</span>
+<span class="sd">    - Delete() - Delete an overlay</span>
+<span class="sd">    - Duplicate() - Clone an overlay</span>
+<span class="sd">    - Find() - Find by name</span>
+<span class="sd">    - Exists() - Check existence</span>
+<span class="sd">    - GetName() / SetName() - Get/set name</span>
+<span class="sd">    - GetDescription() / SetDescription() - Get/set description</span>
+<span class="sd">    - GetGuid() - Get GUID</span>
+<span class="sd">    - CompareTo() - Compare by name</span>
+
+<span class="sd">    Domain-Specific Methods (OverlayOperations):</span>
+<span class="sd">    - IsVisible() - Check visibility</span>
+<span class="sd">    - SetVisible() - Set visibility</span>
+<span class="sd">    - GetDisplayOrder() - Get display order</span>
+<span class="sd">    - SetDisplayOrder() - Set display order</span>
+<span class="sd">    - GetElements() - Get overlay elements</span>
+<span class="sd">    - AddElement() - Add element to overlay</span>
+<span class="sd">    - RemoveElement() - Remove element from overlay</span>
+<span class="sd">    - GetChart() - Get parent chart</span>
+<span class="sd">    - GetPossItems() - Get possibility items</span>
+<span class="sd">    - FindByChart() - Find overlays for a chart</span>
+<span class="sd">    - GetVisibleOverlays() - Get visible overlays for a chart</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Overlays are specific to constituent charts (IConstChart). They provide</span>
+<span class="sd">        a way to layer multiple analytical perspectives in a single chart view.</span>
+<span class="sd">        GetAll() requires chart context - use FindByChart() instead for chart-specific queries.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject, DiscourseOperations, OverlayOperations</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        discourse_ops = DiscourseOperations(project)</span>
+<span class="sd">        overlay_ops = OverlayOperations(project)</span>
+
+<span class="sd">        # Get a chart</span>
+<span class="sd">        text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">        charts = list(discourse_ops.GetAllCharts(text))</span>
+<span class="sd">        chart = charts[0]</span>
+
+<span class="sd">        # Get overlays for the chart</span>
+<span class="sd">        overlays = list(overlay_ops.FindByChart(chart))</span>
+<span class="sd">        print(f&quot;Chart has {len(overlays)} overlays&quot;)</span>
+
+<span class="sd">        # Create a new overlay</span>
+<span class="sd">        overlay = overlay_ops.Create(&quot;Participants&quot;)</span>
+<span class="sd">        overlay_ops.SetDescription(overlay, &quot;Track participant chains&quot;)</span>
+
+<span class="sd">        # Configure visibility and display order</span>
+<span class="sd">        overlay_ops.SetVisible(overlay, True)</span>
+<span class="sd">        overlay_ops.SetDisplayOrder(overlay, 1)</span>
+
+<span class="sd">        # Get visible overlays</span>
+<span class="sd">        visible = list(overlay_ops.GetVisibleOverlays(chart))</span>
+<span class="sd">        print(f&quot;Chart has {len(visible)} visible overlays&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize OverlayOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_item_class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the item class name for error messages.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;Overlay&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_list_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the overlay list container.</span>
+
+<span class="sd">        Note: Overlays are chart-scoped, not project-wide.</span>
+<span class="sd">        Returns None because overlays don&#39;t have a single project list.</span>
+<span class="sd">        Use FindByChart() to get overlays for a specific chart.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Visibility Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsVisible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlay_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if an overlay is visible in its chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overlay_or_hvo: Either an ICmPossibility object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the overlay is visible, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If overlay_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; overlay = project.Overlay.Find(&quot;Participants&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.Overlay.IsVisible(overlay):</span>
+<span class="sd">            ...     print(&quot;Overlay is visible&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetVisible, GetDisplayOrder</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="s2">&quot;overlay_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">overlay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Overlays have a visibility flag in the model</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;IsVisibleRA&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">overlay</span><span class="o">.</span><span class="n">IsVisibleRA</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;Hidden&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="ow">not</span> <span class="n">overlay</span><span class="o">.</span><span class="n">Hidden</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetVisible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="n">visible</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the visibility of an overlay in its chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overlay_or_hvo: Either an ICmPossibility object or its HVO.</span>
+<span class="sd">            visible (bool): True to show, False to hide.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If overlay_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; overlay = project.Overlay.Find(&quot;Participants&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Overlay.SetVisible(overlay, True)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsVisible, GetDisplayOrder</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="s2">&quot;overlay_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">overlay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Set visibility flag</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;IsVisibleRA&quot;</span><span class="p">):</span>
+            <span class="n">overlay</span><span class="o">.</span><span class="n">IsVisibleRA</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">visible</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;Hidden&quot;</span><span class="p">):</span>
+            <span class="n">overlay</span><span class="o">.</span><span class="n">Hidden</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">visible</span>
+
+    <span class="c1"># --- Display Order Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDisplayOrder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlay_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the display order of an overlay in its chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overlay_or_hvo: Either an ICmPossibility object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Display order (typically 0-based or 1-based depending on chart).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If overlay_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; overlay = project.Overlay.Find(&quot;Participants&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; order = project.Overlay.GetDisplayOrder(overlay)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Display order: {order}&quot;)</span>
+<span class="sd">            Display order: 1</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDisplayOrder, IsVisible</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="s2">&quot;overlay_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">overlay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Display order is typically in a numeric field</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;SortSpec&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">overlay</span><span class="o">.</span><span class="n">SortSpec</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDisplayOrder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the display order of an overlay in its chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overlay_or_hvo: Either an ICmPossibility object or its HVO.</span>
+<span class="sd">            order (int): Display order value.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If overlay_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If order is negative.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; overlay = project.Overlay.Find(&quot;Participants&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Overlay.SetDisplayOrder(overlay, 1)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDisplayOrder, SetVisible</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="s2">&quot;overlay_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">order</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Display order cannot be negative&quot;</span><span class="p">)</span>
+
+        <span class="n">overlay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Set display order</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;SortSpec&quot;</span><span class="p">):</span>
+            <span class="n">overlay</span><span class="o">.</span><span class="n">SortSpec</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+
+    <span class="c1"># --- Element Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetElements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlay_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all elements in an overlay.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overlay_or_hvo: Either an ICmPossibility object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of overlay elements.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If overlay_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; overlay = project.Overlay.Find(&quot;Participants&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; elements = project.Overlay.GetElements(overlay)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Overlay has {len(elements)} elements&quot;)</span>
+<span class="sd">            Overlay has 5 elements</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddElement, RemoveElement</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="s2">&quot;overlay_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">overlay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Elements are typically in a sequence</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;InstancesOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">overlay</span><span class="o">.</span><span class="n">InstancesOS</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;Elements&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">overlay</span><span class="o">.</span><span class="n">Elements</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddElement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add an element to an overlay.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overlay_or_hvo: Either an ICmPossibility object or its HVO.</span>
+<span class="sd">            element: The element to add.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If overlay_or_hvo or element is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; overlay = project.Overlay.Find(&quot;Participants&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # element creation code here</span>
+<span class="sd">            &gt;&gt;&gt; project.Overlay.AddElement(overlay, element)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RemoveElement, GetElements</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="s2">&quot;overlay_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s2">&quot;element&quot;</span><span class="p">)</span>
+
+        <span class="n">overlay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Add element to sequence</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;InstancesOS&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">element</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">overlay</span><span class="o">.</span><span class="n">InstancesOS</span><span class="p">:</span>
+                <span class="n">overlay</span><span class="o">.</span><span class="n">InstancesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;Elements&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">element</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">overlay</span><span class="o">.</span><span class="n">Elements</span><span class="p">:</span>
+                <span class="n">overlay</span><span class="o">.</span><span class="n">Elements</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveElement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove an element from an overlay.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overlay_or_hvo: Either an ICmPossibility object or its HVO.</span>
+<span class="sd">            element: The element to remove.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If overlay_or_hvo or element is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; overlay = project.Overlay.Find(&quot;Participants&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; elements = project.Overlay.GetElements(overlay)</span>
+<span class="sd">            &gt;&gt;&gt; if elements:</span>
+<span class="sd">            ...     project.Overlay.RemoveElement(overlay, elements[0])</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddElement, GetElements</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="s2">&quot;overlay_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s2">&quot;element&quot;</span><span class="p">)</span>
+
+        <span class="n">overlay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Remove element from sequence</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;InstancesOS&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">overlay</span><span class="o">.</span><span class="n">InstancesOS</span><span class="p">:</span>
+                <span class="n">overlay</span><span class="o">.</span><span class="n">InstancesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;Elements&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">overlay</span><span class="o">.</span><span class="n">Elements</span><span class="p">:</span>
+                <span class="n">overlay</span><span class="o">.</span><span class="n">Elements</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+
+    <span class="c1"># --- Chart Association Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetChart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlay_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the chart that owns this overlay.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overlay_or_hvo: Either an ICmPossibility object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IDsConstChart or None: The parent chart, or None if not found.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If overlay_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; overlay = project.Overlay.Find(&quot;Participants&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; chart = project.Overlay.GetChart(overlay)</span>
+<span class="sd">            &gt;&gt;&gt; if chart:</span>
+<span class="sd">            ...     print(f&quot;Overlay belongs to chart: {chart.Guid}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Overlays are scoped to charts</span>
+<span class="sd">            - Returns None if overlay is not in any chart</span>
+<span class="sd">            - Used internally by FindByChart()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindByChart, GetVisibleOverlays</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="s2">&quot;overlay_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">overlay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Direct-reference fast path: if a future LCM version exposes ChartRA</span>
+        <span class="c1"># or Chart as a direct property, prefer it over walking ownership.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;ChartRA&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">overlay</span><span class="o">.</span><span class="n">ChartRA</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;Chart&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">overlay</span><span class="o">.</span><span class="n">Chart</span>
+        <span class="c1"># Per issue #149: ICmOverlay is owned per-chart via</span>
+        <span class="c1"># IDsConstChart.OverlaysOC (LcmOwningCollection&lt;ICmOverlay&gt;), not via a</span>
+        <span class="c1"># project-wide DsDiscourseData list.  Walk the ownership chain to find</span>
+        <span class="c1"># the enclosing IDsConstChart ancestor.</span>
+        <span class="n">chart_lcm</span> <span class="o">=</span> <span class="n">overlay</span><span class="o">.</span><span class="n">OwnerOfClass</span><span class="p">(</span><span class="n">DsConstChartTags</span><span class="o">.</span><span class="n">kClassId</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">chart_lcm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">IDsConstChart</span><span class="p">(</span><span class="n">chart_lcm</span><span class="p">)</span> <span class="k">if</span> <span class="n">IDsConstChart</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">chart_lcm</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetPossItems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlay_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the possibility items associated with an overlay.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overlay_or_hvo: Either an ICmPossibility object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of associated possibility items.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If overlay_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; overlay = project.Overlay.Find(&quot;Participants&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; items = project.Overlay.GetPossItems(overlay)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Overlay has {len(items)} associated items&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetElements, GetChart</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">,</span> <span class="s2">&quot;overlay_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">overlay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">overlay_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Possibility items may be stored in SubPossibilitiesOS</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">overlay</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># --- Search Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByChart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find all overlays for a specific chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chart: The IDsConstChart to search.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmPossibility objects representing overlays for the chart.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If chart is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get all overlays for a chart</span>
+<span class="sd">            &gt;&gt;&gt; charts = project.Discourse.GetAllCharts(text)</span>
+<span class="sd">            &gt;&gt;&gt; chart = list(charts)[0]</span>
+<span class="sd">            &gt;&gt;&gt; overlays = project.Overlay.FindByChart(chart)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Chart has {len(overlays)} overlays&quot;)</span>
+<span class="sd">            Chart has 3 overlays</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find overlays by name for a chart</span>
+<span class="sd">            &gt;&gt;&gt; overlays = project.Overlay.FindByChart(chart)</span>
+<span class="sd">            &gt;&gt;&gt; for overlay in overlays:</span>
+<span class="sd">            ...     name = project.Overlay.GetName(overlay)</span>
+<span class="sd">            ...     if name == &quot;Participants&quot;:</span>
+<span class="sd">            ...         print(f&quot;Found participants overlay&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if chart has no overlays</span>
+<span class="sd">            - Overlays are scoped to specific charts</span>
+<span class="sd">            - More efficient than GetAll() for chart-specific queries</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetVisibleOverlays, GetChart</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">chart</span><span class="p">,</span> <span class="s2">&quot;chart&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Query the chart&#39;s overlay list</span>
+        <span class="n">overlays</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">chart</span><span class="p">,</span> <span class="s2">&quot;OverlaysOC&quot;</span><span class="p">):</span>
+            <span class="n">overlays</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">chart</span><span class="o">.</span><span class="n">OverlaysOC</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">chart</span><span class="p">,</span> <span class="s2">&quot;Overlays&quot;</span><span class="p">):</span>
+            <span class="n">overlays</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">chart</span><span class="o">.</span><span class="n">Overlays</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">overlays</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetVisibleOverlays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all visible overlays for a chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chart: The IDsConstChart to search.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of visible overlay ICmPossibility objects.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If chart is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get only visible overlays</span>
+<span class="sd">            &gt;&gt;&gt; overlays = project.Overlay.GetVisibleOverlays(chart)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Chart has {len(overlays)} visible overlays&quot;)</span>
+<span class="sd">            Chart has 2 visible overlays</span>
+
+<span class="sd">            &gt;&gt;&gt; # Hide and show overlays</span>
+<span class="sd">            &gt;&gt;&gt; all_overlays = project.Overlay.FindByChart(chart)</span>
+<span class="sd">            &gt;&gt;&gt; for overlay in all_overlays:</span>
+<span class="sd">            ...     project.Overlay.SetVisible(overlay, False)</span>
+<span class="sd">            &gt;&gt;&gt; # Now GetVisibleOverlays returns empty list</span>
+<span class="sd">            &gt;&gt;&gt; visible = project.Overlay.GetVisibleOverlays(chart)</span>
+<span class="sd">            &gt;&gt;&gt; assert len(visible) == 0</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns subset of FindByChart() filtered by visibility</span>
+<span class="sd">            - Used for determining which layers to render in chart display</span>
+<span class="sd">            - Empty list if all overlays are hidden</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindByChart, IsVisible, SetVisible</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">chart</span><span class="p">,</span> <span class="s2">&quot;chart&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get all overlays and filter by visibility</span>
+        <span class="n">all_overlays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindByChart</span><span class="p">(</span><span class="n">chart</span><span class="p">)</span>
+        <span class="n">visible_overlays</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">overlay</span> <span class="ow">in</span> <span class="n">all_overlays</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">IsVisible</span><span class="p">(</span><span class="n">overlay</span><span class="p">):</span>
+                <span class="n">visible_overlays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">overlay</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">visible_overlays</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists.OverlayOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

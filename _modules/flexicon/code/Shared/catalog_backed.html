@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Shared.catalog_backed &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.catalog_backed</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Shared.catalog_backed</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   catalog_backed.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Module: CatalogBackedMixin</span>
+<span class="c1">#</span>
+<span class="c1">#           Shared catalog-import behaviour for Operations classes that wrap</span>
+<span class="c1">#           LCM possibility-list / feature-system domains backed by a SIL</span>
+<span class="c1">#           catalog XML file (GOLDEtic, PhonFeatsEticGlossList, etc.).</span>
+<span class="c1">#</span>
+<span class="c1">#           Extracted in Phase 5c from the duplicated bodies of</span>
+<span class="c1">#           POSOperations (Phase 5a) and PhonFeatureOperations (Phase 5b).</span>
+<span class="c1">#</span>
+<span class="c1">#           See docs/CATALOG_CONVENTIONS.md for an overview of the prefix</span>
+<span class="c1">#           policy used by each catalog when writing CatalogSourceId.</span>
+<span class="c1">#</span>
+<span class="c1">#           Behaviour is identical to the original per-class implementations:</span>
+<span class="c1">#               * Idempotent ImportCatalog (skip any entry whose canonical</span>
+<span class="c1">#                 GUID is already present in the project).</span>
+<span class="c1">#               * CreateFromCatalog returning the existing object when its</span>
+<span class="c1">#                 canonical GUID is already present, otherwise creating with</span>
+<span class="c1">#                 the canonical GUID.</span>
+<span class="c1">#               * FixGuidsAgainstCatalog walking existing items, looking up</span>
+<span class="c1">#                 the catalog entry by CatalogSourceId, and replacing the</span>
+<span class="c1">#                 object via MergeObject when the GUID drifted.</span>
+<span class="c1">#</span>
+<span class="c1">#           Subclasses customise per-domain behaviour by setting class-level</span>
+<span class="c1">#           constants and implementing a small set of hook methods. See the</span>
+<span class="c1">#           CatalogBackedMixin docstring below for the contract.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2026</span>
+<span class="c1">#</span>
+
+<span class="c1"># .NET Guid for catalog-driven creation. The mixin needs System.Guid to</span>
+<span class="c1"># build the canonical-GUID argument for the factory calls; subclasses</span>
+<span class="c1"># never need to import it themselves.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.catalog</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CatalogImportResult</span><span class="p">,</span>
+    <span class="n">find_catalog_entry</span><span class="p">,</span>
+    <span class="n">find_catalog_file</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="n">FP_ParameterError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">FP_FileNotFoundError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+
+
+<div class="viewcode-block" id="CatalogBackedMixin">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog_backed.CatalogBackedMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CatalogBackedMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Mixin for Operations classes that wrap LCM possibility-list /</span>
+<span class="sd">    feature-system domains backed by a SIL catalog XML file (GOLDEtic,</span>
+<span class="sd">    PhonFeatsEticGlossList, etc.).</span>
+
+<span class="sd">    Subclasses declare class-level constants:</span>
+
+<span class="sd">        CATALOG_FILE</span>
+<span class="sd">            Filename of the catalog XML, e.g. &quot;GOLDEtic.xml&quot; or</span>
+<span class="sd">            &quot;PhonFeatsEticGlossList.xml&quot;.</span>
+
+<span class="sd">        CATALOG_SUBDIR</span>
+<span class="sd">            Relative subdirectory under FWCodeDir. Defaults to &quot;Templates&quot;</span>
+<span class="sd">            in this base; subclasses override for catalogs that live</span>
+<span class="sd">            elsewhere (e.g. &quot;Language Explorer/MGA/GlossLists&quot;).</span>
+
+<span class="sd">        CATALOG_PARSER</span>
+<span class="sd">            Staticmethod returning ``list[CatalogEntry]`` from a file path.</span>
+<span class="sd">            Either ``parse_etic_catalog`` or ``parse_etic_gloss_list``.</span>
+
+<span class="sd">        CATALOG_PREFIX_WRITE</span>
+<span class="sd">            Either a string (e.g. ``&quot;GOLD&quot;``) or ``None``.</span>
+
+<span class="sd">            * String: the mixin writes ``CatalogSourceId = &quot;{PREFIX}:{entry.id}&quot;``.</span>
+<span class="sd">            * None: the mixin writes ``CatalogSourceId = entry.id`` (the bare</span>
+<span class="sd">              FW convention used by PhonFeats).</span>
+
+<span class="sd">        DOMAIN_LABEL</span>
+<span class="sd">            Short human-readable label used in error messages, e.g.</span>
+<span class="sd">            &quot;POS&quot; or &quot;feature&quot;.</span>
+
+<span class="sd">    Subclasses must also set the optional class flag:</span>
+
+<span class="sd">        _supports_recursive_entries (bool, default False)</span>
+<span class="sd">            True for catalogs whose CatalogEntry tree is hierarchical and</span>
+<span class="sd">            should produce a parallel hierarchy of LCM objects (POS:</span>
+<span class="sd">            top-level entries become top-level POSs, nested entries</span>
+<span class="sd">            become SubPossibilitiesOS). When True, the mixin recurses on</span>
+<span class="sd">            entry.children calling _create_from_entry(child,</span>
+<span class="sd">            parent_obj=created_obj).</span>
+
+<span class="sd">            False for catalogs whose top-level entries own a flat list of</span>
+<span class="sd">            children that need bespoke per-domain handling (PhonFeats:</span>
+<span class="sd">            value children of a feature). When False, the mixin invokes</span>
+<span class="sd">            ``_handle_entry_children(entry, created_obj, ...)`` once per</span>
+<span class="sd">            top-level entry; the subclass is responsible for the children.</span>
+
+<span class="sd">    Subclasses implement these hook methods:</span>
+
+<span class="sd">        _factory_create_attached(self, guid, parent)</span>
+<span class="sd">            Try the LCM 2-arg factory overload ``Create(Guid, parent)``.</span>
+<span class="sd">            ``parent`` is whatever was passed to ``_create_from_entry`` -</span>
+<span class="sd">            either the parent LCM object (subcategory case) or the</span>
+<span class="sd">            &quot;root list&quot; returned by ``_get_root_list()`` (top-level case).</span>
+<span class="sd">            Must return either the new LCM object (Path A success) or</span>
+<span class="sd">            ``None`` (Path A failed; mixin then runs Path B).</span>
+
+<span class="sd">        _path_b_attach(self, new_obj, parent_obj)</span>
+<span class="sd">            Path B fallback: attach ``new_obj`` (just created via</span>
+<span class="sd">            ``concrete_factory.Create(guid)``) to its owning collection.</span>
+<span class="sd">            ``parent_obj`` matches the ``parent`` arg passed to the</span>
+<span class="sd">            top-level _create_from_entry call; if it is None and the</span>
+<span class="sd">            domain supports subcategories, the subclass attaches to the</span>
+<span class="sd">            top-level collection on ``_get_root_list()``.</span>
+
+<span class="sd">            * POS: ``parent_obj.SubPossibilitiesOS.Add(new_obj)`` if</span>
+<span class="sd">              parent_obj is a POS, else</span>
+<span class="sd">              ``self.project.lp.PartsOfSpeechOA.PossibilitiesOS.Add(new_obj)``.</span>
+<span class="sd">            * PhonFeats: ``self._get_root_list().FeaturesOC.Add(new_obj)``.</span>
+
+<span class="sd">        _cast_to_domain(self, raw_lcm_obj)</span>
+<span class="sd">            Return the interface-cast view of the raw LCM object.</span>
+
+<span class="sd">            * POS:        ``IPartOfSpeech(raw)``</span>
+<span class="sd">            * PhonFeats:  ``IFsClosedFeature(raw)``</span>
+
+<span class="sd">        _set_localized(self, obj, term, abbrev, ``def_``, missing_ws_seen, warnings)</span>
+<span class="sd">            Per-domain multistring writes. ``term``, ``abbrev`` and ``def_``</span>
+<span class="sd">            are ``{ws_tag: text}`` dicts from the CatalogEntry. The</span>
+<span class="sd">            subclass writes ``obj.Name`` / ``obj.Abbreviation`` /</span>
+<span class="sd">            ``obj.Description`` (where present) using</span>
+<span class="sd">            ``_set_multistring`` which the mixin provides.</span>
+
+<span class="sd">        _walk_existing(self)</span>
+<span class="sd">            Yield existing items for idempotency lookup. For domains</span>
+<span class="sd">            with subcategories (POS), this walks recursively. For flat</span>
+<span class="sd">            domains (PhonFeats), it yields top-level items.</span>
+
+<span class="sd">        _get_root_list(self)</span>
+<span class="sd">            Return the top-level owner object. POS returns</span>
+<span class="sd">            ``self.project.lp.PartsOfSpeechOA``; PhonFeats returns</span>
+<span class="sd">            ``self.project.lp.PhFeatureSystemOA``.</span>
+
+<span class="sd">        _handle_entry_children(self, entry, created_obj, missing_ws_seen, warnings, result)</span>
+<span class="sd">            Per-domain handling of CatalogEntry.children.</span>
+
+<span class="sd">            * POS: empty (use ``_supports_recursive_entries=True`` instead).</span>
+<span class="sd">            * PhonFeats: walk ``entry.children`` (value entries) and</span>
+<span class="sd">              create IFsSymFeatVal items under ``created_obj.ValuesOC``,</span>
+<span class="sd">              respecting per-feature value-GUID idempotency.</span>
+
+<span class="sd">            ``result`` is the CatalogImportResult (so per-value</span>
+<span class="sd">            created/skipped counts and created_guids can be updated).</span>
+<span class="sd">            ``result`` is None when called from CreateFromCatalog or</span>
+<span class="sd">            FixGuidsAgainstCatalog; subclasses must handle that.</span>
+
+<span class="sd">    The mixin provides three public methods (ImportCatalog,</span>
+<span class="sd">    CreateFromCatalog, FixGuidsAgainstCatalog) plus private helpers</span>
+<span class="sd">    (_create_from_entry, _get_all_guids, _find_by_guid,</span>
+<span class="sd">    _set_multistring, _flattened_catalog_count). The public methods are</span>
+<span class="sd">    plain ``def``\\ s on the mixin; subclasses reach them through normal</span>
+<span class="sd">    instance dispatch (see the note below for the @OperationsMethod</span>
+<span class="sd">    convention).</span>
+
+<span class="sd">    Why a mixin and not inheritance? The shared behaviour cuts across</span>
+<span class="sd">    Operations classes that have their own primary inheritance chain</span>
+<span class="sd">    (BaseOperations); a mixin keeps the catalog-import surface composable</span>
+<span class="sd">    with that chain without disturbing it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># ---- Class-level configuration (subclasses override) ---------------</span>
+
+    <span class="n">CATALOG_FILE</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">CATALOG_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;Templates&quot;</span>
+    <span class="n">CATALOG_PARSER</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">CATALOG_PREFIX_WRITE</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">DOMAIN_LABEL</span> <span class="o">=</span> <span class="s2">&quot;item&quot;</span>
+
+    <span class="c1"># When True the mixin recurses into entry.children as a parallel</span>
+    <span class="c1"># parent/child hierarchy (POS). When False the mixin delegates each</span>
+    <span class="c1"># entry&#39;s children to _handle_entry_children (PhonFeats).</span>
+    <span class="n">_supports_recursive_entries</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># ---- Public API ----------------------------------------------------</span>
+
+    <span class="c1"># Note: subclasses are expected to also decorate these on the class</span>
+    <span class="c1"># itself if they want the @OperationsMethod metadata to apply at the</span>
+    <span class="c1"># subclass level. The decorator on BaseOperations already wraps Class</span>
+    <span class="c1"># methods; the mixin inherits the same convention by composition.</span>
+
+<div class="viewcode-block" id="CatalogBackedMixin.ImportCatalog">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog_backed.CatalogBackedMixin.ImportCatalog">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ImportCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Import the configured SIL catalog into this project. Idempotent.</span>
+
+<span class="sd">        Each catalog entry is matched against existing items by its</span>
+<span class="sd">        canonical GUID. Entries whose GUID already exists are skipped.</span>
+<span class="sd">        New entries are created with the canonical GUID + per-WS</span>
+<span class="sd">        localized name/abbreviation/description, and a CatalogSourceId</span>
+<span class="sd">        tag for later FixGuidsAgainstCatalog() repair.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            progress: Optional callable accepting (count, total, name)</span>
+<span class="sd">                      for progress reporting. May be None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            CatalogImportResult: Created/skipped counts, list of created</span>
+<span class="sd">            GUIDs, and any human-readable warnings raised during import.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FileNotFoundError: If the catalog file is not found under FWCodeDir.</span>
+<span class="sd">            FP_ParameterError: For domain-specific preconditions (e.g. missing</span>
+<span class="sd">                PhFeatureSystemOA on the project).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">find_catalog_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CATALOG_FILE</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">CATALOG_SUBDIR</span><span class="p">)</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invoke_parser</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="c1"># Validate that the domain root list exists before doing any work.</span>
+        <span class="c1"># PhonFeats raises here when PhFeatureSystemOA is missing; POS&#39;s</span>
+        <span class="c1"># PartsOfSpeechOA is always present so this is effectively a no-op</span>
+        <span class="c1"># for POS.</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_root_list</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Project has no </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">DOMAIN_LABEL</span><span class="si">}</span><span class="s2"> root list; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;cannot import catalog.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">existing_guids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_all_guids</span><span class="p">()</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">CatalogImportResult</span><span class="p">()</span>
+        <span class="n">missing_ws_seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="n">total</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flattened_catalog_count</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_import_one</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
+            <span class="n">guid_str</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">guid</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">guid</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">existing</span> <span class="o">=</span> <span class="n">existing_guids</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid_str</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">existing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">skipped_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="n">existing</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_from_entry</span><span class="p">(</span>
+                    <span class="n">entry</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">warnings</span>
+                <span class="p">)</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">created_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">created_guids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">guid_str</span><span class="p">)</span>
+                <span class="n">existing_guids</span><span class="p">[</span><span class="n">guid_str</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span>
+
+            <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">progress</span><span class="p">(</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">created_count</span> <span class="o">+</span> <span class="n">result</span><span class="o">.</span><span class="n">skipped_count</span><span class="p">,</span>
+                        <span class="n">total</span><span class="p">,</span>
+                        <span class="n">entry</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="c1"># Progress callbacks must never break the import.</span>
+                    <span class="k">pass</span>
+
+            <span class="c1"># Per-domain children handling.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_supports_recursive_entries</span><span class="p">:</span>
+                <span class="c1"># Hierarchical: recurse with `obj` as the new parent.</span>
+                <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                    <span class="n">_import_one</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Flat-with-children: delegate to subclass.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_handle_entry_children</span><span class="p">(</span>
+                    <span class="n">entry</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="p">,</span> <span class="n">result</span>
+                <span class="p">)</span>
+                <span class="c1"># Update progress for the children handled.</span>
+                <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">progress</span><span class="p">(</span>
+                            <span class="n">result</span><span class="o">.</span><span class="n">created_count</span> <span class="o">+</span> <span class="n">result</span><span class="o">.</span><span class="n">skipped_count</span><span class="p">,</span>
+                            <span class="n">total</span><span class="p">,</span>
+                            <span class="n">entry</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="k">pass</span>
+
+        <span class="k">for</span> <span class="n">top</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+            <span class="n">_import_one</span><span class="p">(</span><span class="n">top</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="CatalogBackedMixin.CreateFromCatalog">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog_backed.CatalogBackedMixin.CreateFromCatalog">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateFromCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_id</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a single item from the configured catalog using the</span>
+<span class="sd">        canonical GUID and all localized data available for the WSes the</span>
+<span class="sd">        project has.</span>
+
+<span class="sd">        Idempotent: if an item with the catalog&#39;s canonical GUID already</span>
+<span class="sd">        exists in the project, that existing item is returned unchanged.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_id (str): Catalog id, with or without a known catalog</span>
+<span class="sd">                prefix (``&quot;GOLD:&quot;``, ``&quot;PHON:&quot;``). e.g. ``&quot;GOLD:Adjective&quot;``</span>
+<span class="sd">                or ``&quot;Adjective&quot;``; ``&quot;PHON:fPAConsonantal&quot;`` or</span>
+<span class="sd">                ``&quot;fPAConsonantal&quot;``.</span>
+<span class="sd">            parent: Optional LCM object to attach the new item under. For</span>
+<span class="sd">                hierarchical domains (POS), this becomes the parent POS.</span>
+<span class="sd">                For flat domains (PhonFeats), this is ignored.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The created (or pre-existing) LCM object, cast via</span>
+<span class="sd">            _cast_to_domain.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_ParameterError: If source_id is not present in the catalog,</span>
+<span class="sd">                               or for domain-specific preconditions.</span>
+<span class="sd">            FileNotFoundError: If the catalog is not found under FWCodeDir.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">source_id</span><span class="p">,</span> <span class="s2">&quot;source_id&quot;</span><span class="p">)</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">find_catalog_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CATALOG_FILE</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">CATALOG_SUBDIR</span><span class="p">)</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invoke_parser</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">find_catalog_entry</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">source_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">entry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Catalog id &#39;</span><span class="si">{</span><span class="n">source_id</span><span class="si">}</span><span class="s2">&#39; not found in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">CATALOG_FILE</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_root_list</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Project has no </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">DOMAIN_LABEL</span><span class="si">}</span><span class="s2"> root list; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;cannot import catalog.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Idempotency: if the canonical GUID is already present, return it</span>
+        <span class="c1"># (and still create any missing children via _handle_entry_children).</span>
+        <span class="n">existing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_by_guid</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">guid</span><span class="p">)</span>
+
+        <span class="n">warnings</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">missing_ws_seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">existing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">existing</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_from_entry</span><span class="p">(</span>
+                <span class="n">entry</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span>
+            <span class="p">)</span>
+
+        <span class="c1"># For flat-with-children domains, ensure value children are</span>
+        <span class="c1"># present even when the parent feature was already there.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_supports_recursive_entries</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_handle_entry_children</span><span class="p">(</span>
+                <span class="n">entry</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">,</span> <span class="kc">None</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">obj</span></div>
+
+
+<div class="viewcode-block" id="CatalogBackedMixin.FixGuidsAgainstCatalog">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog_backed.CatalogBackedMixin.FixGuidsAgainstCatalog">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FixGuidsAgainstCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Scan items in this project; for any whose CatalogSourceId matches</span>
+<span class="sd">        a catalog entry but whose GUID differs from the catalog&#39;s</span>
+<span class="sd">        canonical GUID, create a replacement with the correct GUID,</span>
+<span class="sd">        transfer references via MergeObject, and remove the old item.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[tuple]: One ``(old_name, old_guid, new_guid)`` tuple per</span>
+<span class="sd">            item repaired. Empty list if everything is already canonical.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_ParameterError: If MergeObject fails for any candidate</span>
+<span class="sd">                (silently removing the old item would orphan incoming</span>
+<span class="sd">                references, so we re-raise the LCM error).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">find_catalog_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CATALOG_FILE</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">CATALOG_SUBDIR</span><span class="p">)</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invoke_parser</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_root_list</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="n">fixed</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Collect candidates first; iterating + mutating the same</span>
+        <span class="c1"># collection during merge would be unsafe.</span>
+        <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">existing</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_walk_existing</span><span class="p">():</span>
+            <span class="c1"># _walk_existing yields either (obj, parent) tuples (POS) or</span>
+            <span class="c1"># bare objs (PhonFeats); normalise to obj.</span>
+            <span class="n">obj</span><span class="p">,</span> <span class="n">parent_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalise_walk_item</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
+
+            <span class="n">cat_id</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">CatalogSourceId</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">cat_id</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="n">find_catalog_entry</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">cat_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">entry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">current_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">canonical_guid</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">guid</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">current_guid</span> <span class="o">==</span> <span class="n">canonical_guid</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">obj</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">,</span> <span class="n">entry</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">old_obj</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+            <span class="n">old_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">old_obj</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;(unnamed)&quot;</span>
+            <span class="n">old_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">old_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+            <span class="n">warnings</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">missing_ws</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="n">new_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_from_entry</span><span class="p">(</span>
+                <span class="n">entry</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">,</span> <span class="n">missing_ws</span><span class="p">,</span> <span class="n">warnings</span>
+            <span class="p">)</span>
+
+            <span class="c1"># For flat-with-children: also recreate value children with</span>
+            <span class="c1"># canonical GUIDs under the replacement feature.</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_supports_recursive_entries</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_handle_entry_children</span><span class="p">(</span>
+                    <span class="n">entry</span><span class="p">,</span> <span class="n">new_obj</span><span class="p">,</span> <span class="n">missing_ws</span><span class="p">,</span> <span class="n">warnings</span><span class="p">,</span> <span class="kc">None</span>
+                <span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">old_obj</span><span class="o">.</span><span class="n">MergeObject</span><span class="p">(</span><span class="n">new_obj</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># MergeObject failure indicates a genuine LCM error</span>
+                <span class="c1"># (transaction conflict, reference inconsistency, etc.).</span>
+                <span class="c1"># Silently removing old_obj would orphan incoming</span>
+                <span class="c1"># references; re-raise so the caller sees the real problem.</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Failed to merge </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">DOMAIN_LABEL</span><span class="si">}</span><span class="s2"> &#39;</span><span class="si">{</span><span class="n">old_name</span><span class="si">}</span><span class="s2">&#39; into &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;canonical-GUID replacement (entry &#39;</span><span class="si">{</span><span class="n">entry</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&#39;): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+            <span class="n">fixed</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">old_name</span><span class="p">,</span> <span class="n">old_guid</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">guid</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+
+        <span class="k">return</span> <span class="n">fixed</span></div>
+
+
+    <span class="c1"># ---- Mixin-private helpers ----------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_invoke_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Invoke the configured catalog parser. CATALOG_PARSER is declared</span>
+<span class="sd">        as a staticmethod on the subclass; accessing it via the</span>
+<span class="sd">        descriptor protocol resolves to the underlying function so we</span>
+<span class="sd">        can call it with a single argument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Class-level CATALOG_PARSER is a staticmethod descriptor; access</span>
+        <span class="c1"># through the class to get the unwrapped callable.</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">CATALOG_PARSER</span>
+        <span class="k">return</span> <span class="n">parser</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_from_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal: instantiate one LCM object from a CatalogEntry, attach</span>
+<span class="sd">        to the correct owner with the canonical GUID, then set per-WS</span>
+<span class="sd">        Name / Abbreviation / Description and CatalogSourceId.</span>
+
+<span class="sd">        Applies the Phase 2 ownership-ordering rule: attach first (via</span>
+<span class="sd">        the 2-arg factory overload, or fall back to Create+Add), then</span>
+<span class="sd">        mutate properties.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">guid</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Guid</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">guid</span><span class="p">)</span>
+
+        <span class="c1"># Path A: explicit 2-arg interface overload. The subclass owns</span>
+        <span class="c1"># the factory + the choice of &quot;parent&quot; argument shape (root list</span>
+        <span class="c1"># vs subcategory parent). Returns None on failure.</span>
+        <span class="n">new_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factory_create_attached</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">new_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Path B: implementation-side Create(Guid) + explicit Add().</span>
+            <span class="c1"># cast_to_concrete defends against interface-only views that</span>
+            <span class="c1"># hide Create(Guid).</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_factory</span><span class="p">()</span>
+            <span class="n">concrete_factory</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">factory</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">factory</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">factory</span>
+            <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">new_obj</span> <span class="o">=</span> <span class="n">concrete_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># No safe fallback: parameterless Create() would generate</span>
+                <span class="c1"># a random GUID, defeating the entire point of</span>
+                <span class="c1"># CreateFromCatalog. Fail loudly rather than silently</span>
+                <span class="c1"># degrade (Phase 5a discipline).</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Could not create </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">DOMAIN_LABEL</span><span class="si">}</span><span class="s2"> &#39;</span><span class="si">{</span><span class="n">entry</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&#39; with &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;canonical GUID </span><span class="si">{</span><span class="n">entry</span><span class="o">.</span><span class="n">guid</span><span class="si">}</span><span class="s2"> via either Create(Guid, owner) &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;or Create(Guid) factory overloads. The catalog&#39;s canonical &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;GUID cannot be applied in this LCM version; a manual &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;factory.Create() workaround would produce a random GUID &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;and is not acceptable here.&quot;</span>
+                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_b_attach</span><span class="p">(</span><span class="n">new_obj</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">)</span>
+
+        <span class="c1"># Cast to the domain interface so the subclass&#39;s _set_localized</span>
+        <span class="c1"># sees the right view.</span>
+        <span class="n">new_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cast_to_domain</span><span class="p">(</span><span class="n">new_obj</span><span class="p">)</span>
+
+        <span class="c1"># Per-WS multistring properties.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_localized</span><span class="p">(</span>
+            <span class="n">new_obj</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">term</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">abbrev</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">def_</span><span class="p">,</span>
+            <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># CatalogSourceId tagging policy: prefixed or bare per subclass.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">CATALOG_PREFIX_WRITE</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_obj</span><span class="o">.</span><span class="n">CatalogSourceId</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_obj</span><span class="o">.</span><span class="n">CatalogSourceId</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">CATALOG_PREFIX_WRITE</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">entry</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">return</span> <span class="n">new_obj</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve the LCM factory used by Path B. Subclasses override or</span>
+<span class="sd">        rely on the default: look up the same factory the subclass</span>
+<span class="sd">        already configures _factory_create_attached against.</span>
+
+<span class="sd">        Default impl raises; subclasses MUST override.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> must implement _get_factory() &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;for the Path B fallback.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_multistring</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">multistring</span><span class="p">,</span> <span class="n">ws_to_text</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply a {ws_tag: text} dict to an LCM multistring, mapping ws_tag</span>
+<span class="sd">        to handle via project.WSHandle(). Missing handles are skipped;</span>
+<span class="sd">        a warning is recorded once per missing tag.</span>
+
+<span class="sd">        This is the truly-identical body extracted from</span>
+<span class="sd">        _SetPosMultiString / _SetFsMultiString. Subclasses use it from</span>
+<span class="sd">        their _set_localized implementations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">ws_tag</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">ws_to_text</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WSHandle</span><span class="p">(</span><span class="n">ws_tag</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">handle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ws_tag</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">missing_ws_seen</span><span class="p">:</span>
+                    <span class="n">missing_ws_seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ws_tag</span><span class="p">)</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Skipping catalog WS &#39;</span><span class="si">{</span><span class="n">ws_tag</span><span class="si">}</span><span class="s2">&#39;: &quot;</span>
+                        <span class="s2">&quot;no matching writing system in project.&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">tss</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">handle</span><span class="p">)</span>
+            <span class="n">multistring</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">tss</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_all_guids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build a dict mapping lowercased GUID string -&gt; existing LCM object</span>
+<span class="sd">        for every top-level item in the domain. For hierarchical domains</span>
+<span class="sd">        (POS) _walk_existing recurses; for flat domains (PhonFeats) it</span>
+<span class="sd">        yields top-level items only.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">guids</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">existing</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_walk_existing</span><span class="p">():</span>
+            <span class="n">obj</span><span class="p">,</span> <span class="n">_parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalise_walk_item</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
+            <span class="n">guids</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">guids</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_find_by_guid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid_str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the item whose GUID matches `guid_str`, or None.&quot;&quot;&quot;</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">guid_str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="n">guid_str</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">existing</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_walk_existing</span><span class="p">():</span>
+            <span class="n">obj</span><span class="p">,</span> <span class="n">_parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalise_walk_item</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_normalise_walk_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        _walk_existing may yield either (obj, parent) tuples (POS,</span>
+<span class="sd">        which needs the parent to preserve hierarchy in repair) or</span>
+<span class="sd">        bare LCM objects (PhonFeats, which is flat). Normalise to</span>
+<span class="sd">        (obj, parent_or_None) so the rest of the mixin can be uniform.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">item</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_flattened_catalog_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total catalog entries across the forest, including children.&quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flattened_catalog_count</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">children</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">n</span></div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_LCMNativeCatalogImportMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Mixin for Operations classes that wrap LCM possibility-list domains</span>
+<span class="sd">    whose catalog ships as LCM-native XML (``&lt;LangProject&gt;...&lt;CmPossibilityList&gt;``</span>
+<span class="sd">    with canonical-GUID children) rather than as an etic CatalogEntry feed.</span>
+
+<span class="sd">    Subclasses delegate the heavy lifting to</span>
+<span class="sd">    ``SIL.LCModel.Application.ApplicationServices.XmlList.ImportList(lp,</span>
+<span class="sd">    fieldName, path, progress)`` -- LCM&#39;s native import path -- and only</span>
+<span class="sd">    add a non-empty-list guard around it. ``XmlList.ImportList`` APPENDS</span>
+<span class="sd">    without GUID-based deduplication, so calling it on a non-empty list</span>
+<span class="sd">    silently duplicates the canonical hierarchy. The guard refuses by</span>
+<span class="sd">    default and surfaces an FP_ParameterError; callers pass</span>
+<span class="sd">    ``force=True`` to opt in.</span>
+
+<span class="sd">    Extracted in Phase Q-3a from the duplicated bodies of</span>
+<span class="sd">    SemanticDomainOperations.ImportCatalog (SemDom.xml) and</span>
+<span class="sd">    AnthropologyOperations.ImportCatalog (OCM.xml). Both methods are</span>
+<span class="sd">    near-identical 80-100-line wrappers around the same LCM call; the</span>
+<span class="sd">    only variation is the catalog file, the LCM fieldName argument, the</span>
+<span class="sd">    LangProject OA-property holding the target list, and the singular /</span>
+<span class="sd">    plural item label used in the guard&#39;s error message.</span>
+
+<span class="sd">    Subclasses declare class-level constants:</span>
+
+<span class="sd">        CATALOG_FILE</span>
+<span class="sd">            Filename of the LCM-native catalog XML, e.g. ``&quot;SemDom.xml&quot;``</span>
+<span class="sd">            or ``&quot;OCM.xml&quot;``.</span>
+
+<span class="sd">        CATALOG_SUBDIR</span>
+<span class="sd">            Relative subdirectory under FWCodeDir. Defaults to</span>
+<span class="sd">            ``&quot;Templates&quot;`` to match both existing catalogs.</span>
+
+<span class="sd">        LCM_FIELD_NAME</span>
+<span class="sd">            The second argument to</span>
+<span class="sd">            ``XmlList.ImportList(lp, fieldName, path, progress)`` -- LCM&#39;s</span>
+<span class="sd">            internal name for the LangProject possibility list this</span>
+<span class="sd">            catalog feeds. E.g. ``&quot;SemanticDomainList&quot;`` or ``&quot;AnthroList&quot;``.</span>
+
+<span class="sd">        LANG_PROJECT_LIST_ATTR</span>
+<span class="sd">            Name of the OA property on ``project.lp`` that holds the</span>
+<span class="sd">            target list, e.g. ``&quot;SemanticDomainListOA&quot;`` or</span>
+<span class="sd">            ``&quot;AnthroListOA&quot;``. Used both for the non-empty guard and</span>
+<span class="sd">            for the post-import count returned to the caller.</span>
+
+<span class="sd">        DOMAIN_ITEM_LABEL_SINGULAR</span>
+<span class="sd">            Singular form of the item label used in the guard&#39;s error</span>
+<span class="sd">            message, e.g. ``&quot;domain&quot;`` or ``&quot;anthropology item&quot;``. Shows</span>
+<span class="sd">            up in ``&quot;top-level {SINGULAR}(s)&quot;``.</span>
+
+<span class="sd">        DOMAIN_ITEM_LABEL_PLURAL</span>
+<span class="sd">            Plural form used in the &quot;additional X on top&quot; continuation</span>
+<span class="sd">            of the same error, e.g. ``&quot;domains&quot;`` or ``&quot;items&quot;``. Note</span>
+<span class="sd">            this is the label appearing in the second clause and need</span>
+<span class="sd">            not be the strict morphological plural of</span>
+<span class="sd">            DOMAIN_ITEM_LABEL_SINGULAR -- it matches each catalog&#39;s</span>
+<span class="sd">            historical wording so the message stays byte-identical to</span>
+<span class="sd">            the pre-extraction implementations.</span>
+
+<span class="sd">    The mixin exposes one helper, ``_import_lcm_native_catalog``, which</span>
+<span class="sd">    each subclass&#39;s thin ``ImportCatalog`` wrapper delegates to. The</span>
+<span class="sd">    public method stays on the subclass (with its full docstring and</span>
+<span class="sd">    @OperationsMethod decorator) so that</span>
+<span class="sd">    ``Operations.__dict__[&quot;ImportCatalog&quot;]`` introspection in the test</span>
+<span class="sd">    suite continues to find it on the class itself, not only via MRO</span>
+<span class="sd">    lookup.</span>
+
+<span class="sd">    Why a mixin and not pure inheritance? The shared behaviour cuts</span>
+<span class="sd">    across Operations classes whose primary inheritance is</span>
+<span class="sd">    ``BaseOperations``; a mixin keeps the LCM-native import surface</span>
+<span class="sd">    composable with that chain. Why a private helper rather than an</span>
+<span class="sd">    inherited ImportCatalog? Existing tests use</span>
+<span class="sd">    ``cls.__dict__[&quot;ImportCatalog&quot;]`` to inspect the @OperationsMethod</span>
+<span class="sd">    descriptor and would break under MRO-only resolution.</span>
+
+<span class="sd">    Sibling-catalog importers:</span>
+<span class="sd">        A subclass that ships multiple catalogs feeding the same target</span>
+<span class="sd">        list (e.g. ``AnthropologyOperations`` with both ``OCM.xml`` and</span>
+<span class="sd">        ``OCM-Frame.xml``) can expose additional public ``Import*``</span>
+<span class="sd">        methods that route through ``_import_lcm_native_catalog`` with</span>
+<span class="sd">        the ``catalog_file=`` runtime override (rather than overriding</span>
+<span class="sd">        the class-level ``CATALOG_FILE`` constant). The</span>
+<span class="sd">        ``ImportFrameCatalog`` method on AnthropologyOperations is the</span>
+<span class="sd">        established precedent. (issue #83)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># ---- Class-level configuration (subclasses override) ---------------</span>
+
+    <span class="n">CATALOG_FILE</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">CATALOG_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;Templates&quot;</span>
+    <span class="n">LCM_FIELD_NAME</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">LANG_PROJECT_LIST_ATTR</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">DOMAIN_ITEM_LABEL_SINGULAR</span> <span class="o">=</span> <span class="s2">&quot;item&quot;</span>
+    <span class="n">DOMAIN_ITEM_LABEL_PLURAL</span> <span class="o">=</span> <span class="s2">&quot;items&quot;</span>
+
+    <span class="c1"># ---- Mixin-private helper -----------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_import_lcm_native_catalog</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">catalog_file</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delegate to LCM&#39;s native XmlList.ImportList after the non-empty</span>
+<span class="sd">        guard. Subclasses&#39; ImportCatalog methods call this verbatim;</span>
+<span class="sd">        their docstrings (which describe the catalog&#39;s contents and</span>
+<span class="sd">        idempotency contract) stay on the subclass method.</span>
+
+<span class="sd">        LOCAL imports: SIL.LCModel and the catalog-locator both live</span>
+<span class="sd">        behind FieldWorks-only dependencies; importing at module top</span>
+<span class="sd">        would break test collection on machines without FW installed.</span>
+<span class="sd">        Both pre-extraction implementations imported locally too -- the</span>
+<span class="sd">        pattern is preserved here.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            progress: Optional ``SIL.LCModel.Utils.IProgress`` instance.</span>
+<span class="sd">            force: If True, skip the non-empty guard.</span>
+<span class="sd">            catalog_file: Optional override for ``self.CATALOG_FILE``.</span>
+<span class="sd">                Used by sibling-catalog import methods (e.g.</span>
+<span class="sd">                ``ImportFrameCatalog`` on AnthropologyOperations, which</span>
+<span class="sd">                points at ``OCM-Frame.xml`` instead of the main</span>
+<span class="sd">                ``OCM.xml``). When None (default), the subclass&#39;s</span>
+<span class="sd">                class-level ``CATALOG_FILE`` constant is used.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Count of top-level items in the target list after import.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not write-enabled.</span>
+<span class="sd">            FP_FileNotFoundError: If the catalog file cannot be located.</span>
+<span class="sd">            FP_ParameterError: If the target list is already non-empty</span>
+<span class="sd">                               and ``force`` is False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># LOCAL import: XmlList is the only FieldWorks-dependent symbol</span>
+        <span class="c1"># used here, and SIL.LCModel.Application.ApplicationServices is</span>
+        <span class="c1"># only available when FieldWorks is installed. find_catalog_file</span>
+        <span class="c1"># (pure flexlibs2) and FP_FileNotFoundError (pure flexlibs2) are</span>
+        <span class="c1"># hoisted to module top -- they don&#39;t need deferred loading.</span>
+        <span class="c1"># (issue #119 item 2)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Application.ApplicationServices</span><span class="w"> </span><span class="kn">import</span> <span class="n">XmlList</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="c1"># Explicit None-check rather than truthy fallback so an empty</span>
+        <span class="c1"># string passed by mistake fails loudly via find_catalog_file</span>
+        <span class="c1"># rather than silently degrading to the class-level default.</span>
+        <span class="c1"># (issue #83 item 2)</span>
+        <span class="n">effective_catalog</span> <span class="o">=</span> <span class="n">catalog_file</span> <span class="k">if</span> <span class="n">catalog_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">CATALOG_FILE</span>
+
+        <span class="n">target_list</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">LANG_PROJECT_LIST_ATTR</span><span class="p">)</span>
+        <span class="n">existing</span> <span class="o">=</span> <span class="n">target_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Count</span>
+        <span class="k">if</span> <span class="n">existing</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">force</span><span class="p">:</span>
+            <span class="c1"># Name the specific catalog in the message so a sibling</span>
+            <span class="c1"># caller (ImportFrameCatalog at effective_catalog=&#39;OCM-Frame.xml&#39;)</span>
+            <span class="c1"># self-identifies in error logs instead of saying generic</span>
+            <span class="c1"># &quot;this&quot;. (issue #83 item 3)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">LANG_PROJECT_LIST_ATTR</span><span class="si">}</span><span class="s2"> already has </span><span class="si">{</span><span class="n">existing</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;top-level </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">DOMAIN_ITEM_LABEL_SINGULAR</span><span class="si">}</span><span class="s2">(s). &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;XmlList.ImportList APPENDS without GUID-based &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;deduplication, so importing </span><span class="si">{</span><span class="n">effective_catalog</span><span class="si">!r}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;here would create duplicates. Pass force=True if &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;you intend to layer additional &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">DOMAIN_ITEM_LABEL_PLURAL</span><span class="si">}</span><span class="s2"> on top, or clear &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the list first.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">catalog_path</span> <span class="o">=</span> <span class="n">find_catalog_file</span><span class="p">(</span>
+                <span class="n">effective_catalog</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">CATALOG_SUBDIR</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_FileNotFoundError</span><span class="p">(</span><span class="n">effective_catalog</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+        <span class="n">importer</span> <span class="o">=</span> <span class="n">XmlList</span><span class="p">()</span>
+        <span class="c1"># LCM_FIELD_NAME maps to LangProject.&lt;LANG_PROJECT_LIST_ATTR&gt;.</span>
+        <span class="c1"># progress=None is accepted (IProgress is a reference interface).</span>
+        <span class="n">importer</span><span class="o">.</span><span class="n">ImportList</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">LCM_FIELD_NAME</span><span class="p">,</span>
+            <span class="n">catalog_path</span><span class="p">,</span>
+            <span class="n">progress</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">LANG_PROJECT_LIST_ATTR</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Count</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.catalog_backed</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

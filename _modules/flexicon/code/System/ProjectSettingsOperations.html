@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.System.ProjectSettingsOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.System.ProjectSettingsOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.System.ProjectSettingsOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ProjectSettingsOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ProjectSettingsOperations</span>
+<span class="c1">#          Project-level settings and configuration operations for FieldWorks</span>
+<span class="c1">#          Language Explorer projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ILangProject</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.WritingSystems</span><span class="w"> </span><span class="kn">import</span> <span class="n">WritingSystemDefinition</span>  <span class="c1"># Fixed: was IWritingSystemDefinition</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+    <span class="n">FP_WritingSystemError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
+
+
+<div class="viewcode-block" id="ProjectSettingsOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.ProjectSettingsOperations.ProjectSettingsOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProjectSettingsOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing project-level settings and</span>
+<span class="sd">    configuration in a FieldWorks project.</span>
+
+<span class="sd">    Project settings include metadata (name, description), language settings</span>
+<span class="sd">    (vernacular and analysis writing systems), interface preferences, default</span>
+<span class="sd">    fonts, and file paths for external resources.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.ProjectSettings property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get project information</span>
+<span class="sd">        name = project.ProjectSettings.GetProjectName()</span>
+<span class="sd">        description = project.ProjectSettings.GetDescription(&quot;en&quot;)</span>
+<span class="sd">        print(f&quot;Project: {name}&quot;)</span>
+<span class="sd">        print(f&quot;Description: {description}&quot;)</span>
+
+<span class="sd">        # Set project metadata</span>
+<span class="sd">        project.ProjectSettings.SetProjectName(&quot;My Linguistic Study&quot;)</span>
+<span class="sd">        project.ProjectSettings.SetDescription(</span>
+<span class="sd">            &quot;Documentation of endangered language&quot;, &quot;en&quot;</span>
+<span class="sd">        )</span>
+
+<span class="sd">        # Language settings</span>
+<span class="sd">        vern_wss = project.ProjectSettings.GetVernacularWSs()</span>
+<span class="sd">        anal_wss = project.ProjectSettings.GetAnalysisWSs()</span>
+<span class="sd">        print(f&quot;Vernacular WSs: {vern_wss}&quot;)</span>
+<span class="sd">        print(f&quot;Analysis WSs: {anal_wss}&quot;)</span>
+
+<span class="sd">        # Set default writing systems</span>
+<span class="sd">        project.ProjectSettings.SetDefaultVernacular(&quot;qaa-x-kal&quot;)</span>
+<span class="sd">        project.ProjectSettings.SetDefaultAnalysis(&quot;en&quot;)</span>
+
+<span class="sd">        # Configure default fonts</span>
+<span class="sd">        project.ProjectSettings.SetDefaultFont(&quot;qaa-x-kal&quot;, &quot;Charis SIL&quot;)</span>
+<span class="sd">        project.ProjectSettings.SetDefaultFontSize(&quot;qaa-x-kal&quot;, 14)</span>
+
+<span class="sd">        # External file paths</span>
+<span class="sd">        linked_path = project.ProjectSettings.GetLinkedFilesRootDir()</span>
+<span class="sd">        print(f&quot;Linked files: {linked_path}&quot;)</span>
+
+<span class="sd">        # Metadata</span>
+<span class="sd">        created = project.ProjectSettings.GetDateCreated()</span>
+<span class="sd">        modified = project.ProjectSettings.GetDateModified()</span>
+<span class="sd">        print(f&quot;Created: {created}&quot;)</span>
+<span class="sd">        print(f&quot;Last modified: {modified}&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ProjectSettingsOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Project Information ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetProjectName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the project name.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The name of the project</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; name = project.ProjectSettings.GetProjectName()</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Project name: {name}&quot;)</span>
+<span class="sd">            Project name: Kalaba Documentation</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns the display name of the project</span>
+<span class="sd">            - This is different from the project filename</span>
+<span class="sd">            - Empty string if no name is set</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetProjectName, GetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Name</span><span class="p">:</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ts</span><span class="o">.</span><span class="n">Text</span> <span class="k">if</span> <span class="n">ts</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetProjectName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the project name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The new project name</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If name is None</span>
+<span class="sd">            FP_ParameterError: If name is empty</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetProjectName(&quot;Kalaba Documentation&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; name = project.ProjectSettings.GetProjectName()</span>
+<span class="sd">            &gt;&gt;&gt; print(name)</span>
+<span class="sd">            Kalaba Documentation</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Sets the display name of the project</span>
+<span class="sd">            - Does not change the project filename</span>
+<span class="sd">            - Name should be descriptive and meaningful</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetProjectName, SetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Project name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get default analysis writing system for the name</span>
+        <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">ws_handle</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Name</span> <span class="o">=</span> <span class="n">ts</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the project description in the specified writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int), language tag (str),</span>
+<span class="sd">                or None for default analysis WS</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The project description text</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_WritingSystemError: If writing system not found</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get in default analysis WS</span>
+<span class="sd">            &gt;&gt;&gt; desc = project.ProjectSettings.GetDescription()</span>
+<span class="sd">            &gt;&gt;&gt; print(desc)</span>
+<span class="sd">            Documentation of endangered Kalaba language</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; desc_en = project.ProjectSettings.GetDescription(&quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; desc_fr = project.ProjectSettings.GetDescription(&quot;fr&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if no description set</span>
+<span class="sd">            - Description can be set in multiple writing systems</span>
+<span class="sd">            - Useful for multilingual project documentation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDescription, GetProjectName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWSHandle</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">ts</span><span class="o">.</span><span class="n">Text</span> <span class="k">if</span> <span class="n">ts</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the project description in the specified writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            description (str): The description text</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int), language tag (str),</span>
+<span class="sd">                or None for default analysis WS</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If description is None</span>
+<span class="sd">            FP_WritingSystemError: If writing system not found</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Set in default analysis WS</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetDescription(</span>
+<span class="sd">            ...     &quot;Documentation of endangered Kalaba language&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set in multiple languages</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetDescription(</span>
+<span class="sd">            ...     &quot;Documentation of endangered Kalaba language&quot;, &quot;en&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetDescription(</span>
+<span class="sd">            ...     &quot;Documentation de la langue Kalaba en danger&quot;, &quot;fr&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Can set different descriptions in different writing systems</span>
+<span class="sd">            - Empty string clears the description</span>
+<span class="sd">            - Description is used in project properties and reports</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDescription, SetProjectName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+
+        <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWSHandle</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+
+        <span class="c1"># Ensure Description MultiString exists</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
+            <span class="c1"># Description should exist, but handle gracefully</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Description MultiString not initialized&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">ws_handle</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">,</span> <span class="n">ts</span><span class="p">)</span>
+
+    <span class="c1"># --- Language Settings ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetVernacularWSs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the list of vernacular writing system tags.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of vernacular writing system language tags (e.g., [&quot;qaa-x-kal&quot;])</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; vern_wss = project.ProjectSettings.GetVernacularWSs()</span>
+<span class="sd">            &gt;&gt;&gt; print(&quot;Vernacular writing systems:&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for ws_tag in vern_wss:</span>
+<span class="sd">            ...     print(f&quot;  - {ws_tag}&quot;)</span>
+<span class="sd">            Vernacular writing systems:</span>
+<span class="sd">              - qaa-x-kal</span>
+<span class="sd">              - qaa-x-kal-fonipa</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns list of language tags, not WS objects</span>
+<span class="sd">            - These are the writing systems for the object language(s)</span>
+<span class="sd">            - Use WritingSystems operations to get full WS details</span>
+<span class="sd">            - Empty list if no vernacular writing systems configured</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAnalysisWSs, SetDefaultVernacular</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;CurVernWss&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">CurVernWss</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">CurVernWss</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAnalysisWSs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the list of analysis writing system tags.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of analysis writing system language tags (e.g., [&quot;en&quot;, &quot;fr&quot;])</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; anal_wss = project.ProjectSettings.GetAnalysisWSs()</span>
+<span class="sd">            &gt;&gt;&gt; print(&quot;Analysis writing systems:&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for ws_tag in anal_wss:</span>
+<span class="sd">            ...     print(f&quot;  - {ws_tag}&quot;)</span>
+<span class="sd">            Analysis writing systems:</span>
+<span class="sd">              - en</span>
+<span class="sd">              - fr</span>
+<span class="sd">              - es</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns list of language tags, not WS objects</span>
+<span class="sd">            - These are the writing systems for metadata and analysis</span>
+<span class="sd">            - Use WritingSystems operations to get full WS details</span>
+<span class="sd">            - Empty list if no analysis writing systems configured</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetVernacularWSs, SetDefaultAnalysis</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;CurAnalysisWss&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">CurAnalysisWss</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">CurAnalysisWss</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDefaultVernacular</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the default vernacular writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int) or language tag (str)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If ws_handle_or_tag is None</span>
+<span class="sd">            FP_WritingSystemError: If writing system not found</span>
+<span class="sd">            FP_ParameterError: If WS is not in vernacular list</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Set by language tag</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetDefaultVernacular(&quot;qaa-x-kal&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Verify the change</span>
+<span class="sd">            &gt;&gt;&gt; default = project.WritingSystems.GetDefaultVernacular()</span>
+<span class="sd">            &gt;&gt;&gt; tag = project.WritingSystems.GetLanguageTag(default)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Default vernacular: {tag}&quot;)</span>
+<span class="sd">            Default vernacular: qaa-x-kal</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Writing system must be in the vernacular list</span>
+<span class="sd">            - This is the primary WS for lexical entries</span>
+<span class="sd">            - Used as fallback when no specific WS is specified</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDefaultAnalysis, GetVernacularWSs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="s2">&quot;ws_handle_or_tag&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to WS object</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ws</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">))</span>
+
+        <span class="c1"># Verify it&#39;s a vernacular WS</span>
+        <span class="n">vern_tags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GetVernacularWSs</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">ws</span><span class="o">.</span><span class="n">Id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vern_tags</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Writing system &#39;</span><span class="si">{</span><span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="si">}</span><span class="s2">&#39; is not a vernacular writing system&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Set as default</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DefaultVernacularWritingSystem</span> <span class="o">=</span> <span class="n">ws</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDefaultAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the default analysis writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int) or language tag (str)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If ws_handle_or_tag is None</span>
+<span class="sd">            FP_WritingSystemError: If writing system not found</span>
+<span class="sd">            FP_ParameterError: If WS is not in analysis list</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Set by language tag</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetDefaultAnalysis(&quot;en&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Verify the change</span>
+<span class="sd">            &gt;&gt;&gt; default = project.WritingSystems.GetDefaultAnalysis()</span>
+<span class="sd">            &gt;&gt;&gt; tag = project.WritingSystems.GetLanguageTag(default)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Default analysis: {tag}&quot;)</span>
+<span class="sd">            Default analysis: en</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Writing system must be in the analysis list</span>
+<span class="sd">            - This is the primary WS for glosses and definitions</span>
+<span class="sd">            - Used as fallback when no specific WS is specified</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDefaultVernacular, GetAnalysisWSs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="s2">&quot;ws_handle_or_tag&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to WS object</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ws</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">))</span>
+
+        <span class="c1"># Verify it&#39;s an analysis WS</span>
+        <span class="n">anal_tags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GetAnalysisWSs</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">ws</span><span class="o">.</span><span class="n">Id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">anal_tags</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Writing system &#39;</span><span class="si">{</span><span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="si">}</span><span class="s2">&#39; is not an analysis writing system&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Set as default</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DefaultAnalysisWritingSystem</span> <span class="o">=</span> <span class="n">ws</span>
+
+    <span class="c1"># --- UI Settings ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetInterfaceLanguage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the user interface language writing system.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWritingSystemDefinition: The UI language writing system</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; ui_ws = project.ProjectSettings.GetInterfaceLanguage()</span>
+<span class="sd">            &gt;&gt;&gt; tag = project.WritingSystems.GetLanguageTag(ui_ws)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;UI language: {tag}&quot;)</span>
+<span class="sd">            UI language: en</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This determines the language used in the FLEx interface</span>
+<span class="sd">            - Typically an analysis writing system (e.g., &quot;en&quot;, &quot;fr&quot;, &quot;es&quot;)</span>
+<span class="sd">            - Falls back to default analysis WS if not specifically set</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetInterfaceLanguage</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># The UI language is stored in UserWs</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;UserWs&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">UserWs</span>
+        <span class="c1"># Fall back to default analysis</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DefaultAnalysisWritingSystem</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetInterfaceLanguage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the user interface language writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int) or language tag (str)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If ws_handle_or_tag is None</span>
+<span class="sd">            FP_WritingSystemError: If writing system not found</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Set UI to French</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetInterfaceLanguage(&quot;fr&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set UI to English</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetInterfaceLanguage(&quot;en&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Changes the language used in the FLEx interface</span>
+<span class="sd">            - Should typically be an analysis writing system</span>
+<span class="sd">            - Requires application restart to take full effect</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetInterfaceLanguage</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="s2">&quot;ws_handle_or_tag&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to WS object</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ws</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">))</span>
+
+        <span class="c1"># Set the UI language</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;UserWs&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">UserWs</span> <span class="o">=</span> <span class="n">ws</span>
+
+    <span class="c1"># --- Default Font Settings ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDefaultFont</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the default font name for a writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int) or language tag (str)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Font name (e.g., &quot;Charis SIL&quot;, &quot;Arial&quot;)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If ws_handle_or_tag is None</span>
+<span class="sd">            FP_WritingSystemError: If writing system not found</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; font = project.ProjectSettings.GetDefaultFont(&quot;qaa-x-kal&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Default font: {font}&quot;)</span>
+<span class="sd">            Default font: Charis SIL</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get for analysis WS</span>
+<span class="sd">            &gt;&gt;&gt; font = project.ProjectSettings.GetDefaultFont(&quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(font)</span>
+<span class="sd">            Calibri</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns the default font for display and editing</span>
+<span class="sd">            - Empty string if no default font is set</span>
+<span class="sd">            - This is a convenience wrapper around WritingSystems.GetFontName()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDefaultFont, GetDefaultFontSize</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="s2">&quot;ws_handle_or_tag&quot;</span><span class="p">)</span>
+
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ws</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">))</span>
+
+        <span class="c1"># Get default font name</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">&quot;DefaultFontName&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ws</span><span class="o">.</span><span class="n">DefaultFontName</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ws</span><span class="o">.</span><span class="n">DefaultFontName</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">&quot;DefaultFont&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ws</span><span class="o">.</span><span class="n">DefaultFont</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ws</span><span class="o">.</span><span class="n">DefaultFont</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDefaultFont</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="n">font_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the default font name for a writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int) or language tag (str)</span>
+<span class="sd">            font_name (str): Font name (e.g., &quot;Charis SIL&quot;, &quot;Arial&quot;)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If ws_handle_or_tag or font_name is None</span>
+<span class="sd">            FP_WritingSystemError: If writing system not found</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Set font for vernacular</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetDefaultFont(&quot;qaa-x-kal&quot;, &quot;Charis SIL&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set font for IPA</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetDefaultFont(&quot;qaa-x-kal-fonipa&quot;, &quot;Doulos SIL&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set font for analysis</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetDefaultFont(&quot;en&quot;, &quot;Calibri&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Font must be installed on the system</span>
+<span class="sd">            - Changes affect all text displayed in this writing system</span>
+<span class="sd">            - Recommended fonts for IPA: Charis SIL, Doulos SIL</span>
+<span class="sd">            - This is a convenience wrapper around WritingSystems.SetFontName()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDefaultFont, SetDefaultFontSize</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="s2">&quot;ws_handle_or_tag&quot;</span><span class="p">)</span>
+
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ws</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">))</span>
+
+        <span class="c1"># Set default font name</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">&quot;DefaultFontName&quot;</span><span class="p">):</span>
+            <span class="n">ws</span><span class="o">.</span><span class="n">DefaultFontName</span> <span class="o">=</span> <span class="n">font_name</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">&quot;DefaultFont&quot;</span><span class="p">):</span>
+            <span class="n">ws</span><span class="o">.</span><span class="n">DefaultFont</span> <span class="o">=</span> <span class="n">font_name</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDefaultFontSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the default font size for a writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int) or language tag (str)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: Font size in points (e.g., 12.0)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If ws_handle_or_tag is None</span>
+<span class="sd">            FP_WritingSystemError: If writing system not found</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; size = project.ProjectSettings.GetDefaultFontSize(&quot;qaa-x-kal&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Font size: {size} pt&quot;)</span>
+<span class="sd">            Font size: 14.0 pt</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns 12.0 if no default size is set</span>
+<span class="sd">            - This is a convenience wrapper around WritingSystems.GetFontSize()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDefaultFontSize, GetDefaultFont</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="s2">&quot;ws_handle_or_tag&quot;</span><span class="p">)</span>
+
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ws</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">))</span>
+
+        <span class="c1"># Get default font size</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">&quot;DefaultFontSize&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ws</span><span class="o">.</span><span class="n">DefaultFontSize</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">ws</span><span class="o">.</span><span class="n">DefaultFontSize</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mf">12.0</span>  <span class="c1"># Default size</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDefaultFontSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the default font size for a writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int) or language tag (str)</span>
+<span class="sd">            size (float or int): Font size in points (e.g., 12, 14.5)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If ws_handle_or_tag or size is None</span>
+<span class="sd">            FP_WritingSystemError: If writing system not found</span>
+<span class="sd">            FP_ParameterError: If size is not positive</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Set standard size</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetDefaultFontSize(&quot;qaa-x-kal&quot;, 14)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set larger for better readability</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetDefaultFontSize(&quot;qaa-x-kal&quot;, 16)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set for analysis</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetDefaultFontSize(&quot;en&quot;, 12)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Size should typically be between 8 and 72 points</span>
+<span class="sd">            - Common sizes: 10, 12, 14, 16</span>
+<span class="sd">            - Changes affect all text displayed in this writing system</span>
+<span class="sd">            - This is a convenience wrapper around WritingSystems.SetFontSize()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDefaultFontSize, SetDefaultFont</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="s2">&quot;ws_handle_or_tag&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Font size must be positive&quot;</span><span class="p">)</span>
+
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ws</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">))</span>
+
+        <span class="c1"># Set default font size</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">&quot;DefaultFontSize&quot;</span><span class="p">):</span>
+            <span class="n">ws</span><span class="o">.</span><span class="n">DefaultFontSize</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+
+    <span class="c1"># --- Advanced Settings ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLinkedFilesRootDir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the root directory for linked files (media, pictures, etc.).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Path to the linked files root directory</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; linked_path = project.ProjectSettings.GetLinkedFilesRootDir()</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Linked files: {linked_path}&quot;)</span>
+<span class="sd">            Linked files: C:\\Users\\username\\Documents\\FLEx\\Kalaba\\LinkedFiles</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is where FLEx stores media files, pictures, etc.</span>
+<span class="sd">            - Path is typically relative to the project directory</span>
+<span class="sd">            - Returns empty string if not set</span>
+<span class="sd">            - Used for organizing external resources</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetLinkedFilesRootDir, GetExtLinkRootDir</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;LinkedFilesRootDir&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LinkedFilesRootDir</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LinkedFilesRootDir</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLinkedFilesRootDir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the root directory for linked files (media, pictures, etc.).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): Path to the linked files root directory</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If path is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Set absolute path</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetLinkedFilesRootDir(</span>
+<span class="sd">            ...     &quot;C:\\\\Users\\\\username\\\\Documents\\\\FLEx\\\\Kalaba\\\\LinkedFiles&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set relative path</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetLinkedFilesRootDir(&quot;LinkedFiles&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Can be absolute or relative path</span>
+<span class="sd">            - Relative paths are relative to the project directory</span>
+<span class="sd">            - Directory should exist before setting</span>
+<span class="sd">            - Used for organizing external resources like media files</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetLinkedFilesRootDir, SetExtLinkRootDir</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LinkedFilesRootDir</span> <span class="o">=</span> <span class="n">path</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetExtLinkRootDir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the external link root directory.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Path to the external link root directory</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; ext_link_path = project.ProjectSettings.GetExtLinkRootDir()</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;External links: {ext_link_path}&quot;)</span>
+<span class="sd">            External links: C:\\Users\\username\\Documents\\ExternalResources</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is for external linked resources</span>
+<span class="sd">            - Different from LinkedFilesRootDir</span>
+<span class="sd">            - Returns empty string if not set</span>
+<span class="sd">            - Used for organizing external reference materials</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetExtLinkRootDir, GetLinkedFilesRootDir</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;ExtLinkRootDir&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ExtLinkRootDir</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ExtLinkRootDir</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetExtLinkRootDir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the external link root directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): Path to the external link root directory</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If path is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Set absolute path</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetExtLinkRootDir(</span>
+<span class="sd">            ...     &quot;C:\\\\Users\\\\username\\\\Documents\\\\ExternalResources&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set relative path</span>
+<span class="sd">            &gt;&gt;&gt; project.ProjectSettings.SetExtLinkRootDir(&quot;ExternalLinks&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Can be absolute or relative path</span>
+<span class="sd">            - Relative paths are relative to the project directory</span>
+<span class="sd">            - Directory should exist before setting</span>
+<span class="sd">            - Used for organizing external linked resources</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetExtLinkRootDir, SetLinkedFilesRootDir</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ExtLinkRootDir</span> <span class="o">=</span> <span class="n">path</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAnalysisWritingSystems</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the list of analysis writing system tags.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of analysis writing system language tags (e.g., [&quot;en&quot;, &quot;fr&quot;])</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; anal_wss = project.ProjectSettings.GetAnalysisWritingSystems()</span>
+<span class="sd">            &gt;&gt;&gt; print(&quot;Analysis writing systems:&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for ws_tag in anal_wss:</span>
+<span class="sd">            ...     print(f&quot;  - {ws_tag}&quot;)</span>
+<span class="sd">            Analysis writing systems:</span>
+<span class="sd">              - en</span>
+<span class="sd">              - fr</span>
+<span class="sd">              - es</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns list of language tags, not WS objects</span>
+<span class="sd">            - These are the writing systems for metadata and analysis</span>
+<span class="sd">            - READ-ONLY: Use other methods to modify the writing system list</span>
+<span class="sd">            - Empty list if no analysis writing systems configured</span>
+<span class="sd">            - This is an alias for GetAnalysisWSs() for consistency</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetVernacularWritingSystems, GetAnalysisWSs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;AnalysisWss&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnalysisWss</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnalysisWss</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetVernacularWritingSystems</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the list of vernacular writing system tags.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of vernacular writing system language tags (e.g., [&quot;qaa-x-kal&quot;])</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; vern_wss = project.ProjectSettings.GetVernacularWritingSystems()</span>
+<span class="sd">            &gt;&gt;&gt; print(&quot;Vernacular writing systems:&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for ws_tag in vern_wss:</span>
+<span class="sd">            ...     print(f&quot;  - {ws_tag}&quot;)</span>
+<span class="sd">            Vernacular writing systems:</span>
+<span class="sd">              - qaa-x-kal</span>
+<span class="sd">              - qaa-x-kal-fonipa</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns list of language tags, not WS objects</span>
+<span class="sd">            - These are the writing systems for the object language(s)</span>
+<span class="sd">            - READ-ONLY: Use other methods to modify the writing system list</span>
+<span class="sd">            - Empty list if no vernacular writing systems configured</span>
+<span class="sd">            - This is an alias for GetVernacularWSs() for consistency</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAnalysisWritingSystems, GetVernacularWSs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;CurVernWss&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">CurVernWss</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">CurVernWss</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetProjectGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the project GUID as a string.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The project GUID (e.g., &#39;a1b2c3d4-e5f6-...&#39;), or empty string if unavailable.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; guid = project.ProjectSettings.GetProjectGuid()</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Project GUID: {guid}&quot;)</span>
+<span class="sd">            Project GUID: a1b2c3d4-e5f6-7890-abcd-ef1234567890</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Derived from ILangProject.Guid</span>
+<span class="sd">            - Stable identifier for this project instance</span>
+<span class="sd">            - READ-ONLY</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetProjectName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;Guid&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetProjectDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the project description in the specified writing system.</span>
+
+<span class="sd">        Alias for GetDescription(). See GetDescription() for full documentation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int), language tag (str),</span>
+<span class="sd">                or None for default analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The project description text.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetDescription</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetExternalLink</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the external (linked files) root directory path.</span>
+
+<span class="sd">        Alias for GetExtLinkRootDir(). See GetExtLinkRootDir() for full documentation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The external link root directory path, or empty string if not set.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetExtLinkRootDir</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetExtLinkRootDir</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAnalysisWritingSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the default analysis writing system object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWritingSystem: The default analysis writing system for this project, or None if the language project is unavailable.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; ws = project.ProjectSettings.GetAnalysisWritingSystem()</span>
+<span class="sd">            &gt;&gt;&gt; print(ws.Id)</span>
+<span class="sd">            en</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns the IWritingSystem object, not a string tag</span>
+<span class="sd">            - For a list of all analysis writing system tags, use GetAnalysisWritingSystems()</span>
+<span class="sd">            - READ-ONLY</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAnalysisWritingSystems, GetVernacularWritingSystem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DefaultAnalysisWritingSystem</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetVernacularWritingSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the default vernacular writing system object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWritingSystem: The default vernacular writing system for this project, or None if the language project is unavailable.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; ws = project.ProjectSettings.GetVernacularWritingSystem()</span>
+<span class="sd">            &gt;&gt;&gt; print(ws.Id)</span>
+<span class="sd">            qaa-x-kal</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns the IWritingSystem object, not a string tag</span>
+<span class="sd">            - For a list of all vernacular writing system tags, use GetVernacularWritingSystems()</span>
+<span class="sd">            - READ-ONLY</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetVernacularWritingSystems, GetAnalysisWritingSystem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DefaultVernacularWritingSystem</span>
+
+    <span class="c1"># --- Project Metadata ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the date the project was created.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            datetime: The creation date/time, or None if not available</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; created = project.ProjectSettings.GetDateCreated()</span>
+<span class="sd">            &gt;&gt;&gt; if created:</span>
+<span class="sd">            ...     print(f&quot;Created: {created.strftime(&#39;%Y-%m-%d %H:%M:%S&#39;)}&quot;)</span>
+<span class="sd">            Created: 2024-01-15 10:30:00</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns .NET DateTime object</span>
+<span class="sd">            - Can be None if creation date is not recorded</span>
+<span class="sd">            - Read-only property</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDateModified</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;DateCreated&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DateCreated</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the date the project was last modified.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            datetime: The last modification date/time, or None if not available</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; modified = project.ProjectSettings.GetDateModified()</span>
+<span class="sd">            &gt;&gt;&gt; if modified:</span>
+<span class="sd">            ...     print(f&quot;Last modified: {modified.strftime(&#39;%Y-%m-%d %H:%M:%S&#39;)}&quot;)</span>
+<span class="sd">            Last modified: 2024-03-20 15:45:30</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns .NET DateTime object</span>
+<span class="sd">            - Can be None if modification date is not recorded</span>
+<span class="sd">            - Read-only property</span>
+<span class="sd">            - Updated automatically when project is saved</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDateCreated</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DateModified</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ResolveWSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve a writing system parameter to a WS handle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int), language tag (str),</span>
+<span class="sd">                or None for default analysis WS</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Writing system handle</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_WritingSystemError: If writing system not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ws_handle_or_tag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="c1"># Language tag - resolve to handle</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetWSByTag</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ws</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Assume it&#39;s a handle</span>
+            <span class="k">return</span> <span class="n">ws_handle_or_tag</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ResolveWS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve a writing system parameter to a WS object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws_handle_or_tag: Writing system handle (int) or language tag (str)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWritingSystemDefinition or None: Writing system object or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="s2">&quot;ws_handle_or_tag&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetWSByTag</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Handle - resolve to WS object</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetWSByHandle</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetWSByTag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">language_tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system object by language tag.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            language_tag (str): Language tag</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWritingSystemDefinition or None: Writing system or None if not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">normalized_tag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeLangTag</span><span class="p">(</span><span class="n">language_tag</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">AllWritingSystems</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeLangTag</span><span class="p">(</span><span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="p">)</span> <span class="o">==</span> <span class="n">normalized_tag</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ws</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetWSByHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system object by handle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            handle (int): Writing system handle</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWritingSystemDefinition or None: Writing system or None if not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">AllWritingSystems</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="o">==</span> <span class="n">handle</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ws</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_NormalizeLangTag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">language_tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Normalize language tag for comparison (lowercase, underscores to hyphens).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            language_tag (str): Language tag to normalize</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Normalized tag</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">language_tag</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate operation is not applicable for project settings.</span>
+
+<span class="sd">        Project settings are singleton configuration objects and cannot be duplicated.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Always raised - project settings cannot be duplicated.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Project settings are unique per project</span>
+<span class="sd">            - Use getter/setter methods to modify settings</span>
+<span class="sd">            - Settings are not duplicatable data objects</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetProjectName, SetProjectName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Project settings cannot be duplicated. Project settings are singleton configuration objects.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get syncable properties - NOT IMPLEMENTED for project settings.</span>
+
+<span class="sd">        Project settings are configuration data unique to each project and should</span>
+<span class="sd">        not be synced between projects.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Project settings are not syncable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Project settings cannot be synced between projects. &quot;</span>
+            <span class="s2">&quot;Settings are configuration data unique to each project.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare project settings - NOT IMPLEMENTED.</span>
+
+<span class="sd">        Project settings are configuration data unique to each project and should</span>
+<span class="sd">        not be synced between projects.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Project settings are not syncable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Project settings cannot be compared for sync. &quot;</span> <span class="s2">&quot;Settings are configuration data unique to each project.&quot;</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.System.ProjectSettingsOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

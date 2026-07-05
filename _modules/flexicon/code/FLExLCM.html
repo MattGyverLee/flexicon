@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.FLExLCM &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.FLExLCM</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.FLExLCM</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   FLExLCM.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Module:     Project access functions for FieldWorks Language Explorer</span>
+<span class="c1">#               via SIL Language and Culture Model (LCM).</span>
+<span class="c1">#               (Prior to FW 9 this was known as &quot;FDO&quot; -- &quot;FieldWorks</span>
+<span class="c1">#               Data Objects&quot;)</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             (ITsString doesn&#39;t work in IRONPython)</span>
+<span class="c1">#             FieldWorks Version 9</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright Craig Farrow, 2008 - 2022</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FwUtils&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FieldWorks&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FwCoreDlgs&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FwControls&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FdoUi&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;SIL.Core&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;SIL.Core.Desktop&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;SIL.LCModel&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;SIL.LCModel.Core&quot;</span><span class="p">)</span>
+
+<span class="c1"># Classes needed for loading the Cache</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">LcmCache</span><span class="p">,</span> <span class="n">LcmSettings</span><span class="p">,</span> <span class="n">LcmFileHelper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Cellar</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellarPropertyType</span> <span class="k">as</span> <span class="n">_LCMCellarPropertyType</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.FieldWorks</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProjectId</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.FieldWorks.Common.Controls</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProgressDialogWithTask</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.FieldWorks.Common.FwUtils</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadHelper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.FieldWorks.Common.FwUtils</span><span class="w"> </span><span class="kn">import</span> <span class="n">FwDirectoryFinder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.FieldWorks.Common.FwUtils</span><span class="w"> </span><span class="kn">import</span> <span class="n">FwUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.FieldWorks.FdoUi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FwLcmUI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.FieldWorks.FwCoreDlgs</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChooseLangProjectDialog</span>
+
+<span class="c1"># Import Python mirror of CellarPropertyType constants</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Shared.lcm_constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellarPropertyType</span>
+
+<span class="c1"># --- Globals --------------------------------------------------------</span>
+
+<span class="n">CellarStringTypes</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">_LCMCellarPropertyType</span><span class="o">.</span><span class="n">String</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">CellarMultiStringTypes</span> <span class="o">=</span> <span class="p">{</span><span class="n">_LCMCellarPropertyType</span><span class="o">.</span><span class="n">MultiUnicode</span><span class="p">,</span> <span class="n">_LCMCellarPropertyType</span><span class="o">.</span><span class="n">MultiString</span><span class="p">}</span>
+<span class="n">CellarAllStringTypes</span> <span class="o">=</span> <span class="n">CellarStringTypes</span> <span class="o">|</span> <span class="n">CellarMultiStringTypes</span>
+<span class="c1"># -----------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="GetListOfProjects">
+<a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.FLExLCM.GetListOfProjects">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">GetListOfProjects</span><span class="p">():</span>
+    <span class="c1"># Enumerates local projects only; network drives are not yet supported.</span>
+    <span class="n">projectsPath</span> <span class="o">=</span> <span class="n">FwDirectoryFinder</span><span class="o">.</span><span class="n">ProjectsDirectory</span>
+    <span class="n">objs</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">projectsPath</span><span class="p">))</span>
+    <span class="n">projectList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">dirname</span> <span class="ow">in</span> <span class="n">objs</span><span class="p">:</span>
+        <span class="c1"># FieldWorks can leave ghost directories, so we test</span>
+        <span class="c1"># for the fwdata file, not just the directory. (Issue #48)</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="n">LcmFileHelper</span><span class="o">.</span><span class="n">ksFwDataXmlFileExtension</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">projectsPath</span><span class="p">,</span> <span class="n">dirname</span><span class="p">,</span> <span class="n">dirname</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">)):</span>
+            <span class="n">projectList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dirname</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">projectList</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># -----------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="OpenProject">
+<a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.FLExLCM.OpenProject">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">OpenProject</span><span class="p">(</span><span class="n">projectName</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Open a FieldWorks project.</span>
+
+<span class="sd">    projectName:</span>
+<span class="sd">        - Either the full path including &quot;.fwdata&quot; suffix, or</span>
+<span class="sd">        - The name only, opened from the default project location.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">projectFileName</span> <span class="o">=</span> <span class="n">LcmFileHelper</span><span class="o">.</span><span class="n">GetXmlDataFileName</span><span class="p">(</span><span class="n">projectName</span><span class="p">)</span>
+
+    <span class="n">projId</span> <span class="o">=</span> <span class="n">ProjectId</span><span class="p">(</span><span class="n">projectFileName</span><span class="p">)</span>
+
+    <span class="n">th</span> <span class="o">=</span> <span class="n">ThreadHelper</span><span class="p">()</span>
+    <span class="n">ui</span> <span class="o">=</span> <span class="n">FwLcmUI</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">th</span><span class="p">)</span>  <span class="c1"># IHelpTopicProvider, ISynchronizeInvoke</span>
+    <span class="n">dirs</span> <span class="o">=</span> <span class="n">FwDirectoryFinder</span><span class="o">.</span><span class="n">LcmDirectories</span>
+    <span class="n">settings</span> <span class="o">=</span> <span class="n">LcmSettings</span><span class="p">()</span>
+    <span class="c1"># Migration should be done within FieldWorks</span>
+    <span class="n">settings</span><span class="o">.</span><span class="n">DisableDataMigration</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">dlg</span> <span class="o">=</span> <span class="n">ProgressDialogWithTask</span><span class="p">(</span><span class="n">th</span><span class="p">)</span>
+
+    <span class="c1"># SIL.LCModel\LcmCache.cs</span>
+    <span class="c1"># public static LcmCache CreateCacheFromExistingData(</span>
+    <span class="c1">#    IProjectIdentifier projectId,</span>
+    <span class="c1">#    string userWsIcuLocale,</span>
+    <span class="c1">#    ILcmUI ui,</span>
+    <span class="c1">#    ILcmDirectories dirs,</span>
+    <span class="c1">#    LcmSettings settings,</span>
+    <span class="c1">#    IThreadedProgress progressDlg)</span>
+    <span class="k">return</span> <span class="n">LcmCache</span><span class="o">.</span><span class="n">CreateCacheFromExistingData</span><span class="p">(</span><span class="n">projId</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">,</span> <span class="n">ui</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">settings</span><span class="p">,</span> <span class="n">dlg</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.FLExLCM</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

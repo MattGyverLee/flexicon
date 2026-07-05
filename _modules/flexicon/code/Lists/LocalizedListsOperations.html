@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Lists.LocalizedListsOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists.LocalizedListsOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Lists.LocalizedListsOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   LocalizedListsOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: LocalizedListsOperations</span>
+<span class="c1">#          Localized possibility-list translation-pack import for</span>
+<span class="c1">#          FieldWorks Language Explorer projects via SIL Language and</span>
+<span class="c1">#          Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2026</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">namedtuple</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Application.ApplicationServices</span><span class="w"> </span><span class="kn">import</span> <span class="n">XmlTranslatedLists</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExGlobals</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_FileNotFoundError</span><span class="p">,</span>
+    <span class="n">FP_NullParameterError</span><span class="p">,</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+    <span class="n">FP_ReadOnlyError</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="c1"># Reason constants for SkippedWS.reason -- stable surface for callers</span>
+<span class="c1"># that want to branch on skip cause without string matching.</span>
+<span class="n">SKIP_NO_TRANSLATION_PACK</span> <span class="o">=</span> <span class="s2">&quot;no shipping translation pack&quot;</span>
+<span class="n">SKIP_EMPTY_ICU_LOCALE</span> <span class="o">=</span> <span class="s2">&quot;writing system has empty IcuLocale&quot;</span>
+<span class="n">SKIP_FILE_NOT_FOUND</span> <span class="o">=</span> <span class="s2">&quot;file not found&quot;</span>
+
+
+<span class="n">SkippedWS</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;SkippedWS&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">))</span>
+<span class="n">SkippedWS</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">One entry in ``ImportLocalizedListsResult.skipped``.</span>
+
+<span class="s2">Fields:</span>
+<span class="s2">    code (str): IcuLocale of the writing system that was skipped, or</span>
+<span class="s2">        ``&quot;&lt;empty&gt;&quot;`` if the WS had no IcuLocale set.</span>
+<span class="s2">    reason (str): Short diagnostic explaining why the pack was not</span>
+<span class="s2">        applied. One of the ``SKIP_*`` module constants, or a more</span>
+<span class="s2">        specific message for the file-not-found path.</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="n">ImportLocalizedListsResult</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s2">&quot;ImportLocalizedListsResult&quot;</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">&quot;imported&quot;</span><span class="p">,</span> <span class="s2">&quot;skipped&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">ImportLocalizedListsResult</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Structured result for ``ImportForAllAnalysisWritingSystems``.</span>
+
+<span class="s2">Fields:</span>
+<span class="s2">    imported (list[str]): IcuLocale codes whose translation pack was</span>
+<span class="s2">        successfully merged into the project&#39;s possibility lists.</span>
+<span class="s2">    skipped (list[SkippedWS]): One ``SkippedWS(code, reason)`` entry</span>
+<span class="s2">        per writing system whose pack was not applied. ``code`` is the</span>
+<span class="s2">        IcuLocale (or ``&quot;&lt;empty&gt;&quot;`` if the WS had no IcuLocale set);</span>
+<span class="s2">        ``reason`` is a short human-readable diagnostic, generally one</span>
+<span class="s2">        of the ``SKIP_*`` module constants.</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="LocalizedListsOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lists.html#flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LocalizedListsOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Localized possibility-list translation-pack imports.</span>
+
+<span class="sd">    Translation packs ship at</span>
+<span class="sd">    ``&lt;FWCodeDir&gt;/Templates/LocalizedLists-&lt;lang&gt;.zip`` and carry Name</span>
+<span class="sd">    and Abbreviation alternatives for the canonical possibility lists</span>
+<span class="sd">    shared across LangProject and LexDb (SemanticDomains, AnthroList,</span>
+<span class="sd">    DomainTypes, UsageTypes, RestrictionsList, ...). Items are matched</span>
+<span class="sd">    by canonical GUID, so the corresponding ``ImportCatalog`` call</span>
+<span class="sd">    must have already seeded those items in English before</span>
+<span class="sd">    translations can land.</span>
+
+<span class="sd">    Access via ``FLExProject.LocalizedLists`` -- a lazy property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Seed canonical SemDom items in English first.</span>
+<span class="sd">        project.SemanticDomains.ImportCatalog()</span>
+
+<span class="sd">        # Layer translations for one specific WS.</span>
+<span class="sd">        project.LocalizedLists.Import(&quot;fr&quot;)</span>
+
+<span class="sd">        # Or fan out across every enabled analysis WS that has a</span>
+<span class="sd">        # shipping pack:</span>
+<span class="sd">        result = project.LocalizedLists.ImportForAllAnalysisWritingSystems()</span>
+<span class="sd">        print(result.imported)  # e.g. [&quot;en&quot;, &quot;fr&quot;]</span>
+<span class="sd">        for code, reason in result.skipped:</span>
+<span class="sd">            print(f&quot;  skipped {code}: {reason}&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="LocalizedListsOperations.Import">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lists.html#flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations.Import">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Import</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">language_code</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Import the localized-lists ZIP for a target writing system.</span>
+
+<span class="sd">        Wraps ``XmlTranslatedLists.ImportTranslatedListsForWs`` --</span>
+<span class="sd">        LCM&#39;s purpose-built importer for translated lists. Unlike</span>
+<span class="sd">        ``XmlList.ImportList`` (which appends new items), this method</span>
+<span class="sd">        merges Name / Abbreviation alternatives onto existing items</span>
+<span class="sd">        by canonical GUID; no duplicates are created.</span>
+
+<span class="sd">        Order matters: call after ``*Operations.ImportCatalog`` has</span>
+<span class="sd">        seeded canonical items, never before. Translation packs match</span>
+<span class="sd">        by canonical GUID and silently ignore GUIDs they don&#39;t carry,</span>
+<span class="sd">        so calling Import before the catalog leaves nothing to merge</span>
+<span class="sd">        onto.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            language_code (str): ISO writing-system code identifying</span>
+<span class="sd">                which LocalizedLists-XX.zip to import. Examples:</span>
+<span class="sd">                ``&quot;fr&quot;``, ``&quot;es&quot;``, ``&quot;ar&quot;``, ``&quot;zh-CN&quot;``.</span>
+<span class="sd">            progress: Optional ``SIL.LCModel.Utils.IProgress`` instance</span>
+<span class="sd">                for progress reporting. ``None`` (default) skips</span>
+<span class="sd">                reporting.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with</span>
+<span class="sd">                writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If ``language_code`` is None.</span>
+<span class="sd">            FP_ParameterError: If ``language_code`` is empty.</span>
+<span class="sd">            FP_FileNotFoundError: If the corresponding ZIP is not</span>
+<span class="sd">                found in the FieldWorks Templates directory.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
+<span class="sd">            &gt;&gt;&gt; project.SemanticDomains.ImportCatalog()</span>
+<span class="sd">            &gt;&gt;&gt; project.LocalizedLists.Import(&quot;fr&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.LocalizedLists.Import(&quot;es&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            Translation packs match by canonical GUID and silently</span>
+<span class="sd">            ignore GUIDs they don&#39;t recognise (and silently leave</span>
+<span class="sd">            GUIDs they don&#39;t carry untranslated). Catalog skew is</span>
+<span class="sd">            therefore invisible at the call site. The biggest known</span>
+<span class="sd">            case: ``OCM-Frame.xml`` (loaded via</span>
+<span class="sd">            ``AnthropologyOperations.ImportFrameCatalog``) carries</span>
+<span class="sd">            116 GUIDs that ``OCM.xml`` does not. Pairing the wrong</span>
+<span class="sd">            catalog with the wrong pack leaves part of AnthroListOA</span>
+<span class="sd">            untranslated without any warning. (issue #82)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">language_code</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_NullParameterError</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">language_code</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">language_code</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;language_code must be a non-empty string, got </span><span class="si">{</span><span class="n">language_code</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">writeEnabled</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ReadOnlyError</span><span class="p">()</span>
+
+        <span class="n">templates_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_templates_dir</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">templates_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_FileNotFoundError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;LocalizedLists-</span><span class="si">{</span><span class="n">language_code</span><span class="si">}</span><span class="s2">.zip&quot;</span><span class="p">,</span>
+                <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s2">&quot;FLExGlobals.FWCodeDir is not set; ensure FLEx &quot;</span>
+                    <span class="s2">&quot;initialisation has run.&quot;</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="n">expected_zip</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">templates_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;LocalizedLists-</span><span class="si">{</span><span class="n">language_code</span><span class="si">}</span><span class="s2">.zip&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">expected_zip</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_FileNotFoundError</span><span class="p">(</span>
+                <span class="n">expected_zip</span><span class="p">,</span>
+                <span class="ne">FileNotFoundError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;LocalizedLists-</span><span class="si">{</span><span class="n">language_code</span><span class="si">}</span><span class="s2">.zip not found in &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">templates_dir</span><span class="si">}</span><span class="s2">. Check the language code is a &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;valid ISO writing-system identifier shipped with &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;FieldWorks.&quot;</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;LocalizedLists.Import(</span><span class="si">{</span><span class="n">language_code</span><span class="si">!r}</span><span class="s2">)&quot;</span>
+        <span class="p">):</span>
+            <span class="n">XmlTranslatedLists</span><span class="o">.</span><span class="n">ImportTranslatedListsForWs</span><span class="p">(</span>
+                <span class="n">language_code</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="p">,</span>
+                <span class="n">templates_dir</span><span class="p">,</span>
+                <span class="n">progress</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LocalizedListsOperations.ImportForAllAnalysisWritingSystems">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lists.html#flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations.ImportForAllAnalysisWritingSystems">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ImportForAllAnalysisWritingSystems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Import LocalizedLists translation packs for every enabled</span>
+<span class="sd">        analysis writing system whose ``IcuLocale`` matches a shipping</span>
+<span class="sd">        ``LocalizedLists-&lt;IcuLocale&gt;.zip``.</span>
+
+<span class="sd">        Iterates ``project.ServiceLocator.WritingSystems</span>
+<span class="sd">        .CurrentAnalysisWritingSystems`` and dispatches</span>
+<span class="sd">        ``Import(ws.IcuLocale)`` for each entry. WSes whose</span>
+<span class="sd">        ``IcuLocale`` does not map to a shipping ZIP are reported in</span>
+<span class="sd">        the ``skipped`` field of the returned result rather than</span>
+<span class="sd">        silently ignored.</span>
+
+<span class="sd">        Convenience wrapper over ``Import`` that closes the typical</span>
+<span class="sd">        post-ImportCatalog gap: a user enables an analysis WS</span>
+<span class="sd">        (Portuguese, French, ...), runs ``SemanticDomains</span>
+<span class="sd">        .ImportCatalog`` and then expects the catalog items to carry</span>
+<span class="sd">        translations for every WS they&#39;ve enabled.</span>
+
+<span class="sd">        Important: this does NOT back-fill translations for analysis</span>
+<span class="sd">        WSes that get enabled AFTER catalog content is added. Re-run</span>
+<span class="sd">        this method (or call ``Import(code)`` directly) after enabling</span>
+<span class="sd">        additional analysis WSes.</span>
+
+<span class="sd">        Precondition: at least one ``ImportCatalog`` call should have</span>
+<span class="sd">        run first -- the merger has nothing to land on otherwise. A</span>
+<span class="sd">        ``logger.warning`` is emitted if ``SemanticDomainsOA`` is</span>
+<span class="sd">        empty when this method is invoked.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            progress: Optional ``SIL.LCModel.Utils.IProgress`` instance</span>
+<span class="sd">                passed through to each ``Import`` call.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ImportLocalizedListsResult: Named tuple with</span>
+<span class="sd">            ``imported`` (list[str] of IcuLocale codes that merged</span>
+<span class="sd">            successfully) and ``skipped`` (list[SkippedWS] of</span>
+<span class="sd">            ``SkippedWS(code, reason)`` entries for WSes that did not</span>
+<span class="sd">            apply).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not write-enabled.</span>
+
+<span class="sd">        Warns:</span>
+<span class="sd">            UserWarning: If the SemanticDomains list is empty when this</span>
+<span class="sd">                method is invoked -- translation packs will silently</span>
+<span class="sd">                no-op because there are no canonical items to merge</span>
+<span class="sd">                onto. Raised via ``warnings.warn`` so it surfaces in</span>
+<span class="sd">                interactive REPL use.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
+<span class="sd">            &gt;&gt;&gt; project.SemanticDomains.ImportCatalog()</span>
+<span class="sd">            &gt;&gt;&gt; result = project.LocalizedLists.ImportForAllAnalysisWritingSystems()</span>
+<span class="sd">            &gt;&gt;&gt; # result.imported == [&quot;en&quot;, &quot;fr&quot;] if those packs ship</span>
+<span class="sd">            &gt;&gt;&gt; # result.skipped == [SkippedWS(&quot;pt&quot;, &quot;no shipping translation pack&quot;)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">writeEnabled</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ReadOnlyError</span><span class="p">()</span>
+
+        <span class="c1"># Empty-catalog precondition probe: with nothing to merge</span>
+        <span class="c1"># onto, every translation pack silently no-ops, which is a</span>
+        <span class="c1"># usability trap. warnings.warn so the signal surfaces in</span>
+        <span class="c1"># interactive use, not just in log files.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">semdom_list</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LangProject</span><span class="o">.</span><span class="n">SemanticDomainListOA</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">semdom_list</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">semdom_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;ImportForAllAnalysisWritingSystems: SemanticDomains &quot;</span>
+                    <span class="s2">&quot;list is empty; translation packs will have nothing &quot;</span>
+                    <span class="s2">&quot;to merge onto. Run *Operations.ImportCatalog (e.g. &quot;</span>
+                    <span class="s2">&quot;project.SemanticDomains.ImportCatalog) first.&quot;</span><span class="p">,</span>
+                    <span class="ne">UserWarning</span><span class="p">,</span>
+                    <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="c1"># Best-effort probe only; don&#39;t fail the import on a</span>
+            <span class="c1"># precondition check, but log so probe regressions are</span>
+            <span class="c1"># visible at debug level.</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Precondition probe failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+
+        <span class="n">imported</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">skipped</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">analysis_ws_list</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">WritingSystems</span>
+            <span class="o">.</span><span class="n">CurrentAnalysisWritingSystems</span>
+        <span class="p">)</span>
+        <span class="n">templates_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_templates_dir</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="n">analysis_ws_list</span><span class="p">:</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">IcuLocale</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">code</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;ImportForAllAnalysisWritingSystems: skipping WS with &quot;</span>
+                    <span class="s2">&quot;empty IcuLocale (hvo=</span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">skipped</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SkippedWS</span><span class="p">(</span><span class="s2">&quot;&lt;empty&gt;&quot;</span><span class="p">,</span> <span class="n">SKIP_EMPTY_ICU_LOCALE</span><span class="p">))</span>
+                <span class="k">continue</span>
+            <span class="c1"># Validate that a matching ZIP exists before attempting the</span>
+            <span class="c1"># import. LocalizedLists-&lt;IcuLocale&gt;.zip must exist in the</span>
+            <span class="c1"># Templates directory; if not, record and skip.</span>
+            <span class="c1">#</span>
+            <span class="c1"># Note: variant locales (e.g. ``pt-BR`` when only ``pt``</span>
+            <span class="c1"># ships) are categorised as SKIP_NO_TRANSLATION_PACK -- the</span>
+            <span class="c1"># filename match is exact, so a variant mismatch and a</span>
+            <span class="c1"># truly absent language are indistinguishable here.</span>
+            <span class="k">if</span> <span class="n">templates_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">expected_zip</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">templates_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;LocalizedLists-</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">.zip&quot;</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">expected_zip</span><span class="p">):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">&quot;ImportForAllAnalysisWritingSystems: no translation &quot;</span>
+                        <span class="s2">&quot;pack for </span><span class="si">%r</span><span class="s2"> (expected </span><span class="si">%s</span><span class="s2">); skipping&quot;</span><span class="p">,</span>
+                        <span class="n">code</span><span class="p">,</span> <span class="n">expected_zip</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">skipped</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SkippedWS</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">SKIP_NO_TRANSLATION_PACK</span><span class="p">))</span>
+                    <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Import</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">FP_FileNotFoundError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">skipped</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">SkippedWS</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">SKIP_FILE_NOT_FOUND</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">imported</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ImportLocalizedListsResult</span><span class="p">(</span><span class="n">imported</span><span class="o">=</span><span class="n">imported</span><span class="p">,</span> <span class="n">skipped</span><span class="o">=</span><span class="n">skipped</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_templates_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the FieldWorks Templates directory or None if unset.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">FLExGlobals</span><span class="o">.</span><span class="n">FWCodeDir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FLExGlobals</span><span class="o">.</span><span class="n">FWCodeDir</span><span class="p">,</span> <span class="s2">&quot;Templates&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists.LocalizedListsOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

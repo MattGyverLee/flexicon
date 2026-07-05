@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.TextsWords.WfiMorphBundleOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.TextsWords.WfiMorphBundleOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.TextsWords.WfiMorphBundleOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   WfiMorphBundleOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: WfiMorphBundleOperations</span>
+<span class="c1">#          Morpheme bundle operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IWfiMorphBundle</span><span class="p">,</span>
+    <span class="n">IWfiMorphBundleFactory</span><span class="p">,</span>
+    <span class="n">IWfiAnalysis</span><span class="p">,</span>
+    <span class="n">ILexSense</span><span class="p">,</span>
+    <span class="n">IMoMorphSynAnalysis</span><span class="p">,</span>
+    <span class="n">IMoMorphType</span><span class="p">,</span>
+    <span class="n">IMoInflClass</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+
+<div class="viewcode-block" id="WfiMorphBundleOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.WfiMorphBundleOperations.WfiMorphBundleOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WfiMorphBundleOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing morpheme bundles in a FieldWorks project.</span>
+
+<span class="sd">    Morpheme bundles (IWfiMorphBundle) represent individual morphemes within a wordform</span>
+<span class="sd">    analysis. Each bundle contains the morpheme&#39;s form, gloss, and links to lexical</span>
+<span class="sd">    information (sense, MSA, morph type, inflection class).</span>
+
+<span class="sd">    In FLEx&#39;s interlinear text system, a wordform analysis consists of multiple</span>
+<span class="sd">    morph bundles that break down the word into its constituent morphemes. For example,</span>
+<span class="sd">    the word &quot;running&quot; might have two bundles: &quot;run&quot; (stem) + &quot;-ing&quot; (suffix).</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get a wordform and its analysis</span>
+<span class="sd">        wordform = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">        analyses = project.Wordforms.GetAnalyses(wordform)</span>
+<span class="sd">        if analyses:</span>
+<span class="sd">            analysis = analyses[0]</span>
+
+<span class="sd">            # Get all morph bundles for the analysis</span>
+<span class="sd">            bundles = project.MorphBundles.GetAll(analysis)</span>
+<span class="sd">            for bundle in bundles:</span>
+<span class="sd">                form = project.MorphBundles.GetForm(bundle)</span>
+<span class="sd">                gloss = project.MorphBundles.GetGloss(bundle)</span>
+<span class="sd">                print(f&quot;{form} - {gloss}&quot;)</span>
+
+<span class="sd">            # Create a new morph bundle</span>
+<span class="sd">            bundle = project.MorphBundles.Create(analysis)</span>
+<span class="sd">            project.MorphBundles.SetForm(bundle, &quot;run&quot;)</span>
+<span class="sd">            project.MorphBundles.SetGloss(bundle, &quot;run&quot;)</span>
+
+<span class="sd">            # Link to lexicon</span>
+<span class="sd">            sense = project.LexiconAllSenses()[0]</span>
+<span class="sd">            project.MorphBundles.SetSense(bundle, sense)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize WfiMorphBundleOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Specify which sequence to reorder for morph bundles.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">MorphsOS</span>
+
+    <span class="c1"># ==================== CORE CRUD OPERATIONS ====================</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all morph bundles for a wordform analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: The IWfiAnalysis object or HVO.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            IWfiMorphBundle: Each morph bundle in the analysis.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; for bundle in morphBundleOps.GetAll(analysis):</span>
+<span class="sd">            ...     form = morphBundleOps.GetForm(bundle)</span>
+<span class="sd">            ...     gloss = morphBundleOps.GetGloss(bundle)</span>
+<span class="sd">            ...     print(f&quot;{form} - {gloss}&quot;)</span>
+<span class="sd">            run - run</span>
+<span class="sd">            -ing - PROG</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns bundles in the order they appear in the analysis</span>
+<span class="sd">            - Order represents left-to-right morpheme sequence</span>
+<span class="sd">            - Returns empty generator if analysis has no morph bundles</span>
+<span class="sd">            - Each bundle represents a single morpheme in the word</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, Reorder</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Yield all morph bundles in sequence</span>
+        <span class="k">for</span> <span class="n">bundle</span> <span class="ow">in</span> <span class="n">analysis</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">bundle</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new morph bundle for a wordform analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: The IWfiAnalysis object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiMorphBundle: The newly created morph bundle object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; bundle = morphBundleOps.Create(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.SetForm(bundle, &quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.SetGloss(bundle, &quot;run&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create multiple bundles for complex morphology</span>
+<span class="sd">            &gt;&gt;&gt; stem_bundle = morphBundleOps.Create(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.SetForm(stem_bundle, &quot;walk&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; affix_bundle = morphBundleOps.Create(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.SetForm(affix_bundle, &quot;-ed&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - The bundle is added to the end of the analysis&#39;s bundle sequence</span>
+<span class="sd">            - New bundles have no form, gloss, or lexical links by default</span>
+<span class="sd">            - Use SetForm(), SetGloss(), SetSense(), etc. to populate</span>
+<span class="sd">            - Use Reorder() to change the sequence if needed</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, GetAll, SetForm, SetGloss</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create morph bundle&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the new morph bundle using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiMorphBundleFactory</span><span class="p">)</span>
+            <span class="n">bundle</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to analysis&#39;s morph bundles collection</span>
+            <span class="n">analysis</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">bundle</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">bundle</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a morph bundle from its analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if len(bundles) &gt; 1:</span>
+<span class="sd">            ...     # Delete the last bundle</span>
+<span class="sd">            ...     morphBundleOps.Delete(bundles[-1])</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - Deleting a bundle changes the morphological analysis</span>
+<span class="sd">            - May affect concordance and interlinear text displays</span>
+<span class="sd">            - Consider whether analysis should be modified or replaced</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Removes the bundle from the owning analysis</span>
+<span class="sd">            - Other bundles in the analysis are not affected</span>
+<span class="sd">            - The bundle is removed from the database</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll, Reorder</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Cast owner to its concrete IWfiAnalysis so MorphBundlesOS is</span>
+        <span class="c1"># reachable. Raw bundle.Owner is typed as ICmObject and</span>
+        <span class="c1"># hasattr(...,&quot;MorphBundlesOS&quot;) returns False there, which is why</span>
+        <span class="c1"># the prior implementation silently no-opped.</span>
+        <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">bundle</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Morph bundle has no owning analysis&quot;</span><span class="p">)</span>
+        <span class="n">owner</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">bundle</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a morph bundle, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The IWfiMorphBundle object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source bundle.</span>
+<span class="sd">                                If False, insert at end of analysis&#39;s bundle sequence.</span>
+<span class="sd">            deep (bool): If True, also duplicate owned objects (if any exist).</span>
+<span class="sd">                        If False (default), only copy simple properties and references.</span>
+<span class="sd">                        Note: WfiMorphBundle has no owned objects, so deep has no effect.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiMorphBundle: The newly created duplicate bundle with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     # Duplicate bundle</span>
+<span class="sd">            ...     dup = morphBundleOps.Duplicate(bundles[0])</span>
+<span class="sd">            ...     print(f&quot;Original: {morphBundleOps.GetGuid(bundles[0])}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Duplicate: {morphBundleOps.GetGuid(dup)}&quot;)</span>
+<span class="sd">            Original: 12345678-1234-1234-1234-123456789abc</span>
+<span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
+<span class="sd">            ...</span>
+<span class="sd">            ...     # Verify content was copied</span>
+<span class="sd">            ...     print(f&quot;Form: {morphBundleOps.GetForm(dup)}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Gloss: {morphBundleOps.GetGloss(dup)}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original bundle&#39;s position in sequence</span>
+<span class="sd">            - Simple properties copied: Form, Gloss (MultiStrings)</span>
+<span class="sd">            - Reference properties copied: SenseRA, MsaRA, MorphRA, InflClassRA</span>
+<span class="sd">            - WfiMorphBundle has no owned objects, so deep parameter has no effect</span>
+<span class="sd">            - Useful for creating similar morpheme analyses or templates</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetGuid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source bundle and parent; MorphBundlesOS is declared on IWfiAnalysis</span>
+        <span class="c1"># so cast directly instead of doing a wasteful Hvo round-trip.</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="n">IWfiAnalysis</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate morph bundle&quot;</span><span class="p">):</span>
+            <span class="c1"># Create new bundle using factory (auto-generates new GUID)</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiMorphBundleFactory</span><span class="p">)</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Determine insertion position</span>
+            <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                <span class="c1"># Insert after source bundle</span>
+                <span class="n">source_index</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Insert at end</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy MultiString properties. IWfiMorphBundle has Form but</span>
+            <span class="c1"># NOT Gloss -- the displayed gloss comes from SenseRA.Gloss,</span>
+            <span class="c1"># which the SenseRA assignment below preserves automatically.</span>
+            <span class="c1"># The previous duplicate.Gloss.CopyAlternatives line raised</span>
+            <span class="c1"># AttributeError on every call (same root bug as #16 / #108);</span>
+            <span class="c1"># 4319886 fixed GetGloss/SetGloss but missed this site.</span>
+            <span class="c1"># (issue #107)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Form</span><span class="p">)</span>
+
+            <span class="c1"># Copy Reference Atomic (RA) properties</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;SenseRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">SenseRA</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">SenseRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">SenseRA</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;MsaRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">MsaRA</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">MsaRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">MsaRA</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;MorphRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">MorphRA</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">MorphRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">MorphRA</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;InflClassRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">InflClassRA</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">InflClassRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">InflClassRA</span>
+
+            <span class="c1"># Note: WfiMorphBundle has no owned objects (OS collections), so deep has no effect</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all syncable properties of a morpheme bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The IWfiMorphBundle object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary of syncable properties with their values.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; props = project.MorphBundles.GetSyncableProperties(bundle)</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;Form&#39;])</span>
+<span class="sd">            {&#39;en&#39;: &#39;run&#39;}</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;SenseRA&#39;])</span>
+<span class="sd">            &#39;abc123...&#39;  # GUID of linked sense</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - MultiString properties: Form</span>
+<span class="sd">              (IWfiMorphBundle has no Gloss field of its own; the</span>
+<span class="sd">              displayed gloss is derived from SenseRA.Gloss -- see</span>
+<span class="sd">              GetGloss for the read path.)</span>
+<span class="sd">            - Reference Atomic properties: SenseRA, MsaRA, MorphRA, InflClassRA (GUIDs)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Form&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">Form</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Form&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Form</span><span class="p">)</span>
+
+        <span class="c1"># Reference Atomic properties (return GUIDs)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;SenseRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">SenseRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;SenseRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">SenseRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;MsaRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">MsaRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;MsaRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">MsaRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;MorphRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">MorphRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;MorphRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">MorphRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;InflClassRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">InflClassRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;InflClassRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">InflClassRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two morpheme bundles for differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First bundle object (from project 1)</span>
+<span class="sd">            item2: Second bundle object (from project 2)</span>
+<span class="sd">            ops1: Optional WfiMorphBundleOperations instance for project 1 (defaults to self)</span>
+<span class="sd">            ops2: Optional WfiMorphBundleOperations instance for project 2 (defaults to self)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict)</span>
+<span class="sd">                - is_different (bool): True if bundles differ, False if identical</span>
+<span class="sd">                - differences_dict (dict): Maps property names to (value1, value2) tuples</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = ops1.CompareTo(bundle1, bundle2, ops1, ops2)</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} != {val2}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Compares the Form MultiString (IWfiMorphBundle has no</span>
+<span class="sd">              Gloss field of its own; see GetSyncableProperties)</span>
+<span class="sd">            - Compares reference properties by GUID</span>
+<span class="sd">            - Empty/null values are treated as equivalent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Get all property keys from both items</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="c1"># Compare values</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_CompareValues</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">):</span>
+                <span class="c1"># Values are different</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Reorder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">bundle_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reorder morph bundles within an analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: The IWfiAnalysis object or HVO.</span>
+<span class="sd">            bundle_list: List of IWfiMorphBundle objects in the desired order.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo or bundle_list is None.</span>
+<span class="sd">            FP_ParameterError: If bundle_list is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; # Reverse the order</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.Reorder(analysis, bundles[::-1])</span>
+
+<span class="sd">            &gt;&gt;&gt; # Move a specific bundle to the front</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; affix = bundles[1]</span>
+<span class="sd">            &gt;&gt;&gt; stem = bundles[0]</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.Reorder(analysis, [affix, stem])</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - The bundle_list must contain all bundles from the analysis</span>
+<span class="sd">            - Bundles from other analyses cannot be added this way</span>
+<span class="sd">            - Order affects morpheme sequence in interlinear displays</span>
+<span class="sd">            - Use carefully - incorrect ordering affects linguistic analysis</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, Create, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_list</span><span class="p">,</span> <span class="s2">&quot;bundle_list&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Validate that all bundles belong to this analysis</span>
+        <span class="n">current_bundles</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="p">)</span>
+        <span class="n">new_bundles</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">bundle_list</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">current_bundles</span> <span class="o">!=</span> <span class="n">new_bundles</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Bundle list must contain exactly the same bundles as the analysis&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Reorder morph bundles&quot;</span><span class="p">):</span>
+            <span class="c1"># Clear and re-add in new order</span>
+            <span class="n">analysis</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">bundle</span> <span class="ow">in</span> <span class="n">bundle_list</span><span class="p">:</span>
+                <span class="n">analysis</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">bundle</span><span class="p">)</span>
+
+    <span class="c1"># ==================== FORM &amp; GLOSS OPERATIONS ====================</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the morpheme form of a bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The morpheme form, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     form = morphBundleOps.GetForm(bundles[0])</span>
+<span class="sd">            ...     print(form)</span>
+<span class="sd">            run</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get form in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; form_ipa = morphBundleOps.GetForm(bundles[0],</span>
+<span class="sd">            ...                                     project.WSHandle(&#39;en-fonipa&#39;))</span>
+<span class="sd">            &gt;&gt;&gt; print(form_ipa)</span>
+<span class="sd">            rʌn</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Form represents the surface morpheme as it appears in text</span>
+<span class="sd">            - Returns empty string if form not set in specified writing system</span>
+<span class="sd">            - Typically uses vernacular writing system</span>
+<span class="sd">            - May include affixation markers like &quot;-&quot;, &quot;pre-&quot;, etc.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetForm, GetGloss, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">form</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">bundle</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">form</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the morpheme form of a bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+<span class="sd">            text: The morpheme form text to set.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo or text is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     morphBundleOps.SetForm(bundles[0], &quot;walk&quot;)</span>
+<span class="sd">            ...     print(morphBundleOps.GetForm(bundles[0]))</span>
+<span class="sd">            walk</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set IPA pronunciation form</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.SetForm(bundles[0], &quot;wɔk&quot;,</span>
+<span class="sd">            ...                         project.WSHandle(&#39;en-fonipa&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Form represents how the morpheme appears in the text</span>
+<span class="sd">            - Can include affix markers (-, pre-, etc.)</span>
+<span class="sd">            - Should match actual text tokens or morpheme segmentation</span>
+<span class="sd">            - Use different writing systems for pronunciation variants</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetForm, SetGloss, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">bundle</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGloss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the morpheme gloss of a bundle.</span>
+
+<span class="sd">        Read-only convenience: a morpheme bundle has no free-standing</span>
+<span class="sd">        gloss field on IWfiMorphBundle itself. The displayed gloss</span>
+<span class="sd">        comes from the bundle&#39;s linked lexical sense</span>
+<span class="sd">        (``bundle.SenseRA.Gloss``). This method forwards to that path</span>
+<span class="sd">        and, if no sense gloss is found, falls back to the MSA-level</span>
+<span class="sd">        ``InterlinearAbbr`` (``bundle.MsaRA.InterlinearAbbr``) which</span>
+<span class="sd">        covers grammatical morphemes whose gloss lives on the MSA.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The linked sense&#39;s gloss in the chosen WS; if the sense</span>
+<span class="sd">            gloss is empty or absent, the MSA InterlinearAbbr; or an</span>
+<span class="sd">            empty string if neither is available.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     gloss = morphBundleOps.GetGloss(bundles[0])</span>
+<span class="sd">            ...     print(gloss)</span>
+<span class="sd">            run</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns &quot;&quot; only when neither a sense gloss nor an MSA</span>
+<span class="sd">              InterlinearAbbr is available.</span>
+<span class="sd">            - Uses the analysis writing system by default (sense gloss</span>
+<span class="sd">              only; InterlinearAbbr is WS-independent).</span>
+<span class="sd">            - The sense-gloss path honours the wsHandle; the MSA fallback</span>
+<span class="sd">              returns the LCM-computed abbreviation string directly.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetForm, GetSense</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnal</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># IWfiMorphBundle has no Gloss field; the displayed gloss comes</span>
+        <span class="c1"># from the linked sense&#39;s MultiUnicode Gloss. (issue #16)</span>
+        <span class="n">sense</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">SenseRA</span>
+        <span class="k">if</span> <span class="n">sense</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">gloss</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">sense</span><span class="o">.</span><span class="n">Gloss</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">gloss</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">gloss</span>
+
+        <span class="c1"># Fallback for grammatical morphemes (issue #110): if the bundle has</span>
+        <span class="c1"># an MsaRA, use InterlinearAbbr which is defined on IMoMorphSynAnalysis</span>
+        <span class="c1"># and covers all four concrete MSA types (MoStemMsa, MoDerivAffMsa,</span>
+        <span class="c1"># MoInflAffMsa, MoUnclassifiedAffixMsa).</span>
+        <span class="n">msa</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MsaRA</span>
+        <span class="k">if</span> <span class="n">msa</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">abbr</span> <span class="o">=</span> <span class="n">msa</span><span class="o">.</span><span class="n">InterlinearAbbr</span>
+            <span class="k">if</span> <span class="n">abbr</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">abbr</span>
+
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetGloss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setting a gloss on a morpheme bundle is not supported.</span>
+
+<span class="sd">        IWfiMorphBundle has no Gloss field of its own; the displayed</span>
+<span class="sd">        gloss is derived from the bundle&#39;s linked sense</span>
+<span class="sd">        (``bundle.SenseRA.Gloss``). Writing to that path would mutate</span>
+<span class="sd">        the lexical sense for every wordform/analysis that references</span>
+<span class="sd">        it, which is a surprising side effect to attach to a</span>
+<span class="sd">        per-bundle setter. This method therefore refuses with a clear</span>
+<span class="sd">        redirect rather than performing a hidden write.</span>
+
+<span class="sd">        To change the gloss seen on a bundle, locate the linked sense</span>
+<span class="sd">        and update its gloss directly:</span>
+
+<span class="sd">            sense = morphBundleOps.GetSense(bundle)</span>
+<span class="sd">            if sense is not None:</span>
+<span class="sd">                project.Senses.SetGloss(sense, text, wsHandle=wsHandle)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Always, with a message pointing at the</span>
+<span class="sd">                LexSense path. The exception class signals an unsupported</span>
+<span class="sd">                operation (capability refusal), not a bad argument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;WfiMorphBundleOperations.SetGloss is not supported: &quot;</span>
+            <span class="s2">&quot;IWfiMorphBundle has no Gloss field, and writing through &quot;</span>
+            <span class="s2">&quot;SenseRA.Gloss would mutate the shared lexical sense. &quot;</span>
+            <span class="s2">&quot;Use LexSenseOperations.SetGloss on bundle.SenseRA &quot;</span>
+            <span class="s2">&quot;(see GetSense) when you really intend to change the sense&#39;s &quot;</span>
+            <span class="s2">&quot;gloss for all bundles that reference it.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># ==================== LEXICAL LINK OPERATIONS ====================</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the linked lexical sense for a morph bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexSense or None: The linked sense object, or None if not linked.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     sense = morphBundleOps.GetSense(bundles[0])</span>
+<span class="sd">            ...     if sense:</span>
+<span class="sd">            ...         # Get sense gloss</span>
+<span class="sd">            ...         wsHandle = project.project.DefaultAnalWs</span>
+<span class="sd">            ...         sense_gloss = ITsString(sense.Gloss.get_String(wsHandle)).Text</span>
+<span class="sd">            ...         print(f&quot;Linked to sense: {sense_gloss}&quot;)</span>
+<span class="sd">            Linked to sense: run</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if bundle is not linked to lexicon</span>
+<span class="sd">            - Linking provides richer lexical information</span>
+<span class="sd">            - Linked sense can provide definition, part of speech, etc.</span>
+<span class="sd">            - Bundle gloss may derive from sense gloss</span>
+<span class="sd">            - Important for concordance and lexical queries</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetSense, GetMSA, GetGloss</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bundle</span><span class="o">.</span><span class="n">SenseRA</span> <span class="k">if</span> <span class="n">bundle</span><span class="o">.</span><span class="n">SenseRA</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetSense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="n">sense_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Link a morph bundle to a lexical sense.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+<span class="sd">            sense_or_hvo: The ILexSense object or HVO to link, or None to unlink.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     # Link to a lexical sense</span>
+<span class="sd">            ...     senses = list(project.LexiconAllSenses())</span>
+<span class="sd">            ...     if senses:</span>
+<span class="sd">            ...         morphBundleOps.SetSense(bundles[0], senses[0])</span>
+
+<span class="sd">            &gt;&gt;&gt; # Unlink from sense</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.SetSense(bundles[0], None)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Linking integrates text analysis with lexicon</span>
+<span class="sd">            - Linked sense provides definition, POS, and other information</span>
+<span class="sd">            - Setting to None breaks the lexical link</span>
+<span class="sd">            - Consider also setting MSA when linking sense</span>
+<span class="sd">            - Link is used in concordance views and lexical queries</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSense, SetMSA, SetGloss</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sense_or_hvo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bundle</span><span class="o">.</span><span class="n">SenseRA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sense</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetSenseObject</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">)</span>
+            <span class="n">bundle</span><span class="o">.</span><span class="n">SenseRA</span> <span class="o">=</span> <span class="n">sense</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the morpheme type of a bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoMorphType or None: The morpheme type (stem, prefix, suffix, etc.),</span>
+<span class="sd">                                  or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     morphType = morphBundleOps.GetMorphType(bundles[0])</span>
+<span class="sd">            ...     if morphType:</span>
+<span class="sd">            ...         # Get type name</span>
+<span class="sd">            ...         wsHandle = project.project.DefaultAnalWs</span>
+<span class="sd">            ...         type_name = ITsString(morphType.Name.get_String(wsHandle)).Text</span>
+<span class="sd">            ...         print(type_name)</span>
+<span class="sd">            stem</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if morph type not set</span>
+<span class="sd">            - Morpheme types include: stem, root, prefix, suffix, infix,</span>
+<span class="sd">              circumfix, clitic, proclitic, enclitic, simulfix, etc.</span>
+<span class="sd">            - Type indicates the morphological category</span>
+<span class="sd">            - May be inherited from linked sense/MSA</span>
+<span class="sd">            - Important for morphological analysis and parsing</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetMorphType, GetSense, GetMSA</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MorphRA</span> <span class="k">if</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MorphRA</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="n">morph_type_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the morpheme type of a bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+<span class="sd">            morph_type_or_hvo: The IMoMorphType object or HVO, or None to unset.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     # Get a morph type</span>
+<span class="sd">            ...     morphTypes = project.lp.MorphTypesOA.PossibilitiesOS</span>
+<span class="sd">            ...     suffix_type = [mt for mt in morphTypes</span>
+<span class="sd">            ...                    if &quot;suffix&quot; in str(mt).lower()][0]</span>
+<span class="sd">            ...     morphBundleOps.SetMorphType(bundles[1], suffix_type)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear morph type</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.SetMorphType(bundles[1], None)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Morph type categorizes the morpheme structurally</span>
+<span class="sd">            - Setting to None clears the type reference</span>
+<span class="sd">            - Type should match the morpheme&#39;s linguistic function</span>
+<span class="sd">            - May be automatically set when linking to sense</span>
+<span class="sd">            - Affects morphological analysis and display</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMorphType, SetSense, SetMSA</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">morph_type_or_hvo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bundle</span><span class="o">.</span><span class="n">MorphRA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">morph_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetMorphTypeObject</span><span class="p">(</span><span class="n">morph_type_or_hvo</span><span class="p">)</span>
+            <span class="n">bundle</span><span class="o">.</span><span class="n">MorphRA</span> <span class="o">=</span> <span class="n">morph_type</span>
+
+    <span class="c1"># ==================== MSA OPERATIONS ====================</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMSA</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the Morpho-Syntactic Analysis (MSA) of a bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoMorphSynAnalysis or None: The MSA object, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     msa = morphBundleOps.GetMSA(bundles[0])</span>
+<span class="sd">            ...     if msa:</span>
+<span class="sd">            ...         print(f&quot;MSA type: {msa.ClassName}&quot;)</span>
+<span class="sd">            MSA type: MoStemMsa</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if MSA not set</span>
+<span class="sd">            - MSA provides morpho-syntactic information</span>
+<span class="sd">            - Types include: MoStemMsa, MoInflAffMsa, MoDerivAffMsa, etc.</span>
+<span class="sd">            - Contains information like part of speech, features, etc.</span>
+<span class="sd">            - Usually comes from linked lexical entry/sense</span>
+<span class="sd">            - Critical for grammatical analysis</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetMSA, GetSense, GetMorphType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MsaRA</span> <span class="k">if</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MsaRA</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetMSA</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="n">msa_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the Morpho-Syntactic Analysis (MSA) of a bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+<span class="sd">            msa_or_hvo: The IMoMorphSynAnalysis object or HVO, or None to unset.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     # Get MSA from a lexical sense</span>
+<span class="sd">            ...     sense = morphBundleOps.GetSense(bundles[0])</span>
+<span class="sd">            ...     if sense:</span>
+<span class="sd">            ...         entry = sense.Owner.Owner  # Get owning entry</span>
+<span class="sd">            ...         if entry.MorphoSyntaxAnalysesOC.Count &gt; 0:</span>
+<span class="sd">            ...             msa = entry.MorphoSyntaxAnalysesOC[0]</span>
+<span class="sd">            ...             morphBundleOps.SetMSA(bundles[0], msa)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear MSA</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.SetMSA(bundles[0], None)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - MSA provides grammatical category and features</span>
+<span class="sd">            - Setting to None clears the MSA reference</span>
+<span class="sd">            - MSA should be compatible with morpheme type</span>
+<span class="sd">            - Usually set in conjunction with sense</span>
+<span class="sd">            - Affects grammatical parsing and concordance</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMSA, SetSense, SetMorphType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">msa_or_hvo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bundle</span><span class="o">.</span><span class="n">MsaRA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetMSAObject</span><span class="p">(</span><span class="n">msa_or_hvo</span><span class="p">)</span>
+            <span class="n">bundle</span><span class="o">.</span><span class="n">MsaRA</span> <span class="o">=</span> <span class="n">msa</span>
+
+    <span class="c1"># ==================== INFLECTION OPERATIONS ====================</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetInflType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the inflection type of a bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility or None: The inflection type object, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     inflType = morphBundleOps.GetInflType(bundles[0])</span>
+<span class="sd">            ...     if inflType:</span>
+<span class="sd">            ...         wsHandle = project.project.DefaultAnalWs</span>
+<span class="sd">            ...         type_name = ITsString(inflType.Name.get_String(wsHandle)).Text</span>
+<span class="sd">            ...         print(f&quot;Inflection type: {type_name}&quot;)</span>
+<span class="sd">            Inflection type: past tense</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if inflection type not set</span>
+<span class="sd">            - Inflection type specifies the grammatical category</span>
+<span class="sd">            - Examples: past tense, plural, comparative, etc.</span>
+<span class="sd">            - References an ICmPossibility from the inflection type list</span>
+<span class="sd">            - Used in morphological analysis and parsing</span>
+<span class="sd">            - Complements the inflection class information</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetInflType, GetInflectionClass, GetMSA</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bundle</span><span class="o">.</span><span class="n">InflTypeRA</span> <span class="k">if</span> <span class="n">bundle</span><span class="o">.</span><span class="n">InflTypeRA</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetInflType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="n">infl_type_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the inflection type of a bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+<span class="sd">            infl_type_or_hvo: The ICmPossibility inflection type object or HVO, or None to unset.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     # Get an inflection type from the list</span>
+<span class="sd">            ...     if project.lp.MorphologicalDataOA:</span>
+<span class="sd">            ...         inflTypes = project.lp.MorphologicalDataOA.InflectionTypesOA</span>
+<span class="sd">            ...         if inflTypes and inflTypes.PossibilitiesOS.Count &gt; 0:</span>
+<span class="sd">            ...             past_tense = inflTypes.PossibilitiesOS[0]</span>
+<span class="sd">            ...             morphBundleOps.SetInflType(bundles[0], past_tense)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear inflection type</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.SetInflType(bundles[0], None)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Inflection type specifies the grammatical inflection</span>
+<span class="sd">            - Setting to None clears the type reference</span>
+<span class="sd">            - Type should match the morpheme&#39;s grammatical function</span>
+<span class="sd">            - May be automatically set when linking to lexical entry</span>
+<span class="sd">            - Affects morphological analysis and display</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetInflType, SetInflectionClass, SetMSA</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">infl_type_or_hvo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bundle</span><span class="o">.</span><span class="n">InflTypeRA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Resolve to ICmPossibility object</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">infl_type_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">infl_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">infl_type_or_hvo</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">infl_type</span> <span class="o">=</span> <span class="n">infl_type_or_hvo</span>
+            <span class="n">bundle</span><span class="o">.</span><span class="n">InflTypeRA</span> <span class="o">=</span> <span class="n">infl_type</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetInflectionClass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the inflection class of a bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoInflClass or None: The inflection class object, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     inflClass = morphBundleOps.GetInflectionClass(bundles[0])</span>
+<span class="sd">            ...     if inflClass:</span>
+<span class="sd">            ...         wsHandle = project.project.DefaultAnalWs</span>
+<span class="sd">            ...         class_name = ITsString(inflClass.Name.get_String(wsHandle)).Text</span>
+<span class="sd">            ...         print(f&quot;Inflection class: {class_name}&quot;)</span>
+<span class="sd">            Inflection class: strong verb</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if inflection class not set</span>
+<span class="sd">            - Inflection classes categorize inflectional paradigms</span>
+<span class="sd">            - Examples: strong verb, weak verb, irregular, etc.</span>
+<span class="sd">            - Relevant mainly for inflectional morphology</span>
+<span class="sd">            - May affect paradigm generation and analysis</span>
+<span class="sd">            - Not applicable to all morpheme types</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetInflectionClass, GetMSA, GetMorphType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bundle</span><span class="o">.</span><span class="n">InflClassRA</span> <span class="k">if</span> <span class="n">bundle</span><span class="o">.</span><span class="n">InflClassRA</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetInflectionClass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="n">infl_class_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the inflection class of a bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+<span class="sd">            infl_class_or_hvo: The IMoInflClass object or HVO, or None to unset.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     # Get an inflection class</span>
+<span class="sd">            ...     if project.lp.MorphologicalDataOA:</span>
+<span class="sd">            ...         inflClasses = project.lp.MorphologicalDataOA.InflectionClassesOC</span>
+<span class="sd">            ...         if inflClasses.Count &gt; 0:</span>
+<span class="sd">            ...             inflClass = inflClasses[0]</span>
+<span class="sd">            ...             morphBundleOps.SetInflectionClass(bundles[0], inflClass)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear inflection class</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps.SetInflectionClass(bundles[0], None)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Inflection class specifies paradigm membership</span>
+<span class="sd">            - Setting to None clears the class reference</span>
+<span class="sd">            - Relevant for stems with inflectional variants</span>
+<span class="sd">            - May be inherited from lexical entry</span>
+<span class="sd">            - Affects paradigm generation and validation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetInflectionClass, SetMSA, SetMorphType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">infl_class_or_hvo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bundle</span><span class="o">.</span><span class="n">InflClassRA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">infl_class</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetInflectionClassObject</span><span class="p">(</span><span class="n">infl_class_or_hvo</span><span class="p">)</span>
+            <span class="n">bundle</span><span class="o">.</span><span class="n">InflClassRA</span> <span class="o">=</span> <span class="n">infl_class</span>
+
+    <span class="c1"># ==================== UTILITY OPERATIONS ====================</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwningAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the wordform analysis that owns a morph bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiAnalysis: The owning analysis object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     owner = morphBundleOps.GetOwningAnalysis(bundles[0])</span>
+<span class="sd">            ...     print(f&quot;Owner HVO: {owner.Hvo}&quot;)</span>
+<span class="sd">            Owner HVO: 12345</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Every morph bundle belongs to exactly one analysis</span>
+<span class="sd">            - The owner is always an IWfiAnalysis object</span>
+<span class="sd">            - Useful for navigating from bundle back to analysis</span>
+<span class="sd">            - Owner relationship is fundamental to data structure</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, Create, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+        <span class="c1"># Cast to declared return type IWfiAnalysis. Raw bundle.Owner is typed</span>
+        <span class="c1"># as ICmObject in LCM; pythonnet only surfaces IWfiAnalysis properties</span>
+        <span class="c1"># (e.g. MorphBundlesOS) after the explicit interface cast.</span>
+        <span class="k">return</span> <span class="n">IWfiAnalysis</span><span class="p">(</span><span class="n">bundle</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID (Globally Unique Identifier) of a morph bundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: The IWfiMorphBundle object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The GUID as a string.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If bundle_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; morphBundleOps = WfiMorphBundleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; bundles = list(morphBundleOps.GetAll(analysis))</span>
+<span class="sd">            &gt;&gt;&gt; if bundles:</span>
+<span class="sd">            ...     guid = morphBundleOps.GetGuid(bundles[0])</span>
+<span class="sd">            ...     print(f&quot;Bundle GUID: {guid}&quot;)</span>
+<span class="sd">            Bundle GUID: 12345678-1234-1234-1234-123456789abc</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUID is a unique identifier for the bundle</span>
+<span class="sd">            - Remains constant even if bundle is modified</span>
+<span class="sd">            - Useful for tracking and referencing across sessions</span>
+<span class="sd">            - Format is standard GUID (128-bit value)</span>
+<span class="sd">            - Used in synchronization and external references</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetOwningAnalysis, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="s2">&quot;bundle_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetBundleObject</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">bundle</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+    <span class="c1"># ==================== PRIVATE HELPER METHODS ====================</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetBundleObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IWfiMorphBundle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bundle_or_hvo: Either an IWfiMorphBundle object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiMorphBundle: The resolved bundle object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">bundle_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bundle_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetAnalysisObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IWfiAnalysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiAnalysis: The resolved analysis object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">analysis_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetSenseObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to ILexSense.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sense_or_hvo: Either an ILexSense object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexSense: The resolved sense object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">sense_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sense_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetMorphTypeObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">morph_type_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IMoMorphType.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            morph_type_or_hvo: Either an IMoMorphType object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoMorphType: The resolved morph type object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">morph_type_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">morph_type_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">morph_type_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetMSAObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msa_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IMoMorphSynAnalysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            msa_or_hvo: Either an IMoMorphSynAnalysis object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoMorphSynAnalysis: The resolved MSA object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msa_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">msa_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">msa_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetInflectionClassObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">infl_class_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IMoInflClass.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            infl_class_or_hvo: Either an IMoInflClass object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoInflClass: The resolved inflection class object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">infl_class_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">infl_class_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">infl_class_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleVern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to vernacular WS for morpheme forms.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleAnal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS for glosses.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.TextsWords.WfiMorphBundleOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

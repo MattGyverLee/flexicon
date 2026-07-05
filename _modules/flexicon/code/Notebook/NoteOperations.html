@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Notebook.NoteOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Notebook.NoteOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Notebook.NoteOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   NoteOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: NoteOperations</span>
+<span class="c1">#          Note and comment operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IScrScriptureNote</span><span class="p">,</span>
+    <span class="n">IScrScriptureNoteFactory</span><span class="p">,</span>
+    <span class="n">ICmBaseAnnotation</span><span class="p">,</span>
+    <span class="n">ICmBaseAnnotationFactory</span><span class="p">,</span>
+    <span class="n">ICmAnnotationDefn</span><span class="p">,</span>
+    <span class="n">ICmPossibility</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">DateTime</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+
+<div class="viewcode-block" id="NoteOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.NoteOperations.NoteOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NoteOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing notes and comments in a</span>
+<span class="sd">    FieldWorks project.</span>
+
+<span class="sd">    Notes in FLEx are annotations that can be attached to various objects</span>
+<span class="sd">    including lexical entries, senses, texts, paragraphs, and more. Notes</span>
+<span class="sd">    support threading (replies), categorization, metadata tracking, and</span>
+<span class="sd">    multi-lingual content.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.Note property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get a lexical entry</span>
+<span class="sd">        entry = project.LexEntry.Find(&quot;run&quot;)</span>
+
+<span class="sd">        # Get all notes for the entry</span>
+<span class="sd">        for note in project.Note.GetAll(entry):</span>
+<span class="sd">            content = project.Note.GetContent(note)</span>
+<span class="sd">            date = project.Note.GetDateCreated(note)</span>
+<span class="sd">            print(f&quot;Note: {content} (created {date})&quot;)</span>
+
+<span class="sd">        # Create a new note</span>
+<span class="sd">        note = project.Note.Create(entry, &quot;Review etymology&quot;, &quot;en&quot;)</span>
+
+<span class="sd">        # Set note type</span>
+<span class="sd">        project.Note.SetNoteType(note, &quot;To Do&quot;)</span>
+
+<span class="sd">        # Add a reply</span>
+<span class="sd">        reply = project.Note.AddReply(note, &quot;Checked - looks correct&quot;, &quot;en&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize NoteOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner_object</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all notes attached to an object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            owner_object: The object whose notes to retrieve. Can be an</span>
+<span class="sd">                ILexEntry, ILexSense, IText, IStPara, or any annotatable object.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmBaseAnnotation: Each note/annotation attached to the object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If owner_object is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for note in project.Note.GetAll(entry):</span>
+<span class="sd">            ...     content = project.Note.GetContent(note)</span>
+<span class="sd">            ...     print(f&quot;Note: {content}&quot;)</span>
+<span class="sd">            Note: Check etymology source</span>
+<span class="sd">            Note: Add example sentences</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns notes in creation order</span>
+<span class="sd">            - Returns empty generator if object has no notes</span>
+<span class="sd">            - Works with any object that supports annotations</span>
+<span class="sd">            - Includes both top-level notes and replies</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetReplies</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">owner_object</span><span class="p">,</span> <span class="s2">&quot;owner_object&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get the annotation repository</span>
+        <span class="n">anno_repos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmBaseAnnotation</span><span class="p">)</span><span class="o">.</span><span class="n">Repository</span>
+
+        <span class="c1"># Find all annotations for this object</span>
+        <span class="k">for</span> <span class="n">annotation</span> <span class="ow">in</span> <span class="n">anno_repos</span><span class="o">.</span><span class="n">AllInstances</span><span class="p">():</span>
+            <span class="c1"># Check if this annotation references our owner object</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="s2">&quot;BeginObjectRA&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">annotation</span><span class="o">.</span><span class="n">BeginObjectRA</span> <span class="o">==</span> <span class="n">owner_object</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">annotation</span>
+            <span class="c1"># Also check for direct ownership. .Owner is on every</span>
+            <span class="c1"># ICmObject; no hasattr guard needed. (issue #133 sweep)</span>
+            <span class="k">if</span> <span class="n">annotation</span><span class="o">.</span><span class="n">Owner</span> <span class="o">==</span> <span class="n">owner_object</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">annotation</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner_object</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new note attached to an object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            owner_object: The object to attach the note to (entry, sense, etc.).</span>
+<span class="sd">            content (str): The text content of the note.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmBaseAnnotation: The newly created note object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If owner_object or content is None.</span>
+<span class="sd">            FP_ParameterError: If content is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; note = project.Note.Create(entry, &quot;Check etymology&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Note.GetContent(note))</span>
+<span class="sd">            Check etymology</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; note = project.Note.Create(sense, &quot;À vérifier&quot;,</span>
+<span class="sd">            ...                             project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Note is immediately added to the database</span>
+<span class="sd">            - DateCreated is set automatically to current time</span>
+<span class="sd">            - Use SetNoteType() to assign a category</span>
+<span class="sd">            - Use AddReply() to create threaded discussions</span>
+<span class="sd">            - GUID is auto-generated</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, SetContent, SetNoteType, AddReply</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">owner_object</span><span class="p">,</span> <span class="s2">&quot;owner_object&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">content</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Note content cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Create the annotation using the factory</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create note&quot;</span><span class="p">):</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmBaseAnnotationFactory</span><span class="p">)</span>
+            <span class="n">note</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to the annotations collection (must be done before setting properties)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner_object</span><span class="p">,</span> <span class="s2">&quot;AnnotationsOC&quot;</span><span class="p">):</span>
+                <span class="n">owner_object</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+
+            <span class="c1"># Set the content</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">note</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="c1"># Set the reference to the annotated object</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;BeginObjectRA&quot;</span><span class="p">):</span>
+                <span class="n">note</span><span class="o">.</span><span class="n">BeginObjectRA</span> <span class="o">=</span> <span class="n">owner_object</span>
+
+            <span class="c1"># Set creation date</span>
+            <span class="n">note</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+            <span class="k">return</span> <span class="n">note</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If note is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;obsolete&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; notes = list(project.Note.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if notes:</span>
+<span class="sd">            ...     project.Note.Delete(notes[0])</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - All replies to the note will also be deleted</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Deletion cascades to all replies</span>
+<span class="sd">            - Owner references are automatically cleaned up</span>
+<span class="sd">            - Consider archiving important notes before deletion</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetReplies</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Remove from owner&#39;s collection. note.Owner is typed as</span>
+        <span class="c1"># ICmObject and does not expose AnnotationsOC / RepliesOS; cast</span>
+        <span class="c1"># to the concrete owner so the typed collection is reachable</span>
+        <span class="c1"># (the previous hasattr check silently no-opped for notes owned</span>
+        <span class="c1"># by IRnGenericRec or by a parent note).</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete note&quot;</span><span class="p">):</span>
+            <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;AnnotationsOC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">owner</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="p">:</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">owner</span><span class="o">.</span><span class="n">RepliesOS</span><span class="p">:</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+
+            <span class="c1"># Delete the note object</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;Delete&quot;</span><span class="p">):</span>
+                <span class="n">note</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a note, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmBaseAnnotation (note) object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source note.</span>
+<span class="sd">                                If False, insert at end of owner&#39;s annotation list.</span>
+<span class="sd">            deep (bool): If True (default), also duplicate owned objects (replies).</span>
+<span class="sd">                        If False, only copy simple properties and references.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmBaseAnnotation: The newly created duplicate note with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; notes = list(project.Note.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if notes:</span>
+<span class="sd">            ...     # Shallow duplicate (no replies)</span>
+<span class="sd">            ...     dup = project.Note.Duplicate(notes[0])</span>
+<span class="sd">            ...     print(f&quot;Original: {project.Note.GetGuid(notes[0])}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Duplicate: {project.Note.GetGuid(dup)}&quot;)</span>
+<span class="sd">            Original: 12345678-1234-1234-1234-123456789abc</span>
+<span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
+<span class="sd">            ...</span>
+<span class="sd">            ...     # Deep duplicate (includes all replies)</span>
+<span class="sd">            ...     deep_dup = project.Note.Duplicate(notes[0], deep=True)</span>
+<span class="sd">            ...     print(f&quot;Replies: {len(list(project.Note.GetReplies(deep_dup)))}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original note&#39;s position</span>
+<span class="sd">            - Simple properties copied: Comment, Source (author), DateCreated, DateModified</span>
+<span class="sd">            - Reference properties copied: AnnotationTypeRA, BeginObjectRA</span>
+<span class="sd">            - Owned objects (deep=True): RepliesOS (threaded discussion)</span>
+<span class="sd">            - DateCreated and DateModified are copied from source, not set to current time</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetGuid, GetReplies</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source note and parent. source.Owner is typed as ICmObject</span>
+        <span class="c1"># and does not expose AnnotationsOC / RepliesOS; cast to the</span>
+        <span class="c1"># concrete owner so the typed collection is reachable (the</span>
+        <span class="c1"># previous hasattr checks silently no-opped, leaving the</span>
+        <span class="c1"># duplicate orphaned).</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">item_or_hvo</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Note has no owning record or parent note&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Create new note using factory (auto-generates new GUID)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate note&quot;</span><span class="p">):</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmBaseAnnotationFactory</span><span class="p">)</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Determine insertion position</span>
+            <span class="c1"># Notes can be in AnnotationsOC (when parent is owner object) or RepliesOS (when parent is another note)</span>
+            <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                <span class="c1"># Insert after source note</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;AnnotationsOC&quot;</span><span class="p">):</span>
+                    <span class="c1"># AnnotationsOC is unordered (OC); insert_after is a no-op, add at end</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Insert at end</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;AnnotationsOC&quot;</span><span class="p">):</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">AnnotationsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy simple MultiString properties</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Comment</span><span class="p">)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Source</span><span class="p">)</span>
+
+            <span class="c1"># Copy Reference Atomic (RA) properties</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;AnnotationTypeRA&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">AnnotationTypeRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">AnnotationTypeRA</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;BeginObjectRA&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">BeginObjectRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">BeginObjectRA</span>
+
+            <span class="c1"># Copy datetime properties</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;DateCreated&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">DateCreated</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">DateModified</span>
+
+            <span class="c1"># Handle owned objects if deep=True</span>
+            <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+                <span class="c1"># Duplicate replies into the NEW duplicate (not the original&#39;s parent)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">reply</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">RepliesOS</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateReplyInto</span><span class="p">(</span><span class="n">reply</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_DuplicateReplyInto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_reply</span><span class="p">,</span> <span class="n">parent_note</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate a reply note into the specified parent note&#39;s RepliesOS.&quot;&quot;&quot;</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmBaseAnnotationFactory</span><span class="p">)</span>
+        <span class="n">dup_reply</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+        <span class="n">parent_note</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">dup_reply</span><span class="p">)</span>
+
+        <span class="c1"># Copy properties</span>
+        <span class="n">dup_reply</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_reply</span><span class="o">.</span><span class="n">Comment</span><span class="p">)</span>
+        <span class="n">dup_reply</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_reply</span><span class="o">.</span><span class="n">Source</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_reply</span><span class="p">,</span> <span class="s2">&quot;AnnotationTypeRA&quot;</span><span class="p">):</span>
+            <span class="n">dup_reply</span><span class="o">.</span><span class="n">AnnotationTypeRA</span> <span class="o">=</span> <span class="n">source_reply</span><span class="o">.</span><span class="n">AnnotationTypeRA</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_reply</span><span class="p">,</span> <span class="s2">&quot;BeginObjectRA&quot;</span><span class="p">):</span>
+            <span class="n">dup_reply</span><span class="o">.</span><span class="n">BeginObjectRA</span> <span class="o">=</span> <span class="n">source_reply</span><span class="o">.</span><span class="n">BeginObjectRA</span>
+
+        <span class="c1"># Recurse into nested replies</span>
+        <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_reply</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">nested_reply</span> <span class="ow">in</span> <span class="n">source_reply</span><span class="o">.</span><span class="n">RepliesOS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateReplyInto</span><span class="p">(</span><span class="n">nested_reply</span><span class="p">,</span> <span class="n">dup_reply</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get syncable properties for cross-project synchronization.</span>
+
+<span class="sd">        Returns all syncable properties of a note including MultiString fields</span>
+<span class="sd">        and reference properties.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The ICmBaseAnnotation (note) object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary of syncable properties</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; props = project.Note.GetSyncableProperties(note)</span>
+<span class="sd">            &gt;&gt;&gt; print(props)</span>
+<span class="sd">            {&#39;Comment&#39;: &#39;Check this&#39;, &#39;Source&#39;: &#39;John&#39;, &#39;AnnotationType&#39;: &#39;...&#39;}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;item&quot;</span><span class="p">)</span>
+
+        <span class="n">note</span> <span class="o">=</span> <span class="n">item</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;Comment&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Comment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;Source&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="c1"># Reference Atomic (RA) property - return GUID as string</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;AnnotationTypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">note</span><span class="o">.</span><span class="n">AnnotationTypeRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;AnnotationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">AnnotationTypeRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;AnnotationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;BeginObjectRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">note</span><span class="o">.</span><span class="n">BeginObjectRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;BeginObject&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">BeginObjectRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;BeginObject&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two notes and return detailed differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First note (from source project)</span>
+<span class="sd">            item2: Second note (from target project)</span>
+<span class="sd">            ops1: Operations instance for item1&#39;s project (defaults to self)</span>
+<span class="sd">            ops2: Operations instance for item2&#39;s project (defaults to self)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict) where differences_dict contains</span>
+<span class="sd">                   &#39;properties&#39; dict with changed property details</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = ops1.CompareTo(note1, note2, ops1, ops2)</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, details in diffs[&#39;properties&#39;].items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {details[&#39;source&#39;]} -&gt; {details[&#39;target&#39;]}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+
+        <span class="c1"># Get syncable properties from both items</span>
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="c1"># Compare each property</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">is_different</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">differences</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">val1</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">val2</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;modified&quot;</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span>
+
+    <span class="c1"># --- Content Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the text content of a note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The note content, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If note is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; notes = list(project.Note.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if notes:</span>
+<span class="sd">            ...     content = project.Note.GetContent(notes[0])</span>
+<span class="sd">            ...     print(content)</span>
+<span class="sd">            Check etymology source</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; content_fr = project.Note.GetContent(notes[0],</span>
+<span class="sd">            ...                                       project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if content not set in specified WS</span>
+<span class="sd">            - Notes can have content in multiple writing systems</span>
+<span class="sd">            - Analysis writing system is typically used for notes</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetContent, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;Comment&quot;</span><span class="p">):</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">return</span> <span class="n">text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetContent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the text content of a note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
+<span class="sd">            text (str): The new note content.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If note or text is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; notes = list(project.Note.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if notes:</span>
+<span class="sd">            ...     project.Note.SetContent(notes[0], &quot;Etymology verified&quot;)</span>
+<span class="sd">            ...     print(project.Note.GetContent(notes[0]))</span>
+<span class="sd">            Etymology verified</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Empty string is allowed (clears the content)</span>
+<span class="sd">            - DateModified is updated automatically</span>
+<span class="sd">            - Use different writing systems for multilingual notes</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetContent, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set note content&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;Comment&quot;</span><span class="p">):</span>
+                <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">note</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+                <span class="c1"># Update modification date</span>
+                <span class="n">note</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+    <span class="c1"># --- Note Type Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetNoteType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the note type/category.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnnotationDefn: The annotation definition (note type), or None.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If note is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; notes = list(project.Note.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if notes:</span>
+<span class="sd">            ...     note_type = project.Note.GetNoteType(notes[0])</span>
+<span class="sd">            ...     if note_type:</span>
+<span class="sd">            ...         # Get the name of the note type</span>
+<span class="sd">            ...         ws = project.project.DefaultAnalWs</span>
+<span class="sd">            ...         type_name = ITsString(note_type.Name.get_String(ws)).Text</span>
+<span class="sd">            ...         print(f&quot;Note type: {type_name}&quot;)</span>
+<span class="sd">            Note type: To Do</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if no note type is set</span>
+<span class="sd">            - Note types are defined in the annotation definitions</span>
+<span class="sd">            - Common types: &quot;To Do&quot;, &quot;Question&quot;, &quot;Resolved&quot;, etc.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetNoteType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;AnnotationTypeRA&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">note</span><span class="o">.</span><span class="n">AnnotationTypeRA</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetNoteType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">note_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the note type/category.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
+<span class="sd">            note_type: Either a string name or ICmAnnotationDefn object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If note is None.</span>
+<span class="sd">            FP_ParameterError: If note_type string not found.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; note = project.Note.Create(entry, &quot;Check this later&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Note.SetNoteType(note, &quot;To Do&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Using annotation definition object</span>
+<span class="sd">            &gt;&gt;&gt; anno_defn = project.Note.GetNoteType(existing_note)</span>
+<span class="sd">            &gt;&gt;&gt; if anno_defn:</span>
+<span class="sd">            ...     project.Note.SetNoteType(new_note, anno_defn)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - If string is provided, searches for matching annotation definition</span>
+<span class="sd">            - Search is case-sensitive</span>
+<span class="sd">            - Common types: &quot;To Do&quot;, &quot;Question&quot;, &quot;Resolved&quot;</span>
+<span class="sd">            - Note type affects display and filtering in FLEx</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetNoteType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;AnnotationTypeRA&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Note does not support type assignment&quot;</span><span class="p">)</span>
+
+        <span class="c1"># If string, find the annotation definition</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">note_type</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">anno_defn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__FindAnnotationDefn</span><span class="p">(</span><span class="n">note_type</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">anno_defn</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Note type &#39;</span><span class="si">{</span><span class="n">note_type</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">)</span>
+            <span class="n">note_type</span> <span class="o">=</span> <span class="n">anno_defn</span>
+
+        <span class="n">note</span><span class="o">.</span><span class="n">AnnotationTypeRA</span> <span class="o">=</span> <span class="n">note_type</span>
+
+    <span class="c1"># --- Metadata Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the creation date of a note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.DateTime: The creation date/time, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If note is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; notes = list(project.Note.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if notes:</span>
+<span class="sd">            ...     date = project.Note.GetDateCreated(notes[0])</span>
+<span class="sd">            ...     print(f&quot;Created: {date}&quot;)</span>
+<span class="sd">            Created: 11/23/2025 10:30:45 AM</span>
+
+<span class="sd">            &gt;&gt;&gt; # Sort notes by creation date</span>
+<span class="sd">            &gt;&gt;&gt; sorted_notes = sorted(notes,</span>
+<span class="sd">            ...     key=lambda n: project.Note.GetDateCreated(n) or DateTime.MinValue)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - DateCreated is set automatically when note is created</span>
+<span class="sd">            - Returns System.DateTime object</span>
+<span class="sd">            - Can be None for notes without creation date</span>
+<span class="sd">            - Use for sorting and filtering notes by age</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDateModified, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;DateCreated&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">note</span><span class="o">.</span><span class="n">DateCreated</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the last modification date of a note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.DateTime: The modification date/time, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If note is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; notes = list(project.Note.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if notes:</span>
+<span class="sd">            ...     modified = project.Note.GetDateModified(notes[0])</span>
+<span class="sd">            ...     if modified:</span>
+<span class="sd">            ...         print(f&quot;Last modified: {modified}&quot;)</span>
+<span class="sd">            Last modified: 11/23/2025 2:15:30 PM</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find recently modified notes</span>
+<span class="sd">            &gt;&gt;&gt; from System import DateTime</span>
+<span class="sd">            &gt;&gt;&gt; one_week_ago = DateTime.Now.AddDays(-7)</span>
+<span class="sd">            &gt;&gt;&gt; recent = [n for n in notes</span>
+<span class="sd">            ...     if project.Note.GetDateModified(n) and</span>
+<span class="sd">            ...        project.Note.GetDateModified(n) &gt; one_week_ago]</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - DateModified is updated when content or properties change</span>
+<span class="sd">            - Returns System.DateTime object</span>
+<span class="sd">            - May be None if note has never been modified</span>
+<span class="sd">            - Useful for tracking note activity</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDateCreated, SetContent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">note</span><span class="o">.</span><span class="n">DateModified</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAuthor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the author of a note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The author name, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If note is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; notes = list(project.Note.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if notes:</span>
+<span class="sd">            ...     author = project.Note.GetAuthor(notes[0])</span>
+<span class="sd">            ...     if author:</span>
+<span class="sd">            ...         print(f&quot;Author: {author}&quot;)</span>
+<span class="sd">            Author: John Smith</span>
+
+<span class="sd">            &gt;&gt;&gt; # Filter notes by author</span>
+<span class="sd">            &gt;&gt;&gt; john_notes = [n for n in notes</span>
+<span class="sd">            ...     if project.Note.GetAuthor(n) == &quot;John Smith&quot;]</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if author not set</span>
+<span class="sd">            - Author is typically set from user preferences</span>
+<span class="sd">            - Use for filtering and attribution</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetAuthor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;Source&quot;</span><span class="p">):</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">return</span> <span class="n">text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAuthor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">author_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the author of a note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
+<span class="sd">            author_name (str): The author name to set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If note or author_name is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; note = project.Note.Create(entry, &quot;Review needed&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Note.SetAuthor(note, &quot;John Smith&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Note.GetAuthor(note))</span>
+<span class="sd">            John Smith</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Empty string is allowed (clears the author)</span>
+<span class="sd">            - Author is stored as a string, not a user object reference</span>
+<span class="sd">            - Use consistent naming for better filtering</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAuthor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">author_name</span><span class="p">,</span> <span class="s2">&quot;author_name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;Source&quot;</span><span class="p">):</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">author_name</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+            <span class="n">note</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="c1"># --- Discussion/Threading Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetReplies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all reply notes (threaded discussion) for a note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmBaseAnnotation: Each reply note.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If note is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; notes = list(project.Note.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if notes:</span>
+<span class="sd">            ...     parent = notes[0]</span>
+<span class="sd">            ...     print(f&quot;Parent: {project.Note.GetContent(parent)}&quot;)</span>
+<span class="sd">            ...     for reply in project.Note.GetReplies(parent):</span>
+<span class="sd">            ...         content = project.Note.GetContent(reply)</span>
+<span class="sd">            ...         author = project.Note.GetAuthor(reply)</span>
+<span class="sd">            ...         print(f&quot;  Reply by {author}: {content}&quot;)</span>
+<span class="sd">            Parent: Check etymology</span>
+<span class="sd">              Reply by Jane: Looks correct to me</span>
+<span class="sd">              Reply by John: Agreed, verified in source</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Replies are child annotations of the parent note</span>
+<span class="sd">            - Returns empty generator if note has no replies</span>
+<span class="sd">            - Replies can themselves have replies (nested threading)</span>
+<span class="sd">            - Use recursively for full conversation trees</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddReply, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">reply</span> <span class="ow">in</span> <span class="n">note</span><span class="o">.</span><span class="n">RepliesOS</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">reply</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddReply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_note</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a reply to an existing note (threaded discussion).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent_note: The ICmBaseAnnotation (note) to reply to.</span>
+<span class="sd">            content (str): The reply text content.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmBaseAnnotation: The newly created reply note.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If parent_note or content is None.</span>
+<span class="sd">            FP_ParameterError: If content is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; note = project.Note.Create(entry, &quot;Is this etymology correct?&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Note.SetAuthor(note, &quot;John&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Add a reply</span>
+<span class="sd">            &gt;&gt;&gt; reply = project.Note.AddReply(note, &quot;Yes, verified in source&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Note.SetAuthor(reply, &quot;Jane&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Add a nested reply</span>
+<span class="sd">            &gt;&gt;&gt; nested = project.Note.AddReply(reply, &quot;Thanks for checking!&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Note.SetAuthor(nested, &quot;John&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Reply is created as a child of the parent note</span>
+<span class="sd">            - DateCreated is set automatically</span>
+<span class="sd">            - Replies support all note operations (type, metadata, etc.)</span>
+<span class="sd">            - Can create multi-level threaded discussions</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetReplies, Create, SetAuthor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">parent_note</span><span class="p">,</span> <span class="s2">&quot;parent_note&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">content</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Reply content cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Create the reply annotation using the factory</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add reply&quot;</span><span class="p">):</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmBaseAnnotationFactory</span><span class="p">)</span>
+            <span class="n">reply</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add as reply to parent note (must be done before setting properties)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent_note</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
+                <span class="n">parent_note</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+
+            <span class="c1"># Set the content</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">reply</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="c1"># Set creation date</span>
+            <span class="n">reply</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+            <span class="k">return</span> <span class="n">reply</span>
+
+    <span class="c1"># --- Utility Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the owner object that the note is attached to.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object: The owner object (ILexEntry, ILexSense, etc.), or None.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If note is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; note = project.Note.Create(entry, &quot;Check this&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; owner = project.Note.GetOwner(note)</span>
+<span class="sd">            &gt;&gt;&gt; print(owner == entry)</span>
+<span class="sd">            True</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get headword of entry that owns the note</span>
+<span class="sd">            &gt;&gt;&gt; if hasattr(owner, &#39;LexemeFormOA&#39;):</span>
+<span class="sd">            ...     headword = project.LexEntry.GetHeadword(owner)</span>
+<span class="sd">            ...     print(f&quot;Note on entry: {headword}&quot;)</span>
+<span class="sd">            Note on entry: run</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns the direct owner object</span>
+<span class="sd">            - For replies, returns the parent note, not the original object</span>
+<span class="sd">            - Use BeginObjectRA for the annotated object reference</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+
+        <span class="c1"># .Owner is on every ICmObject; no hasattr guard needed. The</span>
+        <span class="c1"># previous BeginObjectRA fallback was unreachable. (issue #133</span>
+        <span class="c1"># sweep -- BeginObjectRA is exposed as the annotated-object</span>
+        <span class="c1"># reference via separate accessors.)</span>
+        <span class="k">return</span> <span class="n">note</span><span class="o">.</span><span class="n">Owner</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">note</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID of a note.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            note: The ICmBaseAnnotation (note) object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.Guid: The GUID of the note.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If note is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; note = project.Note.Create(entry, &quot;Important note&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; guid = project.Note.GetGuid(note)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Note GUID: {guid}&quot;)</span>
+<span class="sd">            Note GUID: 12345678-1234-1234-1234-123456789abc</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUIDs are globally unique identifiers</span>
+<span class="sd">            - Persistent across project versions</span>
+<span class="sd">            - Use for external references and tracking</span>
+<span class="sd">            - Same GUID across different copies of the project</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetOwner, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">note</span><span class="o">.</span><span class="n">Guid</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS for notes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__FindAnnotationDefn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find an annotation definition by name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the annotation definition to find.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnnotationDefn: The annotation definition, or None if not found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get annotation definition list</span>
+        <span class="n">anno_defn_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LangProject</span><span class="o">.</span><span class="n">AnnotationDefsOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">anno_defn_list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Search through possibilities</span>
+        <span class="k">for</span> <span class="n">defn</span> <span class="ow">in</span> <span class="n">anno_defn_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
+            <span class="n">defn_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">defn</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">defn_name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">defn</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Notebook.NoteOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

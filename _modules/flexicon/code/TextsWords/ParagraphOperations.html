@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.TextsWords.ParagraphOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.TextsWords.ParagraphOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.TextsWords.ParagraphOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ParagraphOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ParagraphOperations</span>
+<span class="c1">#          Paragraph CRUD operations for FieldWorks Language Explorer projects</span>
+<span class="c1">#          via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright Craig Farrow, 2008 - 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IText</span><span class="p">,</span>
+    <span class="n">IStTxtPara</span><span class="p">,</span>
+    <span class="n">IStTxtParaFactory</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+
+<div class="viewcode-block" id="ParagraphOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.ParagraphOperations.ParagraphOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParagraphOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Paragraph CRUD operations for managing FLEx paragraph objects.</span>
+
+<span class="sd">    This class provides methods for creating, reading, updating, and deleting</span>
+<span class="sd">    paragraphs within texts in a FieldWorks Language Explorer project.</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Access through the Paragraphs property</span>
+<span class="sd">        para_ops = ParagraphOperations(project)</span>
+
+<span class="sd">        # Or if integrated into FLExProject:</span>
+<span class="sd">        # text = project.Texts.Create(&quot;Genesis&quot;)</span>
+<span class="sd">        # para = project.Paragraphs.Create(text, &quot;In the beginning...&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ParagraphOperations with a FLEx project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Specify which sequence to reorder for paragraph segments.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">SegmentsOS</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper for writing system handles.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Writing system handle or None for default vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetTextObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve text_or_hvo to IText object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IText: The text object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the object doesn&#39;t exist or isn&#39;t a valid text.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">,</span> <span class="s2">&quot;text_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">IText</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">InvalidCastException</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid text HVO: </span><span class="si">{</span><span class="n">text_or_hvo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+        <span class="k">return</span> <span class="n">text_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetParagraphObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">para_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve para_or_hvo to IStTxtPara object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            para_or_hvo: Either an IStTxtPara object or its HVO (integer).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IStTxtPara: The paragraph object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If para_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the object doesn&#39;t exist or isn&#39;t a valid paragraph.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="s2">&quot;para_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">para_or_hvo</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">IStTxtPara</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">InvalidCastException</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid paragraph HVO: </span><span class="si">{</span><span class="n">para_or_hvo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+        <span class="k">return</span> <span class="n">para_or_hvo</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new paragraph and append it to a text.</span>
+
+<span class="sd">        Creates a new paragraph with the specified content and adds it to the end</span>
+<span class="sd">        of the text&#39;s paragraph collection. The paragraph will be created in the</span>
+<span class="sd">        specified writing system or the default vernacular writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+<span class="sd">            content (str): The text content for the new paragraph. Must be non-empty.</span>
+<span class="sd">            wsHandle (int, optional): Writing system handle. If None, uses the</span>
+<span class="sd">                default vernacular writing system. Can also be a language tag string.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IStTxtPara: The newly created paragraph object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo or content is None.</span>
+<span class="sd">            FP_ParameterError: If text has no StText contents, or content is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create a paragraph in a text</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Texts.Create(&quot;Genesis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; para = project.Paragraphs.Create(text, &quot;In the beginning...&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Paragraphs.GetText(para))</span>
+<span class="sd">            In the beginning...</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; ws_handle = project.WSHandle(&#39;en&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; para2 = project.Paragraphs.Create(text, &quot;Chapter 2&quot;, ws_handle)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, InsertAt, GetAll, SetText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">)</span>
+
+        <span class="n">content_str</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">content_str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Content cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Validate text has ContentsOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Text has no StText contents&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get the writing system handle</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create paragraph&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the new paragraph using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTxtParaFactory</span><span class="p">)</span>
+            <span class="n">para</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to text&#39;s paragraphs collection</span>
+            <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">para</span><span class="p">)</span>
+
+            <span class="c1"># Set the content</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">content_str</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
+
+            <span class="k">return</span> <span class="n">para</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a paragraph from its text.</span>
+
+<span class="sd">        Removes the paragraph from its parent text&#39;s paragraph collection. This</span>
+<span class="sd">        will also delete all segments and other data associated with the paragraph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paragraph_or_hvo: Either an IStTxtPara object or its HVO (integer identifier).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If paragraph_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the paragraph does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Delete a paragraph</span>
+<span class="sd">            &gt;&gt;&gt; para = list(project.Paragraphs.GetAll(text))[0]</span>
+<span class="sd">            &gt;&gt;&gt; project.Paragraphs.Delete(para)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Delete by HVO</span>
+<span class="sd">            &gt;&gt;&gt; project.Paragraphs.Delete(para_hvo)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - All segments in the paragraph will also be deleted</span>
+<span class="sd">            - References to the paragraph from other objects may become invalid</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll, InsertAt</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">para_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Cast owner to its concrete IStText so ParagraphsOS is reachable.</span>
+        <span class="c1"># Raw para.Owner is typed as ICmObject and</span>
+        <span class="c1"># hasattr(...,&quot;ParagraphsOS&quot;) returns False there, which is why</span>
+        <span class="c1"># the prior implementation always fell through to the else branch</span>
+        <span class="c1"># and spuriously raised even on perfectly valid paragraphs.</span>
+        <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">para_obj</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Paragraph has no valid owner or cannot be removed&quot;</span><span class="p">)</span>
+        <span class="n">owner</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">para_obj</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a paragraph, creating a new paragraph with the same content.</span>
+
+<span class="sd">        This method creates a copy of an existing paragraph. With deep=True (default),</span>
+<span class="sd">        all segments are also duplicated (though segments typically need re-parsing).</span>
+<span class="sd">        With deep=False, only the paragraph text is duplicated.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: Either an IStTxtPara object or its HVO (integer identifier)</span>
+<span class="sd">            insert_after (bool): If True, insert the duplicate after the original</span>
+<span class="sd">                paragraph in the text. If False, append to the end of the text.</span>
+<span class="sd">            deep (bool): If True (default), also duplicate all segments (though they</span>
+<span class="sd">                may need re-parsing). If False, only duplicate the paragraph text.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IStTxtPara: The newly created duplicate paragraph</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the paragraph does not exist or is invalid, or</span>
+<span class="sd">                if the paragraph has no valid owner text.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Deep duplicate (default: with segments, though they need re-parsing)</span>
+<span class="sd">            &gt;&gt;&gt; para = list(project.Paragraphs.GetAll(text))[0]</span>
+<span class="sd">            &gt;&gt;&gt; duplicate = project.Paragraphs.Duplicate(para, insert_after=True)  # deep=True by default</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Paragraphs.GetText(duplicate))</span>
+<span class="sd">            In the beginning...</span>
+
+<span class="sd">            &gt;&gt;&gt; # Shallow duplicate (paragraph text only)</span>
+<span class="sd">            &gt;&gt;&gt; duplicate = project.Paragraphs.Duplicate(para, deep=False)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - The duplicate will have identical content but a new GUID</span>
+<span class="sd">            - Segments in duplicated paragraphs will need re-parsing for analyses</span>
+<span class="sd">            - insert_after=True inserts immediately after the original paragraph</span>
+<span class="sd">            - deep=True duplicates segments, but they may not have valid analyses</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Duplicated paragraph is added to the same text as the original</span>
+<span class="sd">            - New GUID is auto-generated for the duplicate</span>
+<span class="sd">            - Text content is copied in the same writing system</span>
+<span class="sd">            - With deep=True, segments are created but analyses are not copied</span>
+<span class="sd">            - Paragraph is inserted after original if insert_after=True</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, InsertAt, project.Segments.Duplicate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">para_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Cast owner to its concrete IStText so ParagraphsOS is reachable.</span>
+        <span class="c1"># Raw para_obj.Owner is typed as ICmObject; hasattr(..., &quot;ParagraphsOS&quot;)</span>
+        <span class="c1"># returns False there, silently no-opping Duplicate.</span>
+        <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">para_obj</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Paragraph has no valid owner text&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get parent IText — StText.Owner is the IText container.</span>
+        <span class="c1"># Cast via IText so ContentsOA and ParagraphsOS are accessible when</span>
+        <span class="c1"># the result is passed to InsertAt / Create.</span>
+        <span class="n">parent_text</span> <span class="o">=</span> <span class="n">IText</span><span class="p">(</span><span class="n">owner</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span> <span class="k">if</span> <span class="n">owner</span><span class="o">.</span><span class="n">Owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">parent_text</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Cannot determine parent text for paragraph&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source properties</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">para_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetText</span><span class="p">(</span><span class="n">para_obj</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate paragraph&quot;</span><span class="p">):</span>
+            <span class="c1"># Determine insertion position</span>
+            <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                <span class="c1"># Find the index of the current paragraph</span>
+                <span class="n">para_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">owner</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">current_index</span> <span class="o">=</span> <span class="n">para_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">para_obj</span><span class="p">)</span>
+                    <span class="n">insert_index</span> <span class="o">=</span> <span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="c1"># Paragraph not found in list, append to end</span>
+                    <span class="n">insert_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">para_list</span><span class="p">)</span>
+
+                <span class="c1"># Insert at position</span>
+                <span class="n">new_para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">InsertAt</span><span class="p">(</span><span class="n">parent_text</span><span class="p">,</span> <span class="n">insert_index</span><span class="p">,</span> <span class="n">para_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Append to end</span>
+                <span class="n">new_para</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">parent_text</span><span class="p">,</span> <span class="n">para_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+            <span class="c1"># Deep duplication: duplicate all segments</span>
+            <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+                <span class="n">segments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetSegments</span><span class="p">(</span><span class="n">para_obj</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">segments</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">segment</span><span class="p">,</span> <span class="s2">&quot;BaselineText&quot;</span><span class="p">):</span>
+                        <span class="n">seg_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">segment</span><span class="o">.</span><span class="n">BaselineText</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+                        <span class="k">if</span> <span class="n">seg_text</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s2">&quot;Segments&quot;</span><span class="p">):</span>
+                            <span class="c1"># AppendSentence edits Contents first then adds the segment,</span>
+                            <span class="c1"># matching the correct LCM idiom. It also auto-inserts a</span>
+                            <span class="c1"># sentence terminator when the paragraph does not already</span>
+                            <span class="c1"># end with one, so seg_text is passed as-is.</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Segments</span><span class="o">.</span><span class="n">AppendSentence</span><span class="p">(</span><span class="n">new_para</span><span class="p">,</span> <span class="n">seg_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_para</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all syncable properties of a paragraph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The IStTxtPara object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary of syncable properties with their values.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; props = project.Paragraphs.GetSyncableProperties(para)</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;Contents&#39;])</span>
+<span class="sd">            {&#39;en&#39;: &#39;In the beginning...&#39;}</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Contents is a TsString property (returned as dict with WS keys)</span>
+<span class="sd">            - Does NOT include owned sequences (segments) - those are children</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># TsString property - Contents (paragraph text)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Contents&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">Contents</span><span class="p">:</span>
+            <span class="c1"># Convert TsString to dict with WS keys</span>
+            <span class="n">ws_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Contents</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                <span class="c1"># Get the writing system of the TsString</span>
+                <span class="n">ws</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">get_WritingSystemAt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">Length</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">ws</span><span class="p">:</span>
+                    <span class="c1"># Find the WritingSystemDefinition with this handle to get its ID</span>
+                    <span class="n">ws_def</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()</span> <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">Handle</span> <span class="o">==</span> <span class="n">ws</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">ws_def</span><span class="p">:</span>
+                        <span class="n">ws_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Contents&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ws_dict</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two paragraphs for differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First paragraph object (from project 1)</span>
+<span class="sd">            item2: Second paragraph object (from project 2)</span>
+<span class="sd">            ops1: Optional ParagraphOperations instance for project 1 (defaults to self)</span>
+<span class="sd">            ops2: Optional ParagraphOperations instance for project 2 (defaults to self)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict)</span>
+<span class="sd">                - is_different (bool): True if paragraphs differ, False if identical</span>
+<span class="sd">                - differences_dict (dict): Maps property names to (value1, val2) tuples</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = ops1.CompareTo(para1, para2, ops1, ops2)</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} != {val2}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Compares paragraph Contents (text)</span>
+<span class="sd">            - Empty/null values are treated as equivalent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Get all property keys from both items</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="c1"># Compare values</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_CompareValues</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">):</span>
+                <span class="c1"># Values are different</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all paragraphs in a text.</span>
+
+<span class="sd">        Returns a generator that yields all paragraph objects in the text&#39;s</span>
+<span class="sd">        paragraph collection in order.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            IStTxtPara: Each paragraph object in the text.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Iterate over all paragraphs</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Texts.Find(&quot;Genesis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for para in project.Paragraphs.GetAll(text):</span>
+<span class="sd">            ...     text = project.Paragraphs.GetText(para)</span>
+<span class="sd">            ...     print(f&quot;Paragraph: {text[:50]}...&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get as list</span>
+<span class="sd">            &gt;&gt;&gt; all_paras = list(project.Paragraphs.GetAll(text))</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Total paragraphs: {len(all_paras)}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - If the text has no contents, yields nothing</span>
+<span class="sd">            - Paragraphs are yielded in the order they appear in the text</span>
+<span class="sd">            - Use list() to convert to a list if you need random access</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetSegmentCount</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># If text has no contents, return empty</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Yield each paragraph, cast to IStTxtPara to ensure SegmentsOS is accessible</span>
+        <span class="k">for</span> <span class="n">para</span> <span class="ow">in</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">IStTxtPara</span><span class="p">(</span><span class="n">para</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the text content of a paragraph.</span>
+
+<span class="sd">        Retrieves the text content in the specified writing system, or the default</span>
+<span class="sd">        vernacular writing system if not specified.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paragraph_or_hvo: Either an IStTxtPara object or its HVO (integer identifier).</span>
+<span class="sd">            wsHandle (int, optional): Writing system handle. If None, uses the</span>
+<span class="sd">                default vernacular writing system. Can also be a language tag string.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The text content of the paragraph. Returns empty string if no</span>
+<span class="sd">                content is set for that writing system.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If paragraph_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the paragraph does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = list(project.Paragraphs.GetAll(text))[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get text in default vernacular WS</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Paragraphs.GetText(para)</span>
+<span class="sd">            &gt;&gt;&gt; print(text)</span>
+<span class="sd">            In the beginning...</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get text in specific WS</span>
+<span class="sd">            &gt;&gt;&gt; ws_handle = project.WSHandle(&#39;en&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; text_en = project.Paragraphs.GetText(para, ws_handle)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetText, Create, GetSegments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">para_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Get the text content</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">para_obj</span><span class="o">.</span><span class="n">Contents</span><span class="o">.</span><span class="n">Text</span> <span class="k">if</span> <span class="n">para_obj</span><span class="o">.</span><span class="n">Contents</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the text content of a paragraph.</span>
+
+<span class="sd">        Updates the paragraph&#39;s text content in the specified writing system, or</span>
+<span class="sd">        the default vernacular writing system if not specified.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paragraph_or_hvo: Either an IStTxtPara object or its HVO (integer identifier).</span>
+<span class="sd">            content (str): The new text content for the paragraph. Must be non-empty.</span>
+<span class="sd">            wsHandle (int, optional): Writing system handle. If None, uses the</span>
+<span class="sd">                default vernacular writing system. Can also be a language tag string.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If paragraph_or_hvo or content is None.</span>
+<span class="sd">            FP_ParameterError: If the paragraph does not exist, is invalid, or</span>
+<span class="sd">                content is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = list(project.Paragraphs.GetAll(text))[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Set text in default vernacular WS</span>
+<span class="sd">            &gt;&gt;&gt; project.Paragraphs.SetText(para, &quot;Updated paragraph text.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Set text in specific WS</span>
+<span class="sd">            &gt;&gt;&gt; ws_handle = project.WSHandle(&#39;en&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Paragraphs.SetText(para, &quot;English text&quot;, ws_handle)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This will replace all existing content in the paragraph</span>
+<span class="sd">            - Existing segments may be invalidated and need re-analysis</span>
+<span class="sd">            - Use with caution on analyzed texts</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetText, Create, InsertAt</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">)</span>
+
+        <span class="n">content_str</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">content_str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Content cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">para_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Set the content</span>
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">content_str</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">para_obj</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSegments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all segments in a paragraph.</span>
+
+<span class="sd">        Segments are the individual units (typically sentences) within a paragraph</span>
+<span class="sd">        that can have their own analyses and translations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paragraph_or_hvo: Either an IStTxtPara object or its HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: A list of ISegment objects in the paragraph.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If paragraph_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the paragraph does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = list(project.Paragraphs.GetAll(text))[0]</span>
+<span class="sd">            &gt;&gt;&gt; segments = project.Paragraphs.GetSegments(para)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Paragraph has {len(segments)} segments&quot;)</span>
+<span class="sd">            Paragraph has 3 segments</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Iterate over segments</span>
+<span class="sd">            &gt;&gt;&gt; for seg in segments:</span>
+<span class="sd">            ...     print(seg.BaselineText.Text)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if the paragraph has no segments</span>
+<span class="sd">            - Segments are created during text analysis</span>
+<span class="sd">            - Use GetSegmentCount() for a quick count without creating a list</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSegmentCount, GetText, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">para_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Return list of segments</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">para_obj</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSegmentCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paragraph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of segments in a paragraph.</span>
+
+<span class="sd">        This is more efficient than calling len(GetSegments()) when you only</span>
+<span class="sd">        need the count.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paragraph_or_hvo: Either an IStTxtPara object or its HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The number of segments in the paragraph.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If paragraph_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the paragraph does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; para = list(project.Paragraphs.GetAll(text))[0]</span>
+<span class="sd">            &gt;&gt;&gt; count = project.Paragraphs.GetSegmentCount(para)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Paragraph has {count} segments&quot;)</span>
+<span class="sd">            Paragraph has 3 segments</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns 0 if the paragraph has no segments</span>
+<span class="sd">            - More efficient than getting all segments when you only need the count</span>
+<span class="sd">            - Segments are created during text analysis</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSegments, GetText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">para_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetParagraphObject</span><span class="p">(</span><span class="n">paragraph_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Return segment count</span>
+        <span class="k">return</span> <span class="n">para_obj</span><span class="o">.</span><span class="n">SegmentsOS</span><span class="o">.</span><span class="n">Count</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">InsertAt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Insert a new paragraph at a specific position in a text.</span>
+
+<span class="sd">        Creates a new paragraph with the specified content and inserts it at the</span>
+<span class="sd">        given index in the text&#39;s paragraph collection. Existing paragraphs at</span>
+<span class="sd">        that index and after will be shifted down.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+<span class="sd">            index (int): The position at which to insert the paragraph (0-based).</span>
+<span class="sd">                Must be between 0 and the current paragraph count (inclusive).</span>
+<span class="sd">            content (str): The text content for the new paragraph. Must be non-empty.</span>
+<span class="sd">            wsHandle (int, optional): Writing system handle. If None, uses the</span>
+<span class="sd">                default vernacular writing system. Can also be a language tag string.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IStTxtPara: The newly created paragraph object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo or content is None.</span>
+<span class="sd">            FP_ParameterError: If text has no StText contents, content is empty,</span>
+<span class="sd">                or index is out of range.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Texts.Find(&quot;Genesis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Insert at beginning</span>
+<span class="sd">            &gt;&gt;&gt; para = project.Paragraphs.InsertAt(text, 0, &quot;Title: Genesis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Insert at end (equivalent to Create)</span>
+<span class="sd">            &gt;&gt;&gt; count = len(list(project.Paragraphs.GetAll(text)))</span>
+<span class="sd">            &gt;&gt;&gt; para2 = project.Paragraphs.InsertAt(text, count, &quot;The end&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Insert in middle</span>
+<span class="sd">            &gt;&gt;&gt; para3 = project.Paragraphs.InsertAt(text, 5, &quot;Chapter 3&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Index must be in range [0, current_paragraph_count]</span>
+<span class="sd">            - Index equal to paragraph count appends to the end</span>
+<span class="sd">            - Existing paragraphs are shifted, not replaced</span>
+<span class="sd">            - Use Create() to always append to the end</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">)</span>
+
+        <span class="n">content_str</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">content_str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Content cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Validate text has ContentsOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Text has no StText contents&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Validate index range</span>
+        <span class="n">para_count</span> <span class="o">=</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Count</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="n">para_count</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> out of range (0-</span><span class="si">{</span><span class="n">para_count</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get the writing system handle</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Insert paragraph at </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the new paragraph using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTxtParaFactory</span><span class="p">)</span>
+            <span class="n">para</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Insert at the specified index</span>
+            <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">para</span><span class="p">)</span>
+
+            <span class="c1"># Set the content</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">content_str</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">mkstr</span>
+
+            <span class="k">return</span> <span class="n">para</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.TextsWords.ParagraphOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

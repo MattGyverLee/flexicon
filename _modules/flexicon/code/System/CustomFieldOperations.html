@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.System.CustomFieldOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.System.CustomFieldOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.System.CustomFieldOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   CustomFieldOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: CustomFieldOperations</span>
+<span class="c1">#          Custom field management operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ICmObjectRepository</span><span class="p">,</span>
+    <span class="n">ICmPossibilityRepository</span><span class="p">,</span>
+    <span class="n">ILexEntry</span><span class="p">,</span>
+    <span class="n">ILexSense</span><span class="p">,</span>
+    <span class="n">ILexExampleSentence</span><span class="p">,</span>
+    <span class="n">IMoForm</span><span class="p">,</span>
+    <span class="n">LexEntryTags</span><span class="p">,</span>
+    <span class="n">LexSenseTags</span><span class="p">,</span>
+    <span class="n">LexExampleSentenceTags</span><span class="p">,</span>
+    <span class="n">MoFormTags</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Cellar</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CellarPropertyType</span><span class="p">,</span>
+    <span class="n">CellarPropertyTypeFilter</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Infrastructure</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IFwMetaDataCacheManaged</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+    <span class="n">FP_TransactionError</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Import FLExLCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExLCM</span>  <span class="c1"># Fixed: was &quot;from .&quot; (wrong path)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+
+<div class="viewcode-block" id="CustomFieldOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.CustomFieldOperations.CustomFieldOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CustomFieldOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing custom fields in a</span>
+<span class="sd">    FieldWorks project.</span>
+
+<span class="sd">    Custom fields extend the FLEx data model by allowing users to add</span>
+<span class="sd">    additional fields to various object classes (entries, senses, examples,</span>
+<span class="sd">    etc.). These fields can store strings, integers, dates, or references</span>
+<span class="sd">    to lists/objects.</span>
+
+<span class="sd">    Field Types:</span>
+<span class="sd">        - String: Single-line text (one writing system)</span>
+<span class="sd">        - MultiString: Multi-line text (multiple writing systems)</span>
+<span class="sd">        - MultiUnicode: Unicode text (multiple writing systems)</span>
+<span class="sd">        - Integer: Whole number (e.g., frequency counts)</span>
+<span class="sd">        - GenDate: Date with flexible precision</span>
+<span class="sd">        - ReferenceAtom: Single-select from predefined list (dropdown menu)</span>
+<span class="sd">        - ReferenceCollection: Multi-select from predefined list (checkboxes)</span>
+
+<span class="sd">    This class should be accessed via FLExProject.CustomFields property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get all custom fields for entries</span>
+<span class="sd">        entry_fields = project.CustomFields.GetAllFields(&quot;LexEntry&quot;)</span>
+<span class="sd">        for field_id, label in entry_fields:</span>
+<span class="sd">            print(f&quot;Field: {label} (ID: {field_id})&quot;)</span>
+
+<span class="sd">        # Create a new custom field</span>
+<span class="sd">        field_id = project.CustomFields.CreateField(</span>
+<span class="sd">            &quot;LexEntry&quot;,</span>
+<span class="sd">            &quot;DialectVariant&quot;,</span>
+<span class="sd">            &quot;MultiString&quot;,</span>
+<span class="sd">            &quot;vernacular&quot;</span>
+<span class="sd">        )</span>
+
+<span class="sd">        # Get and set field values</span>
+<span class="sd">        entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">        project.CustomFields.SetValue(entry, &quot;DialectVariant&quot;, &quot;runnin&#39;&quot;, &quot;en&quot;)</span>
+<span class="sd">        value = project.CustomFields.GetValue(entry, &quot;DialectVariant&quot;, &quot;en&quot;)</span>
+<span class="sd">        print(value)  # &quot;runnin&#39;&quot;</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize CustomFieldOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Field Definition Management ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllFields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner_class</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all custom fields for a given class.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            owner_class (str): The class name (e.g., &quot;LexEntry&quot;, &quot;LexSense&quot;,</span>
+<span class="sd">                &quot;LexExampleSentence&quot;, &quot;MoForm&quot;)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of tuples (field_id, label) for each custom field</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If owner_class is None</span>
+<span class="sd">            FP_ParameterError: If owner_class is invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get all entry-level custom fields</span>
+<span class="sd">            &gt;&gt;&gt; fields = project.CustomFields.GetAllFields(&quot;LexEntry&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for field_id, label in fields:</span>
+<span class="sd">            ...     print(f&quot;{label}: {field_id}&quot;)</span>
+<span class="sd">            Etymology Source: 5002</span>
+<span class="sd">            Dialect: 5003</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get all sense-level custom fields</span>
+<span class="sd">            &gt;&gt;&gt; sense_fields = project.CustomFields.GetAllFields(&quot;LexSense&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if no custom fields are defined</span>
+<span class="sd">            - Field IDs are unique across the project</span>
+<span class="sd">            - Labels are the display names shown in FLEx UI</span>
+<span class="sd">            - Only returns custom fields, not built-in fields</span>
+<span class="sd">            - Common classes: LexEntry, LexSense, LexExampleSentence, MoForm</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindField, CreateField, GetFieldName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">owner_class</span><span class="p">,</span> <span class="s2">&quot;owner_class&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">owner_class</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">owner_class</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Owner class cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get the class ID</span>
+        <span class="n">class_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetClassID</span><span class="p">(</span><span class="n">owner_class</span><span class="p">)</span>
+
+        <span class="c1"># Get custom fields from metadata cache</span>
+        <span class="n">mdc</span> <span class="o">=</span> <span class="n">IFwMetaDataCacheManaged</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">MetaDataCacheAccessor</span><span class="p">)</span>
+
+        <span class="n">custom_fields</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">flid</span> <span class="ow">in</span> <span class="n">mdc</span><span class="o">.</span><span class="n">GetFields</span><span class="p">(</span><span class="n">class_id</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">CellarPropertyTypeFilter</span><span class="o">.</span><span class="n">All</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetIsCustomField</span><span class="p">(</span><span class="n">flid</span><span class="p">):</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="n">mdc</span><span class="o">.</span><span class="n">GetFieldLabel</span><span class="p">(</span><span class="n">flid</span><span class="p">)</span>
+                <span class="n">custom_fields</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">flid</span><span class="p">,</span> <span class="n">label</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">custom_fields</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateField</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner_class</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">field_type</span><span class="p">,</span> <span class="n">ws_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new custom field.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            owner_class (str): The class name (e.g., &quot;LexEntry&quot;, &quot;LexSense&quot;)</span>
+<span class="sd">            name (str): The field name/label</span>
+<span class="sd">            field_type (str): Field type:</span>
+<span class="sd">                - &quot;String&quot;: Single-line text (one writing system)</span>
+<span class="sd">                - &quot;MultiString&quot;: Multi-line text (multiple writing systems)</span>
+<span class="sd">                - &quot;MultiUnicode&quot;: Unicode text (multiple writing systems)</span>
+<span class="sd">                - &quot;Integer&quot;: Whole number (e.g., frequency counts)</span>
+<span class="sd">                - &quot;GenDate&quot;: Date with flexible precision</span>
+<span class="sd">                - &quot;ReferenceAtom&quot;: Single-select from predefined list (dropdown menu)</span>
+<span class="sd">                - &quot;ReferenceCollection&quot;: Multi-select from predefined list (checkboxes)</span>
+<span class="sd">            ws_type (str, optional): Writing system type for string fields -</span>
+<span class="sd">                &quot;vernacular&quot;, &quot;analysis&quot;, or &quot;all&quot;. Default is &quot;analysis&quot; for</span>
+<span class="sd">                MultiString, None for String.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The field ID of the newly created field</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If required parameters are None</span>
+<span class="sd">            FP_ParameterError: If parameters are invalid or field already exists</span>
+<span class="sd">            FP_TransactionError: If called while a UnitOfWork is open (always</span>
+<span class="sd">                the case in Phase 1 transaction mode). See &quot;Transaction Safety&quot;</span>
+<span class="sd">                below and docs/CUSTOM_FIELDS.md.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create a vernacular multi-string field</span>
+<span class="sd">            &gt;&gt;&gt; field_id = project.CustomFields.CreateField(</span>
+<span class="sd">            ...     &quot;LexEntry&quot;,</span>
+<span class="sd">            ...     &quot;Dialect Variant&quot;,</span>
+<span class="sd">            ...     &quot;MultiString&quot;,</span>
+<span class="sd">            ...     &quot;vernacular&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create an integer field</span>
+<span class="sd">            &gt;&gt;&gt; freq_field = project.CustomFields.CreateField(</span>
+<span class="sd">            ...     &quot;LexEntry&quot;,</span>
+<span class="sd">            ...     &quot;Frequency&quot;,</span>
+<span class="sd">            ...     &quot;Integer&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create a reference to a possibility list</span>
+<span class="sd">            &gt;&gt;&gt; region_field = project.CustomFields.CreateField(</span>
+<span class="sd">            ...     &quot;LexSense&quot;,</span>
+<span class="sd">            ...     &quot;Region&quot;,</span>
+<span class="sd">            ...     &quot;ReferenceAtom&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This operation modifies the project schema</span>
+<span class="sd">            - Field creation is permanent and cannot be easily undone</span>
+<span class="sd">            - Field names must be unique within a class</span>
+<span class="sd">            - Use FLEx UI for complex field setup (lists, etc.)</span>
+
+<span class="sd">        Transaction Safety:</span>
+<span class="sd">            Custom field creation is a SCHEMA mutation and cannot run inside</span>
+<span class="sd">            an open UnitOfWork. In Phase 1 transaction mode (the default),</span>
+<span class="sd">            OpenProject() opens a non-undoable envelope that remains open</span>
+<span class="sd">            until CloseProject(), so CreateField() will refuse with</span>
+<span class="sd">            FP_TransactionError.</span>
+
+<span class="sd">            Bypassing this guard with raw LCM (IFwMetaDataCacheManaged.</span>
+<span class="sd">            AddCustomField) creates the field in memory only; subsequent</span>
+<span class="sd">            SetValue calls appear to succeed but the schema does NOT persist,</span>
+<span class="sd">            producing corrupted records on next FLEx UI open. See</span>
+<span class="sd">            docs/CUSTOM_FIELDS.md for the recommended workflow.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - MultiString supports multiple writing systems</span>
+<span class="sd">            - String supports single writing system</span>
+<span class="sd">            - Integer stores whole numbers</span>
+<span class="sd">            - GenDate stores dates with various precision levels</span>
+<span class="sd">            - ReferenceAtom stores single reference to possibility list</span>
+<span class="sd">            - ReferenceCollection stores multiple references</span>
+<span class="sd">            - Field appears in FLEx UI after creation</span>
+<span class="sd">            - May require FLEx restart to fully integrate</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            DeleteField, GetAllFields, FindField</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">owner_class</span><span class="p">,</span> <span class="s2">&quot;owner_class&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">owner_class</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">field_type</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Parameters cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if field already exists</span>
+        <span class="n">existing_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindField</span><span class="p">(</span><span class="n">owner_class</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">existing_field</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom field &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; already exists for </span><span class="si">{</span><span class="n">owner_class</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Validate field type</span>
+        <span class="n">valid_types</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;String&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Integer&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;GenDate&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;MultiString&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;MultiUnicode&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ReferenceAtom&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ReferenceCollection&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">field_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_types</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid field type &#39;</span><span class="si">{</span><span class="n">field_type</span><span class="si">}</span><span class="s2">&#39;. &quot;</span> <span class="sa">f</span><span class="s2">&quot;Valid types: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">valid_types</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Refuse if an open UnitOfWork would make the schema mutation</span>
+        <span class="c1"># unsafe. In Phase 1 mode (the default), OpenProject() opens a</span>
+        <span class="c1"># non-undoable envelope at BeginNonUndoableTask that remains open</span>
+        <span class="c1"># until CloseProject(), so this check effectively always fires.</span>
+        <span class="c1">#</span>
+        <span class="c1"># The LCM contract forbids schema mutation inside a data UoW</span>
+        <span class="c1"># (AddCustomField + an active task -&gt; InvalidOperationException at</span>
+        <span class="c1"># UndoStack.CheckNotProcessingDataChanges). Bypassing the wrapper</span>
+        <span class="c1"># with raw IFwMetaDataCacheManaged.AddCustomField creates the field</span>
+        <span class="c1"># in memory only; SetValue calls then write data referencing a</span>
+        <span class="c1"># ghost field that never persists, producing project corruption on</span>
+        <span class="c1"># next FLEx UI open (issue #21).</span>
+        <span class="c1">#</span>
+        <span class="c1"># Until Phase 2 transaction mode lands and a safe schema-mutation</span>
+        <span class="c1"># path is characterized, the correct workflow is:</span>
+        <span class="c1">#   1. Create custom fields via FLEx UI (Tools &gt; Configure &gt; Custom Fields)</span>
+        <span class="c1">#   2. Then run bootstrap scripts that populate values via SetValue</span>
+        <span class="c1"># See docs/CUSTOM_FIELDS.md.</span>
+        <span class="n">action_handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ActionHandlerAccessor</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">action_handler</span><span class="p">,</span> <span class="s2">&quot;CurrentDepth&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_TransactionError</span><span class="p">(</span>
+                <span class="s2">&quot;CreateField cannot run inside an open UnitOfWork. &quot;</span>
+                <span class="s2">&quot;Custom field creation is a schema mutation that LCM forbids &quot;</span>
+                <span class="s2">&quot;inside an active task (raises InvalidOperationException at &quot;</span>
+                <span class="s2">&quot;UndoStack.CheckNotProcessingDataChanges). In Phase 1 transaction &quot;</span>
+                <span class="s2">&quot;mode this UoW is opened at OpenProject() and stays open until &quot;</span>
+                <span class="s2">&quot;CloseProject(), so schema mutations are not possible via the &quot;</span>
+                <span class="s2">&quot;wrapper. &quot;</span>
+                <span class="s2">&quot;Fix: create custom fields through the FLEx UI &quot;</span>
+                <span class="s2">&quot;(Tools &gt; Configure &gt; Custom Fields) before running bootstrap &quot;</span>
+                <span class="s2">&quot;scripts that populate values. &quot;</span>
+                <span class="s2">&quot;Do NOT bypass this guard with raw &quot;</span>
+                <span class="s2">&quot;IFwMetaDataCacheManaged.AddCustomField: the field is created &quot;</span>
+                <span class="s2">&quot;in memory only, SetValue writes data referencing a ghost field, &quot;</span>
+                <span class="s2">&quot;and the project corrupts on next FLEx UI open (issue #21). &quot;</span>
+                <span class="s2">&quot;See docs/CUSTOM_FIELDS.md.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Unreachable in Phase 1 mode; placeholder for Phase 2 work.</span>
+        <span class="k">raise</span> <span class="n">FP_TransactionError</span><span class="p">(</span>
+            <span class="s2">&quot;CreateField is not yet implemented for the no-UoW path. &quot;</span>
+            <span class="s2">&quot;Pending Phase 2 transaction mode (see FLExProject.UndoableOperation). &quot;</span>
+            <span class="s2">&quot;Until then, create custom fields through the FLEx UI: &quot;</span>
+            <span class="s2">&quot;Tools &gt; Configure &gt; Custom Fields. See docs/CUSTOM_FIELDS.md.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">DeleteField</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a custom field from the project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_id (int): The field ID to delete</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If field_id is None</span>
+<span class="sd">            FP_ParameterError: If field_id is invalid or is not a custom field</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; field_id = project.CustomFields.FindField(&quot;LexEntry&quot;, &quot;OldField&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if field_id:</span>
+<span class="sd">            ...     project.CustomFields.DeleteField(field_id)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - All data stored in this field will be lost</span>
+<span class="sd">            - Cannot be undone</span>
+<span class="sd">            - Field deletion affects all objects in the project</span>
+<span class="sd">            - Use FLEx UI for safe field management</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only custom fields can be deleted (not built-in fields)</span>
+<span class="sd">            - Field is removed from project schema</span>
+<span class="sd">            - Data stored in field is permanently deleted</span>
+<span class="sd">            - Recommended to use FLEx UI: Tools &gt; Configure &gt; Custom Fields</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateField, GetAllFields</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">field_id</span><span class="p">,</span> <span class="s2">&quot;field_id&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Verify it&#39;s a custom field</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetIsCustomField</span><span class="p">(</span><span class="n">field_id</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Field ID does not refer to a custom field&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Note: Actual deletion of custom fields through LCM API is complex</span>
+        <span class="c1"># and should be done through FLEx UI for safety</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Custom field deletion must be done through FLEx UI: &quot;</span> <span class="s2">&quot;Tools &gt; Configure &gt; Custom Fields&quot;</span>
+        <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindField</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner_class</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a custom field by owner class and name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            owner_class (str): The class name (e.g., &quot;LexEntry&quot;, &quot;LexSense&quot;)</span>
+<span class="sd">            name (str): The field name/label to search for (case-sensitive)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int or None: The field ID if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If owner_class or name is None</span>
+<span class="sd">            FP_ParameterError: If owner_class is invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find entry-level custom field</span>
+<span class="sd">            &gt;&gt;&gt; field_id = project.CustomFields.FindField(&quot;LexEntry&quot;, &quot;Etymology Source&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if field_id:</span>
+<span class="sd">            ...     print(f&quot;Found field: {field_id}&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;Field not found&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find sense-level custom field</span>
+<span class="sd">            &gt;&gt;&gt; domain_field = project.CustomFields.FindField(&quot;LexSense&quot;, &quot;Semantic Domain Notes&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-sensitive</span>
+<span class="sd">            - Returns None if field doesn&#39;t exist (doesn&#39;t raise exception)</span>
+<span class="sd">            - Only searches custom fields, not built-in fields</span>
+<span class="sd">            - Field name must match exactly (including spaces, punctuation)</span>
+<span class="sd">            - Use GetAllFields() to see all available field names</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAllFields, GetFieldName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">owner_class</span><span class="p">,</span> <span class="s2">&quot;owner_class&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">owner_class</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Get all custom fields and search by name. NFD-normalize both</span>
+        <span class="c1"># sides: FLEx stores Unicode in NFD, Python source is typically</span>
+        <span class="c1"># NFC; a user looking up &quot;Etymologie Detaillee&quot; with NFC e-acute</span>
+        <span class="c1"># would silently miss against NFD-stored data. (issue #125)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAllFields</span><span class="p">(</span><span class="n">owner_class</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">field_id</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">field_id</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFieldType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the data type of a custom field.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_id (int): The field ID</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            CellarPropertyType: The field type enumeration value</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If field_id is None</span>
+<span class="sd">            FP_ParameterError: If field_id is invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; field_id = project.CustomFields.FindField(&quot;LexEntry&quot;, &quot;Frequency&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; field_type = project.CustomFields.GetFieldType(field_id)</span>
+<span class="sd">            &gt;&gt;&gt; if field_type == CellarPropertyType.Integer:</span>
+<span class="sd">            ...     print(&quot;This is an integer field&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check if field is multi-string type</span>
+<span class="sd">            &gt;&gt;&gt; if project.CustomFields.IsMultiString(field_id):</span>
+<span class="sd">            ...     print(&quot;This field supports multiple writing systems&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns CellarPropertyType enumeration value</span>
+<span class="sd">            - Common types: String, MultiString, MultiUnicode, Integer,</span>
+<span class="sd">              GenDate, ReferenceAtom, ReferenceCollection</span>
+<span class="sd">            - Use IsMultiString(), IsListType() helper methods for checks</span>
+<span class="sd">            - Field type cannot be changed after creation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsMultiString, IsListType, GetFieldName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">field_id</span><span class="p">,</span> <span class="s2">&quot;field_id&quot;</span><span class="p">)</span>
+
+        <span class="n">mdc</span> <span class="o">=</span> <span class="n">IFwMetaDataCacheManaged</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">MetaDataCacheAccessor</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">field_type</span> <span class="o">=</span> <span class="n">CellarPropertyType</span><span class="p">(</span><span class="n">mdc</span><span class="o">.</span><span class="n">GetFieldType</span><span class="p">(</span><span class="n">field_id</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">field_type</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">Exception</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid field ID&quot;</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFieldName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name/label of a custom field.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_id (int): The field ID</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The field name/label</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If field_id is None</span>
+<span class="sd">            FP_ParameterError: If field_id is invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; field_id = 5002</span>
+<span class="sd">            &gt;&gt;&gt; name = project.CustomFields.GetFieldName(field_id)</span>
+<span class="sd">            &gt;&gt;&gt; print(name)</span>
+<span class="sd">            Etymology Source</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns the display label shown in FLEx UI</span>
+<span class="sd">            - Name is user-defined when field is created</span>
+<span class="sd">            - Returns empty string if field has no label (rare)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetFieldName, FindField, GetAllFields</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">field_id</span><span class="p">,</span> <span class="s2">&quot;field_id&quot;</span><span class="p">)</span>
+
+        <span class="n">mdc</span> <span class="o">=</span> <span class="n">IFwMetaDataCacheManaged</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">MetaDataCacheAccessor</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mdc</span><span class="o">.</span><span class="n">GetFieldLabel</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">Exception</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid field ID&quot;</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetFieldName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_id</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set/rename the label of a custom field.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_id (int): The field ID</span>
+<span class="sd">            name (str): The new field name/label</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If field_id or name is None</span>
+<span class="sd">            FP_ParameterError: If field_id is invalid or name is empty</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; field_id = project.CustomFields.FindField(&quot;LexEntry&quot;, &quot;OldName&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if field_id:</span>
+<span class="sd">            ...     project.CustomFields.SetFieldName(field_id, &quot;NewName&quot;)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Renaming fields may affect exports and scripts</span>
+<span class="sd">            - Other users/systems may reference fields by name</span>
+<span class="sd">            - Consider backward compatibility before renaming</span>
+<span class="sd">            - Recommended to use FLEx UI for field management</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Changes the display label in FLEx UI</span>
+<span class="sd">            - Does not affect field ID (which remains constant)</span>
+<span class="sd">            - Does not affect stored data</span>
+<span class="sd">            - Name change is immediate</span>
+<span class="sd">            - Should be unique within the class (not enforced)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetFieldName, FindField</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">field_id</span><span class="p">,</span> <span class="s2">&quot;field_id&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Field name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Verify field exists</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">GetFieldName</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">Exception</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid field ID&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Note: Renaming custom fields through LCM API is not commonly supported</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Custom field renaming must be done through FLEx UI: &quot;</span> <span class="s2">&quot;Tools &gt; Configure &gt; Custom Fields&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># --- Field Values (Generic) ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the value of a custom field for an object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The object (ILexEntry, ILexSense, etc.) or HVO</span>
+<span class="sd">            field_name (str): The custom field name</span>
+<span class="sd">            ws (str or int, optional): Writing system (tag or handle) for</span>
+<span class="sd">                multi-string fields. If None, returns best analysis/vernacular.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Value depends on field type:</span>
+<span class="sd">            - String/MultiString: str</span>
+<span class="sd">            - Integer: int</span>
+<span class="sd">            - ReferenceAtom: str (short name of referenced item)</span>
+<span class="sd">            - ReferenceCollection: list of str</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If obj or field_name is None</span>
+<span class="sd">            FP_ParameterError: If field not found or obj invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Get string field value</span>
+<span class="sd">            &gt;&gt;&gt; etym = project.CustomFields.GetValue(entry, &quot;Etymology Source&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(etym)</span>
+<span class="sd">            Latin currere</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get multi-string field with specific WS</span>
+<span class="sd">            &gt;&gt;&gt; dialect = project.CustomFields.GetValue(entry, &quot;Dialect&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(dialect)</span>
+<span class="sd">            runnin&#39;</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get integer field</span>
+<span class="sd">            &gt;&gt;&gt; freq = project.CustomFields.GetValue(entry, &quot;Frequency&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(freq)</span>
+<span class="sd">            42</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get list field</span>
+<span class="sd">            &gt;&gt;&gt; regions = project.CustomFields.GetValue(sense, &quot;Regions&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(regions)</span>
+<span class="sd">            [&#39;North&#39;, &#39;East&#39;]</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string/0/[] if field is empty</span>
+<span class="sd">            - For multi-string fields without ws specified, returns best alternative</span>
+<span class="sd">            - For list fields (ReferenceCollection), returns list of short names</span>
+<span class="sd">            - Field must exist for the object&#39;s class</span>
+<span class="sd">            - Use GetFieldType() to determine expected return type</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetValue, ClearValue, GetListValues</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;obj&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve object and get class name</span>
+        <span class="n">hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetHvo</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span>
+
+        <span class="c1"># Find the field</span>
+        <span class="n">field_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindField</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; not found for </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get the value using existing FLExProject method</span>
+        <span class="n">ws_handle</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">ws</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetWSHandle</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetCustomFieldValue</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_id</span><span class="p">,</span> <span class="n">ws_handle</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the value of a custom field for an object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The object (ILexEntry, ILexSense, etc.) or HVO</span>
+<span class="sd">            field_name (str): The custom field name</span>
+<span class="sd">            value: The value to set (type depends on field type)</span>
+<span class="sd">            ws (str or int, optional): Writing system (tag or handle) for</span>
+<span class="sd">                multi-string fields. Defaults to default analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If obj or field_name is None</span>
+<span class="sd">            FP_ParameterError: If field not found, obj invalid, or value</span>
+<span class="sd">                type doesn&#39;t match field type</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Set string field</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.SetValue(entry, &quot;Etymology Source&quot;,</span>
+<span class="sd">            ...                                &quot;Latin currere&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set multi-string field with specific WS</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.SetValue(entry, &quot;Dialect&quot;, &quot;runnin&#39;&quot;, &quot;en&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set integer field</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.SetValue(entry, &quot;Frequency&quot;, 42)</span>
+
+<span class="sd">            &gt;&gt;&gt; # For list fields, use SetListFieldSingle/Multiple</span>
+<span class="sd">            &gt;&gt;&gt; # or AddListValue/RemoveListValue</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Value type must match field type (string, int, etc.)</span>
+<span class="sd">            - For multi-string fields, ws parameter is required or uses default</span>
+<span class="sd">            - For list fields (Reference types), use list-specific methods</span>
+<span class="sd">            - Integer fields accept int values</span>
+<span class="sd">            - String/MultiString fields accept str values</span>
+<span class="sd">            - Overwrites existing value</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetValue, ClearValue, AddListValue, SetListFieldSingle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;obj&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve object and get class name</span>
+        <span class="n">hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetHvo</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span>
+
+        <span class="c1"># Find the field</span>
+        <span class="n">field_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindField</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; not found for </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Determine field type and use appropriate setter</span>
+        <span class="n">field_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetFieldType</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">field_type</span> <span class="o">==</span> <span class="n">CellarPropertyType</span><span class="o">.</span><span class="n">Integer</span><span class="p">:</span>
+            <span class="c1"># Integer field</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Value must be an integer&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LexiconSetFieldInteger</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_id</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">field_type</span> <span class="ow">in</span> <span class="n">FLExLCM</span><span class="o">.</span><span class="n">CellarAllStringTypes</span><span class="p">:</span>
+            <span class="c1"># String or MultiString field</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Value must be a string&quot;</span><span class="p">)</span>
+            <span class="n">ws_handle</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">ws</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ws_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetWSHandle</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LexiconSetFieldText</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_id</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">ws_handle</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;SetValue only supports String, MultiString, and Integer fields. &quot;</span>
+                <span class="s2">&quot;For list fields, use AddListValue or SetListFieldSingle/Multiple.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ClearValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clear the value of a custom field for an object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The object (ILexEntry, ILexSense, etc.) or HVO</span>
+<span class="sd">            field_name (str): The custom field name</span>
+<span class="sd">            ws (str or int, optional): Writing system for multi-string fields.</span>
+<span class="sd">                If None, clears all writing systems.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If obj or field_name is None</span>
+<span class="sd">            FP_ParameterError: If field not found or obj invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Clear a field value</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.ClearValue(entry, &quot;Etymology Source&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear specific writing system in multi-string field</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.ClearValue(entry, &quot;Dialect&quot;, &quot;en&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For multi-string fields without ws, clears all writing systems</span>
+<span class="sd">            - For single-string fields, ws parameter is ignored</span>
+<span class="sd">            - Sets field to empty/null value</span>
+<span class="sd">            - For integer fields, sets to 0</span>
+<span class="sd">            - For list fields, removes all references</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetValue, GetValue</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;obj&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve object and get class name</span>
+        <span class="n">hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetHvo</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span>
+
+        <span class="c1"># Find the field</span>
+        <span class="n">field_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindField</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; not found for </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get field type to determine how to clear</span>
+        <span class="n">mdc</span> <span class="o">=</span> <span class="n">IFwMetaDataCacheManaged</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">MetaDataCacheAccessor</span><span class="p">)</span>
+        <span class="n">field_type</span> <span class="o">=</span> <span class="n">CellarPropertyType</span><span class="p">(</span><span class="n">mdc</span><span class="o">.</span><span class="n">GetFieldType</span><span class="p">(</span><span class="n">field_id</span><span class="p">))</span>
+
+        <span class="c1"># Handle multi-string fields with specific writing system</span>
+        <span class="k">if</span> <span class="n">field_type</span> <span class="ow">in</span> <span class="n">FLExLCM</span><span class="o">.</span><span class="n">CellarMultiStringTypes</span> <span class="ow">and</span> <span class="n">ws</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Clear only the specified writing system</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WSHandle</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+            <span class="n">mua</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DomainDataByFlid</span><span class="o">.</span><span class="n">get_MultiStringProp</span><span class="p">(</span><span class="n">hvo</span><span class="p">,</span> <span class="n">field_id</span><span class="p">)</span>
+            <span class="n">mua</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Clear all writing systems (or single-value field)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LexiconClearField</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_id</span><span class="p">)</span>
+
+    <span class="c1"># --- List Field Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetListValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get list values from a ReferenceCollection custom field.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The object (ILexEntry, ILexSense, etc.) or HVO</span>
+<span class="sd">            field_name (str): The custom field name (must be ReferenceCollection type)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of short names (str) of referenced items</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If obj or field_name is None</span>
+<span class="sd">            FP_ParameterError: If field not found, obj invalid, or field</span>
+<span class="sd">                is not a ReferenceCollection type</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Get list of regions</span>
+<span class="sd">            &gt;&gt;&gt; regions = project.CustomFields.GetListValues(sense, &quot;Regions&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(regions)</span>
+<span class="sd">            [&#39;North&#39;, &#39;East&#39;, &#39;West&#39;]</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check if list is empty</span>
+<span class="sd">            &gt;&gt;&gt; if not project.CustomFields.GetListValues(entry, &quot;Tags&quot;):</span>
+<span class="sd">            ...     print(&quot;No tags assigned&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only works with ReferenceCollection fields (multi-select lists)</span>
+<span class="sd">            - Returns empty list if no items are selected</span>
+<span class="sd">            - Returns short names, not full possibility objects</span>
+<span class="sd">            - For ReferenceAtom (single-select), use GetValue() instead</span>
+<span class="sd">            - Order is preserved as stored in database</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddListValue, RemoveListValue, GetValue</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;obj&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve object and get class name</span>
+        <span class="n">hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetHvo</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span>
+
+        <span class="c1"># Find the field</span>
+        <span class="n">field_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindField</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; not found for </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Verify it&#39;s a ReferenceCollection field</span>
+        <span class="n">field_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetFieldType</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_type</span> <span class="o">!=</span> <span class="n">CellarPropertyType</span><span class="o">.</span><span class="n">ReferenceCollection</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; is not a ReferenceCollection type&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get the values</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetCustomFieldValue</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_id</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddListValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a value to a ReferenceCollection custom field.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The object (ILexEntry, ILexSense, etc.) or HVO</span>
+<span class="sd">            field_name (str): The custom field name (must be ReferenceCollection type)</span>
+<span class="sd">            value (str): The value to add (short name or full name of possibility)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If obj, field_name, or value is None</span>
+<span class="sd">            FP_ParameterError: If field not found, obj invalid, field is not</span>
+<span class="sd">                ReferenceCollection type, or value not found in possibility list</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Add a region</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.AddListValue(sense, &quot;Regions&quot;, &quot;North&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Add multiple values</span>
+<span class="sd">            &gt;&gt;&gt; for region in [&quot;East&quot;, &quot;West&quot;]:</span>
+<span class="sd">            ...     project.CustomFields.AddListValue(sense, &quot;Regions&quot;, region)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only works with ReferenceCollection fields (multi-select lists)</span>
+<span class="sd">            - Value must exist in the field&#39;s possibility list</span>
+<span class="sd">            - If value already exists, it&#39;s not added again (no duplicates)</span>
+<span class="sd">            - Value is case-sensitive</span>
+<span class="sd">            - For single-select lists (ReferenceAtom), use SetValue() instead</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RemoveListValue, GetListValues, SetListFieldMultiple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;obj&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve object and get class name</span>
+        <span class="n">hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetHvo</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span>
+
+        <span class="c1"># Find the field</span>
+        <span class="n">field_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindField</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; not found for </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Verify it&#39;s a ReferenceCollection field</span>
+        <span class="n">field_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetFieldType</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_type</span> <span class="o">!=</span> <span class="n">CellarPropertyType</span><span class="o">.</span><span class="n">ReferenceCollection</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; is not a ReferenceCollection type&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get current values and add new one</span>
+        <span class="n">current_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetListValues</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">current_values</span><span class="p">:</span>
+            <span class="n">current_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="c1"># Set the updated list</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LexiconSetListFieldMultiple</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_id</span><span class="p">,</span> <span class="n">current_values</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveListValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a value from a ReferenceCollection custom field.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The object (ILexEntry, ILexSense, etc.) or HVO</span>
+<span class="sd">            field_name (str): The custom field name (must be ReferenceCollection type)</span>
+<span class="sd">            value (str): The value to remove (short name or full name of possibility)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If obj, field_name, or value is None</span>
+<span class="sd">            FP_ParameterError: If field not found, obj invalid, or field is not</span>
+<span class="sd">                ReferenceCollection type</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Remove a region</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.RemoveListValue(sense, &quot;Regions&quot;, &quot;North&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Remove all values</span>
+<span class="sd">            &gt;&gt;&gt; for region in project.CustomFields.GetListValues(sense, &quot;Regions&quot;):</span>
+<span class="sd">            ...     project.CustomFields.RemoveListValue(sense, &quot;Regions&quot;, region)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only works with ReferenceCollection fields (multi-select lists)</span>
+<span class="sd">            - If value doesn&#39;t exist, operation succeeds silently (no error)</span>
+<span class="sd">            - Value is case-sensitive</span>
+<span class="sd">            - After removing all values, list is empty (not deleted)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddListValue, GetListValues, ClearValue</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;obj&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve object and get class name</span>
+        <span class="n">hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetHvo</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span>
+
+        <span class="c1"># Find the field</span>
+        <span class="n">field_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindField</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; not found for </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Verify it&#39;s a ReferenceCollection field</span>
+        <span class="n">field_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetFieldType</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_type</span> <span class="o">!=</span> <span class="n">CellarPropertyType</span><span class="o">.</span><span class="n">ReferenceCollection</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; is not a ReferenceCollection type&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get current values and remove the specified one</span>
+        <span class="n">current_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetListValues</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">current_values</span><span class="p">:</span>
+            <span class="n">current_values</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="c1"># Set the updated list</span>
+            <span class="k">if</span> <span class="n">current_values</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LexiconSetListFieldMultiple</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_id</span><span class="p">,</span> <span class="n">current_values</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Clear the field if no values remain</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LexiconClearField</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_id</span><span class="p">)</span>
+
+    <span class="c1"># --- Utility Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwnerClass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the owner class name for a custom field.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_id (int): The field ID</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The class name (e.g., &quot;LexEntry&quot;, &quot;LexSense&quot;)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If field_id is None</span>
+<span class="sd">            FP_ParameterError: If field_id is invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; field_id = 5002</span>
+<span class="sd">            &gt;&gt;&gt; class_name = project.CustomFields.GetOwnerClass(field_id)</span>
+<span class="sd">            &gt;&gt;&gt; print(class_name)</span>
+<span class="sd">            LexEntry</span>
+
+<span class="sd">            &gt;&gt;&gt; # Use to determine which objects can use this field</span>
+<span class="sd">            &gt;&gt;&gt; owner = project.CustomFields.GetOwnerClass(field_id)</span>
+<span class="sd">            &gt;&gt;&gt; if owner == &quot;LexSense&quot;:</span>
+<span class="sd">            ...     print(&quot;This field is for senses&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns the class that owns the field definition</span>
+<span class="sd">            - Common classes: LexEntry, LexSense, LexExampleSentence, MoForm</span>
+<span class="sd">            - Each field belongs to exactly one class</span>
+<span class="sd">            - Class determines which objects can have this field</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAllFields, FindField</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">field_id</span><span class="p">,</span> <span class="s2">&quot;field_id&quot;</span><span class="p">)</span>
+
+        <span class="n">mdc</span> <span class="o">=</span> <span class="n">IFwMetaDataCacheManaged</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">MetaDataCacheAccessor</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">class_id</span> <span class="o">=</span> <span class="n">mdc</span><span class="o">.</span><span class="n">GetOwnClsId</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">mdc</span><span class="o">.</span><span class="n">GetClassName</span><span class="p">(</span><span class="n">class_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">Exception</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid field ID&quot;</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsMultiString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a custom field is a multi-string type.</span>
+
+<span class="sd">        Multi-string fields support multiple writing systems (e.g., entering</span>
+<span class="sd">        the same field in English, French, Spanish).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_id (int): The field ID</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if field is MultiString or MultiUnicode, False otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If field_id is None</span>
+<span class="sd">            FP_ParameterError: If field_id is invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; field_id = project.CustomFields.FindField(&quot;LexEntry&quot;, &quot;Dialect&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.CustomFields.IsMultiString(field_id):</span>
+<span class="sd">            ...     # Need to specify writing system when getting/setting</span>
+<span class="sd">            ...     value_en = project.CustomFields.GetValue(entry, &quot;Dialect&quot;, &quot;en&quot;)</span>
+<span class="sd">            ...     value_fr = project.CustomFields.GetValue(entry, &quot;Dialect&quot;, &quot;fr&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     # Single string, no WS needed</span>
+<span class="sd">            ...     value = project.CustomFields.GetValue(entry, &quot;Dialect&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - MultiString and MultiUnicode both return True</span>
+<span class="sd">            - Single String fields return False</span>
+<span class="sd">            - Multi-string fields require WS parameter in GetValue/SetValue</span>
+<span class="sd">            - Useful for determining API usage pattern</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsListType, GetFieldType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">field_id</span><span class="p">,</span> <span class="s2">&quot;field_id&quot;</span><span class="p">)</span>
+
+        <span class="n">field_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetFieldType</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">field_type</span> <span class="ow">in</span> <span class="n">FLExLCM</span><span class="o">.</span><span class="n">CellarMultiStringTypes</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsListType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a custom field is a list (reference) type.</span>
+
+<span class="sd">        List fields reference possibility lists (e.g., selecting from</span>
+<span class="sd">        predefined options like regions, tags, categories).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_id (int): The field ID</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if field is ReferenceAtom or ReferenceCollection,</span>
+<span class="sd">                False otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If field_id is None</span>
+<span class="sd">            FP_ParameterError: If field_id is invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; field_id = project.CustomFields.FindField(&quot;LexSense&quot;, &quot;Region&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.CustomFields.IsListType(field_id):</span>
+<span class="sd">            ...     # Use list-specific methods</span>
+<span class="sd">            ...     values = project.CustomFields.GetListValues(sense, &quot;Region&quot;)</span>
+<span class="sd">            ...     project.CustomFields.AddListValue(sense, &quot;Region&quot;, &quot;North&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     # Use regular GetValue/SetValue</span>
+<span class="sd">            ...     value = project.CustomFields.GetValue(sense, &quot;Region&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check if multi-select list</span>
+<span class="sd">            &gt;&gt;&gt; field_type = project.CustomFields.GetFieldType(field_id)</span>
+<span class="sd">            &gt;&gt;&gt; if field_type == CellarPropertyType.ReferenceCollection:</span>
+<span class="sd">            ...     print(&quot;Multi-select list&quot;)</span>
+<span class="sd">            ... elif field_type == CellarPropertyType.ReferenceAtom:</span>
+<span class="sd">            ...     print(&quot;Single-select list&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - ReferenceAtom = single-select list (radio buttons)</span>
+<span class="sd">            - ReferenceCollection = multi-select list (checkboxes)</span>
+<span class="sd">            - Both return True for this method</span>
+<span class="sd">            - List fields reference possibility lists defined in project</span>
+<span class="sd">            - Use GetListValues/AddListValue for ReferenceCollection</span>
+<span class="sd">            - Use GetValue/SetValue for ReferenceAtom</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsMultiString, GetFieldType, GetListValues, AddListValue</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">field_id</span><span class="p">,</span> <span class="s2">&quot;field_id&quot;</span><span class="p">)</span>
+
+        <span class="n">field_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetFieldType</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">field_type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">CellarPropertyType</span><span class="o">.</span><span class="n">ReferenceAtom</span><span class="p">,</span> <span class="n">CellarPropertyType</span><span class="o">.</span><span class="n">ReferenceCollection</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsStringType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a custom field is a string type.</span>
+
+<span class="sd">        String fields store text data (single or multiple writing systems).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_id (int): The field ID</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if field is String, MultiString, or MultiUnicode,</span>
+<span class="sd">                False otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If field_id is None</span>
+<span class="sd">            FP_ParameterError: If field_id is invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; field_id = project.CustomFields.FindField(&quot;LexEntry&quot;, &quot;Etymology&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.CustomFields.IsStringType(field_id):</span>
+<span class="sd">            ...     # Can use GetValue/SetValue with string</span>
+<span class="sd">            ...     value = project.CustomFields.GetValue(entry, &quot;Etymology&quot;)</span>
+<span class="sd">            ...     project.CustomFields.SetValue(entry, &quot;Etymology&quot;, &quot;New value&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     # Use type-specific methods (Integer, List, etc.)</span>
+<span class="sd">            ...     pass</span>
+
+<span class="sd">            &gt;&gt;&gt; # Determine if it&#39;s single vs multi-string</span>
+<span class="sd">            &gt;&gt;&gt; if project.CustomFields.IsStringType(field_id):</span>
+<span class="sd">            ...     if project.CustomFields.IsMultiString(field_id):</span>
+<span class="sd">            ...         print(&quot;Multi-string field (multiple writing systems)&quot;)</span>
+<span class="sd">            ...     else:</span>
+<span class="sd">            ...         print(&quot;Single string field&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns True for String, MultiString, and MultiUnicode types</span>
+<span class="sd">            - Returns False for Integer, GenDate, Reference types</span>
+<span class="sd">            - String types can use GetValue/SetValue with str values</span>
+<span class="sd">            - Use IsMultiString() to distinguish single vs multi-string</span>
+<span class="sd">            - Useful for type checking before operations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsMultiString, IsListType, GetFieldType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">field_id</span><span class="p">,</span> <span class="s2">&quot;field_id&quot;</span><span class="p">)</span>
+
+        <span class="n">field_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetFieldType</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">field_type</span> <span class="ow">in</span> <span class="n">FLExLCM</span><span class="o">.</span><span class="n">CellarAllStringTypes</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ClearField</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clear a custom field value for an object.</span>
+
+<span class="sd">        This is an alias for ClearValue() provided for FlexTools compatibility.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The object (ILexEntry, ILexSense, etc.) or HVO</span>
+<span class="sd">            field_name (str): The custom field name</span>
+<span class="sd">            ws (str or int, optional): Writing system for multi-string fields.</span>
+<span class="sd">                If None, clears all writing systems.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If obj or field_name is None</span>
+<span class="sd">            FP_ParameterError: If field not found or obj invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Clear a field (FlexTools-style API)</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.ClearField(entry, &quot;Etymology Source&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # This is equivalent to:</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.ClearValue(entry, &quot;Etymology Source&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is a convenience alias for ClearValue()</span>
+<span class="sd">            - Provided for compatibility with FlexTools scripts</span>
+<span class="sd">            - Both methods do exactly the same thing</span>
+<span class="sd">            - For multi-string fields without ws, clears all writing systems</span>
+<span class="sd">            - For integer fields, sets to 0</span>
+<span class="sd">            - For list fields, removes all references</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            ClearValue, SetValue, GetValue</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ClearValue</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetListFieldSingle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the value of a ReferenceAtom (single-select list) custom field.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The object (ILexEntry, ILexSense, etc.) or HVO</span>
+<span class="sd">            field_name (str): The custom field name (must be ReferenceAtom type)</span>
+<span class="sd">            value (str): The value to set (short name or full name of possibility)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If obj, field_name, or value is None</span>
+<span class="sd">            FP_ParameterError: If field not found, obj invalid, field is not</span>
+<span class="sd">                ReferenceAtom type, or value not found in possibility list</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Set a single-select field</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.SetListFieldSingle(sense, &quot;Primary Region&quot;, &quot;North&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Change the value</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.SetListFieldSingle(sense, &quot;Primary Region&quot;, &quot;South&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only works with ReferenceAtom fields (single-select lists)</span>
+<span class="sd">            - Overwrites any existing value</span>
+<span class="sd">            - Value must exist in the field&#39;s possibility list</span>
+<span class="sd">            - Value is case-sensitive</span>
+<span class="sd">            - For multi-select lists, use AddListValue/RemoveListValue</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetListFieldMultiple, AddListValue, GetValue</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;obj&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve object and get class name</span>
+        <span class="n">hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetHvo</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span>
+
+        <span class="c1"># Find the field</span>
+        <span class="n">field_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindField</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; not found for </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Verify it&#39;s a ReferenceAtom field</span>
+        <span class="n">field_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetFieldType</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_type</span> <span class="o">!=</span> <span class="n">CellarPropertyType</span><span class="o">.</span><span class="n">ReferenceAtom</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; is not a ReferenceAtom type&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Set the value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LexiconSetListFieldSingle</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_id</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetListFieldMultiple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the values of a ReferenceCollection (multi-select list) custom field.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The object (ILexEntry, ILexSense, etc.) or HVO</span>
+<span class="sd">            field_name (str): The custom field name (must be ReferenceCollection type)</span>
+<span class="sd">            values (list): List of values to set (short names or full names)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If obj, field_name, or values is None</span>
+<span class="sd">            FP_ParameterError: If field not found, obj invalid, field is not</span>
+<span class="sd">                ReferenceCollection type, or any value not found in possibility list</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; sense = entry.SensesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Set multiple regions</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.SetListFieldMultiple(sense, &quot;Regions&quot;,</span>
+<span class="sd">            ...                                           [&quot;North&quot;, &quot;East&quot;, &quot;West&quot;])</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear all values by setting empty list</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.SetListFieldMultiple(sense, &quot;Regions&quot;, [])</span>
+
+<span class="sd">            &gt;&gt;&gt; # Replace existing values</span>
+<span class="sd">            &gt;&gt;&gt; project.CustomFields.SetListFieldMultiple(sense, &quot;Regions&quot;, [&quot;South&quot;])</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only works with ReferenceCollection fields (multi-select lists)</span>
+<span class="sd">            - Replaces all existing values</span>
+<span class="sd">            - Values must exist in the field&#39;s possibility list</span>
+<span class="sd">            - Values are case-sensitive</span>
+<span class="sd">            - Empty list clears the field</span>
+<span class="sd">            - For adding/removing individual values, use AddListValue/RemoveListValue</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetListFieldSingle, AddListValue, RemoveListValue, GetListValues</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;obj&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve object and get class name</span>
+        <span class="n">hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetHvo</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span>
+
+        <span class="c1"># Find the field</span>
+        <span class="n">field_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindField</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; not found for </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Verify it&#39;s a ReferenceCollection field</span>
+        <span class="n">field_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetFieldType</span><span class="p">(</span><span class="n">field_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">field_type</span> <span class="o">!=</span> <span class="n">CellarPropertyType</span><span class="o">.</span><span class="n">ReferenceCollection</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; is not a ReferenceCollection type&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Set the values</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">values</span><span class="p">:</span>
+            <span class="c1"># Clear the field if empty list</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LexiconClearField</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LexiconSetListFieldMultiple</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_id</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetClassID</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the class ID for a class name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            class_name (str): The class name</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The class ID</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If class name is invalid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Map common class names to their kClassId constants</span>
+        <span class="n">class_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span> <span class="n">LexEntryTags</span><span class="o">.</span><span class="n">kClassId</span><span class="p">,</span>
+            <span class="s2">&quot;LexSense&quot;</span><span class="p">:</span> <span class="n">LexSenseTags</span><span class="o">.</span><span class="n">kClassId</span><span class="p">,</span>
+            <span class="s2">&quot;LexExampleSentence&quot;</span><span class="p">:</span> <span class="n">LexExampleSentenceTags</span><span class="o">.</span><span class="n">kClassId</span><span class="p">,</span>
+            <span class="s2">&quot;MoForm&quot;</span><span class="p">:</span> <span class="n">MoFormTags</span><span class="o">.</span><span class="n">kClassId</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="n">class_map</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">class_map</span><span class="p">[</span><span class="n">class_name</span><span class="p">]</span>
+
+        <span class="c1"># Try to get from metadata cache</span>
+        <span class="n">mdc</span> <span class="o">=</span> <span class="n">IFwMetaDataCacheManaged</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">MetaDataCacheAccessor</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mdc</span><span class="o">.</span><span class="n">GetClassId</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">Exception</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid class name: </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetHvo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get HVO from object or HVO.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: Object or HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The HVO</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">Hvo</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid object - must have Hvo attribute&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetWSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle from tag or handle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws: Writing system tag (str) or handle (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WSHandle</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">handle</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid writing system: </span><span class="si">{</span><span class="n">ws</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">handle</span>
+        <span class="k">return</span> <span class="n">ws</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate operation is not applicable for custom fields.</span>
+
+<span class="sd">        Custom fields are metadata definitions at the project schema level and</span>
+<span class="sd">        cannot be duplicated like data objects.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Always raised - custom fields cannot be duplicated.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Use CreateField() to create a new custom field with similar properties</span>
+<span class="sd">            - Custom fields are unique schema elements</span>
+<span class="sd">            - Field duplication would require schema modification</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateField, DeleteField</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Custom fields cannot be duplicated. Use CreateField() to create a new field.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get syncable properties - NOT IMPLEMENTED for custom fields.</span>
+
+<span class="sd">        Custom fields are project schema definitions that cannot be safely synced</span>
+<span class="sd">        between projects due to their structural nature.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Custom fields are not syncable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Custom fields cannot be synced between projects. &quot;</span>
+            <span class="s2">&quot;Custom fields are schema definitions unique to each project.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare custom fields - NOT IMPLEMENTED.</span>
+
+<span class="sd">        Custom fields are project schema definitions that cannot be safely synced</span>
+<span class="sd">        between projects due to their structural nature.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Custom fields are not syncable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Custom fields cannot be compared for sync. &quot;</span> <span class="s2">&quot;Custom fields are schema definitions unique to each project.&quot;</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.System.CustomFieldOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Lists.PublicationOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists.PublicationOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Lists.PublicationOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   PublicationOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: PublicationOperations</span>
+<span class="c1">#          Publication and publishing workflow operations for FieldWorks Language</span>
+<span class="c1">#          Explorer projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ICmPossibility</span><span class="p">,</span>
+    <span class="n">ICmPossibilityFactory</span><span class="p">,</span>
+    <span class="n">ICmPossibilityRepository</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">DateTime</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+    <span class="n">FP_NullParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.possibility_item_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PossibilityItemOperations</span>
+
+
+<div class="viewcode-block" id="PublicationOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lists.html#flexicon.code.Lists.PublicationOperations.PublicationOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PublicationOperations</span><span class="p">(</span><span class="n">PossibilityItemOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing publications and publishing</span>
+<span class="sd">    workflows in a FieldWorks project.</span>
+
+<span class="sd">    Publications in FLEx define output formats for dictionary and text publishing.</span>
+<span class="sd">    They specify page layouts, formatting options, divisions (e.g., main entries,</span>
+<span class="sd">    minor entries), header/footer settings, and default publication types. These</span>
+<span class="sd">    are used when exporting dictionaries or texts to various formats.</span>
+
+<span class="sd">    Inherited CRUD Operations (from PossibilityItemOperations):</span>
+<span class="sd">    - GetAll() - Get all publications (NOTE: override handles flat parameter)</span>
+<span class="sd">    - Create() - Create a new publication</span>
+<span class="sd">    - Delete() - Delete a publication</span>
+<span class="sd">    - Duplicate() - Clone a publication</span>
+<span class="sd">    - Find() - Find by name</span>
+<span class="sd">    - Exists() - Check existence</span>
+<span class="sd">    - GetName() / SetName() - Get/set name</span>
+<span class="sd">    - GetDescription() / SetDescription() - Get/set description</span>
+<span class="sd">    - GetGuid() - Get GUID</span>
+<span class="sd">    - CompareTo() - Compare by name</span>
+
+<span class="sd">    Domain-Specific Methods (PublicationOperations):</span>
+<span class="sd">    - GetPageLayout() - Get page layout description</span>
+<span class="sd">    - SetPageLayout() - Set page layout description</span>
+<span class="sd">    - GetIsDefault() - Check if default publication</span>
+<span class="sd">    - SetIsDefault() - Set default publication</span>
+<span class="sd">    - GetPageHeight() - Get page height</span>
+<span class="sd">    - SetPageHeight() - Set page height</span>
+<span class="sd">    - GetPageWidth() - Get page width</span>
+<span class="sd">    - SetPageWidth() - Set page width</span>
+<span class="sd">    - GetDivisions() - Get publication divisions</span>
+<span class="sd">    - AddDivision() - Add a division</span>
+<span class="sd">    - GetHeaderFooter() - Get header/footer configuration</span>
+<span class="sd">    - GetIsLandscape() - Check landscape orientation</span>
+<span class="sd">    - GetSubPublications() - Get sub-publications</span>
+<span class="sd">    - GetParent() - Get parent publication</span>
+<span class="sd">    - GetDateCreated() - Get creation date</span>
+<span class="sd">    - GetDateModified() - Get modification date</span>
+
+<span class="sd">    This class should be accessed via FLExProject.Publications property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get all publications</span>
+<span class="sd">        for pub in project.Publications.GetAll():</span>
+<span class="sd">            name = project.Publications.GetName(pub)</span>
+<span class="sd">            is_default = project.Publications.GetIsDefault(pub)</span>
+<span class="sd">            print(f&quot;{name} (Default: {is_default})&quot;)</span>
+
+<span class="sd">        # Create a new publication</span>
+<span class="sd">        pub = project.Publications.Create(&quot;Web Dictionary&quot;)</span>
+
+<span class="sd">        # Set page layout and formatting</span>
+<span class="sd">        project.Publications.SetPageWidth(pub, 8.5)</span>
+<span class="sd">        project.Publications.SetPageHeight(pub, 11.0)</span>
+<span class="sd">        project.Publications.SetDescription(pub,</span>
+<span class="sd">            &quot;Dictionary layout for web publication&quot;)</span>
+
+<span class="sd">        # Set as default publication</span>
+<span class="sd">        project.Publications.SetIsDefault(pub, True)</span>
+
+<span class="sd">        # Find a publication by name</span>
+<span class="sd">        main_pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">        if main_pub:</span>
+<span class="sd">            width = project.Publications.GetPageWidth(main_pub)</span>
+<span class="sd">            height = project.Publications.GetPageHeight(main_pub)</span>
+<span class="sd">            print(f&quot;Page size: {width} x {height} inches&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize PublicationOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_item_class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the item class name for error messages.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;Publication&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_list_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the publications list container.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lexDB</span><span class="o">.</span><span class="n">PublicationTypesOA</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all publications in the project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            recursive (bool): If True (default), returns every publication in</span>
+<span class="sd">                the hierarchy (depth-first, parents before children). If</span>
+<span class="sd">                False, returns only top-level publications and the caller</span>
+<span class="sd">                must descend via GetSubPublications.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmPossibility objects representing publications.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for pub in project.Publications.GetAll():</span>
+<span class="sd">            ...     print(project.Publications.GetName(pub))   # Includes variants at any depth</span>
+
+<span class="sd">            &gt;&gt;&gt; # Top-level only</span>
+<span class="sd">            &gt;&gt;&gt; for pub in project.Publications.GetAll(recursive=False):</span>
+<span class="sd">            ...     print(project.Publications.GetName(pub))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, GetSubPublications</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RejectLegacyKwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s2">&quot;flat&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recursive&quot;</span><span class="p">,</span> <span class="s2">&quot;semantics inverted: flat=True is now recursive=True&quot;</span><span class="p">),</span>
+        <span class="p">})</span>
+        <span class="n">list_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_list_object</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">list_obj</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">list_obj</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">)</span>
+
+        <span class="n">all_pubs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">pub</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+                <span class="n">all_pubs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pub</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pub</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pub</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">walk</span><span class="p">(</span><span class="n">pub</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="n">walk</span><span class="p">(</span><span class="n">list_obj</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">all_pubs</span>
+
+    <span class="c1"># --- Publishing Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetPageLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the page layout description for a publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Page layout description, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; layout = project.Publications.GetPageLayout(pub)</span>
+<span class="sd">            &gt;&gt;&gt; print(layout)</span>
+<span class="sd">            Two-column layout with headers and footers</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if page layout not set</span>
+<span class="sd">            - Layout description is free-form text</span>
+<span class="sd">            - Can describe columns, margins, orientation, etc.</span>
+<span class="sd">            - Different from page dimensions (width/height)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetPageLayout, GetPageWidth, GetPageHeight</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Use Abbreviation field for page layout description</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;Abbreviation&quot;</span><span class="p">):</span>
+            <span class="n">layout</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">publication</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">return</span> <span class="n">layout</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetPageLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">,</span> <span class="n">layout</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the page layout description for a publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+<span class="sd">            layout (str): Page layout description.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo or layout is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Publications.SetPageLayout(pub,</span>
+<span class="sd">            ...     &quot;Two-column layout with running headers&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear layout description</span>
+<span class="sd">            &gt;&gt;&gt; project.Publications.SetPageLayout(pub, &quot;&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Empty string is allowed (clears the layout description)</span>
+<span class="sd">            - Layout description is stored in the specified writing system</span>
+<span class="sd">            - Use to describe columns, margins, orientation, etc.</span>
+<span class="sd">            - Actual page dimensions set with SetPageWidth/SetPageHeight</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetPageLayout, SetPageWidth, SetPageHeight</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="s2">&quot;layout&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;Abbreviation&quot;</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set publication page layout&quot;</span><span class="p">):</span>
+                <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">publication</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+                <span class="c1"># Update modification date</span>
+                <span class="n">publication</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetIsDefault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a publication is the default publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if this is the default publication, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for pub in project.Publications.GetAll():</span>
+<span class="sd">            ...     name = project.Publications.GetName(pub)</span>
+<span class="sd">            ...     is_default = project.Publications.GetIsDefault(pub)</span>
+<span class="sd">            ...     default_marker = &quot; [DEFAULT]&quot; if is_default else &quot;&quot;</span>
+<span class="sd">            ...     print(f&quot;{name}{default_marker}&quot;)</span>
+<span class="sd">            Main Dictionary [DEFAULT]</span>
+<span class="sd">            Root-based Dictionary</span>
+<span class="sd">            Thematic Dictionary</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find the default publication</span>
+<span class="sd">            &gt;&gt;&gt; default_pub = None</span>
+<span class="sd">            &gt;&gt;&gt; for pub in project.Publications.GetAll():</span>
+<span class="sd">            ...     if project.Publications.GetIsDefault(pub):</span>
+<span class="sd">            ...         default_pub = pub</span>
+<span class="sd">            ...         break</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only one publication can be the default</span>
+<span class="sd">            - Default publication is used when no specific publication is selected</span>
+<span class="sd">            - Returns False if publication is not default</span>
+<span class="sd">            - If no default is set, all publications return False</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetIsDefault, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Check if this publication is the default</span>
+        <span class="c1"># Default is typically the first publication or marked by IsDefault property</span>
+        <span class="n">pub_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lexDB</span><span class="o">.</span><span class="n">PublicationTypesOA</span>
+        <span class="k">if</span> <span class="n">pub_list</span> <span class="ow">and</span> <span class="n">pub_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># The default publication is typically the first one</span>
+            <span class="n">default_pub</span> <span class="o">=</span> <span class="n">pub_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">publication</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">default_pub</span><span class="o">.</span><span class="n">Hvo</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetIsDefault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">,</span> <span class="n">is_default</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set whether a publication is the default publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+<span class="sd">            is_default (bool): True to make this the default, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo or is_default is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Set a publication as default</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Web Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Publications.SetIsDefault(pub, True)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Remove default status (sets first publication as default)</span>
+<span class="sd">            &gt;&gt;&gt; project.Publications.SetIsDefault(pub, False)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only one publication can be default at a time</span>
+<span class="sd">            - Setting a publication as default makes it the first in the list</span>
+<span class="sd">            - If is_default is False, publication is moved from first position</span>
+<span class="sd">            - Default publication is used when no specific publication is selected</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetIsDefault, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">is_default</span><span class="p">,</span> <span class="s2">&quot;is_default&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+
+        <span class="n">pub_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lexDB</span><span class="o">.</span><span class="n">PublicationTypesOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pub_list</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># To make a publication default, move it to the first position</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set default publication&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">is_default</span><span class="p">:</span>
+                <span class="c1"># Remove from current position</span>
+                <span class="k">if</span> <span class="n">publication</span> <span class="ow">in</span> <span class="n">pub_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
+                    <span class="n">pub_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">publication</span><span class="p">)</span>
+                <span class="c1"># Insert at first position</span>
+                <span class="n">pub_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">publication</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># If removing default status, move to end</span>
+                <span class="k">if</span> <span class="n">publication</span> <span class="ow">in</span> <span class="n">pub_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
+                    <span class="n">current_index</span> <span class="o">=</span> <span class="n">pub_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">publication</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">current_index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Is currently default</span>
+                        <span class="n">pub_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">publication</span><span class="p">)</span>
+                        <span class="n">pub_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">publication</span><span class="p">)</span>
+
+    <span class="c1"># --- Formatting Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetPageHeight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the page height for a publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float or None: Page height in inches, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; height = project.Publications.GetPageHeight(pub)</span>
+<span class="sd">            &gt;&gt;&gt; if height:</span>
+<span class="sd">            ...     print(f&quot;Page height: {height} inches&quot;)</span>
+<span class="sd">            Page height: 11.0 inches</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get both dimensions</span>
+<span class="sd">            &gt;&gt;&gt; width = project.Publications.GetPageWidth(pub)</span>
+<span class="sd">            &gt;&gt;&gt; height = project.Publications.GetPageHeight(pub)</span>
+<span class="sd">            &gt;&gt;&gt; if width and height:</span>
+<span class="sd">            ...     print(f&quot;Page size: {width}\&quot; x {height}\&quot;&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if page height is not set</span>
+<span class="sd">            - Height is in inches (standard US measurement)</span>
+<span class="sd">            - Common sizes: 11.0 (Letter), 11.69 (A4), 14.0 (Legal)</span>
+<span class="sd">            - Use with GetPageWidth() to get full page dimensions</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetPageHeight, GetPageWidth</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Store in SortKey2 field (encoded as integer, divide by 1000 for inches)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;SortKey2&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">publication</span><span class="o">.</span><span class="n">SortKey2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">publication</span><span class="o">.</span><span class="n">SortKey2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1000.0</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetPageHeight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the page height for a publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+<span class="sd">            height (float): Page height in inches.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo or height is None.</span>
+<span class="sd">            FP_ParameterError: If height is not positive.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Set letter-size height</span>
+<span class="sd">            &gt;&gt;&gt; project.Publications.SetPageHeight(pub, 11.0)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set A4 height</span>
+<span class="sd">            &gt;&gt;&gt; project.Publications.SetPageHeight(pub, 11.69)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set legal-size height</span>
+<span class="sd">            &gt;&gt;&gt; project.Publications.SetPageHeight(pub, 14.0)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Height must be positive</span>
+<span class="sd">            - Height is stored in inches</span>
+<span class="sd">            - Common heights: 11.0 (Letter), 11.69 (A4), 14.0 (Legal)</span>
+<span class="sd">            - Set both width and height for complete page dimensions</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetPageHeight, SetPageWidth</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="s2">&quot;height&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">height</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Height must be numeric&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">h</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Height must be positive&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Store in SortKey2 field (multiply by 1000 to store as integer)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;SortKey2&quot;</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set publication page height&quot;</span><span class="p">):</span>
+                <span class="n">publication</span><span class="o">.</span><span class="n">SortKey2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">h</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+
+                <span class="c1"># Update modification date</span>
+                <span class="n">publication</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetPageWidth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the page width for a publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float or None: Page width in inches, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; width = project.Publications.GetPageWidth(pub)</span>
+<span class="sd">            &gt;&gt;&gt; if width:</span>
+<span class="sd">            ...     print(f&quot;Page width: {width} inches&quot;)</span>
+<span class="sd">            Page width: 8.5 inches</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check if dimensions are set</span>
+<span class="sd">            &gt;&gt;&gt; width = project.Publications.GetPageWidth(pub)</span>
+<span class="sd">            &gt;&gt;&gt; height = project.Publications.GetPageHeight(pub)</span>
+<span class="sd">            &gt;&gt;&gt; if width and height:</span>
+<span class="sd">            ...     aspect = width / height</span>
+<span class="sd">            ...     print(f&quot;Aspect ratio: {aspect:.2f}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if page width is not set</span>
+<span class="sd">            - Width is in inches (standard US measurement)</span>
+<span class="sd">            - Common sizes: 8.5 (Letter/Legal), 8.27 (A4)</span>
+<span class="sd">            - Use with GetPageHeight() to get full page dimensions</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetPageWidth, GetPageHeight</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Store in SortKey field (encoded as integer, divide by 1000 for inches)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;SortKey&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">publication</span><span class="o">.</span><span class="n">SortKey</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">publication</span><span class="o">.</span><span class="n">SortKey</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1000.0</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetPageWidth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">,</span> <span class="n">width</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the page width for a publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+<span class="sd">            width (float): Page width in inches.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo or width is None.</span>
+<span class="sd">            FP_ParameterError: If width is not positive.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Set letter-size width</span>
+<span class="sd">            &gt;&gt;&gt; project.Publications.SetPageWidth(pub, 8.5)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set A4 width</span>
+<span class="sd">            &gt;&gt;&gt; project.Publications.SetPageWidth(pub, 8.27)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set custom width</span>
+<span class="sd">            &gt;&gt;&gt; project.Publications.SetPageWidth(pub, 7.0)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Width must be positive</span>
+<span class="sd">            - Width is stored in inches</span>
+<span class="sd">            - Common widths: 8.5 (Letter/Legal), 8.27 (A4)</span>
+<span class="sd">            - Set both width and height for complete page dimensions</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetPageWidth, SetPageHeight</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="s2">&quot;width&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">width</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Width must be numeric&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">w</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Width must be positive&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Store in SortKey field (multiply by 1000 to store as integer)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;SortKey&quot;</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set publication page width&quot;</span><span class="p">):</span>
+                <span class="n">publication</span><span class="o">.</span><span class="n">SortKey</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+
+                <span class="c1"># Update modification date</span>
+                <span class="n">publication</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+    <span class="c1"># --- Divisions and Structure ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDivisions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the publication divisions (e.g., main entries, minor entries).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmPossibility objects representing divisions.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; divisions = project.Publications.GetDivisions(pub)</span>
+<span class="sd">            &gt;&gt;&gt; for div in divisions:</span>
+<span class="sd">            ...     name = ITsString(div.Name.BestAnalysisAlternative).Text</span>
+<span class="sd">            ...     print(f&quot;Division: {name}&quot;)</span>
+<span class="sd">            Division: Main Entries</span>
+<span class="sd">            Division: Minor Entries</span>
+<span class="sd">            Division: Back Matter</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if no divisions</span>
+<span class="sd">            - Divisions organize content into sections</span>
+<span class="sd">            - Common divisions: Main Entries, Minor Entries, Subentries</span>
+<span class="sd">            - Divisions are represented as sub-possibilities</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddDivision, GetSubPublications</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Divisions are stored as sub-possibilities</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">publication</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddDivision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">,</span> <span class="n">division_name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a division to a publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+<span class="sd">            division_name (str): Name of the division (e.g., &quot;Main Entries&quot;).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility: The newly created division object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo or division_name is None.</span>
+<span class="sd">            FP_ParameterError: If division_name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Add standard divisions</span>
+<span class="sd">            &gt;&gt;&gt; main = project.Publications.AddDivision(pub, &quot;Main Entries&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; minor = project.Publications.AddDivision(pub, &quot;Minor Entries&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; back = project.Publications.AddDivision(pub, &quot;Back Matter&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Verify divisions were added</span>
+<span class="sd">            &gt;&gt;&gt; divisions = project.Publications.GetDivisions(pub)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Publication has {len(divisions)} divisions&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Division name should be descriptive</span>
+<span class="sd">            - Common divisions: Main Entries, Minor Entries, Subentries</span>
+<span class="sd">            - Divisions organize publication content</span>
+<span class="sd">            - Multiple divisions can be added to one publication</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDivisions, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">division_name</span><span class="p">,</span> <span class="s2">&quot;division_name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">division_name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">division_name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Division name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Create the new division using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Add division </span><span class="si">{</span><span class="n">division_name</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="n">new_division</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to publication&#39;s sub-possibilities (must be done before setting properties)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+                <span class="n">publication</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_division</span><span class="p">)</span>
+
+            <span class="c1"># Set name</span>
+            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">division_name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_division</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+            <span class="c1"># Set creation date</span>
+            <span class="n">new_division</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+            <span class="k">return</span> <span class="n">new_division</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetHeaderFooter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the header/footer configuration for a publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Header/footer configuration text, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; header = project.Publications.GetHeaderFooter(pub)</span>
+<span class="sd">            &gt;&gt;&gt; print(header)</span>
+<span class="sd">            Header: Dictionary title | Page number</span>
+<span class="sd">            Footer: Copyright notice</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if header/footer not set</span>
+<span class="sd">            - Can describe header and footer content</span>
+<span class="sd">            - Free-form text description</span>
+<span class="sd">            - Actual header/footer rendering depends on export format</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetPageLayout, GetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Use Comment field for header/footer information</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;Comment&quot;</span><span class="p">):</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">publication</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">return</span> <span class="n">header</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetIsLandscape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if publication uses landscape orientation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if landscape orientation, False if portrait or not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; is_landscape = project.Publications.GetIsLandscape(pub)</span>
+<span class="sd">            &gt;&gt;&gt; if is_landscape:</span>
+<span class="sd">            ...     print(&quot;Landscape orientation&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;Portrait orientation&quot;)</span>
+<span class="sd">            Portrait orientation</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check orientation and page dimensions</span>
+<span class="sd">            &gt;&gt;&gt; width = project.Publications.GetPageWidth(pub)</span>
+<span class="sd">            &gt;&gt;&gt; height = project.Publications.GetPageHeight(pub)</span>
+<span class="sd">            &gt;&gt;&gt; is_landscape = project.Publications.GetIsLandscape(pub)</span>
+<span class="sd">            &gt;&gt;&gt; orientation = &quot;Landscape&quot; if is_landscape else &quot;Portrait&quot;</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;{orientation}: {width}\&quot; x {height}\&quot;&quot;)</span>
+<span class="sd">            Portrait: 8.5&quot; x 11.0&quot;</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - READ-ONLY property - cannot be set directly</span>
+<span class="sd">            - Orientation is typically inferred from page width vs. height</span>
+<span class="sd">            - True indicates landscape (width &gt; height)</span>
+<span class="sd">            - False indicates portrait (height &gt;= width)</span>
+<span class="sd">            - Returns False if orientation not set or if dimensions are equal</span>
+<span class="sd">            - Used when exporting dictionaries or texts</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetPageWidth, GetPageHeight, GetPageLayout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Check for IsLandscape property</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;IsLandscape&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">publication</span><span class="o">.</span><span class="n">IsLandscape</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># --- Hierarchical Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSubPublications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the sub-publications of a publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+<span class="sd">            recursive (bool): If True (default), returns every descendant</span>
+<span class="sd">                sub-publication (depth-first, parents before children). If</span>
+<span class="sd">                False, returns only direct children.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmPossibility sub-publication objects.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for sub in project.Publications.GetSubPublications(pub):</span>
+<span class="sd">            ...     print(project.Publications.GetName(sub))   # All descendants</span>
+
+<span class="sd">            &gt;&gt;&gt; # Direct children only</span>
+<span class="sd">            &gt;&gt;&gt; for sub in project.Publications.GetSubPublications(pub, recursive=False):</span>
+<span class="sd">            ...     print(project.Publications.GetName(sub))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetParent, GetDivisions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">publication</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">walk</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="n">walk</span><span class="p">(</span><span class="n">publication</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the parent publication of a sub-publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility or None: The parent publication, or None if top-level.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Web Dictionary Variant&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; parent = project.Publications.GetParent(pub)</span>
+<span class="sd">            &gt;&gt;&gt; if parent:</span>
+<span class="sd">            ...     parent_name = project.Publications.GetName(parent)</span>
+<span class="sd">            ...     print(f&quot;Parent: {parent_name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None for top-level publications</span>
+<span class="sd">            - Parent is determined by ownership hierarchy</span>
+<span class="sd">            - Use for building breadcrumb navigation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSubPublications</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+        <span class="n">owner</span> <span class="o">=</span> <span class="n">publication</span><span class="o">.</span><span class="n">Owner</span>
+
+        <span class="c1"># Check if owner is a publication (sub-publication) or the list (top-level)</span>
+        <span class="k">if</span> <span class="n">owner</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">owner</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;CmPossibility&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Metadata Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the creation date of a publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.DateTime or None: The creation date/time, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; date = project.Publications.GetDateCreated(pub)</span>
+<span class="sd">            &gt;&gt;&gt; if date:</span>
+<span class="sd">            ...     print(f&quot;Created: {date}&quot;)</span>
+<span class="sd">            Created: 11/23/2025 10:30:45 AM</span>
+
+<span class="sd">            &gt;&gt;&gt; # Sort publications by creation date</span>
+<span class="sd">            &gt;&gt;&gt; pubs = project.Publications.GetAll()</span>
+<span class="sd">            &gt;&gt;&gt; sorted_pubs = sorted(pubs,</span>
+<span class="sd">            ...     key=lambda p: project.Publications.GetDateCreated(p) or DateTime.MinValue)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - DateCreated is set automatically when publication is created</span>
+<span class="sd">            - Returns System.DateTime object</span>
+<span class="sd">            - Can be None for publications without creation date</span>
+<span class="sd">            - Use for tracking when publications were added to project</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDateModified, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;DateCreated&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">publication</span><span class="o">.</span><span class="n">DateCreated</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the last modification date of a publication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            publication_or_hvo: Either an ICmPossibility publication object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.DateTime or None: The modification date/time, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If publication_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pub = project.Publications.Find(&quot;Main Dictionary&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; modified = project.Publications.GetDateModified(pub)</span>
+<span class="sd">            &gt;&gt;&gt; if modified:</span>
+<span class="sd">            ...     print(f&quot;Last modified: {modified}&quot;)</span>
+<span class="sd">            Last modified: 11/23/2025 2:15:30 PM</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find recently modified publications</span>
+<span class="sd">            &gt;&gt;&gt; from System import DateTime</span>
+<span class="sd">            &gt;&gt;&gt; one_week_ago = DateTime.Now.AddDays(-7)</span>
+<span class="sd">            &gt;&gt;&gt; pubs = project.Publications.GetAll()</span>
+<span class="sd">            &gt;&gt;&gt; recent = [p for p in pubs</span>
+<span class="sd">            ...     if project.Publications.GetDateModified(p) and</span>
+<span class="sd">            ...        project.Publications.GetDateModified(p) &gt; one_week_ago]</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - DateModified is updated when properties change</span>
+<span class="sd">            - Returns System.DateTime object</span>
+<span class="sd">            - May be None if publication has never been modified</span>
+<span class="sd">            - Useful for tracking publication updates</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDateCreated, SetName, SetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">,</span> <span class="s2">&quot;publication_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">publication</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PossibilityItemOperations__ResolveObject</span><span class="p">(</span><span class="n">publication_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">publication</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">publication</span><span class="o">.</span><span class="n">DateModified</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists.PublicationOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

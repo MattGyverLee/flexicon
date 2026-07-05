@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.TextsWords.WfiAnalysisOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.TextsWords.WfiAnalysisOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.TextsWords.WfiAnalysisOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   WfiAnalysisOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: WfiAnalysisOperations</span>
+<span class="c1">#          Wordform analysis operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IWfiAnalysis</span><span class="p">,</span>
+    <span class="n">IWfiAnalysisFactory</span><span class="p">,</span>
+    <span class="n">IWfiAnalysisRepository</span><span class="p">,</span>
+    <span class="n">IWfiWordform</span><span class="p">,</span>
+    <span class="n">IWfiGlossFactory</span><span class="p">,</span>
+    <span class="n">IWfiMorphBundleFactory</span><span class="p">,</span>
+    <span class="n">IPartOfSpeech</span><span class="p">,</span>
+    <span class="n">ICmAgentEvaluation</span><span class="p">,</span>
+    <span class="n">ICmAgent</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># --- Approval Status Enum ---</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">enum</span>
+
+
+<div class="viewcode-block" id="ApprovalStatusTypes">
+<a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.WfiAnalysisOperations.ApprovalStatusTypes">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ApprovalStatusTypes</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Approval status values for wordform analyses.</span>
+
+<span class="sd">    IntEnum so existing callers that compared by the underlying integer</span>
+<span class="sd">    keep working: ``ApprovalStatusTypes.APPROVED == 2`` is still True,</span>
+<span class="sd">    and ``int(ApprovalStatusTypes.APPROVED) == 2`` for explicit</span>
+<span class="sd">    coercion. New callers can also pass ``True`` / ``False`` / ``None``</span>
+<span class="sd">    directly to :meth:`SetApprovalStatus` (more user-centric per</span>
+<span class="sd">    CLAUDE.md). (issue #59)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">DISAPPROVED</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Parser or human has disapproved</span>
+    <span class="n">UNAPPROVED</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Not yet approved/reviewed</span>
+    <span class="n">APPROVED</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># Parser or human has approved</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_coerce_approval_status</span><span class="p">(</span><span class="n">status</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize a user-facing approval value to ApprovalStatusTypes.</span>
+
+<span class="sd">    Accepts:</span>
+<span class="sd">      - ApprovalStatusTypes member -&gt; passes through.</span>
+<span class="sd">      - True / False / None -&gt; APPROVED / DISAPPROVED / UNAPPROVED.</span>
+<span class="sd">        Matches the natural mental model: &quot;I approve this&quot; / &quot;I reject</span>
+<span class="sd">        this&quot; / &quot;no opinion.&quot; (issue #59)</span>
+<span class="sd">      - Bare ints 0/1/2 -&gt; looked up against the enum members for</span>
+<span class="sd">        back-compat with the pre-IntEnum constants.</span>
+
+<span class="sd">    Raises FP_ParameterError on anything else so a typo&#39;d value fails</span>
+<span class="sd">    loudly instead of silently dispatching to the wrong opinion.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="n">ApprovalStatusTypes</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">status</span>
+    <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">APPROVED</span>
+    <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">DISAPPROVED</span>
+    <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">UNAPPROVED</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ApprovalStatusTypes</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;status must be ApprovalStatusTypes (or True/False/None for &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;approved/disapproved/unapproved), got </span><span class="si">{</span><span class="n">status</span><span class="si">!r}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+
+
+<span class="c1"># --- WfiAnalysisOperations Class ---</span>
+
+
+<div class="viewcode-block" id="WfiAnalysisOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.WfiAnalysisOperations.WfiAnalysisOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WfiAnalysisOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Provides operations for managing wordform analyses in a FLEx project.</span>
+
+<span class="sd">    Wordform analyses represent linguistic analyses of wordforms, including</span>
+<span class="sd">    morphological breakdowns, glosses, grammatical categories, and approval</span>
+<span class="sd">    status. Each wordform can have multiple analyses representing different</span>
+<span class="sd">    possible interpretations.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.WfiAnalyses property.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; project = FLExProject()</span>
+<span class="sd">        &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
+<span class="sd">        &gt;&gt;&gt; # Get wordform and its analyses</span>
+<span class="sd">        &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; analyses = project.WfiAnalyses.GetAll(wf)</span>
+<span class="sd">        &gt;&gt;&gt; for analysis in analyses:</span>
+<span class="sd">        ...     glosses = project.WfiAnalyses.GetGlosses(analysis)</span>
+<span class="sd">        ...     print(f&quot;Analysis: {glosses}&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; # Create new analysis</span>
+<span class="sd">        &gt;&gt;&gt; new_analysis = project.WfiAnalyses.Create(wf)</span>
+<span class="sd">        &gt;&gt;&gt; # Add gloss</span>
+<span class="sd">        &gt;&gt;&gt; project.WfiAnalyses.AddGloss(new_analysis, &quot;running&quot;, &quot;en&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; # Approve analysis</span>
+<span class="sd">        &gt;&gt;&gt; project.WfiAnalyses.ApproveAnalysis(new_analysis)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize WfiAnalysisOperations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: FLExProject instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Specify which sequence to reorder for wordform analyses.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">AnalysesOS</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper to resolve writing system handle (analysis).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Writing system handle (language tag or ID), or None for default</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Resolved writing system handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetWordformObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper to get wordform object from HVO or object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wordform_or_hvo: IWfiWordform object or HVO integer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiWordform: The wordform object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If parameter doesn&#39;t refer to a wordform.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">wf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span> <span class="n">IWfiWordform</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">wf</span>
+        <span class="k">return</span> <span class="n">wordform_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetAnalysisObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper to get analysis object from HVO or object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: IWfiAnalysis object or HVO integer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiAnalysis: The analysis object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If parameter doesn&#39;t refer to an analysis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="n">IWfiAnalysis</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to an analysis&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">analysis</span>
+        <span class="k">return</span> <span class="n">analysis_or_hvo</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve all analyses for a wordform.</span>
+
+<span class="sd">        This method returns all IWfiAnalysis objects associated with a given</span>
+<span class="sd">        wordform, representing different possible linguistic interpretations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wordform_or_hvo: Either an IWfiWordform object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IWfiAnalysis objects for this wordform</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If wordform_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If wordform doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; analyses = project.WfiAnalyses.GetAll(wf)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(analyses)} analyses&quot;)</span>
+<span class="sd">            Found 2 analyses</span>
+<span class="sd">            &gt;&gt;&gt; for analysis in analyses:</span>
+<span class="sd">            ...     if project.WfiAnalyses.IsHumanApproved(analysis):</span>
+<span class="sd">            ...         print(&quot;This is the approved analysis&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if wordform has no analyses</span>
+<span class="sd">            - Analyses may be human-created or parser-generated</span>
+<span class="sd">            - Each analysis represents a possible linguistic interpretation</span>
+<span class="sd">            - Analyses include morphological breakdown and glosses</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Exists, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="s2">&quot;wordform_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetWordformObject</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">wordform</span><span class="o">.</span><span class="n">AnalysesOC</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new analysis for a wordform.</span>
+
+<span class="sd">        Creates an empty IWfiAnalysis object associated with the specified</span>
+<span class="sd">        wordform. After creation, use AddGloss, AddMorphBundle, SetCategory,</span>
+<span class="sd">        etc. to populate the analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wordform_or_hvo: Either an IWfiWordform object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiAnalysis: The newly created analysis object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If wordform_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If wordform doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; analysis = project.WfiAnalyses.Create(wf)</span>
+<span class="sd">            &gt;&gt;&gt; # Add gloss to the analysis</span>
+<span class="sd">            &gt;&gt;&gt; project.WfiAnalyses.AddGloss(analysis, &quot;running&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Set category</span>
+<span class="sd">            &gt;&gt;&gt; verb = project.POS.Find(&quot;Verb&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if verb:</span>
+<span class="sd">            ...     project.WfiAnalyses.SetCategory(analysis, verb)</span>
+<span class="sd">            &gt;&gt;&gt; # Approve it</span>
+<span class="sd">            &gt;&gt;&gt; project.WfiAnalyses.ApproveAnalysis(analysis)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - New analyses start with unapproved status</span>
+<span class="sd">            - Empty analyses have no glosses or morph bundles</span>
+<span class="sd">            - Use SetApprovalStatus or ApproveAnalysis to mark as approved</span>
+<span class="sd">            - Consider using AddGloss immediately after creation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, AddGloss, SetCategory, ApproveAnalysis</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="s2">&quot;wordform_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetWordformObject</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create analysis&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the analysis using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiAnalysisFactory</span><span class="p">)</span>
+            <span class="n">new_analysis</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to wordform&#39;s analysis collection</span>
+            <span class="n">wordform</span><span class="o">.</span><span class="n">AnalysesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_analysis</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_analysis</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all syncable properties of a wordform analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The IWfiAnalysis object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary of syncable properties with their values.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; props = project.WfiAnalyses.GetSyncableProperties(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;CategoryRA&#39;])</span>
+<span class="sd">            &#39;abc123...&#39;  # GUID of the category (POS)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Reference Atomic property: CategoryRA (returns GUID string)</span>
+<span class="sd">            - Does NOT include owned collections (glosses, morph bundles) - those are children</span>
+<span class="sd">            - Does NOT include approval status (metadata)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Reference Atomic property - CategoryRA (Part of Speech)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;CategoryRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">CategoryRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;CategoryRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">CategoryRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two wordform analyses for differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First analysis object (from project 1)</span>
+<span class="sd">            item2: Second analysis object (from project 2)</span>
+<span class="sd">            ops1: Optional WfiAnalysisOperations instance for project 1 (defaults to self)</span>
+<span class="sd">            ops2: Optional WfiAnalysisOperations instance for project 2 (defaults to self)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict)</span>
+<span class="sd">                - is_different (bool): True if analyses differ, False if identical</span>
+<span class="sd">                - differences_dict (dict): Maps property names to (value1, value2) tuples</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = ops1.CompareTo(analysis1, analysis2, ops1, ops2)</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} != {val2}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Compares CategoryRA (POS) by GUID</span>
+<span class="sd">            - Empty/null values are treated as equivalent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Get all property keys from both items</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="c1"># Compare values</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_CompareValues</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">):</span>
+                <span class="c1"># Values are different</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete an analysis from its owning wordform.</span>
+
+<span class="sd">        Removes the specified analysis from the wordform&#39;s analysis collection.</span>
+<span class="sd">        All associated glosses and morph bundles are also deleted.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; analyses = project.WfiAnalyses.GetAll(wf)</span>
+<span class="sd">            &gt;&gt;&gt; # Delete disapproved analyses</span>
+<span class="sd">            &gt;&gt;&gt; for analysis in analyses:</span>
+<span class="sd">            ...     status = project.WfiAnalyses.GetApprovalStatus(analysis)</span>
+<span class="sd">            ...     if status == ApprovalStatusTypes.DISAPPROVED:</span>
+<span class="sd">            ...         project.WfiAnalyses.Delete(analysis)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - All glosses and morph bundles are permanently deleted</span>
+<span class="sd">            - Text segments using this analysis may be affected</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get the owning wordform and remove the analysis. pythonnet</span>
+        <span class="c1"># returns analysis.Owner as the base ICmObject, which has no</span>
+        <span class="c1"># AnalysesOC; cast to IWfiWordform first (issue #32).</span>
+        <span class="n">wordform</span> <span class="o">=</span> <span class="n">IWfiWordform</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+        <span class="n">wordform</span><span class="o">.</span><span class="n">AnalysesOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">analysis</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a wordform analysis, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The IWfiAnalysis object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): Ignored. AnalysesOC is an unordered</span>
+<span class="sd">                ILcmOwningCollection with no Insert() method and no concept of</span>
+<span class="sd">                positional ordering. The duplicate is always appended via Add().</span>
+<span class="sd">            deep (bool): If True, also duplicate owned objects (glosses, morph bundles).</span>
+<span class="sd">                        If False (default), only copy simple properties and references.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiAnalysis: The newly created duplicate analysis with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; analyses = project.WfiAnalyses.GetAll(wf)</span>
+<span class="sd">            &gt;&gt;&gt; if analyses:</span>
+<span class="sd">            ...     # Shallow duplicate (no glosses/morph bundles)</span>
+<span class="sd">            ...     dup = project.WfiAnalyses.Duplicate(analyses[0])</span>
+<span class="sd">            ...     print(f&quot;Original: {project.WfiAnalyses.GetGuid(analyses[0])}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Duplicate: {project.WfiAnalyses.GetGuid(dup)}&quot;)</span>
+<span class="sd">            Original: 12345678-1234-1234-1234-123456789abc</span>
+<span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
+<span class="sd">            ...</span>
+<span class="sd">            ...     # Deep duplicate (includes all glosses and morph bundles)</span>
+<span class="sd">            ...     deep_dup = project.WfiAnalyses.Duplicate(analyses[0], deep=True)</span>
+<span class="sd">            ...     print(f&quot;Glosses: {project.WfiAnalyses.GetGlossCount(deep_dup)}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Morph bundles: {project.WfiAnalyses.GetMorphBundleCount(deep_dup)}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original analysis&#39;s position</span>
+<span class="sd">            - Simple properties copied: None (analysis has no simple MultiString properties)</span>
+<span class="sd">            - Reference properties copied: CategoryRA (part of speech)</span>
+<span class="sd">            - Owned objects (deep=True): MeaningsOC (glosses), MorphBundlesOS (morph bundles)</span>
+<span class="sd">            - EvaluationsRC (approval status) is NOT copied - new analysis starts unapproved</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetGuid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source analysis and parent; AnalysesOC is declared on IWfiWordform</span>
+        <span class="c1"># so cast directly instead of doing a wasteful Hvo round-trip.</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="n">IWfiWordform</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate analysis&quot;</span><span class="p">):</span>
+            <span class="c1"># Create new analysis using factory (auto-generates new GUID)</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiAnalysisFactory</span><span class="p">)</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># AnalysesOC is an unordered ILcmOwningCollection; insert_after has</span>
+            <span class="c1"># no semantic meaning and is ignored.</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">AnalysesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy Reference Atomic (RA) properties</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;CategoryRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">CategoryRA</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">CategoryRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">CategoryRA</span>
+
+            <span class="c1"># Note: We intentionally do NOT copy EvaluationsRC (approval status)</span>
+            <span class="c1"># New duplicate should start as unapproved</span>
+
+            <span class="c1"># Handle owned objects if deep=True</span>
+            <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+                <span class="c1"># Duplicate glosses (MeaningsOC)</span>
+                <span class="k">for</span> <span class="n">gloss</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">MeaningsOC</span><span class="p">:</span>
+                    <span class="c1"># Use WfiGlossOperations.Duplicate if available, otherwise manually copy</span>
+                    <span class="n">gloss_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiGlossFactory</span><span class="p">)</span>
+                    <span class="n">new_gloss</span> <span class="o">=</span> <span class="n">gloss_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                    <span class="n">duplicate</span><span class="o">.</span><span class="n">MeaningsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_gloss</span><span class="p">)</span>
+                    <span class="c1"># Copy gloss form</span>
+                    <span class="n">new_gloss</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">gloss</span><span class="o">.</span><span class="n">Form</span><span class="p">)</span>
+
+                <span class="c1"># Duplicate morph bundles (MorphBundlesOS)</span>
+                <span class="k">for</span> <span class="n">bundle</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="p">:</span>
+                    <span class="c1"># Use WfiMorphBundleOperations.Duplicate if available, otherwise manually copy</span>
+                    <span class="n">bundle_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiMorphBundleFactory</span><span class="p">)</span>
+                    <span class="n">new_bundle</span> <span class="o">=</span> <span class="n">bundle_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                    <span class="n">duplicate</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_bundle</span><span class="p">)</span>
+                    <span class="c1"># Copy bundle properties</span>
+                    <span class="n">new_bundle</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">bundle</span><span class="o">.</span><span class="n">Form</span><span class="p">)</span>
+                    <span class="n">new_bundle</span><span class="o">.</span><span class="n">Gloss</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">bundle</span><span class="o">.</span><span class="n">Gloss</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">bundle</span><span class="p">,</span> <span class="s2">&quot;SenseRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">bundle</span><span class="o">.</span><span class="n">SenseRA</span><span class="p">:</span>
+                        <span class="n">new_bundle</span><span class="o">.</span><span class="n">SenseRA</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">SenseRA</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">bundle</span><span class="p">,</span> <span class="s2">&quot;MsaRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MsaRA</span><span class="p">:</span>
+                        <span class="n">new_bundle</span><span class="o">.</span><span class="n">MsaRA</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MsaRA</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">bundle</span><span class="p">,</span> <span class="s2">&quot;MorphRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MorphRA</span><span class="p">:</span>
+                        <span class="n">new_bundle</span><span class="o">.</span><span class="n">MorphRA</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">MorphRA</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">bundle</span><span class="p">,</span> <span class="s2">&quot;InflClassRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">bundle</span><span class="o">.</span><span class="n">InflClassRA</span><span class="p">:</span>
+                        <span class="n">new_bundle</span><span class="o">.</span><span class="n">InflClassRA</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">InflClassRA</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a specific analysis exists for a wordform.</span>
+
+<span class="sd">        Verifies that the given analysis belongs to the specified wordform.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wordform_or_hvo: Either an IWfiWordform object or its HVO</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the analysis exists in the wordform, False otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If either parameter is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; analyses = project.WfiAnalyses.GetAll(wf)</span>
+<span class="sd">            &gt;&gt;&gt; if analyses:</span>
+<span class="sd">            ...     # Check if first analysis exists</span>
+<span class="sd">            ...     exists = project.WfiAnalyses.Exists(wf, analyses[0])</span>
+<span class="sd">            ...     print(f&quot;Analysis exists: {exists}&quot;)</span>
+<span class="sd">            Analysis exists: True</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns False if wordform has no analyses</span>
+<span class="sd">            - Checks by comparing HVO values</span>
+<span class="sd">            - Useful for validation before operations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">,</span> <span class="s2">&quot;wordform_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">wordform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetWordformObject</span><span class="p">(</span><span class="n">wordform_or_hvo</span><span class="p">)</span>
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Check if analysis is in wordform&#39;s analyses</span>
+        <span class="k">for</span> <span class="n">wf_analysis</span> <span class="ow">in</span> <span class="n">wordform</span><span class="o">.</span><span class="n">AnalysesOC</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">wf_analysis</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">analysis</span><span class="o">.</span><span class="n">Hvo</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># --- Approval &amp; Status Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetApprovalStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the approval status of an analysis.</span>
+
+<span class="sd">        Returns the current approval status indicating whether the analysis</span>
+<span class="sd">        has been approved, disapproved, or is still unapproved.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The approval status (from ApprovalStatusTypes enum)</span>
+<span class="sd">                 0 = DISAPPROVED</span>
+<span class="sd">                 1 = UNAPPROVED (default)</span>
+<span class="sd">                 2 = APPROVED</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; status = project.WfiAnalyses.GetApprovalStatus(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; if status == ApprovalStatusTypes.APPROVED:</span>
+<span class="sd">            ...     print(&quot;This analysis is approved&quot;)</span>
+<span class="sd">            ... elif status == ApprovalStatusTypes.UNAPPROVED:</span>
+<span class="sd">            ...     print(&quot;This analysis needs review&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;This analysis is disapproved&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - New analyses default to UNAPPROVED status</span>
+<span class="sd">            - Parser-generated analyses may have different initial status</span>
+<span class="sd">            - Status affects which analysis is used in interlinear text</span>
+<span class="sd">            - Human approval overrides parser approval</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetApprovalStatus, IsHumanApproved, IsComputerApproved,</span>
+<span class="sd">            ApproveAnalysis, RejectAnalysis</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Human evaluations take precedence over parser evaluations.</span>
+        <span class="c1"># Within the human evaluations, a single approve outweighs</span>
+        <span class="c1"># disapproves -- matches FLEx UI semantics where one human</span>
+        <span class="c1"># approval makes the analysis &quot;approved&quot; status.</span>
+        <span class="c1">#</span>
+        <span class="c1"># ICmAgentEvaluation exposes two flags: Human (true = human</span>
+        <span class="c1"># analyst, false = parser) and Approves (true = approves,</span>
+        <span class="c1"># false = disapproves). The previous implementation treated</span>
+        <span class="c1"># any non-empty EvaluationsRC as APPROVED, which silently</span>
+        <span class="c1"># mis-reported DISAPPROVED analyses. (issue #38)</span>
+        <span class="n">found_human_disapprove</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">evaluation</span> <span class="ow">in</span> <span class="n">analysis</span><span class="o">.</span><span class="n">EvaluationsRC</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">evaluation</span><span class="p">,</span> <span class="s2">&quot;Human&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">evaluation</span><span class="p">,</span> <span class="s2">&quot;Approves&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">APPROVED</span>
+            <span class="n">found_human_disapprove</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">found_human_disapprove</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">DISAPPROVED</span>
+
+        <span class="k">return</span> <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">UNAPPROVED</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetApprovalStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the approval status of an analysis.</span>
+
+<span class="sd">        Updates the approval status to indicate whether the analysis is</span>
+<span class="sd">        approved, disapproved, or unapproved.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+<span class="sd">            status: The approval status (from ApprovalStatusTypes enum)</span>
+<span class="sd">                   0 = DISAPPROVED</span>
+<span class="sd">                   1 = UNAPPROVED</span>
+<span class="sd">                   2 = APPROVED</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist, status is invalid,</span>
+<span class="sd">                or no human agents exist in the project</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = project.WfiAnalyses.Create(wf)</span>
+<span class="sd">            &gt;&gt;&gt; # Approve the analysis</span>
+<span class="sd">            &gt;&gt;&gt; project.WfiAnalyses.SetApprovalStatus(</span>
+<span class="sd">            ...     analysis, ApprovalStatusTypes.APPROVED)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Or reject it</span>
+<span class="sd">            &gt;&gt;&gt; project.WfiAnalyses.SetApprovalStatus(</span>
+<span class="sd">            ...     analysis, ApprovalStatusTypes.DISAPPROVED)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Use ApprovalStatusTypes enum for status values</span>
+<span class="sd">            - APPROVED analyses are preferred in interlinear text</span>
+<span class="sd">            - DISAPPROVED analyses are typically hidden</span>
+<span class="sd">            - UNAPPROVED is the default state</span>
+<span class="sd">            - Consider using ApproveAnalysis() or RejectAnalysis() shortcuts</span>
+<span class="sd">            - Creates/updates CmAgentEvaluation objects to persist approval</span>
+<span class="sd">            - Requires at least one human agent to exist in project</span>
+<span class="sd">            - Uses first available human agent for evaluation</span>
+<span class="sd">            - Setting UNAPPROVED removes the evaluation entirely</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetApprovalStatus, ApproveAnalysis, RejectAnalysis,</span>
+<span class="sd">            IsHumanApproved</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">DISAPPROVED</span><span class="p">,</span>
+            <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">UNAPPROVED</span><span class="p">,</span>
+            <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">APPROVED</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid approval status: </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">. Must be 0, 1, or 2.&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get default human agent for evaluations</span>
+        <span class="c1"># Import here to avoid circular dependency. AgentOperations lives in</span>
+        <span class="c1"># the Lists/ subpackage, not TextsWords/ (issue #24).</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..Lists.AgentOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentOperations</span>
+
+        <span class="n">agent_ops</span> <span class="o">=</span> <span class="n">AgentOperations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
+
+        <span class="c1"># Require user to create human agent explicitly (Craig&#39;s pattern)</span>
+        <span class="n">human_agents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">agent_ops</span><span class="o">.</span><span class="n">GetHumanAgents</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">human_agents</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;No human agents exist in project. Create one first using &quot;</span>
+                <span class="s2">&quot;project.Agents.CreateHumanAgent(name, person) before setting approval status.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Prefer ILangProject.DefaultUserAgent (the canonical &quot;the user&quot;</span>
+        <span class="c1"># agent) when it is present and human. AnalyzingAgentsOC has no</span>
+        <span class="c1"># deterministic ordering, so falling straight back to</span>
+        <span class="c1"># human_agents[0] would non-deterministically pick whichever</span>
+        <span class="c1"># human agent the runtime happened to list first -- e.g. a</span>
+        <span class="c1"># legacy collaborator instead of the actual current user. Fall</span>
+        <span class="c1"># back to human_agents[0] only when DefaultUserAgent is</span>
+        <span class="c1"># unavailable or somehow not a human agent. (issue #56)</span>
+        <span class="n">agent</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">default_user</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">,</span> <span class="s2">&quot;DefaultUserAgent&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">default_user</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">default_user</span><span class="p">,</span> <span class="s2">&quot;Human&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">human_agents</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">default_user</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                    <span class="n">agent</span> <span class="o">=</span> <span class="n">candidate</span>
+                    <span class="k">break</span>
+            <span class="k">if</span> <span class="n">agent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># DefaultUserAgent is human but wasn&#39;t surfaced by</span>
+                <span class="c1"># GetHumanAgents() (shouldn&#39;t normally happen). Trust</span>
+                <span class="c1"># the LCM-canonical reference anyway.</span>
+                <span class="n">agent</span> <span class="o">=</span> <span class="n">default_user</span>
+        <span class="k">if</span> <span class="n">agent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">agent</span> <span class="o">=</span> <span class="n">human_agents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Use LCM&#39;s purpose-built ICmAgent.SetEvaluation(target, opinion).</span>
+        <span class="c1"># The previous implementation built ICmAgentEvaluation manually</span>
+        <span class="c1"># and added it to analysis.EvaluationsRC, but EvaluationsRC is a</span>
+        <span class="c1"># reference collection (RC) -- adding to it doesn&#39;t confer</span>
+        <span class="c1"># ownership on the new evaluation. ICmAgentEvaluation has to be</span>
+        <span class="c1"># owned somewhere (it lives under CmAgent.ApprovesOA or in a</span>
+        <span class="c1"># parallel disapprovals collection), and the manual code set</span>
+        <span class="c1"># evaluation.Agent on a free-floating object before any owner</span>
+        <span class="c1"># took it, which trips the Phase 2 NPE pattern. (issue #26)</span>
+        <span class="c1">#</span>
+        <span class="c1"># SetEvaluation handles ownership, opinion bookkeeping, and the</span>
+        <span class="c1"># remove/replace cases internally.</span>
+        <span class="c1">#</span>
+        <span class="c1"># Coerce status from True/False/None (user-centric input) or</span>
+        <span class="c1"># bare-int 0/1/2 (back-compat with the pre-IntEnum constants)</span>
+        <span class="c1"># to the IntEnum members before dispatching. (issue #59)</span>
+        <span class="n">normalized</span> <span class="o">=</span> <span class="n">_coerce_approval_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">Opinions</span>
+
+        <span class="n">opinion_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">APPROVED</span><span class="p">:</span> <span class="n">Opinions</span><span class="o">.</span><span class="n">approves</span><span class="p">,</span>
+            <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">DISAPPROVED</span><span class="p">:</span> <span class="n">Opinions</span><span class="o">.</span><span class="n">disapproves</span><span class="p">,</span>
+            <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">UNAPPROVED</span><span class="p">:</span> <span class="n">Opinions</span><span class="o">.</span><span class="n">noopinion</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">SetEvaluation</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="n">opinion_map</span><span class="p">[</span><span class="n">normalized</span><span class="p">])</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsHumanApproved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if an analysis is human-approved.</span>
+
+<span class="sd">        Determines whether a human linguist has explicitly approved this</span>
+<span class="sd">        analysis (as opposed to parser/computer approval).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if human-approved, False otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for analysis in project.WfiAnalyses.GetAll(wf):</span>
+<span class="sd">            ...     if project.WfiAnalyses.IsHumanApproved(analysis):</span>
+<span class="sd">            ...         print(&quot;Found human-approved analysis&quot;)</span>
+<span class="sd">            ...         glosses = project.WfiAnalyses.GetGlosses(analysis)</span>
+<span class="sd">            ...         print(f&quot;Glosses: {glosses}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Human approval takes precedence over computer approval</span>
+<span class="sd">            - New analyses are not human-approved by default</span>
+<span class="sd">            - Parser-generated analyses require human review</span>
+<span class="sd">            - Used to distinguish manual vs. automatic analyses</span>
+<span class="sd">            - Checks for evaluations with human agents and Accepted=True</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsComputerApproved, ApproveAnalysis, GetApprovalStatus</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># ICmAgentEvaluation always exposes Human (bool) and Approves</span>
+        <span class="c1"># (bool) per LCM schema; the previous hasattr guards were dead</span>
+        <span class="c1"># weight. GetApprovalStatus uses the bare property access</span>
+        <span class="c1"># pattern. (issue #60)</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">Human</span> <span class="ow">and</span> <span class="n">e</span><span class="o">.</span><span class="n">Approves</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">analysis</span><span class="o">.</span><span class="n">EvaluationsRC</span>
+        <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsComputerApproved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if an analysis is computer/parser-approved.</span>
+
+<span class="sd">        Determines whether the parser has approved this analysis</span>
+<span class="sd">        (as opposed to human approval).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if computer-approved, False otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for analysis in project.WfiAnalyses.GetAll(wf):</span>
+<span class="sd">            ...     if project.WfiAnalyses.IsComputerApproved(analysis):</span>
+<span class="sd">            ...         print(&quot;Parser-generated analysis&quot;)</span>
+<span class="sd">            ...     else:</span>
+<span class="sd">            ...         print(&quot;Needs parsing or manual creation&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Computer approval is from the morphological parser</span>
+<span class="sd">            - Human approval typically overrides computer approval</span>
+<span class="sd">            - Parser analyses may be approved automatically</span>
+<span class="sd">            - Useful for identifying parser-generated content</span>
+<span class="sd">            - Checks for evaluations with Human=False and Approves=True</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsHumanApproved, GetAgentEvaluation, GetApprovalStatus</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># ICmAgentEvaluation always exposes Human (bool) and Approves</span>
+        <span class="c1"># (bool) per LCM schema; the previous hasattr guards were dead</span>
+        <span class="c1"># weight. (issue #60)</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="ow">not</span> <span class="n">e</span><span class="o">.</span><span class="n">Human</span> <span class="ow">and</span> <span class="n">e</span><span class="o">.</span><span class="n">Approves</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">analysis</span><span class="o">.</span><span class="n">EvaluationsRC</span>
+        <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApproveAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Approve an analysis (mark as human-approved).</span>
+
+<span class="sd">        Sets the analysis to approved status, indicating that a human</span>
+<span class="sd">        linguist has reviewed and approved this analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; analysis = project.WfiAnalyses.Create(wf)</span>
+<span class="sd">            &gt;&gt;&gt; project.WfiAnalyses.AddGloss(analysis, &quot;running&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Approve the analysis</span>
+<span class="sd">            &gt;&gt;&gt; project.WfiAnalyses.ApproveAnalysis(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; # Verify</span>
+<span class="sd">            &gt;&gt;&gt; if project.WfiAnalyses.IsHumanApproved(analysis):</span>
+<span class="sd">            ...     print(&quot;Analysis is now approved&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is a convenience method for SetApprovalStatus(APPROVED)</span>
+<span class="sd">            - Marks the analysis as human-approved</span>
+<span class="sd">            - Approved analyses are preferred in interlinear text display</span>
+<span class="sd">            - Only one analysis per wordform should typically be approved</span>
+<span class="sd">            - Creates CmAgentEvaluation with Accepted=True</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RejectAnalysis, SetApprovalStatus, IsHumanApproved</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Set to approved status</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetApprovalStatus</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">APPROVED</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RejectAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reject an analysis (mark as disapproved).</span>
+
+<span class="sd">        Sets the analysis to disapproved status, indicating that this</span>
+<span class="sd">        analysis is incorrect and should not be used.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for analysis in project.WfiAnalyses.GetAll(wf):</span>
+<span class="sd">            ...     # Reject parser analyses that are incorrect</span>
+<span class="sd">            ...     if project.WfiAnalyses.IsComputerApproved(analysis):</span>
+<span class="sd">            ...         glosses = project.WfiAnalyses.GetGlosses(analysis)</span>
+<span class="sd">            ...         if &quot;incorrect_gloss&quot; in glosses:</span>
+<span class="sd">            ...             project.WfiAnalyses.RejectAnalysis(analysis)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is a convenience method for SetApprovalStatus(DISAPPROVED)</span>
+<span class="sd">            - Rejected analyses are typically hidden in FLEx UI</span>
+<span class="sd">            - Use instead of Delete to preserve analysis history</span>
+<span class="sd">            - Useful for marking parser errors</span>
+<span class="sd">            - Creates CmAgentEvaluation with Accepted=False</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            ApproveAnalysis, SetApprovalStatus, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Set to disapproved status</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetApprovalStatus</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="n">ApprovalStatusTypes</span><span class="o">.</span><span class="n">DISAPPROVED</span><span class="p">)</span>
+
+    <span class="c1"># --- Gloss Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGlosses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all glosses for an analysis.</span>
+
+<span class="sd">        Retrieves all IWfiGloss objects associated with this analysis,</span>
+<span class="sd">        representing the meanings/translations of the analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IWfiGloss objects</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; glosses = project.WfiAnalyses.GetGlosses(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; for gloss in glosses:</span>
+<span class="sd">            ...     # Access gloss properties</span>
+<span class="sd">            ...     print(f&quot;Gloss HVO: {gloss.Hvo}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if analysis has no glosses</span>
+<span class="sd">            - Glosses are stored in the MeaningsOC collection</span>
+<span class="sd">            - Each gloss can have text in multiple writing systems</span>
+<span class="sd">            - Typically one gloss per analysis, but multiple are possible</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetGlossCount, AddGloss</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">MeaningsOC</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGlossCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the count of glosses for an analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of glosses in the analysis</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; count = project.WfiAnalyses.GetGlossCount(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Analysis has {count} gloss(es)&quot;)</span>
+<span class="sd">            Analysis has 1 gloss(es)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns 0 if analysis has no glosses</span>
+<span class="sd">            - Most analyses have exactly one gloss</span>
+<span class="sd">            - Multiple glosses may represent different writing systems</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetGlosses, AddGloss</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">analysis</span><span class="o">.</span><span class="n">MeaningsOC</span><span class="o">.</span><span class="n">Count</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddGloss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">gloss_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a gloss to an analysis.</span>
+
+<span class="sd">        Creates a new IWfiGloss object with the specified text and adds it</span>
+<span class="sd">        to the analysis&#39;s gloss collection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+<span class="sd">            gloss_text: The gloss text to add</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiGloss: The newly created gloss object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo or gloss_text is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist or gloss_text is empty</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = project.WfiAnalyses.Create(wf)</span>
+<span class="sd">            &gt;&gt;&gt; # Add English gloss</span>
+<span class="sd">            &gt;&gt;&gt; gloss = project.WfiAnalyses.AddGloss(analysis, &quot;running&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Add French gloss</span>
+<span class="sd">            &gt;&gt;&gt; gloss_fr = project.WfiAnalyses.AddGloss(analysis, &quot;courir&quot;, &quot;fr&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Verify</span>
+<span class="sd">            &gt;&gt;&gt; count = project.WfiAnalyses.GetGlossCount(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Analysis now has {count} glosses&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Gloss text is stored in the specified writing system</span>
+<span class="sd">            - Multiple glosses can exist for different writing systems</span>
+<span class="sd">            - Empty or whitespace-only gloss text raises error</span>
+<span class="sd">            - Glosses are stored in the MeaningsOC collection</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetGlosses, GetGlossCount</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_text</span><span class="p">,</span> <span class="s2">&quot;gloss_text&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">gloss_text</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">gloss_text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Gloss text cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add gloss&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the gloss using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiGlossFactory</span><span class="p">)</span>
+            <span class="n">new_gloss</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to analysis&#39;s meanings collection (must be done before setting properties)</span>
+            <span class="n">analysis</span><span class="o">.</span><span class="n">MeaningsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_gloss</span><span class="p">)</span>
+
+            <span class="c1"># Set the gloss text</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">gloss_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_gloss</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_gloss</span>
+
+    <span class="c1"># --- Morph Bundle Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMorphBundles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all morpheme bundles for an analysis.</span>
+
+<span class="sd">        Retrieves all IWfiMorphBundle objects representing the morphological</span>
+<span class="sd">        breakdown of the wordform in this analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IWfiMorphBundle objects in sequence order</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; bundles = project.WfiAnalyses.GetMorphBundles(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; for bundle in bundles:</span>
+<span class="sd">            ...     # Access bundle properties</span>
+<span class="sd">            ...     print(f&quot;Morph bundle HVO: {bundle.Hvo}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if analysis has no morph bundles</span>
+<span class="sd">            - Bundles are ordered sequence (MorphBundlesOS)</span>
+<span class="sd">            - Each bundle represents one morpheme in the analysis</span>
+<span class="sd">            - Bundles include morph form, gloss, and grammatical info</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMorphBundleCount</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMorphBundleCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the count of morpheme bundles for an analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of morph bundles in the analysis</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; count = project.WfiAnalyses.GetMorphBundleCount(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Analysis has {count} morpheme(s)&quot;)</span>
+<span class="sd">            Analysis has 2 morpheme(s)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns 0 if analysis has no morph bundles</span>
+<span class="sd">            - Count represents the morphological complexity</span>
+<span class="sd">            - Monomorphemic words typically have 1 bundle</span>
+<span class="sd">            - Polymorphemic words have multiple bundles</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMorphBundles</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">analysis</span><span class="o">.</span><span class="n">MorphBundlesOS</span><span class="o">.</span><span class="n">Count</span>
+
+    <span class="c1"># --- Category Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the grammatical category (part of speech) for an analysis.</span>
+
+<span class="sd">        Retrieves the IPartOfSpeech object representing the grammatical</span>
+<span class="sd">        category assigned to this analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech or None: The category object, or None if not set</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; category = project.WfiAnalyses.GetCategory(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; if category:</span>
+<span class="sd">            ...     name = project.POS.GetName(category)</span>
+<span class="sd">            ...     abbr = project.POS.GetAbbreviation(category)</span>
+<span class="sd">            ...     print(f&quot;Category: {name} ({abbr})&quot;)</span>
+<span class="sd">            Category: Verb (V)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if no category is set</span>
+<span class="sd">            - Category represents the overall POS for the wordform</span>
+<span class="sd">            - Individual morph bundles may have different categories</span>
+<span class="sd">            - Use project.POS methods to access category properties</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetCategory, GetMorphBundles</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="s2">&quot;CategoryRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">analysis</span><span class="o">.</span><span class="n">CategoryRA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">analysis</span><span class="o">.</span><span class="n">CategoryRA</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetCategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">category</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the grammatical category (part of speech) for an analysis.</span>
+
+<span class="sd">        Assigns a grammatical category to the analysis, indicating the</span>
+<span class="sd">        overall part of speech for the wordform.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+<span class="sd">            category: IPartOfSpeech object to set as the category</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo or category is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = project.WfiAnalyses.Create(wf)</span>
+<span class="sd">            &gt;&gt;&gt; # Find or create a verb category</span>
+<span class="sd">            &gt;&gt;&gt; verb = project.POS.Find(&quot;Verb&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if verb:</span>
+<span class="sd">            ...     project.WfiAnalyses.SetCategory(analysis, verb)</span>
+<span class="sd">            &gt;&gt;&gt; # Verify</span>
+<span class="sd">            &gt;&gt;&gt; cat = project.WfiAnalyses.GetCategory(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.POS.GetName(cat))</span>
+<span class="sd">            Verb</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Category must be a valid IPartOfSpeech object</span>
+<span class="sd">            - Use project.POS methods to find/create categories</span>
+<span class="sd">            - Setting to None will clear the category</span>
+<span class="sd">            - Category affects grammatical analysis display</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetCategory, project.POS.Find, project.POS.Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Verify category is a valid IPartOfSpeech</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="n">IPartOfSpeech</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Category must be an IPartOfSpeech object&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Set the category</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="s2">&quot;CategoryRA&quot;</span><span class="p">):</span>
+            <span class="n">analysis</span><span class="o">.</span><span class="n">CategoryRA</span> <span class="o">=</span> <span class="n">category</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Analysis does not support CategoryRA property&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Evaluation Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAgentEvaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the parser/agent evaluation for an analysis.</span>
+
+<span class="sd">        Retrieves evaluation information created by the parser or other</span>
+<span class="sd">        automated agents.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAgentEvaluation or None: The agent evaluation object, or None if not set</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; evaluation = project.WfiAnalyses.GetAgentEvaluation(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; if evaluation:</span>
+<span class="sd">            ...     print(&quot;Analysis has parser evaluation&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;No parser evaluation&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if no agent evaluation exists</span>
+<span class="sd">            - Agent evaluations are created by the parser</span>
+<span class="sd">            - Multiple evaluations may exist in EvaluationsRC</span>
+<span class="sd">            - This returns the first evaluation found</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetHumanEvaluation, IsComputerApproved</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Return the first PARSER evaluation (Human == False). The</span>
+        <span class="c1"># previous implementation returned EvaluationsRC[0], but</span>
+        <span class="c1"># EvaluationsRC mixes human and parser evaluations and LCM</span>
+        <span class="c1"># ordering is not deterministic -- so that path would</span>
+        <span class="c1"># non-deterministically return a human evaluation when one</span>
+        <span class="c1"># happened to be listed first. Mirrors the discriminating</span>
+        <span class="c1"># iteration pattern used in GetApprovalStatus. (issue #55)</span>
+        <span class="k">for</span> <span class="n">evaluation</span> <span class="ow">in</span> <span class="n">analysis</span><span class="o">.</span><span class="n">EvaluationsRC</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">evaluation</span><span class="p">,</span> <span class="s2">&quot;Human&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">evaluation</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetHumanEvaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the human evaluation for an analysis.</span>
+
+<span class="sd">        Retrieves evaluation information created by human linguists.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAgentEvaluation or None: The human evaluation object, or None if not set</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; evaluation = project.WfiAnalyses.GetHumanEvaluation(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; if evaluation:</span>
+<span class="sd">            ...     print(&quot;Analysis has human evaluation&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;Analysis not yet reviewed by human&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if no human evaluation exists</span>
+<span class="sd">            - Human evaluations indicate manual review</span>
+<span class="sd">            - Searches EvaluationsRC for human agent</span>
+<span class="sd">            - Human evaluation overrides parser evaluation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAgentEvaluation, IsHumanApproved</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Return the first HUMAN evaluation (Human == True). The</span>
+        <span class="c1"># previous implementation accepted any evaluation that exposed</span>
+        <span class="c1"># an .Agent attribute, but every ICmAgentEvaluation has an</span>
+        <span class="c1"># Agent -- the check did not actually discriminate. Mirrors</span>
+        <span class="c1"># the iteration pattern used in GetApprovalStatus. (issue #55)</span>
+        <span class="k">for</span> <span class="n">evaluation</span> <span class="ow">in</span> <span class="n">analysis</span><span class="o">.</span><span class="n">EvaluationsRC</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">evaluation</span><span class="p">,</span> <span class="s2">&quot;Human&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">evaluation</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEvaluations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all agent evaluations for an analysis.</span>
+
+<span class="sd">        Retrieves all ICmAgentEvaluation objects from the analysis&#39;s</span>
+<span class="sd">        EvaluationsRC (Reference Collection). This is a read-only property</span>
+<span class="sd">        that returns evaluations created by both human linguists and automated</span>
+<span class="sd">        agents (e.g., morphological parser).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmAgentEvaluation objects. Returns empty list if</span>
+<span class="sd">                no evaluations exist.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; evaluations = project.WfiAnalyses.GetEvaluations(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; for evaluation in evaluations:</span>
+<span class="sd">            ...     if hasattr(evaluation, &#39;Agent&#39;) and evaluation.Agent:</span>
+<span class="sd">            ...         agent_name = evaluation.Agent.Name.BestAnalysisAlternative.Text</span>
+<span class="sd">            ...         is_accepted = evaluation.Accepted if hasattr(evaluation, &#39;Accepted&#39;) else None</span>
+<span class="sd">            ...         print(f&quot;Agent: {agent_name}, Accepted: {is_accepted}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is a READ-ONLY property (Reference Collection)</span>
+<span class="sd">            - Returns all evaluations (human and computer/parser)</span>
+<span class="sd">            - Empty list indicates no evaluations have been created</span>
+<span class="sd">            - Evaluations track approval/disapproval status</span>
+<span class="sd">            - Each evaluation links to an ICmAgent (human or parser)</span>
+<span class="sd">            - Use IsHumanApproved() or IsComputerApproved() for simple checks</span>
+<span class="sd">            - Evaluations are added/removed via SetApprovalStatus()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAgentEvaluation, GetHumanEvaluation, IsHumanApproved,</span>
+<span class="sd">            IsComputerApproved, SetApprovalStatus</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">EvaluationsRC</span><span class="p">)</span>
+
+    <span class="c1"># --- Utility Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwningWordform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the wordform that owns this analysis.</span>
+
+<span class="sd">        Retrieves the IWfiWordform object that contains this analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiWordform: The owning wordform object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; wordform = project.WfiAnalyses.GetOwningWordform(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; form = project.Wordforms.GetForm(wordform)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Analysis belongs to: {form}&quot;)</span>
+<span class="sd">            Analysis belongs to: running</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Every analysis must have an owning wordform</span>
+<span class="sd">            - This is the inverse of GetAll(wordform)</span>
+<span class="sd">            - Useful for navigating from analysis back to wordform</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, project.Wordforms.GetForm</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Cast to declared return type IWfiWordform. Raw analysis.Owner is</span>
+        <span class="c1"># typed as ICmObject in LCM; pythonnet only surfaces IWfiWordform</span>
+        <span class="c1"># properties (e.g. AnalysesOC, Form) after the explicit interface cast.</span>
+        <span class="k">return</span> <span class="n">IWfiWordform</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID (globally unique identifier) of an analysis.</span>
+
+<span class="sd">        Retrieves the unique identifier for this analysis object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.Guid: The GUID of the analysis</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; analysis = analyses[0]</span>
+<span class="sd">            &gt;&gt;&gt; guid = project.WfiAnalyses.GetGuid(analysis)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Analysis GUID: {guid}&quot;)</span>
+<span class="sd">            Analysis GUID: a1b2c3d4-e5f6-7890-abcd-ef1234567890</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUID is a globally unique identifier</span>
+<span class="sd">            - Persists across sessions</span>
+<span class="sd">            - Useful for external references</span>
+<span class="sd">            - Different from HVO (database handle)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetOwningWordform</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAnalysisObject</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">analysis</span><span class="o">.</span><span class="n">Guid</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.TextsWords.WfiAnalysisOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

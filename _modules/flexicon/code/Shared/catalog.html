@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Shared.catalog &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.catalog</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Shared.catalog</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   catalog.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Module: Catalog file discovery and XML parsing helpers for FieldWorks</span>
+<span class="c1">#           catalog XML formats.</span>
+<span class="c1">#</span>
+<span class="c1">#           Phase 5a: GOLDEtic shape used by the FW Templates/GOLDEtic.xml</span>
+<span class="c1">#           POS catalog:</span>
+<span class="c1">#</span>
+<span class="c1">#               &lt;eticPOSList&gt;</span>
+<span class="c1">#                 &lt;item type=&quot;category&quot; id=&quot;Adjective&quot; guid=&quot;...&quot;&gt;</span>
+<span class="c1">#                   &lt;abbrev ws=&quot;en&quot;&gt;adj&lt;/abbrev&gt;</span>
+<span class="c1">#                   &lt;term ws=&quot;en&quot;&gt;Adjective&lt;/term&gt;</span>
+<span class="c1">#                   &lt;def ws=&quot;en&quot;&gt;An adjective is ...&lt;/def&gt;</span>
+<span class="c1">#                   &lt;item type=&quot;category&quot; ...&gt;  &lt;!-- nested --&gt;</span>
+<span class="c1">#                 &lt;/item&gt;</span>
+<span class="c1">#                 ...</span>
+<span class="c1">#               &lt;/eticPOSList&gt;</span>
+<span class="c1">#</span>
+<span class="c1">#           Phase 5b: eticGlossList shape used by the FW MGA gloss-list</span>
+<span class="c1">#           catalogs (e.g. Language Explorer/MGA/GlossLists/</span>
+<span class="c1">#           PhonFeatsEticGlossList.xml):</span>
+<span class="c1">#</span>
+<span class="c1">#               &lt;eticGlossList&gt;</span>
+<span class="c1">#                 &lt;item type=&quot;group&quot; id=&quot;gPAPhonFeatures&quot; guid=&quot;...&quot;&gt;</span>
+<span class="c1">#                   ...</span>
+<span class="c1">#                   &lt;item type=&quot;feature&quot; id=&quot;fPAConsonantal&quot; guid=&quot;...&quot;&gt;</span>
+<span class="c1">#                     &lt;abbrev ws=&quot;en&quot;&gt;cons&lt;/abbrev&gt;</span>
+<span class="c1">#                     &lt;term ws=&quot;en&quot;&gt;consonantal&lt;/term&gt;</span>
+<span class="c1">#                     &lt;item type=&quot;value&quot; id=&quot;vPAConsonantalPositive&quot; ...&gt;</span>
+<span class="c1">#                       &lt;abbrev ws=&quot;en&quot;&gt;+&lt;/abbrev&gt;</span>
+<span class="c1">#                       &lt;term ws=&quot;en&quot;&gt;positive&lt;/term&gt;</span>
+<span class="c1">#                     &lt;/item&gt;</span>
+<span class="c1">#                     ...</span>
+<span class="c1">#                   &lt;/item&gt;</span>
+<span class="c1">#                 &lt;/item&gt;</span>
+<span class="c1">#               &lt;/eticGlossList&gt;</span>
+<span class="c1">#</span>
+<span class="c1">#           Other FW catalog shapes (LocalizedLists, semantic-domain catalogs,</span>
+<span class="c1">#           etc.) will be added in later phases.</span>
+<span class="c1">#</span>
+<span class="c1">#           See docs/CATALOG_CONVENTIONS.md for the prefix policy each</span>
+<span class="c1">#           catalog uses when writing CatalogSourceId.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python (stdlib only; no FieldWorks/.NET dependency)</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2026</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xml.etree.ElementTree</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ET</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExGlobals</span>
+
+
+<span class="c1"># --- Public dataclasses ------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="CatalogEntry">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog.CatalogEntry">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CatalogEntry</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    One &lt;item type=&quot;category&quot;&gt; from the GOLDEtic catalog.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        id:       The catalog id, e.g. &quot;Adjective&quot;. This is the suffix of</span>
+<span class="sd">                  the canonical CatalogSourceId (&quot;GOLD:Adjective&quot;).</span>
+<span class="sd">        guid:     The canonical FW GUID for this category, as a string.</span>
+<span class="sd">                  e.g. &quot;30d07580-5052-4d91-bc24-469b8b2d7df9&quot;.</span>
+<span class="sd">        abbrev:   Map of writing-system tag -&gt; abbreviation string,</span>
+<span class="sd">                  e.g. {&quot;en&quot;: &quot;adj&quot;, &quot;fr&quot;: &quot;adj&quot;, &quot;ko&quot;: &quot;형&quot;}.</span>
+<span class="sd">        term:     Map of writing-system tag -&gt; name/term string,</span>
+<span class="sd">                  e.g. {&quot;en&quot;: &quot;Adjective&quot;, &quot;fr&quot;: &quot;Adjectif&quot;}.</span>
+<span class="sd">        def_:     Map of writing-system tag -&gt; definition string. Note</span>
+<span class="sd">                  the trailing underscore: &quot;def&quot; is a Python keyword.</span>
+<span class="sd">        children: List of nested CatalogEntry items (sub-categories</span>
+<span class="sd">                  in the catalog hierarchy).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">abbrev</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">term</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">def_</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">children</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;CatalogEntry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CatalogImportResult">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog.CatalogImportResult">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CatalogImportResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Summary of what happened during a catalog import.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        created_count: Number of new POSs created.</span>
+<span class="sd">        skipped_count: Number of catalog entries skipped because a POS</span>
+<span class="sd">                       with the same canonical GUID already exists.</span>
+<span class="sd">        created_guids: Canonical GUIDs (as strings) for the POSs that</span>
+<span class="sd">                       were created. Useful for verification and tests.</span>
+<span class="sd">        warnings:      Human-readable warnings (e.g. WS tags present in</span>
+<span class="sd">                       the catalog but missing from the project).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">created_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">skipped_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">created_guids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">warnings</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># --- File discovery ----------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="find_catalog_file">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog.find_catalog_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_catalog_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="s2">&quot;Templates&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Locate a catalog XML file under the FieldWorks install.</span>
+
+<span class="sd">    Uses FLExGlobals.FWCodeDir (resolved during FLEx init from the</span>
+<span class="sd">    Windows registry) so it works against whatever FW install the</span>
+<span class="sd">    user actually has. Does not hard-code &quot;C:/Program Files/SIL/...&quot;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filename (str): The catalog filename, e.g. &quot;GOLDEtic.xml&quot;.</span>
+<span class="sd">        subdir (str):   Relative subdirectory under FWCodeDir; default</span>
+<span class="sd">                        &quot;Templates&quot; (used for GOLDEtic.xml). For MGA</span>
+<span class="sd">                        gloss lists, pass &quot;Language Explorer/MGA/GlossLists&quot;.</span>
+<span class="sd">                        Forward slashes are converted to OS-native</span>
+<span class="sd">                        separators by os.path.join.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Absolute path to the catalog file.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        RuntimeError: If FLExGlobals.FWCodeDir has not been initialised</span>
+<span class="sd">                      (caller must have imported flexlibs2 first).</span>
+<span class="sd">        FileNotFoundError: If the file does not exist at the expected path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">FLExGlobals</span><span class="o">.</span><span class="n">FWCodeDir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;FLExGlobals.FWCodeDir is not set; &quot;</span>
+            <span class="s2">&quot;import flexlibs2 (or call FLExGlobals.InitialiseFWGlobals()) first.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Normalize slashes in subdir so callers can pass &quot;a/b/c&quot; portably.</span>
+    <span class="n">subdir_parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">subdir</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span><span class="p">]</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FLExGlobals</span><span class="o">.</span><span class="n">FWCodeDir</span><span class="p">,</span> <span class="o">*</span><span class="n">subdir_parts</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+            <span class="s2">&quot;Catalog file not found at expected location: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">path</span></div>
+
+
+
+<span class="c1"># --- XML parsing -------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_item</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recursively parse one &lt;item type=&quot;category&quot;&gt; element into a</span>
+<span class="sd">    CatalogEntry. Non-category items are ignored. Children are walked</span>
+<span class="sd">    depth-first so the returned tree mirrors the on-disk hierarchy.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">entry</span> <span class="o">=</span> <span class="n">CatalogEntry</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">elem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">guid</span><span class="o">=</span><span class="n">elem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;guid&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">elem</span><span class="p">:</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span>
+        <span class="k">if</span> <span class="n">tag</span> <span class="o">==</span> <span class="s2">&quot;abbrev&quot;</span><span class="p">:</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">ws</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">abbrev</span><span class="p">[</span><span class="n">ws</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">elif</span> <span class="n">tag</span> <span class="o">==</span> <span class="s2">&quot;term&quot;</span><span class="p">:</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">ws</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">term</span><span class="p">[</span><span class="n">ws</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">elif</span> <span class="n">tag</span> <span class="o">==</span> <span class="s2">&quot;def&quot;</span><span class="p">:</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">ws</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">def_</span><span class="p">[</span><span class="n">ws</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">elif</span> <span class="n">tag</span> <span class="o">==</span> <span class="s2">&quot;item&quot;</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">:</span>
+            <span class="n">entry</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_parse_item</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+        <span class="c1"># Silently ignore unknown / non-category children (source,</span>
+        <span class="c1"># citation, etc.) - they aren&#39;t part of the Phase 5a MVP.</span>
+
+    <span class="k">return</span> <span class="n">entry</span>
+
+
+<div class="viewcode-block" id="parse_etic_catalog">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog.parse_etic_catalog">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_etic_catalog</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse a GOLDEtic-shaped POS catalog XML file into a tree of</span>
+<span class="sd">    CatalogEntry objects.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path (str): Absolute path to GOLDEtic.xml.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[CatalogEntry]: The top-level catalog entries. Nested</span>
+<span class="sd">        sub-categories are reachable via each entry&#39;s `.children`.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - The root element is &lt;eticPOSList&gt;; we walk its direct</span>
+<span class="sd">          &lt;item type=&quot;category&quot;&gt; children and recurse from there.</span>
+<span class="sd">        - Other root shapes are not supported by this function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">root</span><span class="o">.</span><span class="n">tag</span> <span class="o">!=</span> <span class="s2">&quot;eticPOSList&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Expected root &lt;eticPOSList&gt;, got &lt;</span><span class="si">{}</span><span class="s2">&gt;; this parser only &quot;</span>
+            <span class="s2">&quot;handles the GOLDEtic shape.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">tag</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;item&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">:</span>
+            <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_parse_item</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">entries</span></div>
+
+
+
+<span class="c1"># --- eticGlossList parsing (Phase 5b) ---------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_gloss_item</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">expected_type</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse one &lt;item&gt; element from an eticGlossList catalog as a</span>
+<span class="sd">    CatalogEntry. Only the abbrev/term/def localised strings and any</span>
+<span class="sd">    nested &lt;item&gt; children matching `expected_type` are captured.</span>
+
+<span class="sd">    `expected_type` is the type attribute value to recurse into for</span>
+<span class="sd">    children: for a &quot;feature&quot; element, child items are &quot;value&quot;s; for</span>
+<span class="sd">    a &quot;value&quot; element there are no expected children (pass None).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">entry</span> <span class="o">=</span> <span class="n">CatalogEntry</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">elem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">guid</span><span class="o">=</span><span class="n">elem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;guid&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">elem</span><span class="p">:</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span>
+        <span class="k">if</span> <span class="n">tag</span> <span class="o">==</span> <span class="s2">&quot;abbrev&quot;</span><span class="p">:</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">ws</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">abbrev</span><span class="p">[</span><span class="n">ws</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">elif</span> <span class="n">tag</span> <span class="o">==</span> <span class="s2">&quot;term&quot;</span><span class="p">:</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">ws</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">term</span><span class="p">[</span><span class="n">ws</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">elif</span> <span class="n">tag</span> <span class="o">==</span> <span class="s2">&quot;def&quot;</span><span class="p">:</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">ws</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">def_</span><span class="p">[</span><span class="n">ws</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">elif</span> <span class="n">tag</span> <span class="o">==</span> <span class="s2">&quot;item&quot;</span> <span class="ow">and</span> <span class="n">expected_type</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">expected_type</span><span class="p">:</span>
+            <span class="c1"># Value items have no further children we care about.</span>
+            <span class="n">entry</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_parse_gloss_item</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="c1"># Silently ignore &lt;citation&gt;, &lt;fs&gt; (FW UI&#39;s encoded feature structure</span>
+        <span class="c1"># for values), &lt;source&gt;, and any other extraneous markup - they</span>
+        <span class="c1"># aren&#39;t part of the Phase 5b import contract.</span>
+
+    <span class="k">return</span> <span class="n">entry</span>
+
+
+<div class="viewcode-block" id="parse_etic_gloss_list">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog.parse_etic_gloss_list">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_etic_gloss_list</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse a PhonFeatsEticGlossList-shaped catalog (root &lt;eticGlossList&gt;)</span>
+<span class="sd">    into a flat list of feature CatalogEntry objects.</span>
+
+<span class="sd">    Items have type=&quot;group&quot; | &quot;fsType&quot; | &quot;feature&quot; | &quot;value&quot;:</span>
+<span class="sd">        - &quot;group&quot; entries are organizational only (not representable in</span>
+<span class="sd">          LCM). They are skipped at every level, but the parser recurses</span>
+<span class="sd">          INTO them so any features they contain still get returned.</span>
+<span class="sd">        - &quot;fsType&quot; entries are agreement-category containers (e.g.</span>
+<span class="sd">          ``tCommonAgr`` holds the Bantu number features ``fBantuSg``,</span>
+<span class="sd">          ``fBantuPl``, ``fBantuMany``). Like &quot;group&quot; they are</span>
+<span class="sd">          organizational and are not themselves CatalogEntry items, but</span>
+<span class="sd">          the parser recurses INTO them so the features they hold get</span>
+<span class="sd">          returned. (issue #192)</span>
+<span class="sd">        - &quot;feature&quot; entries become CatalogEntry items in the returned</span>
+<span class="sd">          list. Each feature&#39;s value children are attached to its</span>
+<span class="sd">          `.children` list.</span>
+<span class="sd">        - &quot;value&quot; entries become CatalogEntry children of their parent</span>
+<span class="sd">          feature entry.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path (str): Absolute path to e.g. PhonFeatsEticGlossList.xml.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[CatalogEntry]: Flat list of feature entries with their</span>
+<span class="sd">        value entries attached as `.children`. Group structure is</span>
+<span class="sd">        flattened away.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the root element is not &lt;eticGlossList&gt;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">root</span><span class="o">.</span><span class="n">tag</span> <span class="o">!=</span> <span class="s2">&quot;eticGlossList&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Expected root &lt;eticGlossList&gt;, got &lt;</span><span class="si">{}</span><span class="s2">&gt;; this parser only &quot;</span>
+            <span class="s2">&quot;handles the eticGlossList shape.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">tag</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_walk</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&quot;feature&quot;</span><span class="p">:</span>
+                <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_parse_gloss_item</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">t</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;group&quot;</span><span class="p">,</span> <span class="s2">&quot;fsType&quot;</span><span class="p">):</span>
+                <span class="c1"># Organizational containers; descend into their</span>
+                <span class="c1"># children but don&#39;t emit a CatalogEntry for the</span>
+                <span class="c1"># container itself. fsType wraps agreement-category</span>
+                <span class="c1"># feature sets (e.g. tCommonAgr holds the Bantu number</span>
+                <span class="c1"># features). (issue #192)</span>
+                <span class="n">_walk</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;item&quot;</span><span class="p">))</span>
+            <span class="c1"># Any other top-level type is silently ignored.</span>
+
+    <span class="n">_walk</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;item&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">features</span></div>
+
+
+
+<span class="c1"># --- BasicIPAInfo parsing (Phase 6d) ----------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_codepoints</span><span class="p">(</span><span class="n">raw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Canonicalise a ``unicodeCodePoints`` attribute value for use as a</span>
+<span class="sd">    stable dedup key.</span>
+
+<span class="sd">    The catalog format encodes multi-codepoint segments (affricates,</span>
+<span class="sd">    clicks, pre-nasalized stops) as a whitespace-separated list, e.g.</span>
+<span class="sd">    ``&quot;u0074 u0283&quot;`` for /tʃ/. Without normalization the raw string is</span>
+<span class="sd">    fragile as a dedup key: extra whitespace (&quot;u0074  u0283&quot;), variant</span>
+<span class="sd">    ordering (&quot;u0283 u0074&quot;), or trailing spaces would all produce</span>
+<span class="sd">    distinct keys for what is the same segment.</span>
+
+<span class="sd">    Canonicalises by splitting on whitespace (collapsing runs), sorting</span>
+<span class="sd">    the codepoint tokens lexicographically, and joining back with single</span>
+<span class="sd">    spaces. Single-codepoint ids (&quot;u0061&quot;) round-trip unchanged.</span>
+
+<span class="sd">    (issue #141 part 2)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">split</span><span class="p">()))</span>
+
+
+<div class="viewcode-block" id="SegmentDefinition">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog.SegmentDefinition">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SegmentDefinition</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    One &lt;SegmentDefinition&gt; from the BasicIPAInfo.xml catalog.</span>
+
+<span class="sd">    BasicIPAInfo.xml ships with FW under Templates/BasicIPAInfo.xml. Unlike</span>
+<span class="sd">    GOLDEtic / eticGlossList catalogs, segments have NO per-entry GUIDs:</span>
+<span class="sd">    the only stable identifier is ``code_point_id`` (e.g. &quot;u0061&quot;), which</span>
+<span class="sd">    the importer uses to dedup within a single pass but cannot use for</span>
+<span class="sd">    cross-import idempotency.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        code_point_id: Value of the ``unicodeCodePoints`` attribute on the</span>
+<span class="sd">                       (first) ``&lt;Representation&gt;`` element, e.g. ``&quot;u0061&quot;``</span>
+<span class="sd">                       for the segment &quot;a&quot;.</span>
+<span class="sd">        representation: The element text of the (first) ``&lt;Representation&gt;``,</span>
+<span class="sd">                        e.g. ``&quot;a&quot;``. This is what the importer writes into</span>
+<span class="sd">                        ``IPhPhoneme.Name`` and ``BasicIPASymbol``.</span>
+<span class="sd">        descriptions:  Map of ``lang`` attribute -&gt; description text,</span>
+<span class="sd">                       e.g. ``{&quot;en&quot;: &quot;Open front unrounded vowel&quot;}``.</span>
+<span class="sd">        feature_pairs: List of ``(feature_id, value_id)`` tuples from the</span>
+<span class="sd">                       ``&lt;Features&gt;/&lt;FeatureValuePair&gt;`` children. Both ids</span>
+<span class="sd">                       reference PhonFeats catalog entries (e.g.</span>
+<span class="sd">                       ``(&quot;fPAConsonantal&quot;, &quot;vPAConsonantalNegative&quot;)``).</span>
+<span class="sd">                       Empty list when the segment has ``&lt;Features/&gt;``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">code_point_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">representation</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">descriptions</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">feature_pairs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="parse_basic_ipa_info">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog.parse_basic_ipa_info">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_basic_ipa_info</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse a BasicIPAInfo.xml-shaped segment catalog (root</span>
+<span class="sd">    ``&lt;SegmentDefinitions&gt;``) into a flat list of SegmentDefinition</span>
+<span class="sd">    objects.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path (str): Absolute path to BasicIPAInfo.xml.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[SegmentDefinition]: One entry per ``&lt;SegmentDefinition&gt;``.</span>
+<span class="sd">        Order in the returned list matches order in the source file (FW</span>
+<span class="sd">        ships the catalog with a meaningful order: tones first, then</span>
+<span class="sd">        vowels and consonants).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the root element is not ``&lt;SegmentDefinitions&gt;``.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - Only the FIRST ``&lt;Representation&gt;`` child is captured. The stock</span>
+<span class="sd">          catalog has exactly one per segment; multi-representation</span>
+<span class="sd">          segments would need a richer dataclass.</span>
+<span class="sd">        - Description ``lang`` tags use the lowercase short form</span>
+<span class="sd">          (&quot;en&quot;, &quot;es&quot;, &quot;fr&quot;, ...). The catalog ships English plus partial</span>
+<span class="sd">          Spanish; other languages may be sparse.</span>
+<span class="sd">        - Segments with empty ``&lt;Features/&gt;`` (the tone entries at the</span>
+<span class="sd">          head of the file) end up with ``feature_pairs == []``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">root</span><span class="o">.</span><span class="n">tag</span> <span class="o">!=</span> <span class="s2">&quot;SegmentDefinitions&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Expected root &lt;SegmentDefinitions&gt;, got &lt;</span><span class="si">{}</span><span class="s2">&gt;; this parser only &quot;</span>
+            <span class="s2">&quot;handles the BasicIPAInfo shape.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">tag</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">sd</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;SegmentDefinition&quot;</span><span class="p">):</span>
+        <span class="n">rep_elem</span> <span class="o">=</span> <span class="n">sd</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;Representations/Representation&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rep_elem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Defensive: skip malformed entries silently rather than</span>
+            <span class="c1"># aborting an import. The stock catalog is well-formed; this</span>
+            <span class="c1"># only matters for user-edited / partial files.</span>
+            <span class="k">continue</span>
+        <span class="n">rep_text</span> <span class="o">=</span> <span class="p">(</span><span class="n">rep_elem</span><span class="o">.</span><span class="n">text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">code_id</span> <span class="o">=</span> <span class="n">_normalize_codepoints</span><span class="p">(</span><span class="n">rep_elem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unicodeCodePoints&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="n">descs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">sd</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;Descriptions/Description&quot;</span><span class="p">):</span>
+            <span class="n">lang</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lang&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">lang</span> <span class="ow">and</span> <span class="n">d</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+                <span class="n">descs</span><span class="p">[</span><span class="n">lang</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">text</span>
+
+        <span class="n">pairs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">fv</span> <span class="ow">in</span> <span class="n">sd</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;Features/FeatureValuePair&quot;</span><span class="p">):</span>
+            <span class="n">feat_id</span> <span class="o">=</span> <span class="n">fv</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;feature&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">val_id</span> <span class="o">=</span> <span class="n">fv</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">feat_id</span> <span class="ow">and</span> <span class="n">val_id</span><span class="p">:</span>
+                <span class="n">pairs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">feat_id</span><span class="p">,</span> <span class="n">val_id</span><span class="p">))</span>
+
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">SegmentDefinition</span><span class="p">(</span>
+                <span class="n">code_point_id</span><span class="o">=</span><span class="n">code_id</span><span class="p">,</span>
+                <span class="n">representation</span><span class="o">=</span><span class="n">rep_text</span><span class="p">,</span>
+                <span class="n">descriptions</span><span class="o">=</span><span class="n">descs</span><span class="p">,</span>
+                <span class="n">feature_pairs</span><span class="o">=</span><span class="n">pairs</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<span class="c1"># --- Tree navigation ---------------------------------------------------------</span>
+
+
+<span class="n">_KNOWN_CATALOG_PREFIXES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;GOLD&quot;</span><span class="p">,</span> <span class="s2">&quot;PHON&quot;</span><span class="p">,</span> <span class="s2">&quot;INFL&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_strip_catalog_prefix</span><span class="p">(</span><span class="n">source_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Accept either a bare id (&quot;Adjective&quot;, &quot;fPAConsonantal&quot;) or a prefixed</span>
+<span class="sd">    catalog source id (&quot;GOLD:Adjective&quot;, &quot;PHON:fPAConsonantal&quot;) and return</span>
+<span class="sd">    the bare id. Case-sensitive on the id portion; the prefix match is</span>
+<span class="sd">    case-insensitive. Unknown prefixes are passed through unchanged.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">source_id</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">head</span><span class="p">,</span> <span class="n">sep</span><span class="p">,</span> <span class="n">tail</span> <span class="o">=</span> <span class="n">source_id</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sep</span> <span class="ow">and</span> <span class="n">head</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="ow">in</span> <span class="n">_KNOWN_CATALOG_PREFIXES</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tail</span>
+    <span class="k">return</span> <span class="n">source_id</span>
+
+
+<div class="viewcode-block" id="find_catalog_entry">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog.find_catalog_entry">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_catalog_entry</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">source_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Walk a list of CatalogEntry trees (depth-first) and return the</span>
+<span class="sd">    entry whose id matches `source_id`. Known catalog prefixes</span>
+<span class="sd">    (&quot;GOLD:&quot;, &quot;PHON:&quot;) are stripped before comparison so both</span>
+<span class="sd">    &quot;GOLD:Adjective&quot; and &quot;Adjective&quot; work.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        entries (list[CatalogEntry]): Result of parse_etic_catalog() or</span>
+<span class="sd">                                       parse_etic_gloss_list().</span>
+<span class="sd">        source_id (str): Catalog source id, with or without a known</span>
+<span class="sd">                         prefix.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        CatalogEntry or None: The matching entry, or None if no match.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">_strip_catalog_prefix</span><span class="p">(</span><span class="n">source_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">target</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_walk</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">it</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">it</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">it</span>
+            <span class="k">if</span> <span class="n">it</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="n">hit</span> <span class="o">=</span> <span class="n">_walk</span><span class="p">(</span><span class="n">it</span><span class="o">.</span><span class="n">children</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">hit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">hit</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">_walk</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="count_catalog_entries">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.catalog.count_catalog_entries">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">count_catalog_entries</span><span class="p">(</span><span class="n">entries</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Count all CatalogEntry items in a forest, including nested children.</span>
+
+<span class="sd">    Convenience helper for tests / smoke checks. GOLDEtic.xml has</span>
+<span class="sd">    16 top-level entries and 58 entries total.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        entries (list[CatalogEntry]): Result of parse_etic_catalog().</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: Total number of entries across the tree.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_walk</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+        <span class="k">nonlocal</span> <span class="n">total</span>
+        <span class="k">for</span> <span class="n">it</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="n">total</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">it</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="n">_walk</span><span class="p">(</span><span class="n">it</span><span class="o">.</span><span class="n">children</span><span class="p">)</span>
+
+    <span class="n">_walk</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">total</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.catalog</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

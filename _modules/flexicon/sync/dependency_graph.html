@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.sync.dependency_graph &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.sync.dependency_graph</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.sync.dependency_graph</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Dependency Graph - Phase 3.1</span>
+
+<span class="sd">Models object dependencies as a directed acyclic graph (DAG) and provides</span>
+<span class="sd">topological sorting for correct import order.</span>
+
+<span class="sd">Author: FlexTools Development Team</span>
+<span class="sd">Date: 2025-11-27</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DependencyType">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyType">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DependencyType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Types of dependencies between objects.&quot;&quot;&quot;</span>
+
+    <span class="n">OWNERSHIP</span> <span class="o">=</span> <span class="s2">&quot;ownership&quot;</span>  <span class="c1"># Parent owns child (must import parent first)</span>
+    <span class="n">REFERENCE</span> <span class="o">=</span> <span class="s2">&quot;reference&quot;</span>  <span class="c1"># Object references another (should exist)</span>
+    <span class="n">CROSS_REFERENCE</span> <span class="o">=</span> <span class="s2">&quot;cross_ref&quot;</span>  <span class="c1"># Bidirectional reference</span></div>
+
+
+
+<div class="viewcode-block" id="DependencyNode">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyNode">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DependencyNode</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Node in dependency graph representing a FLEx object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Actual FLEx object</span>
+    <span class="n">dependencies</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">set</span><span class="p">)</span>  <span class="c1"># GUIDs this depends on</span>
+    <span class="n">dependents</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">set</span><span class="p">)</span>  <span class="c1"># GUIDs that depend on this</span>
+    <span class="n">dependency_types</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DependencyType</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>  <span class="c1"># guid → type</span>
+    <span class="n">visited</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># For graph traversal</span>
+    <span class="n">in_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># For cycle detection</span></div>
+
+
+
+<div class="viewcode-block" id="DependencyGraph">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DependencyGraph</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Directed acyclic graph (DAG) of object dependencies.</span>
+
+<span class="sd">    Manages dependencies between FLEx objects and provides topological</span>
+<span class="sd">    sorting to determine correct import order.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize empty dependency graph.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DependencyNode</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_import_order</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Cached import order</span>
+
+<div class="viewcode-block" id="DependencyGraph.add_object">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph.add_object">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add object to graph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            guid: Object GUID</span>
+<span class="sd">            object_type: Type of object (e.g., &quot;LexEntry&quot;, &quot;LexSense&quot;)</span>
+<span class="sd">            obj: Actual FLEx object (optional)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">guid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span> <span class="o">=</span> <span class="n">DependencyNode</span><span class="p">(</span><span class="n">guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span> <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="n">obj</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_import_order</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Invalidate cache</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Update existing node</span>
+            <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span><span class="o">.</span><span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span><span class="o">.</span><span class="n">object_type</span> <span class="o">=</span> <span class="n">object_type</span></div>
+
+
+<div class="viewcode-block" id="DependencyGraph.add_dependency">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph.add_dependency">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_dependency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">to_guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dep_type</span><span class="p">:</span> <span class="n">DependencyType</span> <span class="o">=</span> <span class="n">DependencyType</span><span class="o">.</span><span class="n">REFERENCE</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add dependency: from_guid depends on to_guid.</span>
+
+<span class="sd">        This means to_guid must be imported before from_guid.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            from_guid: Object that depends on another</span>
+<span class="sd">            to_guid: Object that is depended upon</span>
+<span class="sd">            dep_type: Type of dependency</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Ensure both nodes exist</span>
+        <span class="k">if</span> <span class="n">from_guid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Adding dependency for unknown object </span><span class="si">{</span><span class="n">from_guid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_object</span><span class="p">(</span><span class="n">from_guid</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">to_guid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Adding dependency on unknown object </span><span class="si">{</span><span class="n">to_guid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_object</span><span class="p">(</span><span class="n">to_guid</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Add dependency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">from_guid</span><span class="p">]</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">to_guid</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">from_guid</span><span class="p">]</span><span class="o">.</span><span class="n">dependency_types</span><span class="p">[</span><span class="n">to_guid</span><span class="p">]</span> <span class="o">=</span> <span class="n">dep_type</span>
+
+        <span class="c1"># Add reverse (dependent) relationship</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">to_guid</span><span class="p">]</span><span class="o">.</span><span class="n">dependents</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">from_guid</span><span class="p">)</span>
+
+        <span class="c1"># Invalidate cached import order</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_import_order</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DependencyGraph.remove_dependency">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph.remove_dependency">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_dependency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">to_guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove dependency between objects.</span>
+
+<span class="sd">        Used for breaking cycles or handling optional dependencies.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            from_guid: Object that depends on another</span>
+<span class="sd">            to_guid: Object that is depended upon</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">from_guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">from_guid</span><span class="p">]</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">to_guid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">to_guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">from_guid</span><span class="p">]</span><span class="o">.</span><span class="n">dependency_types</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">from_guid</span><span class="p">]</span><span class="o">.</span><span class="n">dependency_types</span><span class="p">[</span><span class="n">to_guid</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">to_guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">to_guid</span><span class="p">]</span><span class="o">.</span><span class="n">dependents</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">from_guid</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_import_order</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DependencyGraph.get_import_order">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph.get_import_order">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_import_order</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get topologically sorted import order.</span>
+
+<span class="sd">        Returns list of (guid, object_type) tuples in order they should</span>
+<span class="sd">        be imported (dependencies first).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of (guid, object_type) tuples</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            CircularDependencyError: If circular dependency detected</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_import_order</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_import_order</span>
+
+        <span class="c1"># Check for cycles first</span>
+        <span class="n">cycles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">detect_cycles</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">cycles</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CircularDependencyError</span><span class="p">(</span><span class="n">cycles</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="c1"># Perform topological sort using Kahn&#39;s algorithm</span>
+        <span class="c1"># Calculate in-degree for each node</span>
+        <span class="n">in_degree</span> <span class="o">=</span> <span class="p">{</span><span class="n">guid</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span> <span class="k">for</span> <span class="n">guid</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="c1"># Queue of nodes with no dependencies</span>
+        <span class="n">queue</span> <span class="o">=</span> <span class="p">[</span><span class="n">guid</span> <span class="k">for</span> <span class="n">guid</span><span class="p">,</span> <span class="n">degree</span> <span class="ow">in</span> <span class="n">in_degree</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">degree</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+            <span class="c1"># Sort queue to ensure deterministic order</span>
+            <span class="n">queue</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+            <span class="c1"># Process node with no remaining dependencies</span>
+            <span class="n">guid</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">guid</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">object_type</span><span class="p">))</span>
+
+            <span class="c1"># Reduce in-degree for dependent nodes</span>
+            <span class="k">for</span> <span class="n">dependent_guid</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">dependents</span><span class="p">:</span>
+                <span class="n">in_degree</span><span class="p">[</span><span class="n">dependent_guid</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">in_degree</span><span class="p">[</span><span class="n">dependent_guid</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dependent_guid</span><span class="p">)</span>
+
+        <span class="c1"># Cache result</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_import_order</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="DependencyGraph.detect_cycles">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph.detect_cycles">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">detect_cycles</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Detect circular dependencies using depth-first search.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of cycles found, each cycle is a list of GUIDs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cycles</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Reset visited flags</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">visited</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">in_progress</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">dfs</span><span class="p">(</span><span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Depth-first search to detect cycles.&quot;&quot;&quot;</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">in_progress</span><span class="p">:</span>
+                <span class="c1"># Found cycle - extract it from path</span>
+                <span class="n">cycle_start</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+                <span class="n">cycle</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">cycle_start</span><span class="p">:]</span> <span class="o">+</span> <span class="p">[</span><span class="n">guid</span><span class="p">]</span>
+                <span class="n">cycles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cycle</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">visited</span><span class="p">:</span>
+                <span class="k">return</span>
+
+            <span class="n">node</span><span class="o">.</span><span class="n">in_progress</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">dep_guid</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dep_guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                    <span class="n">dfs</span><span class="p">(</span><span class="n">dep_guid</span><span class="p">,</span> <span class="n">path</span><span class="p">[:])</span>
+
+            <span class="n">path</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">in_progress</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">visited</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Check from each node</span>
+        <span class="k">for</span> <span class="n">guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span><span class="o">.</span><span class="n">visited</span><span class="p">:</span>
+                <span class="n">dfs</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="p">[])</span>
+
+        <span class="k">return</span> <span class="n">cycles</span></div>
+
+
+<div class="viewcode-block" id="DependencyGraph.get_roots">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph.get_roots">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_roots</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get root nodes (objects with no dependencies).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of GUIDs with no dependencies</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">guid</span> <span class="k">for</span> <span class="n">guid</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">dependencies</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="DependencyGraph.get_leaves">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph.get_leaves">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_leaves</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get leaf nodes (objects that nothing depends on).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of GUIDs with no dependents</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">guid</span> <span class="k">for</span> <span class="n">guid</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">dependents</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="DependencyGraph.get_dependencies">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph.get_dependencies">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all dependencies for an object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            guid: Object GUID</span>
+<span class="sd">            recursive: If True, get transitive dependencies</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of GUIDs this object depends on</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">guid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span>
+
+        <span class="c1"># Get transitive dependencies</span>
+        <span class="n">visited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">queue</span> <span class="o">=</span> <span class="p">[</span><span class="n">guid</span><span class="p">]</span>
+
+        <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">current</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">current</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">current</span><span class="p">]</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">dep</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                        <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dep</span><span class="p">)</span>
+
+        <span class="n">visited</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>  <span class="c1"># Remove self</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">visited</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DependencyGraph.get_dependents">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph.get_dependents">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dependents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all objects that depend on this object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            guid: Object GUID</span>
+<span class="sd">            recursive: If True, get transitive dependents</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of GUIDs that depend on this object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">guid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span><span class="o">.</span><span class="n">dependents</span><span class="p">)</span>
+
+        <span class="c1"># Get transitive dependents</span>
+        <span class="n">visited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">queue</span> <span class="o">=</span> <span class="p">[</span><span class="n">guid</span><span class="p">]</span>
+
+        <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">current</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">current</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">current</span><span class="p">]</span><span class="o">.</span><span class="n">dependents</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">dep</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                        <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dep</span><span class="p">)</span>
+
+        <span class="n">visited</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>  <span class="c1"># Remove self</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">visited</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DependencyGraph.get_subgraph">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph.get_subgraph">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_subgraph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;DependencyGraph&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract subgraph containing only specified objects and their dependencies.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            guids: List of GUIDs to include</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            New DependencyGraph with only specified objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subgraph</span> <span class="o">=</span> <span class="n">DependencyGraph</span><span class="p">()</span>
+
+        <span class="c1"># Collect all objects and their transitive dependencies</span>
+        <span class="n">all_guids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">guid</span> <span class="ow">in</span> <span class="n">guids</span><span class="p">:</span>
+            <span class="n">all_guids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+            <span class="n">all_guids</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_dependencies</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+        <span class="c1"># Add objects to subgraph</span>
+        <span class="k">for</span> <span class="n">guid</span> <span class="ow">in</span> <span class="n">all_guids</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span>
+                <span class="n">subgraph</span><span class="o">.</span><span class="n">add_object</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">object_type</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="c1"># Add dependencies</span>
+        <span class="k">for</span> <span class="n">guid</span> <span class="ow">in</span> <span class="n">all_guids</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">dep_guid</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">dep_guid</span> <span class="ow">in</span> <span class="n">all_guids</span><span class="p">:</span>
+                        <span class="n">dep_type</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">dependency_types</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dep_guid</span><span class="p">,</span> <span class="n">DependencyType</span><span class="o">.</span><span class="n">REFERENCE</span><span class="p">)</span>
+                        <span class="n">subgraph</span><span class="o">.</span><span class="n">add_dependency</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">dep_guid</span><span class="p">,</span> <span class="n">dep_type</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">subgraph</span></div>
+
+
+<div class="viewcode-block" id="DependencyGraph.summary">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.DependencyGraph.summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get summary of dependency graph.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Human-readable summary string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;DEPENDENCY GRAPH SUMMARY&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Total objects: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Root objects: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_roots</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Leaf objects: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_leaves</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Count by object type</span>
+        <span class="n">type_counts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">type_counts</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">object_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">object_type</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Objects by type:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">obj_type</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">type_counts</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">obj_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Count by dependency type</span>
+        <span class="n">dep_type_counts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">DependencyType</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">dep_type</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">dependency_types</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">dep_type_counts</span><span class="p">[</span><span class="n">dep_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">dep_type_counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dep_type</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">dep_type_counts</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Dependencies by type:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">dep_type</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dep_type_counts</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">dep_type</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return number of objects in graph.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if GUID is in graph.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span></div>
+
+
+
+<div class="viewcode-block" id="CircularDependencyError">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_graph.CircularDependencyError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CircularDependencyError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when circular dependency is detected.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cycle</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cycle</span> <span class="o">=</span> <span class="n">cycle</span>
+        <span class="n">cycle_str</span> <span class="o">=</span> <span class="s2">&quot; → &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cycle</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Circular dependency detected: </span><span class="si">{</span><span class="n">cycle_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.sync.dependency_graph</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

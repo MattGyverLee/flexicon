@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.System.context_collection &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.System.context_collection</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.System.context_collection</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   context_collection.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ContextCollection</span>
+<span class="c1">#          Smart collection for phonological contexts with type-aware filtering</span>
+<span class="c1">#          and unified access across multiple concrete types.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Smart collection class for phonological contexts.</span>
+
+<span class="sd">This module provides ContextCollection, a smart collection that manages</span>
+<span class="sd">phonological contexts while showing type diversity and supporting unified</span>
+<span class="sd">operations across the multiple concrete types:</span>
+<span class="sd">- PhSimpleContextSeg</span>
+<span class="sd">- PhSimpleContextNC</span>
+<span class="sd">- PhComplexContextSeg</span>
+<span class="sd">- PhComplexContextNC</span>
+<span class="sd">- PhBoundaryContext</span>
+
+<span class="sd">Problem:</span>
+<span class="sd">    GetAll() or input_contexts returns objects with multiple concrete implementations.</span>
+<span class="sd">    Users need to:</span>
+<span class="sd">    - See which types are in the collection</span>
+<span class="sd">    - Filter by type if they want to</span>
+<span class="sd">    - Work with all types together without manual casting</span>
+<span class="sd">    - Filter by common properties that work across all types</span>
+
+<span class="sd">Solution:</span>
+<span class="sd">    ContextCollection provides:</span>
+<span class="sd">    - __str__() showing type breakdown</span>
+<span class="sd">    - by_type() filtering to specific concrete types</span>
+<span class="sd">    - filter() for common criteria (context_name, type)</span>
+<span class="sd">    - Convenience methods (simple_contexts(), complex_contexts(), boundary_contexts())</span>
+<span class="sd">    - Chainable filtering: contexts.simple_contexts().filter(name_contains=&#39;word&#39;)</span>
+
+<span class="sd">Example::</span>
+
+<span class="sd">    from flexlibs2.code.System.context_collection import ContextCollection</span>
+
+<span class="sd">    # Rule&#39;s input contexts now wrapped in ContextCollection</span>
+<span class="sd">    contexts = rule.input_contexts  # Returns ContextCollection</span>
+<span class="sd">    print(contexts)  # Shows type breakdown</span>
+<span class="sd">    # ContextCollection (8 total)</span>
+<span class="sd">    #   PhSimpleContextSeg: 4 (50%)</span>
+<span class="sd">    #   PhBoundaryContext: 3 (37%)</span>
+<span class="sd">    #   PhSimpleContextNC: 1 (13%)</span>
+
+<span class="sd">    # Filter by type</span>
+<span class="sd">    simple_only = contexts.simple_contexts()</span>
+<span class="sd">    print(len(simple_only))  # 5</span>
+
+<span class="sd">    # Filter by name</span>
+<span class="sd">    word_contexts = contexts.filter(name_contains=&#39;word&#39;)</span>
+
+<span class="sd">    # Chain filters</span>
+<span class="sd">    simple_word = contexts.simple_contexts().filter(name_contains=&#39;word&#39;)</span>
+
+<span class="sd">    # Iterate</span>
+<span class="sd">    for context in contexts:</span>
+<span class="sd">        print(context.context_name)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.smart_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmartCollection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.phonological_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhonologicalContext</span>
+
+
+<div class="viewcode-block" id="ContextCollection">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.context_collection.ContextCollection">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ContextCollection</span><span class="p">(</span><span class="n">SmartCollection</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Smart collection for phonological contexts with type-aware filtering.</span>
+
+<span class="sd">    Manages collections of phonological contexts (PhonologicalContext wrapper objects)</span>
+<span class="sd">    with type-aware display and filtering capabilities. Supports filtering by</span>
+<span class="sd">    common properties (name, type) and by concrete type.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        _items: List of PhonologicalContext wrapper objects</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        contexts = rule.input_contexts  # Returns ContextCollection</span>
+<span class="sd">        print(contexts)  # Shows type breakdown</span>
+<span class="sd">        simple = contexts.simple_contexts()  # Filter to simple contexts</span>
+<span class="sd">        word = contexts.filter(name_contains=&#39;word&#39;)  # Name filter</span>
+<span class="sd">        both = contexts.simple_contexts().filter(name_contains=&#39;word&#39;)  # Chain</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize a ContextCollection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            items: Iterable of PhonologicalContext objects, or None for empty.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            collection = ContextCollection()</span>
+<span class="sd">            collection = ContextCollection([context1, context2, context3])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ContextCollection.filter">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.context_collection.ContextCollection.filter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name_contains</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter the collection by common context properties.</span>
+
+<span class="sd">        Supports filtering by properties that work across all context types</span>
+<span class="sd">        (name). For complex filtering, use where().</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name_contains (str, optional): Filter to contexts whose name contains</span>
+<span class="sd">                this string (case-sensitive).</span>
+<span class="sd">            where (callable, optional): Custom predicate function. If provided,</span>
+<span class="sd">                other criteria are ignored.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ContextCollection: New collection with filtered items.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            # Filter by name</span>
+<span class="sd">            word_contexts = contexts.filter(name_contains=&#39;word&#39;)</span>
+
+<span class="sd">            # Custom filtering</span>
+<span class="sd">            simple_word = contexts.where(</span>
+<span class="sd">                lambda c: c.is_simple_context and &#39;word&#39; in c.context_name</span>
+<span class="sd">            )</span>
+
+<span class="sd">            # Chain filters</span>
+<span class="sd">            simple_word = contexts.simple_contexts().filter(name_contains=&#39;word&#39;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - name_contains is case-sensitive</span>
+<span class="sd">            - where() takes precedence over other criteria</span>
+<span class="sd">            - Returns new collection (doesn&#39;t modify original)</span>
+<span class="sd">            - Use where() for complex custom filtering</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If custom predicate provided, use it</span>
+        <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">where</span><span class="p">(</span><span class="n">item</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="n">ContextCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span>
+
+        <span class="c1"># Apply criteria filters</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span>
+
+        <span class="k">if</span> <span class="n">name_contains</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctx</span> <span class="k">for</span> <span class="n">ctx</span> <span class="ow">in</span> <span class="n">filtered</span> <span class="k">if</span> <span class="n">name_contains</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">context_name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)]</span>
+
+        <span class="k">return</span> <span class="n">ContextCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContextCollection.where">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.context_collection.ContextCollection.where">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predicate</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter using a custom predicate function.</span>
+
+<span class="sd">        For filtering by complex criteria or properties not supported by filter().</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            predicate (callable): Function that takes a PhonologicalContext and</span>
+<span class="sd">                returns True to include it in the result.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ContextCollection: New collection with items matching the predicate.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            # Complex predicate: simple segment contexts only</span>
+<span class="sd">            simple_segs = contexts.where(lambda c: c.is_simple_context_seg)</span>
+
+<span class="sd">            # Combining conditions</span>
+<span class="sd">            simple_with_name = contexts.where(</span>
+<span class="sd">                lambda c: c.is_simple_context and c.context_name</span>
+<span class="sd">            )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Predicate receives each PhonologicalContext object</span>
+<span class="sd">            - Return True to include in result, False to exclude</span>
+<span class="sd">            - For simple filters (name), use filter() instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctx</span> <span class="k">for</span> <span class="n">ctx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">predicate</span><span class="p">(</span><span class="n">ctx</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">ContextCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContextCollection.simple_contexts">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.context_collection.ContextCollection.simple_contexts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">simple_contexts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the simple contexts (segment or natural class).</span>
+
+<span class="sd">        Convenience method for filtering to simple contexts (either</span>
+<span class="sd">        PhSimpleContextSeg or PhSimpleContextNC).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ContextCollection: New collection with only simple context objects.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            simple = contexts.simple_contexts()</span>
+<span class="sd">            print(f&quot;Found {len(simple)} simple contexts&quot;)</span>
+
+<span class="sd">            # Chain with other filters</span>
+<span class="sd">            simple_word = contexts.simple_contexts().filter(name_contains=&#39;word&#39;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Includes both PhSimpleContextSeg and PhSimpleContextNC</span>
+<span class="sd">            - Use simple_context_seg() or simple_context_nc() to distinguish</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctx</span> <span class="k">for</span> <span class="n">ctx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">is_simple_context</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">ContextCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContextCollection.simple_context_seg">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.context_collection.ContextCollection.simple_context_seg">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">simple_context_seg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the simple segment contexts.</span>
+
+<span class="sd">        Convenience method for filtering to PhSimpleContextSeg objects only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ContextCollection: New collection with only simple segment contexts.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            segs = contexts.simple_context_seg()</span>
+<span class="sd">            for seg_ctx in segs:</span>
+<span class="sd">                segment = seg_ctx.segment</span>
+<span class="sd">                print(f&quot;Segment: {segment}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Simple segment contexts represent a single segment</span>
+<span class="sd">            - Equivalent to by_type(&#39;PhSimpleContextSeg&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;PhSimpleContextSeg&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContextCollection.simple_context_nc">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.context_collection.ContextCollection.simple_context_nc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">simple_context_nc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the simple natural class contexts.</span>
+
+<span class="sd">        Convenience method for filtering to PhSimpleContextNC objects only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ContextCollection: New collection with only simple natural class contexts.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            ncs = contexts.simple_context_nc()</span>
+<span class="sd">            for nc_ctx in ncs:</span>
+<span class="sd">                nc = nc_ctx.natural_class</span>
+<span class="sd">                print(f&quot;Natural Class: {nc}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Simple natural class contexts represent a natural class</span>
+<span class="sd">            - Equivalent to by_type(&#39;PhSimpleContextNC&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;PhSimpleContextNC&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContextCollection.complex_contexts">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.context_collection.ContextCollection.complex_contexts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">complex_contexts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the complex contexts (segment or natural class).</span>
+
+<span class="sd">        Convenience method for filtering to complex contexts (either</span>
+<span class="sd">        PhComplexContextSeg or PhComplexContextNC).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ContextCollection: New collection with only complex context objects.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            complex = contexts.complex_contexts()</span>
+<span class="sd">            print(f&quot;Found {len(complex)} complex contexts&quot;)</span>
+
+<span class="sd">            # Chain with other filters</span>
+<span class="sd">            complex_word = contexts.complex_contexts().filter(name_contains=&#39;word&#39;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Includes both PhComplexContextSeg and PhComplexContextNC</span>
+<span class="sd">            - Use complex_context_seg() or complex_context_nc() to distinguish</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctx</span> <span class="k">for</span> <span class="n">ctx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">is_complex_context</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">ContextCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContextCollection.complex_context_seg">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.context_collection.ContextCollection.complex_context_seg">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">complex_context_seg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the complex segment contexts.</span>
+
+<span class="sd">        Convenience method for filtering to PhComplexContextSeg objects only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ContextCollection: New collection with only complex segment contexts.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            segs = contexts.complex_context_seg()</span>
+<span class="sd">            print(f&quot;Found {len(segs)} complex segment contexts&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to by_type(&#39;PhComplexContextSeg&#39;)</span>
+<span class="sd">            - Complex segment contexts have multiple segment specifications</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;PhComplexContextSeg&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContextCollection.complex_context_nc">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.context_collection.ContextCollection.complex_context_nc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">complex_context_nc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the complex natural class contexts.</span>
+
+<span class="sd">        Convenience method for filtering to PhComplexContextNC objects only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ContextCollection: New collection with only complex natural class contexts.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            ncs = contexts.complex_context_nc()</span>
+<span class="sd">            print(f&quot;Found {len(ncs)} complex natural class contexts&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to by_type(&#39;PhComplexContextNC&#39;)</span>
+<span class="sd">            - Complex natural class contexts have multiple natural class specifications</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;PhComplexContextNC&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContextCollection.boundary_contexts">
+<a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.context_collection.ContextCollection.boundary_contexts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">boundary_contexts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the boundary contexts.</span>
+
+<span class="sd">        Convenience method for filtering to PhBoundaryContext objects only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ContextCollection: New collection with only boundary context objects.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            boundaries = contexts.boundary_contexts()</span>
+<span class="sd">            for bctx in boundaries:</span>
+<span class="sd">                btype = bctx.boundary_type</span>
+<span class="sd">                print(f&quot;Boundary type: {btype}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Boundary contexts represent word/morpheme boundaries</span>
+<span class="sd">            - Equivalent to by_type(&#39;PhBoundaryContext&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;PhBoundaryContext&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Technical representation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;ContextCollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> contexts)&quot;</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.System.context_collection</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

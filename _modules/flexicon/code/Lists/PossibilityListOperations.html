@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Lists.PossibilityListOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists.PossibilityListOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Lists.PossibilityListOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   PossibilityListOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: PossibilityListOperations</span>
+<span class="c1">#          Generic possibility list operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ICmPossibility</span><span class="p">,</span>
+    <span class="n">ICmPossibilityFactory</span><span class="p">,</span>
+    <span class="n">ICmPossibilityList</span><span class="p">,</span>
+    <span class="n">ICmPossibilityListFactory</span><span class="p">,</span>
+    <span class="n">ICmPossibilityRepository</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+
+<div class="viewcode-block" id="PossibilityListOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lists.html#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PossibilityListOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides generic operations for managing possibility lists</span>
+<span class="sd">    in a FieldWorks project.</span>
+
+<span class="sd">    Possibility lists are hierarchical categorization systems used throughout</span>
+<span class="sd">    FLEx for various purposes (e.g., semantic domains, parts of speech,</span>
+<span class="sd">    grammatical categories, locations, people, text genres, etc.).</span>
+
+<span class="sd">    This class provides generic operations that work with any possibility list,</span>
+<span class="sd">    regardless of its specific purpose.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.PossibilityLists property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get all possibility lists in the project</span>
+<span class="sd">        for poss_list in project.PossibilityLists.GetAllLists():</span>
+<span class="sd">            name = project.PossibilityLists.GetListName(poss_list)</span>
+<span class="sd">            print(f&quot;List: {name}&quot;)</span>
+
+<span class="sd">            # Get items in each list</span>
+<span class="sd">            items = project.PossibilityLists.GetItems(poss_list)</span>
+<span class="sd">            print(f&quot;  Contains {len(items)} items&quot;)</span>
+
+<span class="sd">        # Work with a specific list</span>
+<span class="sd">        genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+<span class="sd">        if genre_list:</span>
+<span class="sd">            # Create a new genre</span>
+<span class="sd">            narrative = project.PossibilityLists.CreateItem(</span>
+<span class="sd">                genre_list, &quot;Narrative&quot;, &quot;en&quot;)</span>
+
+<span class="sd">            # Create a sub-genre</span>
+<span class="sd">            folktale = project.PossibilityLists.CreateItem(</span>
+<span class="sd">                genre_list, &quot;Folktale&quot;, &quot;en&quot;, parent=narrative)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize PossibilityListOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Specify which sequence to reorder for possibility items.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span>
+
+    <span class="c1"># --- List Management ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllLists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all possibility lists in the project.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmPossibilityList objects representing all</span>
+<span class="sd">                possibility lists in the project.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for poss_list in project.PossibilityLists.GetAllLists():</span>
+<span class="sd">            ...     name = project.PossibilityLists.GetListName(poss_list)</span>
+<span class="sd">            ...     guid = project.PossibilityLists.GetListGuid(poss_list)</span>
+<span class="sd">            ...     print(f&quot;{name}: {guid}&quot;)</span>
+<span class="sd">            Semantic Domains: 63403699-07c1-43f3-a47c-069d6e4316e5</span>
+<span class="sd">            Parts of Speech: d1b6f191-6664-4f28-b2cc-5c37e24f69f1</span>
+<span class="sd">            Text Genres: 3f99fdad-19c9-44e7-8d04-4b0f284137f9</span>
+<span class="sd">            ...</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns all possibility lists accessible in the LangProject</span>
+<span class="sd">            - Each list serves a different purpose in the project</span>
+<span class="sd">            - Standard FLEx projects have predefined lists (semantic domains, POS, etc.)</span>
+<span class="sd">            - Custom lists can also be created for project-specific needs</span>
+<span class="sd">            - Some lists may be empty if not used in the project</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindList, CreateList, GetListName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lists</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Access common possibility lists through LangProject</span>
+        <span class="n">lp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span>
+
+        <span class="c1"># Add all major possibility lists</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">SemanticDomainListOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">SemanticDomainListOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">PartsOfSpeechOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">PeopleOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">PeopleOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">EducationOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">EducationOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">TranslationTagsOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">TranslationTagsOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">AnthroListOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">AnthroListOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">ConfidenceLevelsOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">ConfidenceLevelsOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">RestrictionsOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">RestrictionsOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">RolesOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">RolesOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">StatusOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">StatusOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">TimeOfDayOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">TimeOfDayOA</span><span class="p">)</span>
+
+        <span class="c1"># Lexicon-specific lists</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">LexDbOA</span><span class="p">:</span>
+            <span class="n">lexdb</span> <span class="o">=</span> <span class="n">lp</span><span class="o">.</span><span class="n">LexDbOA</span>
+            <span class="k">if</span> <span class="n">lexdb</span><span class="o">.</span><span class="n">PublicationTypesOA</span><span class="p">:</span>
+                <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lexdb</span><span class="o">.</span><span class="n">PublicationTypesOA</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lexdb</span><span class="o">.</span><span class="n">UsageTypesOA</span><span class="p">:</span>
+                <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lexdb</span><span class="o">.</span><span class="n">UsageTypesOA</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lexdb</span><span class="o">.</span><span class="n">DomainTypesOA</span><span class="p">:</span>
+                <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lexdb</span><span class="o">.</span><span class="n">DomainTypesOA</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lexdb</span><span class="o">.</span><span class="n">SenseTypesOA</span><span class="p">:</span>
+                <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lexdb</span><span class="o">.</span><span class="n">SenseTypesOA</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lexdb</span><span class="o">.</span><span class="n">DialectLabelsOA</span><span class="p">:</span>
+                <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lexdb</span><span class="o">.</span><span class="n">DialectLabelsOA</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lexdb</span><span class="o">.</span><span class="n">VariantEntryTypesOA</span><span class="p">:</span>
+                <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lexdb</span><span class="o">.</span><span class="n">VariantEntryTypesOA</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lexdb</span><span class="o">.</span><span class="n">ComplexEntryTypesOA</span><span class="p">:</span>
+                <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lexdb</span><span class="o">.</span><span class="n">ComplexEntryTypesOA</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lexdb</span><span class="o">.</span><span class="n">MorphTypesOA</span><span class="p">:</span>
+                <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lexdb</span><span class="o">.</span><span class="n">MorphTypesOA</span><span class="p">)</span>
+
+        <span class="c1"># Text/discourse lists</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">TextMarkupTagsOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">TextMarkupTagsOA</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">GenreListOA</span><span class="p">:</span>
+            <span class="n">lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">GenreListOA</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">lists</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new possibility list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the new list.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibilityList: The newly created list object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create a custom possibility list</span>
+<span class="sd">            &gt;&gt;&gt; custom_list = project.PossibilityLists.CreateList(&quot;Custom Categories&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.PossibilityLists.GetListName(custom_list))</span>
+<span class="sd">            Custom Categories</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Custom possibility lists may not integrate with all FLEx features</span>
+<span class="sd">            - Consider using existing lists where possible</span>
+<span class="sd">            - Created lists are not automatically linked to any field</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Creates an independent possibility list</span>
+<span class="sd">            - List is created but not automatically added to any field</span>
+<span class="sd">            - To use the list, it must be associated with a custom field</span>
+<span class="sd">            - Name is set in specified writing system</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            DeleteList, GetAllLists, FindList</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Create the new list using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetInstance</span><span class="p">(</span><span class="n">ICmPossibilityListFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create list </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="n">new_list</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Set name</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_list</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_list</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">DeleteList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a possibility list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            list_or_hvo: The ICmPossibilityList object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If list_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If trying to delete a system list.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Delete a custom list</span>
+<span class="sd">            &gt;&gt;&gt; custom = project.PossibilityLists.FindList(&quot;Old Custom List&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if custom:</span>
+<span class="sd">            ...     project.PossibilityLists.DeleteList(custom)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - DO NOT delete standard FLEx lists (semantic domains, POS, etc.)</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - Deletes all items in the list recursively</span>
+<span class="sd">            - Any fields referencing this list will be broken</span>
+<span class="sd">            - Only delete custom lists that are no longer needed</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Best practice: only delete custom lists you created</span>
+<span class="sd">            - Deletion cascades to all items in the list</span>
+<span class="sd">            - Use with extreme caution on shared projects</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateList, GetAllLists</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">,</span> <span class="s2">&quot;list_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">poss_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveList</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Note: Actual deletion of system lists is dangerous and not implemented</span>
+        <span class="c1"># Only custom lists should be deleted, and they need special handling</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="s2">&quot;DeleteList: Direct deletion of possibility lists is not safe. &quot;</span>
+            <span class="s2">&quot;Please delete items individually or consult FLEx documentation.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a possibility list by its name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The list name to search for (case-insensitive).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibilityList or None: The list object if found, None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find the semantic domains list</span>
+<span class="sd">            &gt;&gt;&gt; sd_list = project.PossibilityLists.FindList(&quot;Semantic Domains&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if sd_list:</span>
+<span class="sd">            ...     items = project.PossibilityLists.GetItems(sd_list)</span>
+<span class="sd">            ...     print(f&quot;Found {len(items)} semantic domains&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find text genres list</span>
+<span class="sd">            &gt;&gt;&gt; genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-insensitive</span>
+<span class="sd">            - Searches in default analysis writing system</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+<span class="sd">            - Common list names: &quot;Semantic Domains&quot;, &quot;Parts of Speech&quot;,</span>
+<span class="sd">              &quot;Text Genres&quot;, &quot;Locations&quot;, &quot;People&quot;, etc.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAllLists, GetListName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Search through all lists</span>
+        <span class="k">for</span> <span class="n">poss_list</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAllLists</span><span class="p">():</span>
+            <span class="n">list_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">poss_list</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">list_name</span> <span class="ow">and</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">list_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">poss_list</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetListName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of a possibility list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            list_or_hvo: The ICmPossibilityList object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The list name, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If list_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; lists = project.PossibilityLists.GetAllLists()</span>
+<span class="sd">            &gt;&gt;&gt; for poss_list in lists:</span>
+<span class="sd">            ...     name = project.PossibilityLists.GetListName(poss_list)</span>
+<span class="sd">            ...     print(f&quot;List: {name}&quot;)</span>
+<span class="sd">            List: Semantic Domains</span>
+<span class="sd">            List: Parts of Speech</span>
+<span class="sd">            List: Text Genres</span>
+<span class="sd">            ...</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetListName, FindList</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">,</span> <span class="s2">&quot;list_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">poss_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveList</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">poss_list</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetListName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of a possibility list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            list_or_hvo: The ICmPossibilityList object or HVO.</span>
+<span class="sd">            name (str): The new name.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If list_or_hvo or name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; custom_list = project.PossibilityLists.CreateList(&quot;Temp&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.PossibilityLists.SetListName(custom_list, &quot;Custom List&quot;)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Renaming standard FLEx lists is not recommended</span>
+<span class="sd">            - Only rename custom lists you created</span>
+<span class="sd">            - Changes affect how the list appears throughout the UI</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetListName, CreateList</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">,</span> <span class="s2">&quot;list_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">poss_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveList</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">poss_list</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="c1"># --- Item Management ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetItems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get items from a possibility list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            list_or_hvo: The ICmPossibilityList object or HVO.</span>
+<span class="sd">            recursive (bool): If True (default), returns every item in the</span>
+<span class="sd">                hierarchy (depth-first, parents before children). If False,</span>
+<span class="sd">                returns only top-level items and the caller must descend via</span>
+<span class="sd">                GetSubitems.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmPossibility objects.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If list_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for item in project.PossibilityLists.GetItems(genre_list):</span>
+<span class="sd">            ...     print(project.PossibilityLists.GetItemName(item))    # All items at any depth</span>
+
+<span class="sd">            &gt;&gt;&gt; # Top-level only</span>
+<span class="sd">            &gt;&gt;&gt; top = project.PossibilityLists.GetItems(genre_list, recursive=False)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSubitems, CreateItem, FindItem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">,</span> <span class="s2">&quot;list_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">poss_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveList</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">poss_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">UnpackNestedPossibilityList</span><span class="p">(</span>
+            <span class="n">poss_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">,</span> <span class="n">ICmPossibility</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new item in a possibility list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            list_or_hvo: The ICmPossibilityList object or HVO.</span>
+<span class="sd">            name (str): The name of the new item.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+<span class="sd">            parent: Optional parent ICmPossibility object or HVO. If None,</span>
+<span class="sd">                creates a top-level item. If provided, creates a subitem.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility: The newly created item object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If list_or_hvo or name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty or parent is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create a top-level item</span>
+<span class="sd">            &gt;&gt;&gt; genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; narrative = project.PossibilityLists.CreateItem(</span>
+<span class="sd">            ...     genre_list, &quot;Narrative&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.PossibilityLists.GetItemName(narrative))</span>
+<span class="sd">            Narrative</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create a subitem</span>
+<span class="sd">            &gt;&gt;&gt; folktale = project.PossibilityLists.CreateItem(</span>
+<span class="sd">            ...     genre_list, &quot;Folktale&quot;, &quot;en&quot;, parent=narrative)</span>
+<span class="sd">            &gt;&gt;&gt; parent = project.PossibilityLists.GetParentItem(folktale)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.PossibilityLists.GetItemName(parent))</span>
+<span class="sd">            Narrative</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Item is added to parent&#39;s subitems or to list&#39;s top level</span>
+<span class="sd">            - Name is set in specified writing system</span>
+<span class="sd">            - Use SetItemName() to add names in other writing systems</span>
+<span class="sd">            - New items have no abbreviation by default</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            DeleteItem, GetItems, FindItem, GetSubitems</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">,</span> <span class="s2">&quot;list_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">poss_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveList</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Resolve and validate parent (if any) before any mutation.</span>
+        <span class="n">parent_obj</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">parent</span><span class="p">:</span>
+            <span class="n">parent_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+            <span class="c1"># Verify parent belongs to the same list</span>
+            <span class="n">parent_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetListOwner</span><span class="p">(</span><span class="n">parent_obj</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parent_list</span><span class="o">.</span><span class="n">Guid</span> <span class="o">!=</span> <span class="n">poss_list</span><span class="o">.</span><span class="n">Guid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Parent item does not belong to the specified list&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Create the new possibility using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create list item </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="n">new_item</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to parent or top-level list (must be done before setting properties)</span>
+            <span class="k">if</span> <span class="n">parent_obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parent_obj</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_item</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">poss_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_item</span><span class="p">)</span>
+
+            <span class="c1"># Set name</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_item</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">DeleteItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete an item from a possibility list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Delete an item</span>
+<span class="sd">            &gt;&gt;&gt; genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; obsolete = project.PossibilityLists.FindItem(genre_list, &quot;Obsolete&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if obsolete:</span>
+<span class="sd">            ...     project.PossibilityLists.DeleteItem(obsolete)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - Deletes all subitems recursively</span>
+<span class="sd">            - Objects referencing this item will lose the reference</span>
+<span class="sd">            - Consider removing references first</span>
+<span class="sd">            - DO NOT delete standard list items unless you know what you&#39;re doing</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Deletion cascades to all subitems</span>
+<span class="sd">            - Item is removed from parent&#39;s SubPossibilitiesOS or list&#39;s PossibilitiesOS</span>
+<span class="sd">            - References to this item are automatically cleaned up</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateItem, GetItems, FindItem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get the parent or owning list</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetParentItem</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">parent</span><span class="p">:</span>
+            <span class="c1"># Remove from parent&#39;s subitems</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Remove from top-level list</span>
+            <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetListOwner</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="n">owner</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a possibility item, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: Either an ICmPossibility object or its HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source item.</span>
+<span class="sd">                                If False, insert at end of parent&#39;s collection.</span>
+<span class="sd">            deep (bool): If True (default), also duplicate owned subitems recursively.</span>
+<span class="sd">                        If False, only copy simple properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility: The newly created duplicate item with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Duplicate a top-level item (shallow copy)</span>
+<span class="sd">            &gt;&gt;&gt; genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; narrative = project.PossibilityLists.FindItem(genre_list, &quot;Narrative&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; dup = project.PossibilityLists.Duplicate(narrative)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Original: {project.PossibilityLists.GetItemName(narrative)}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Duplicate: {project.PossibilityLists.GetItemName(dup)}&quot;)</span>
+<span class="sd">            Original: Narrative</span>
+<span class="sd">            Duplicate: Narrative</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Modify the duplicate</span>
+<span class="sd">            &gt;&gt;&gt; project.PossibilityLists.SetItemName(dup, &quot;Epic Narrative&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.PossibilityLists.SetItemAbbreviation(dup, &quot;Epic&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Deep duplicate (includes all subitems)</span>
+<span class="sd">            &gt;&gt;&gt; deep_dup = project.PossibilityLists.Duplicate(narrative, deep=True)</span>
+<span class="sd">            &gt;&gt;&gt; subitems = project.PossibilityLists.GetSubitems(deep_dup)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Duplicate has {len(subitems)} subitems&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original item&#39;s position</span>
+<span class="sd">            - MultiString properties copied: Name, Abbreviation, Description</span>
+<span class="sd">            - If deep=True, recursively duplicates all SubPossibilitiesOS</span>
+<span class="sd">            - Duplicate is added to parent collection before copying properties</span>
+<span class="sd">            - Parent hierarchy is preserved</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateItem, DeleteItem, GetGuid, GetSubitems</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source item</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get the parent item or owning list</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetParentItem</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+
+        <span class="c1"># Create new item using factory (auto-generates new GUID)</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate list item&quot;</span><span class="p">):</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># ADD TO PARENT FIRST before copying properties (CRITICAL)</span>
+            <span class="k">if</span> <span class="n">parent</span><span class="p">:</span>
+                <span class="c1"># Insert into parent&#39;s subitems</span>
+                <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Insert into top-level list</span>
+                <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetListOwner</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">owner</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy MultiString properties using CopyAlternatives</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+            <span class="c1"># Description is also a MultiString but needs special handling</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">duplicate</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+            <span class="c1"># Deep copy: duplicate owned subitems recursively</span>
+            <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">sub_item</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                    <span class="c1"># Recursively duplicate each subitem</span>
+                    <span class="n">sub_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityFactory</span><span class="p">)</span>
+                    <span class="n">sub_dup</span> <span class="o">=</span> <span class="n">sub_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                    <span class="n">duplicate</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">sub_dup</span><span class="p">)</span>
+
+                    <span class="c1"># Copy sub-item properties</span>
+                    <span class="n">sub_dup</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">sub_item</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+                    <span class="n">sub_dup</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">sub_item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sub_item</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+                        <span class="n">sub_dup</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">sub_item</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+                    <span class="c1"># Recursively copy deeper levels if they exist</span>
+                    <span class="k">if</span> <span class="n">sub_item</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">__DuplicateSubitemsRecursive</span><span class="p">(</span><span class="n">sub_item</span><span class="p">,</span> <span class="n">sub_dup</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get syncable properties for cross-project synchronization.</span>
+
+<span class="sd">        Returns all syncable properties of a possibility item including</span>
+<span class="sd">        MultiString fields.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The ICmPossibility object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary of syncable properties</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; props = project.PossibilityLists.GetSyncableProperties(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(props)</span>
+<span class="sd">            {&#39;Name&#39;: &#39;Narrative&#39;, &#39;Abbreviation&#39;: &#39;Narr&#39;, &#39;Description&#39;: &#39;...&#39;}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;item&quot;</span><span class="p">)</span>
+
+        <span class="n">poss_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">poss_item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Abbreviation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">poss_item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">poss_item</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">poss_item</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two possibility items and return detailed differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First item (from source project)</span>
+<span class="sd">            item2: Second item (from target project)</span>
+<span class="sd">            ops1: Operations instance for item1&#39;s project (defaults to self)</span>
+<span class="sd">            ops2: Operations instance for item2&#39;s project (defaults to self)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict) where differences_dict contains</span>
+<span class="sd">                   &#39;properties&#39; dict with changed property details</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = ops1.CompareTo(item1, item2, ops1, ops2)</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, details in diffs[&#39;properties&#39;].items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {details[&#39;source&#39;]} -&gt; {details[&#39;target&#39;]}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+
+        <span class="c1"># Get syncable properties from both items</span>
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="c1"># Compare each property</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">is_different</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">differences</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">val1</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">val2</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;modified&quot;</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__DuplicateSubitemsRecursive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_parent</span><span class="p">,</span> <span class="n">dup_parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method to recursively duplicate subitems.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_parent: Source ICmPossibility with subitems to copy.</span>
+<span class="sd">            dup_parent: Duplicate ICmPossibility to receive copied subitems.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">sub_item</span> <span class="ow">in</span> <span class="n">source_parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityFactory</span><span class="p">)</span>
+            <span class="n">sub_dup</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="n">dup_parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">sub_dup</span><span class="p">)</span>
+
+            <span class="c1"># Copy properties</span>
+            <span class="n">sub_dup</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">sub_item</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="n">sub_dup</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">sub_item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sub_item</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+                <span class="n">sub_dup</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">sub_item</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+            <span class="c1"># Continue recursion if there are deeper levels</span>
+            <span class="k">if</span> <span class="n">sub_item</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__DuplicateSubitemsRecursive</span><span class="p">(</span><span class="n">sub_item</span><span class="p">,</span> <span class="n">sub_dup</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find an item in a possibility list by name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            list_or_hvo: The ICmPossibilityList object or HVO to search in.</span>
+<span class="sd">            name (str): The item name to search for (case-insensitive).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility or None: The item object if found, None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If list_or_hvo or name is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find an item</span>
+<span class="sd">            &gt;&gt;&gt; genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; narrative = project.PossibilityLists.FindItem(genre_list, &quot;Narrative&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if narrative:</span>
+<span class="sd">            ...     subitems = project.PossibilityLists.GetSubitems(narrative)</span>
+<span class="sd">            ...     print(f&quot;Found {len(subitems)} sub-genres&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Case-insensitive search</span>
+<span class="sd">            &gt;&gt;&gt; item = project.PossibilityLists.FindItem(genre_list, &quot;narrative&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(item is not None)</span>
+<span class="sd">            True</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-insensitive</span>
+<span class="sd">            - Searches recursively through all items including nested ones</span>
+<span class="sd">            - Searches in default analysis writing system</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetItems, CreateItem, GetItemName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">,</span> <span class="s2">&quot;list_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Search through all items (recursive default)</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetItems</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">):</span>
+            <span class="n">item_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">item_name</span> <span class="ow">and</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">item_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetItemName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of a possibility item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The item name, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; items = project.PossibilityLists.GetItems(genre_list)</span>
+<span class="sd">            &gt;&gt;&gt; for item in items:</span>
+<span class="sd">            ...     name = project.PossibilityLists.GetItemName(item)</span>
+<span class="sd">            ...     print(f&quot;Genre: {name}&quot;)</span>
+<span class="sd">            Genre: Narrative</span>
+<span class="sd">            Genre: Procedural</span>
+<span class="sd">            Genre: Expository</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get name in a specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; name_fr = project.PossibilityLists.GetItemName(</span>
+<span class="sd">            ...     item, project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetItemName, GetItemAbbreviation, FindItem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetItemName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of a possibility item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            name (str): The new name.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo or name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; item = project.PossibilityLists.FindItem(genre_list, &quot;Old Name&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if item:</span>
+<span class="sd">            ...     project.PossibilityLists.SetItemName(item, &quot;New Name&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetItemName, SetItemAbbreviation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetItemAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the abbreviation of a possibility item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The item abbreviation, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pos_list = project.PossibilityLists.FindList(&quot;Parts of Speech&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; noun = project.PossibilityLists.FindItem(pos_list, &quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; abbr = project.PossibilityLists.GetItemAbbreviation(noun)</span>
+<span class="sd">            &gt;&gt;&gt; print(abbr)</span>
+<span class="sd">            N</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetItemAbbreviation, GetItemName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">abbr</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetItemAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">abbr</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the abbreviation of a possibility item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            abbr (str): The new abbreviation.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo or abbr is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pos_list = project.PossibilityLists.FindList(&quot;Parts of Speech&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; noun = project.PossibilityLists.FindItem(pos_list, &quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.PossibilityLists.SetItemAbbreviation(noun, &quot;N&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Abbreviation can be empty string if not needed</span>
+<span class="sd">            - Abbreviations are often used in interlinear displays</span>
+<span class="sd">            - Common in POS lists and semantic domain lists</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetItemAbbreviation, SetItemName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbr</span><span class="p">,</span> <span class="s2">&quot;abbr&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbr</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetItemDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the description of a possibility item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The item description, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; sd_list = project.PossibilityLists.FindList(&quot;Semantic Domains&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; walk = project.PossibilityLists.FindItem(sd_list, &quot;Walk&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; desc = project.PossibilityLists.GetItemDescription(walk)</span>
+<span class="sd">            &gt;&gt;&gt; print(desc)</span>
+<span class="sd">            Use this domain for words related to walking.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetItemDescription, GetItemName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Description is a MultiString</span>
+        <span class="n">desc</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetItemDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the description of a possibility item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            description (str): The new description text.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo or description is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; narrative = project.PossibilityLists.FindItem(genre_list, &quot;Narrative&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.PossibilityLists.SetItemDescription(</span>
+<span class="sd">            ...     narrative, &quot;Stories that tell about events in sequence&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetItemDescription, SetItemName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Description is a MultiString</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
+
+    <span class="c1"># --- Hierarchy Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSubitems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the subitems of a possibility item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO.</span>
+<span class="sd">            recursive (bool): If True (default), returns every descendant</span>
+<span class="sd">                (depth-first, parents before children). If False, returns</span>
+<span class="sd">                only direct children.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmPossibility objects (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pos_list = project.PossibilityLists.FindList(&quot;Parts of Speech&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; noun = project.PossibilityLists.FindItem(pos_list, &quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for sub in project.PossibilityLists.GetSubitems(noun):</span>
+<span class="sd">            ...     print(project.PossibilityLists.GetItemName(sub))   # All descendants</span>
+
+<span class="sd">            &gt;&gt;&gt; # Direct children only</span>
+<span class="sd">            &gt;&gt;&gt; for sub in project.PossibilityLists.GetSubitems(noun, recursive=False):</span>
+<span class="sd">            ...     print(project.PossibilityLists.GetItemName(sub))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetParentItem, GetItems, CreateItem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RejectLegacyKwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s2">&quot;flat&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recursive&quot;</span><span class="p">,</span> <span class="s2">&quot;semantics inverted: flat=True is now recursive=True&quot;</span><span class="p">),</span>
+        <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">walk</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="n">walk</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParentItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the parent item of a possibility item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility or None: The parent item, or None if top-level.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get parent</span>
+<span class="sd">            &gt;&gt;&gt; pos_list = project.PossibilityLists.FindList(&quot;Parts of Speech&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; proper_noun = project.PossibilityLists.FindItem(</span>
+<span class="sd">            ...     pos_list, &quot;Proper Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; parent = project.PossibilityLists.GetParentItem(proper_noun)</span>
+<span class="sd">            &gt;&gt;&gt; if parent:</span>
+<span class="sd">            ...     name = project.PossibilityLists.GetItemName(parent)</span>
+<span class="sd">            ...     print(f&quot;Parent: {name}&quot;)</span>
+<span class="sd">            Parent: Noun</span>
+
+<span class="sd">            &gt;&gt;&gt; # Top-level items have no parent</span>
+<span class="sd">            &gt;&gt;&gt; noun = project.PossibilityLists.FindItem(pos_list, &quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; parent = project.PossibilityLists.GetParentItem(noun)</span>
+<span class="sd">            &gt;&gt;&gt; print(parent)</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None for top-level items</span>
+<span class="sd">            - Parent is determined by ownership hierarchy</span>
+<span class="sd">            - Parent-child relationships form a tree structure</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSubitems, GetDepth, MoveItem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">owner</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">Owner</span>
+
+        <span class="c1"># Check if owner is a possibility (subitem) or a list (top-level)</span>
+        <span class="k">if</span> <span class="n">owner</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">owner</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;CmPossibility&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">new_parent_or_hvo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Move an item to a different parent or to top level.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO to move.</span>
+<span class="sd">            new_parent_or_hvo: The new parent ICmPossibility object or HVO.</span>
+<span class="sd">                If None, moves item to top level of its list.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If new parent is in a different list or</span>
+<span class="sd">                if trying to make an item its own descendant.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Move item to a different parent</span>
+<span class="sd">            &gt;&gt;&gt; pos_list = project.PossibilityLists.FindList(&quot;Parts of Speech&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; common_noun = project.PossibilityLists.FindItem(</span>
+<span class="sd">            ...     pos_list, &quot;Common Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; noun = project.PossibilityLists.FindItem(pos_list, &quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.PossibilityLists.MoveItem(common_noun, noun)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Move item to top level</span>
+<span class="sd">            &gt;&gt;&gt; project.PossibilityLists.MoveItem(common_noun, None)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Cannot move item to its own descendant (would create cycle)</span>
+<span class="sd">            - Cannot move item between different lists</span>
+<span class="sd">            - Moving changes the item&#39;s hierarchical position</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Item is removed from old location and added to new location</span>
+<span class="sd">            - All subitems move with the item</span>
+<span class="sd">            - Item remains in the same list</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetParentItem, GetSubitems, CreateItem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">item_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetListOwner</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="c1"># Resolve new parent if provided</span>
+        <span class="k">if</span> <span class="n">new_parent_or_hvo</span><span class="p">:</span>
+            <span class="n">new_parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">new_parent_or_hvo</span><span class="p">)</span>
+            <span class="n">new_parent_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetListOwner</span><span class="p">(</span><span class="n">new_parent</span><span class="p">)</span>
+
+            <span class="c1"># Verify both items are in the same list</span>
+            <span class="k">if</span> <span class="n">item_list</span><span class="o">.</span><span class="n">Guid</span> <span class="o">!=</span> <span class="n">new_parent_list</span><span class="o">.</span><span class="n">Guid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Cannot move item to a different list&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Verify not moving to own descendant</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__IsDescendant</span><span class="p">(</span><span class="n">new_parent</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Cannot move item to its own descendant&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_parent</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Move list item&quot;</span><span class="p">):</span>
+            <span class="c1"># Remove from current location</span>
+            <span class="n">old_parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetParentItem</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">old_parent</span><span class="p">:</span>
+                <span class="n">old_parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">item_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+            <span class="c1"># Add to new location</span>
+            <span class="k">if</span> <span class="n">new_parent</span><span class="p">:</span>
+                <span class="n">new_parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">item_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDepth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the depth of an item in the hierarchy.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The depth (0 for top-level, 1 for first level subitems, etc.).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Top-level item</span>
+<span class="sd">            &gt;&gt;&gt; pos_list = project.PossibilityLists.FindList(&quot;Parts of Speech&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; noun = project.PossibilityLists.FindItem(pos_list, &quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; depth = project.PossibilityLists.GetDepth(noun)</span>
+<span class="sd">            &gt;&gt;&gt; print(depth)</span>
+<span class="sd">            0</span>
+
+<span class="sd">            &gt;&gt;&gt; # Second-level item</span>
+<span class="sd">            &gt;&gt;&gt; proper = project.PossibilityLists.FindItem(pos_list, &quot;Proper Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; depth = project.PossibilityLists.GetDepth(proper)</span>
+<span class="sd">            &gt;&gt;&gt; print(depth)</span>
+<span class="sd">            1</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Depth is 0-based (top-level = 0)</span>
+<span class="sd">            - Calculated by traversing parent chain</span>
+<span class="sd">            - Useful for indentation in tree displays</span>
+<span class="sd">            - Efficient operation (doesn&#39;t scan entire tree)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetParentItem, GetSubitems</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Count parents by traversing ownership chain</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">item</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetParentItem</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">depth</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">parent</span>
+
+        <span class="k">return</span> <span class="n">depth</span>
+
+    <span class="c1"># --- Utilities ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetListGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID of a possibility list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            list_or_hvo: The ICmPossibilityList object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.Guid: The list&#39;s globally unique identifier.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If list_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; guid = project.PossibilityLists.GetListGuid(genre_list)</span>
+<span class="sd">            &gt;&gt;&gt; print(guid)</span>
+<span class="sd">            3f99fdad-19c9-44e7-8d04-4b0f284137f9</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUID is stable across sessions</span>
+<span class="sd">            - GUID is unique across all projects</span>
+<span class="sd">            - Use GUID for persistent references</span>
+<span class="sd">            - GUID can be used with project.Object(guid) to retrieve the list</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetItemGuid, FindList</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">,</span> <span class="s2">&quot;list_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">poss_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveList</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">poss_list</span><span class="o">.</span><span class="n">Guid</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetItemGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID of a possibility item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmPossibility object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.Guid: The item&#39;s globally unique identifier.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pos_list = project.PossibilityLists.FindList(&quot;Parts of Speech&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; noun = project.PossibilityLists.FindItem(pos_list, &quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; guid = project.PossibilityLists.GetItemGuid(noun)</span>
+<span class="sd">            &gt;&gt;&gt; print(guid)</span>
+<span class="sd">            a23b6fcc-654c-4983-a11c-5e4e15e1f6e9</span>
+
+<span class="sd">            &gt;&gt;&gt; # Use GUID to retrieve item later</span>
+<span class="sd">            &gt;&gt;&gt; retrieved = project.Object(guid)</span>
+<span class="sd">            &gt;&gt;&gt; name = project.PossibilityLists.GetItemName(retrieved)</span>
+<span class="sd">            &gt;&gt;&gt; print(name)</span>
+<span class="sd">            Noun</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUID is stable across sessions</span>
+<span class="sd">            - GUID is unique across all projects</span>
+<span class="sd">            - Use GUID for persistent references</span>
+<span class="sd">            - GUID can be used with project.Object(guid) to retrieve the item</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetListGuid, FindItem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveItem</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">Guid</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetItemHvo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the HVO (handle value) of a possibility item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The ICmPossibility object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The item&#39;s HVO.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pos_list = project.PossibilityLists.FindList(&quot;Parts of Speech&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; noun = project.PossibilityLists.FindItem(pos_list, &quot;Noun&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; hvo = project.PossibilityLists.GetItemHvo(noun)</span>
+<span class="sd">            &gt;&gt;&gt; print(hvo)</span>
+<span class="sd">            123456</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - HVO is only valid for current session</span>
+<span class="sd">            - HVO changes between sessions</span>
+<span class="sd">            - Use GUID for persistent references</span>
+<span class="sd">            - HVO can be used with project.Object(hvo) to retrieve the item</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetItemGuid, GetListGuid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;item&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">Hvo</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetListHvo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">poss_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the HVO (handle value) of a possibility list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            poss_list: The ICmPossibilityList object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The list&#39;s HVO.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If poss_list is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; genre_list = project.PossibilityLists.FindList(&quot;Text Genres&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; hvo = project.PossibilityLists.GetListHvo(genre_list)</span>
+<span class="sd">            &gt;&gt;&gt; print(hvo)</span>
+<span class="sd">            789012</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - HVO is only valid for current session</span>
+<span class="sd">            - HVO changes between sessions</span>
+<span class="sd">            - Use GUID for persistent references</span>
+<span class="sd">            - HVO can be used with project.Object(hvo) to retrieve the list</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetListGuid, GetItemHvo</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">poss_list</span><span class="p">,</span> <span class="s2">&quot;poss_list&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">poss_list</span><span class="o">.</span><span class="n">Hvo</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to ICmPossibilityList.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            list_or_hvo: Either an ICmPossibilityList object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibilityList: The resolved list object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a possibility list.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">list_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ICmPossibilityList</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a possibility list&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">list_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to ICmPossibility.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: Either an ICmPossibility object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility: The resolved item object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a possibility item.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ICmPossibility</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a possibility item&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">item_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetListOwner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the possibility list that owns an item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The ICmPossibility object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibilityList: The owning list.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Traverse up the ownership chain to find the list.</span>
+        <span class="c1"># Use ClassName-based check instead of isinstance() -- pythonnet&#39;s</span>
+        <span class="c1"># isinstance() on LCM interface types is unreliable.</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">item</span>
+        <span class="k">while</span> <span class="n">current</span><span class="p">:</span>
+            <span class="n">owner</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">Owner</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">owner</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;CmPossibilityList&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ICmPossibilityList</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">owner</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;CmPossibility&quot;</span><span class="p">:</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__IsDescendant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">potential_descendant</span><span class="p">,</span> <span class="n">potential_ancestor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if an item is a descendant of another item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            potential_descendant: The ICmPossibility that might be a descendant.</span>
+<span class="sd">            potential_ancestor: The ICmPossibility that might be an ancestor.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if potential_descendant is a descendant of potential_ancestor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">potential_descendant</span><span class="o">.</span><span class="n">Guid</span> <span class="o">==</span> <span class="n">potential_ancestor</span><span class="o">.</span><span class="n">Guid</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetParentItem</span><span class="p">(</span><span class="n">potential_descendant</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">parent</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">Guid</span> <span class="o">==</span> <span class="n">potential_ancestor</span><span class="o">.</span><span class="n">Guid</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetParentItem</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists.PossibilityListOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

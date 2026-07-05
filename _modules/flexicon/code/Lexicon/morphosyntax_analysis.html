@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Lexicon.morphosyntax_analysis &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.morphosyntax_analysis</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Lexicon.morphosyntax_analysis</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   morphosyntax_analysis.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: MorphosyntaxAnalysis</span>
+<span class="c1">#          Wrapper for morphosyntactic analysis objects providing unified interface</span>
+<span class="c1">#          access across multiple concrete types.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Wrapper class for morphosyntactic analysis (MSA) objects with unified interface.</span>
+
+<span class="sd">This module provides MorphosyntaxAnalysis, a wrapper class that transparently</span>
+<span class="sd">handles the four concrete types of morphosyntactic analyses:</span>
+<span class="sd">- MoStemMsa: Stem (root) analysis with Part of Speech</span>
+<span class="sd">- MoDerivAffMsa: Derivational affix analysis with from/to Part of Speech</span>
+<span class="sd">- MoInflAffMsa: Inflectional affix analysis with Part of Speech and slots</span>
+<span class="sd">- MoUnclassifiedAffixMsa: Unclassified affix analysis</span>
+
+<span class="sd">All share base interface IMoMorphSynAnalysis.</span>
+
+<span class="sd">Problem:</span>
+<span class="sd">    MSAs have different properties depending on their concrete type:</span>
+
+<span class="sd">    - All have PartOfSpeechRA or similar properties for grammatical category</span>
+<span class="sd">    - MoDerivAffMsa has FromPartOfSpeechRA and ToPartOfSpeechRA (input/output POS)</span>
+<span class="sd">    - MoInflAffMsa has PartOfSpeechRA and inflection class references</span>
+<span class="sd">    - Users working with mixed collections need to check ClassName and cast to</span>
+<span class="sd">      access type-specific properties, which is error-prone and verbose.</span>
+
+<span class="sd">Solution:</span>
+<span class="sd">    MorphosyntaxAnalysis wrapper provides:</span>
+
+<span class="sd">    - Simple properties for common features (pos_main, class_type)</span>
+<span class="sd">    - Capability check properties (is_stem_msa, is_deriv_aff_msa, etc.)</span>
+<span class="sd">    - Property access that works across all types</span>
+<span class="sd">    - Optional: Methods for advanced users who know C# types</span>
+
+<span class="sd">Example::</span>
+
+<span class="sd">    from flexlibs2.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis</span>
+
+<span class="sd">    # Wrap an MSA from entry.MorphoSyntaxAnalysesOC</span>
+<span class="sd">    msa = entry.MorphoSyntaxAnalysesOC[0]</span>
+<span class="sd">    wrapped = MorphosyntaxAnalysis(msa)</span>
+
+<span class="sd">    # Access common properties</span>
+<span class="sd">    if wrapped.is_stem_msa:</span>
+<span class="sd">        print(f&quot;Stem with POS: {wrapped.pos_main}&quot;)</span>
+
+<span class="sd">    if wrapped.is_deriv_aff_msa:</span>
+<span class="sd">        from_pos = wrapped.pos_from</span>
+<span class="sd">        to_pos = wrapped.pos_to</span>
+<span class="sd">        print(f&quot;Derives: {from_pos} -&gt; {to_pos}&quot;)</span>
+
+<span class="sd">    # Check capabilities</span>
+<span class="sd">    if wrapped.has_from_pos:</span>
+<span class="sd">        print(f&quot;From POS: {wrapped.pos_from}&quot;)</span>
+
+<span class="sd">    # Optional: Advanced users can access concrete types</span>
+<span class="sd">    if wrapped.as_stem_msa():</span>
+<span class="sd">        concrete = wrapped.as_stem_msa()</span>
+<span class="sd">        # Use concrete interface for advanced operations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.wrapper_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LCMObjectWrapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span><span class="p">,</span> <span class="n">get_pos_from_msa</span><span class="p">,</span> <span class="n">get_from_pos_from_msa</span>
+
+
+<div class="viewcode-block" id="MorphosyntaxAnalysis">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.morphosyntax_analysis.MorphosyntaxAnalysis">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MorphosyntaxAnalysis</span><span class="p">(</span><span class="n">LCMObjectWrapper</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper for morphosyntactic analysis objects providing unified interface access.</span>
+
+<span class="sd">    Handles the four concrete types of MSAs (MoStemMsa, MoDerivAffMsa, MoInflAffMsa,</span>
+<span class="sd">    MoUnclassifiedAffixMsa) transparently, providing common properties and capability</span>
+<span class="sd">    checks without exposing ClassName or casting.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        _obj: The base interface object (IMoMorphSynAnalysis)</span>
+<span class="sd">        _concrete: The concrete type object (IMoStemMsa, IMoDerivAffMsa,</span>
+<span class="sd">                  IMoInflAffMsa, or IMoUnclassifiedAffixMsa)</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        msa = entry.MorphoSyntaxAnalysesOC[0]</span>
+<span class="sd">        wrapped = MorphosyntaxAnalysis(msa)</span>
+<span class="sd">        print(wrapped.class_type)</span>
+<span class="sd">        if wrapped.is_stem_msa:</span>
+<span class="sd">            print(wrapped.pos_main)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lcm_msa</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize MorphosyntaxAnalysis wrapper with an MSA object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lcm_msa: An IMoMorphSynAnalysis object (or derived type).</span>
+<span class="sd">                     Typically from entry.MorphoSyntaxAnalysesOC.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            msa = entry.MorphoSyntaxAnalysesOC[0]</span>
+<span class="sd">            wrapped = MorphosyntaxAnalysis(msa)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lcm_msa</span><span class="p">)</span>
+
+    <span class="c1"># ========== Type Check Properties ==========</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_stem_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this is a stem MSA (MoStemMsa).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if this is a MoStemMsa object.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.is_stem_msa:</span>
+<span class="sd">                pos = wrapped.pos_main</span>
+<span class="sd">                print(f&quot;Stem POS: {pos}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoStemMsa&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_deriv_aff_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this is a derivational affix MSA (MoDerivAffMsa).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if this is a MoDerivAffMsa object.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.is_deriv_aff_msa:</span>
+<span class="sd">                from_pos = wrapped.pos_from</span>
+<span class="sd">                to_pos = wrapped.pos_to</span>
+<span class="sd">                print(f&quot;Derives: {from_pos} -&gt; {to_pos}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoDerivAffMsa&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_infl_aff_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this is an inflectional affix MSA (MoInflAffMsa).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if this is a MoInflAffMsa object.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.is_infl_aff_msa:</span>
+<span class="sd">                pos = wrapped.pos_main</span>
+<span class="sd">                print(f&quot;Inflectional affix for POS: {pos}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoInflAffMsa&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_unclassified_aff_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this is an unclassified affix MSA (MoUnclassifiedAffixMsa).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if this is a MoUnclassifiedAffixMsa object.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.is_unclassified_aff_msa:</span>
+<span class="sd">                pos = wrapped.pos_main</span>
+<span class="sd">                print(f&quot;Unclassified affix with POS: {pos}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoUnclassifiedAffixMsa&quot;</span>
+
+    <span class="c1"># ========== Common Properties (work across most MSA types) ==========</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pos_main</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the main Part of Speech for this MSA.</span>
+
+<span class="sd">        Returns the PartOfSpeechRA for stem and inflectional affixes,</span>
+<span class="sd">        and ToPartOfSpeechRA for derivational affixes (output POS).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech or None: The main POS reference, or None if not set.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.pos_main:</span>
+<span class="sd">                pos_name = wrapped.pos_main.Name.BestAnalysisAlternative.Text</span>
+<span class="sd">                print(f&quot;POS: {pos_name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For MoStemMsa, MoInflAffMsa, MoUnclassifiedAffixMsa: PartOfSpeechRA</span>
+<span class="sd">            - For MoDerivAffMsa: ToPartOfSpeechRA (output POS)</span>
+<span class="sd">            - Use pos_from for derivational affix input POS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">get_pos_from_msa</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_from_pos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this MSA has a &quot;from&quot; Part of Speech (input POS).</span>
+
+<span class="sd">        Only meaningful for derivational affixes, which show what POS</span>
+<span class="sd">        something derives from. Returns False for all other MSA types.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if this is a MoDerivAffMsa with FromPartOfSpeechRA set.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.has_from_pos:</span>
+<span class="sd">                from_pos = wrapped.pos_from</span>
+<span class="sd">                to_pos = wrapped.pos_to</span>
+<span class="sd">                print(f&quot;Derives: {from_pos} -&gt; {to_pos}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only MoDerivAffMsa has FromPartOfSpeechRA</span>
+<span class="sd">            - Always False for MoStemMsa, MoInflAffMsa, MoUnclassifiedAffixMsa</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_deriv_aff_msa</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">get_from_pos_from_msa</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pos_from</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the &quot;from&quot; Part of Speech for derivational affixes.</span>
+
+<span class="sd">        Only meaningful for MoDerivAffMsa. Shows the POS before derivation.</span>
+<span class="sd">        Returns None for all other MSA types.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech or None: The input POS for derivational affixes,</span>
+<span class="sd">                or None if not a derivational affix or not set.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.has_from_pos:</span>
+<span class="sd">                from_pos = wrapped.pos_from</span>
+<span class="sd">                to_pos = wrapped.pos_to</span>
+<span class="sd">                print(f&quot;Derives {from_pos.Name} to {to_pos.Name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only meaningful for MoDerivAffMsa</span>
+<span class="sd">            - Returns None for MoStemMsa, MoInflAffMsa, MoUnclassifiedAffixMsa</span>
+<span class="sd">            - Use pos_to to get the output POS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_deriv_aff_msa</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">get_from_pos_from_msa</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pos_to</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the &quot;to&quot; Part of Speech for derivational affixes.</span>
+
+<span class="sd">        For derivational affixes, this is the output POS (what you get after</span>
+<span class="sd">        applying the derivation). For other MSA types, returns the same as pos_main.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech or None: The output POS for derivational affixes,</span>
+<span class="sd">                or the main POS for other types, or None if not set.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.is_deriv_aff_msa:</span>
+<span class="sd">                from_pos = wrapped.pos_from</span>
+<span class="sd">                to_pos = wrapped.pos_to</span>
+<span class="sd">                print(f&quot;Change: {from_pos} -&gt; {to_pos}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For MoDerivAffMsa: ToPartOfSpeechRA (output after derivation)</span>
+<span class="sd">            - For other types: Same as pos_main</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_deriv_aff_msa</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">get_pos_from_msa</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">)</span>  <span class="c1"># ToPartOfSpeechRA</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_main</span>
+
+    <span class="c1"># ========== Advanced: Direct C# class access (optional for power users) ==========</span>
+
+<div class="viewcode-block" id="MorphosyntaxAnalysis.as_stem_msa">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.morphosyntax_analysis.MorphosyntaxAnalysis.as_stem_msa">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">as_stem_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cast to IMoStemMsa if this is a stem MSA.</span>
+
+<span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
+<span class="sd">        Returns None if this is not a MoStemMsa.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoStemMsa or None: The concrete interface if this is a</span>
+<span class="sd">                MoStemMsa, None otherwise.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.as_stem_msa():</span>
+<span class="sd">                concrete = wrapped.as_stem_msa()</span>
+<span class="sd">                # Can now access IMoStemMsa-specific methods/properties</span>
+<span class="sd">                # Advanced operations...</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For users who know C# interfaces and want advanced control</span>
+<span class="sd">            - Most users should use properties like pos_main instead</span>
+<span class="sd">            - Only useful if you need to call methods or access properties</span>
+<span class="sd">              that aren&#39;t exposed through the wrapper</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoStemMsa&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="MorphosyntaxAnalysis.as_deriv_aff_msa">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.morphosyntax_analysis.MorphosyntaxAnalysis.as_deriv_aff_msa">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">as_deriv_aff_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cast to IMoDerivAffMsa if this is a derivational affix MSA.</span>
+
+<span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
+<span class="sd">        Returns None if this is not a MoDerivAffMsa.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoDerivAffMsa or None: The concrete interface if this is a</span>
+<span class="sd">                MoDerivAffMsa, None otherwise.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.as_deriv_aff_msa():</span>
+<span class="sd">                concrete = wrapped.as_deriv_aff_msa()</span>
+<span class="sd">                # Can now access IMoDerivAffMsa-specific methods/properties</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For users who know C# interfaces and want advanced control</span>
+<span class="sd">            - Most users should use properties like pos_from and pos_to instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoDerivAffMsa&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="MorphosyntaxAnalysis.as_infl_aff_msa">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.morphosyntax_analysis.MorphosyntaxAnalysis.as_infl_aff_msa">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">as_infl_aff_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cast to IMoInflAffMsa if this is an inflectional affix MSA.</span>
+
+<span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
+<span class="sd">        Returns None if this is not a MoInflAffMsa.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoInflAffMsa or None: The concrete interface if this is a</span>
+<span class="sd">                MoInflAffMsa, None otherwise.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.as_infl_aff_msa():</span>
+<span class="sd">                concrete = wrapped.as_infl_aff_msa()</span>
+<span class="sd">                # Can now access IMoInflAffMsa-specific methods/properties</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For users who know C# interfaces and want advanced control</span>
+<span class="sd">            - Most users should use properties like pos_main instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoInflAffMsa&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="MorphosyntaxAnalysis.as_unclassified_aff_msa">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.morphosyntax_analysis.MorphosyntaxAnalysis.as_unclassified_aff_msa">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">as_unclassified_aff_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cast to IMoUnclassifiedAffixMsa if this is an unclassified affix MSA.</span>
+
+<span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
+<span class="sd">        Returns None if this is not a MoUnclassifiedAffixMsa.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoUnclassifiedAffixMsa or None: The concrete interface if this is a</span>
+<span class="sd">                MoUnclassifiedAffixMsa, None otherwise.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.as_unclassified_aff_msa():</span>
+<span class="sd">                concrete = wrapped.as_unclassified_aff_msa()</span>
+<span class="sd">                # Can now access IMoUnclassifiedAffixMsa-specific methods/properties</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For users who know C# interfaces and want advanced control</span>
+<span class="sd">            - Most users should use properties like pos_main instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoUnclassifiedAffixMsa&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">concrete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the raw concrete interface object.</span>
+
+<span class="sd">        For advanced users who need to access the underlying C# interface</span>
+<span class="sd">        directly without going through wrapper properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The concrete interface object (IMoStemMsa, IMoDerivAffMsa,</span>
+<span class="sd">            IMoInflAffMsa, or IMoUnclassifiedAffixMsa depending on the MSA&#39;s</span>
+<span class="sd">            actual type).</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            # Direct access to concrete interface</span>
+<span class="sd">            concrete = msa_obj.concrete</span>
+<span class="sd">            pos = concrete.PartOfSpeechRA  # MSA type-specific property</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For power users only</span>
+<span class="sd">            - Bypasses the wrapper&#39;s abstraction</span>
+<span class="sd">            - Normal users should prefer wrapper properties like</span>
+<span class="sd">              is_stem_msa, pos_main, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation showing MSA type.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;MorphosyntaxAnalysis(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Human-readable description.&quot;&quot;&quot;</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_main</span>
+        <span class="n">pos_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">pos</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pos_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; [</span><span class="si">{</span><span class="n">pos</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">BestAnalysisAlternative</span><span class="o">.</span><span class="n">Text</span><span class="si">}</span><span class="s2">]&quot;</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">pos_name</span> <span class="o">=</span> <span class="s2">&quot; [unknown POS]&quot;</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}{</span><span class="n">pos_name</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.morphosyntax_analysis</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

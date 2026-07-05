@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Lexicon.allomorph &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.allomorph</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Lexicon.allomorph</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   allomorph.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: Allomorph</span>
+<span class="c1">#          Wrapper for allomorph objects providing unified interface</span>
+<span class="c1">#          access across multiple concrete types.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Wrapper class for allomorph objects with unified interface.</span>
+
+<span class="sd">This module provides Allomorph, a wrapper class that transparently</span>
+<span class="sd">handles the two concrete types of allomorphs:</span>
+<span class="sd">- MoStemAllomorph: Allomorphs of stems (StemName property)</span>
+<span class="sd">- MoAffixAllomorph: Allomorphs of affixes (AffixType property)</span>
+
+<span class="sd">The wrapper exposes a unified interface for accessing common properties</span>
+<span class="sd">and provides convenience methods for checking type-specific capabilities</span>
+<span class="sd">without exposing the underlying ClassName or casting complexity.</span>
+
+<span class="sd">Problem:</span>
+<span class="sd">    Allomorphs have different properties depending on their concrete type:</span>
+<span class="sd">    - MoStemAllomorph has StemName property</span>
+<span class="sd">    - MoAffixAllomorph has AffixType property</span>
+
+<span class="sd">    Both have Form (ITsString), PhEnvironmentRC, Gloss, etc.</span>
+
+<span class="sd">    Users working with mixed collections need to check ClassName and cast to</span>
+<span class="sd">    access type-specific properties, which is error-prone and verbose.</span>
+
+<span class="sd">Solution:</span>
+<span class="sd">    Allomorph wrapper provides:</span>
+<span class="sd">    - Simple properties for common features (form, environment, gloss)</span>
+<span class="sd">    - Capability check properties (is_stem_allomorph, is_affix_allomorph)</span>
+<span class="sd">    - Property access that works across all types</span>
+<span class="sd">    - Optional: Methods for advanced users who know C# types</span>
+
+<span class="sd">Example::</span>
+
+<span class="sd">    from flexlibs2.code.Lexicon.allomorph import Allomorph</span>
+
+<span class="sd">    # Wrap an allomorph from GetAll()</span>
+<span class="sd">    allomorph = allomorphOps.GetAll(entry)[0]  # Typed as IMoForm</span>
+<span class="sd">    wrapped = Allomorph(allomorph)</span>
+
+<span class="sd">    # Access common properties</span>
+<span class="sd">    print(wrapped.form)  # Works for all allomorph types</span>
+<span class="sd">    print(wrapped.environment)</span>
+
+<span class="sd">    # Check capabilities</span>
+<span class="sd">    if wrapped.is_stem_allomorph:</span>
+<span class="sd">        print(&quot;This is a stem allomorph&quot;)</span>
+
+<span class="sd">    # Optional: Advanced users can access concrete types</span>
+<span class="sd">    if wrapped.as_stem_allomorph():</span>
+<span class="sd">        concrete = wrapped.as_stem_allomorph()</span>
+<span class="sd">        # Use concrete interface for advanced operations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.wrapper_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LCMObjectWrapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+
+
+<div class="viewcode-block" id="Allomorph">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.allomorph.Allomorph">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Allomorph</span><span class="p">(</span><span class="n">LCMObjectWrapper</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper for allomorph objects providing unified interface access.</span>
+
+<span class="sd">    Handles the two concrete types of allomorphs (MoStemAllomorph,</span>
+<span class="sd">    MoAffixAllomorph) transparently, providing common properties and</span>
+<span class="sd">    capability checks without exposing ClassName or casting.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        _obj: The base interface object (IMoForm)</span>
+<span class="sd">        _concrete: The concrete type object (IMoStemAllomorph or IMoAffixAllomorph)</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        allomorph = allomorphOps.GetAll(entry)[0]</span>
+<span class="sd">        wrapped = Allomorph(allomorph)</span>
+<span class="sd">        print(wrapped.form)</span>
+<span class="sd">        print(wrapped.environment)</span>
+<span class="sd">        if wrapped.is_stem_allomorph:</span>
+<span class="sd">            print(&quot;Stem allomorph&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lcm_allomorph</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize Allomorph wrapper with an allomorph object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lcm_allomorph: An IMoForm object (or derived type).</span>
+<span class="sd">                         Typically from AllomorphOperations.GetAll().</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            allomorph = allomorphOps.GetAll(entry)[0]</span>
+<span class="sd">            wrapped = Allomorph(allomorph)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lcm_allomorph</span><span class="p">)</span>
+
+    <span class="c1"># ========== Common Properties (work across all allomorph types) ==========</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">form</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the form (text) of this allomorph.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The allomorph form, normalized and stripped of FLEx null markers.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            print(f&quot;Allomorph form: {wrapped.form}&quot;)</span>
+<span class="sd">            # Output: &quot;walk&quot; or &quot;-ing&quot;</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Uses vernacular writing system by default</span>
+<span class="sd">            - Empty string returned if form not set</span>
+<span class="sd">            - FLEx null marker (``***``) is normalized to empty string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span>
+
+            <span class="n">form_multistring</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Form</span>
+            <span class="k">if</span> <span class="n">form_multistring</span><span class="p">:</span>
+                <span class="c1"># Get from default vernacular writing system</span>
+                <span class="n">default_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Cache</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+                <span class="n">form_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">form_multistring</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">default_ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">form_text</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gloss</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the gloss of this allomorph.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The allomorph gloss, or empty string if not set.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.gloss:</span>
+<span class="sd">                print(f&quot;Gloss: {wrapped.gloss}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Gloss is typically empty for allomorphs (glosses go on senses)</span>
+<span class="sd">            - This is included for completeness as allomorphs have Gloss field</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;Gloss&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Gloss</span><span class="p">:</span>
+                <span class="c1"># Get from default analysis writing system</span>
+                <span class="n">default_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Cache</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+                <span class="n">gloss_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Gloss</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">default_ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">gloss_text</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">environment</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;list[object]&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the phonological environments for this allomorph.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IPhEnvironment objects defining where this allomorph occurs.</span>
+<span class="sd">                 Empty list if no environments specified (appears in all contexts).</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            for env in wrapped.environment:</span>
+<span class="sd">                print(f&quot;Environment: {env.Name}&quot;)</span>
+
+<span class="sd">            if not wrapped.environment:</span>
+<span class="sd">                print(&quot;This allomorph appears in all contexts&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Multiple environments use OR logic</span>
+<span class="sd">            - Empty list means allomorph appears in any context</span>
+<span class="sd">            - Environments guide the parser in selecting the appropriate allomorph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;PhoneEnvRC&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># ========== Type Detection Properties ==========</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_stem_allomorph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this is a stem allomorph.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if this is a MoStemAllomorph, False otherwise.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.is_stem_allomorph:</span>
+<span class="sd">                print(&quot;This is a stem allomorph&quot;)</span>
+<span class="sd">            else:</span>
+<span class="sd">                print(&quot;This is an affix allomorph&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - MoStemAllomorph allomorphs are variants of stems/roots</span>
+<span class="sd">            - MoAffixAllomorph allomorphs are variants of affixes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoStemAllomorph&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_affix_allomorph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this is an affix allomorph.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if this is a MoAffixAllomorph, False otherwise.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.is_affix_allomorph:</span>
+<span class="sd">                print(&quot;This is an affix allomorph&quot;)</span>
+<span class="sd">            else:</span>
+<span class="sd">                print(&quot;This is a stem allomorph&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - MoAffixAllomorph allomorphs are variants of prefixes, suffixes, etc.</span>
+<span class="sd">            - MoStemAllomorph allomorphs are variants of stems/roots</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoAffixAllomorph&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># ========== Type-Specific Property Access ==========</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stem_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the stem name (only for stem allomorphs).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The stem name if this is a MoStemAllomorph, empty string otherwise.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.is_stem_allomorph:</span>
+<span class="sd">                print(f&quot;Stem name: {wrapped.stem_name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only available on MoStemAllomorph</span>
+<span class="sd">            - Returns empty string for MoAffixAllomorph</span>
+<span class="sd">            - StemName is a multistring property</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_stem_allomorph</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;StemName&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">StemName</span><span class="p">:</span>
+                <span class="c1"># Get from default analysis writing system</span>
+                <span class="n">default_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Cache</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+                <span class="n">stem_name_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">StemName</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">default_ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                <span class="k">return</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">stem_name_text</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">affix_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the affix type (only for affix allomorphs).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoMorphType or None: The affix type if this is a MoAffixAllomorph,</span>
+<span class="sd">            None otherwise.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.is_affix_allomorph and wrapped.affix_type:</span>
+<span class="sd">                print(f&quot;Affix type: {wrapped.affix_type.Name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only available on MoAffixAllomorph</span>
+<span class="sd">            - Returns None for MoStemAllomorph</span>
+<span class="sd">            - AffixType indicates prefix, suffix, infix, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_affix_allomorph</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;AffixType&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">AffixType</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># ========== Advanced: Direct C# class access (optional for power users) ==========</span>
+
+<div class="viewcode-block" id="Allomorph.as_stem_allomorph">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.allomorph.Allomorph.as_stem_allomorph">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">as_stem_allomorph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cast to IMoStemAllomorph if this is a stem allomorph.</span>
+
+<span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
+<span class="sd">        Returns None if this is not a MoStemAllomorph.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoStemAllomorph or None: The concrete interface if this is a</span>
+<span class="sd">                MoStemAllomorph, None otherwise.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if allomorph_obj.as_stem_allomorph():</span>
+<span class="sd">                concrete = allomorph_obj.as_stem_allomorph()</span>
+<span class="sd">                # Can now access IMoStemAllomorph-specific methods/properties</span>
+<span class="sd">                stem_name = concrete.StemName</span>
+<span class="sd">                # Advanced operations...</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For users who know C# interfaces and want advanced control</span>
+<span class="sd">            - Most users should use properties like is_stem_allomorph and</span>
+<span class="sd">              stem_name instead</span>
+<span class="sd">            - Only useful if you need to call methods or access properties</span>
+<span class="sd">              that aren&#39;t exposed through the wrapper</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoStemAllomorph&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Allomorph.as_affix_allomorph">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.allomorph.Allomorph.as_affix_allomorph">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">as_affix_allomorph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cast to IMoAffixAllomorph if this is an affix allomorph.</span>
+
+<span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
+<span class="sd">        Returns None if this is not a MoAffixAllomorph.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoAffixAllomorph or None: The concrete interface if this is a</span>
+<span class="sd">                MoAffixAllomorph, None otherwise.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if allomorph_obj.as_affix_allomorph():</span>
+<span class="sd">                concrete = allomorph_obj.as_affix_allomorph()</span>
+<span class="sd">                # Can now access IMoAffixAllomorph-specific methods/properties</span>
+<span class="sd">                affix_type = concrete.AffixType</span>
+<span class="sd">                # Advanced operations...</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For users who know C# interfaces and want advanced control</span>
+<span class="sd">            - Most users should use properties like is_affix_allomorph and</span>
+<span class="sd">              affix_type instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoAffixAllomorph&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">concrete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the raw concrete interface object.</span>
+
+<span class="sd">        For advanced users who need to access the underlying C# interface</span>
+<span class="sd">        directly without going through wrapper properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The concrete interface object (IMoStemAllomorph or IMoAffixAllomorph</span>
+<span class="sd">            depending on the allomorph&#39;s actual type).</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            # Direct access to concrete interface</span>
+<span class="sd">            concrete = allomorph_obj.concrete</span>
+<span class="sd">            stem_name = concrete.StemName  # MoStemAllomorph property</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For power users only</span>
+<span class="sd">            - Bypasses the wrapper&#39;s abstraction</span>
+<span class="sd">            - Normal users should prefer wrapper properties like</span>
+<span class="sd">              is_stem_allomorph, stem_name, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation showing allomorph form and type.&quot;&quot;&quot;</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">form</span> <span class="ow">or</span> <span class="s2">&quot;Unnamed&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Allomorph(</span><span class="si">{</span><span class="n">form</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Human-readable description.&quot;&quot;&quot;</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">form</span> <span class="ow">or</span> <span class="s2">&quot;Unnamed&quot;</span>
+        <span class="n">type_name</span> <span class="o">=</span> <span class="s2">&quot;Stem&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_stem_allomorph</span> <span class="k">else</span> <span class="s2">&quot;Affix&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2"> Allomorph &#39;</span><span class="si">{</span><span class="n">form</span><span class="si">}</span><span class="s2">&#39;&quot;</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.allomorph</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

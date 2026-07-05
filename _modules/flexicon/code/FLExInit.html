@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.FLExInit &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.FLExInit</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.FLExInit</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   FLExInit.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Module: Fieldworks Language Explorer initialisation.</span>
+<span class="c1">#</span>
+<span class="c1">#   Note:   This module needs to be imported before importing or</span>
+<span class="c1">#           using any Fieldworks Assemblies as it sets up the</span>
+<span class="c1">#           path, and other low-level things.</span>
+<span class="c1">#</span>
+<span class="c1">#   Usage:  Call FLExInitialize() and FLExCleanup() as the first and</span>
+<span class="c1">#           last actions from the main application.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET &amp; IRONPython</span>
+<span class="c1">#             FieldWorks Version 9</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright Craig Farrow, 2011 - 2022</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Defer version import to avoid circular dependency during initialization</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">version</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;flexlibs version: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">version</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="c1"># Version module not yet available during initialization</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Python version: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+
+<span class="c1"># Configure the path for accessing the FW DLLs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExGlobals</span>
+
+<span class="n">FLExGlobals</span><span class="o">.</span><span class="n">InitialiseFWGlobals</span><span class="p">()</span>
+
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FwUtils&quot;</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.FieldWorks.Common.FwUtils</span><span class="w"> </span><span class="kn">import</span> <span class="n">FwRegistryHelper</span><span class="p">,</span> <span class="n">FwUtils</span>
+
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;SIL.WritingSystems&quot;</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.WritingSystems</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sldr</span>
+
+<span class="c1"># -------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="FLExInitialize">
+<a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.FLExInit.FLExInitialize">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">FLExInitialize</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initialize the Fieldworks libraries. An application should call</span>
+<span class="sd">    this as the first thing it does.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># [FW9] These 3 inits copied from LCMBrowser::Main()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calling RegistryHelper.Initialize()&quot;</span><span class="p">)</span>
+    <span class="n">FwRegistryHelper</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calling InitializeIcu()&quot;</span><span class="p">)</span>
+    <span class="n">FwUtils</span><span class="o">.</span><span class="n">InitializeIcu</span><span class="p">()</span>
+    <span class="c1"># No need to access the online SLDR: Offline mode = True</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calling Sldr.Initialize()&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">Sldr</span><span class="o">.</span><span class="n">Initialize</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="c1"># SLDR may already be initialized in some test/startup scenarios</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sldr.Initialize failed (already initialized?): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># Sldr.Initialize() can fail silently. If it doesn&#39;t return,</span>
+    <span class="c1"># then it is likely a dll issue.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FLExInit.Initialize complete&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FLExCleanup">
+<a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.FLExInit.FLExCleanup">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">FLExCleanup</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Close up the Fieldworks libraries. An application should call this</span>
+<span class="sd">    before exiting.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Sldr</span><span class="o">.</span><span class="n">Cleanup</span><span class="p">()</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.FLExInit</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

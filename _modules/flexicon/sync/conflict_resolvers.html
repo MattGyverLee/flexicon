@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.sync.conflict_resolvers &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.sync.conflict_resolvers</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.sync.conflict_resolvers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Conflict Resolvers - Strategies for resolving sync conflicts</span>
+
+<span class="sd">This module provides conflict resolution policies for sync operations.</span>
+
+<span class="sd">Author: FlexTools Development Team</span>
+<span class="sd">Date: 2025-11-26</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ConflictResolver">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.ConflictResolver">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConflictResolver</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for conflict resolution strategies.</span>
+
+<span class="sd">    When an object exists in both source and target but differs, a conflict</span>
+<span class="sd">    resolver determines which version to keep.</span>
+
+<span class="sd">    Custom resolvers can be implemented by subclassing and implementing resolve().</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ConflictResolver.resolve">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.ConflictResolver.resolve">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve conflict between source and target objects.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_obj: Source version of object</span>
+<span class="sd">            target_obj: Target version of object</span>
+<span class="sd">            source_project: Source FLExProject instance</span>
+<span class="sd">            target_project: Target FLExProject instance</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The object to keep (either source_obj or target_obj)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SourceWinsResolver">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.SourceWinsResolver">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SourceWinsResolver</span><span class="p">(</span><span class="n">ConflictResolver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Resolve conflicts by always choosing the source version.</span>
+
+<span class="sd">    This is the most common strategy for one-way sync operations where</span>
+<span class="sd">    the source is considered authoritative.</span>
+
+<span class="sd">    Use this when:</span>
+<span class="sd">    - Source is the &quot;master&quot; or &quot;stable&quot; project</span>
+<span class="sd">    - Syncing updates from development to production</span>
+<span class="sd">    - You want to overwrite target with source data</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; resolver = SourceWinsResolver()</span>
+<span class="sd">        &gt;&gt;&gt; sync.sync(</span>
+<span class="sd">        ...     object_type=&quot;Allomorph&quot;,</span>
+<span class="sd">        ...     conflict_resolver=resolver</span>
+<span class="sd">        ... )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SourceWinsResolver.resolve">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.SourceWinsResolver.resolve">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Always choose source version.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_obj: Source object (will be chosen)</span>
+<span class="sd">            target_obj: Target object (will be overwritten)</span>
+<span class="sd">            source_project: Source project</span>
+<span class="sd">            target_project: Target project</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            source_obj</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Conflict resolved: source wins (GUID: </span><span class="si">{</span><span class="n">source_obj</span><span class="o">.</span><span class="n">Guid</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">source_obj</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TargetWinsResolver">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.TargetWinsResolver">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TargetWinsResolver</span><span class="p">(</span><span class="n">ConflictResolver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Resolve conflicts by always keeping the target version.</span>
+
+<span class="sd">    This strategy preserves the target project&#39;s data when conflicts occur.</span>
+<span class="sd">    Useful for selective merging or when target has priority.</span>
+
+<span class="sd">    Use this when:</span>
+<span class="sd">    - Target contains more recent data</span>
+<span class="sd">    - You want to preserve local changes</span>
+<span class="sd">    - Syncing metadata but keeping target content</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; resolver = TargetWinsResolver()</span>
+<span class="sd">        &gt;&gt;&gt; sync.sync(</span>
+<span class="sd">        ...     object_type=&quot;Allomorph&quot;,</span>
+<span class="sd">        ...     conflict_resolver=resolver</span>
+<span class="sd">        ... )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TargetWinsResolver.resolve">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.TargetWinsResolver.resolve">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Always keep target version.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_obj: Source object (will be ignored)</span>
+<span class="sd">            target_obj: Target object (will be kept)</span>
+<span class="sd">            source_project: Source project</span>
+<span class="sd">            target_project: Target project</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            target_obj</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Conflict resolved: target wins (GUID: </span><span class="si">{</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">target_obj</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="NewestWinsResolver">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.NewestWinsResolver">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NewestWinsResolver</span><span class="p">(</span><span class="n">ConflictResolver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Resolve conflicts by choosing the most recently modified version.</span>
+
+<span class="sd">    This strategy compares modification timestamps and chooses the newer version.</span>
+<span class="sd">    Requires objects to have DateModified or similar timestamp properties.</span>
+
+<span class="sd">    Use this when:</span>
+<span class="sd">    - Both source and target are actively maintained</span>
+<span class="sd">    - You want automatic conflict resolution based on recency</span>
+<span class="sd">    - Bidirectional sync scenarios</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; resolver = NewestWinsResolver()</span>
+<span class="sd">        &gt;&gt;&gt; sync.sync(</span>
+<span class="sd">        ...     object_type=&quot;LexEntry&quot;,</span>
+<span class="sd">        ...     conflict_resolver=resolver</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Full implementation in Phase 2. Phase 1 placeholder.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="NewestWinsResolver.resolve">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.NewestWinsResolver.resolve">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Choose version with most recent modification date.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_obj: Source object</span>
+<span class="sd">            target_obj: Target object</span>
+<span class="sd">            source_project: Source project</span>
+<span class="sd">            target_project: Target project</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Newer object (source or target)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Phase 1: Basic implementation</span>
+        <span class="c1"># Full implementation with proper date comparison in Phase 2</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">source_date</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">target_date</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">target_obj</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">source_date</span> <span class="ow">and</span> <span class="n">target_date</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">source_date</span> <span class="o">&gt;</span> <span class="n">target_date</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Conflict resolved: source newer &quot;</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">source_date</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">target_date</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">source_obj</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Conflict resolved: target newer &quot;</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">target_date</span><span class="si">}</span><span class="s2"> &gt;= </span><span class="si">{</span><span class="n">source_date</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">target_obj</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not compare dates: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Fallback to source wins</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Conflict resolved: fallback to source wins&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">source_obj</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ManualResolver">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.ManualResolver">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ManualResolver</span><span class="p">(</span><span class="n">ConflictResolver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Resolve conflicts by prompting the user.</span>
+
+<span class="sd">    This strategy asks the user to manually choose which version to keep</span>
+<span class="sd">    for each conflict. Useful for interactive sync operations.</span>
+
+<span class="sd">    Use this when:</span>
+<span class="sd">    - Conflicts are rare and important</span>
+<span class="sd">    - You want human review of changes</span>
+<span class="sd">    - Data is critical and needs careful merging</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; resolver = ManualResolver()</span>
+<span class="sd">        &gt;&gt;&gt; sync.sync(</span>
+<span class="sd">        ...     object_type=&quot;LexEntry&quot;,</span>
+<span class="sd">        ...     conflict_resolver=resolver</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Full implementation in Phase 2. Phase 1 placeholder.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ManualResolver.resolve">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.ManualResolver.resolve">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prompt user to choose version.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_obj: Source object</span>
+<span class="sd">            target_obj: Target object</span>
+<span class="sd">            source_project: Source project</span>
+<span class="sd">            target_project: Target project</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            User-chosen object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Phase 1 - full implementation in Phase 2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Phase 1: Not implemented</span>
+        <span class="c1"># Full interactive UI in Phase 2</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Manual conflict resolution not yet implemented (Phase 2). &quot;</span>
+            <span class="s2">&quot;Use &#39;source_wins&#39; or &#39;target_wins&#39; for automated resolution.&quot;</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FieldMergeResolver">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.FieldMergeResolver">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FieldMergeResolver</span><span class="p">(</span><span class="n">ConflictResolver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Resolve conflicts by merging specific fields.</span>
+
+<span class="sd">    This strategy allows fine-grained control, merging some fields from source</span>
+<span class="sd">    and keeping others from target.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; # Keep target&#39;s gloss, but update form from source</span>
+<span class="sd">        &gt;&gt;&gt; resolver = FieldMergeResolver(</span>
+<span class="sd">        ...     source_fields=[&quot;form&quot;, &quot;morph_type&quot;],</span>
+<span class="sd">        ...     target_fields=[&quot;gloss&quot;, &quot;definition&quot;]</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Full implementation in Phase 4. Phase 1 placeholder.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_fields</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">target_fields</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize FieldMergeResolver.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_fields: Fields to take from source</span>
+<span class="sd">            target_fields: Fields to keep from target</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_fields</span> <span class="o">=</span> <span class="n">source_fields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_fields</span> <span class="o">=</span> <span class="n">target_fields</span>
+
+<div class="viewcode-block" id="FieldMergeResolver.resolve">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.conflict_resolvers.FieldMergeResolver.resolve">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Merge fields from both versions.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            Phase 1 placeholder - full implementation in Phase 4.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Field-level merge not yet implemented (Phase 4). &quot;</span>
+            <span class="s2">&quot;Use &#39;source_wins&#39; or &#39;target_wins&#39; for whole-object resolution.&quot;</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.sync.conflict_resolvers</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

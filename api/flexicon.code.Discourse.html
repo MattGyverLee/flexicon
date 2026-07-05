@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>flexicon.code.Discourse package &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/pyramid.css?v=cf1aad34" />
+    <script src="../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="flexicon.code.Grammar package" href="flexicon.code.Grammar.html" />
+    <link rel="prev" title="flexicon.code package" href="flexicon.code.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Grammar.html" title="flexicon.code.Grammar package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.html" title="flexicon.code package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >flexicon</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="flexicon.html" >flexicon package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="flexicon.code.html" accesskey="U">flexicon.code package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Discourse package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="flexicon-code-discourse-package">
+<h1>flexicon.code.Discourse package<a class="headerlink" href="#flexicon-code-discourse-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-flexicon.code.Discourse.ConstChartCellTagOperations">
+<span id="flexicon-code-discourse-constchartcelltagoperations-module"></span><h2>flexicon.code.Discourse.ConstChartCellTagOperations module<a class="headerlink" href="#module-flexicon.code.Discourse.ConstChartCellTagOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Discourse.ConstChartCellTagOperations.</span></span><span class="sig-name descname"><span class="pre">ConstChartCellTagOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Discourse/ConstChartCellTagOperations.html#ConstChartCellTagOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>Operations for managing per-cell chart tags (<code class="docutils literal notranslate"><span class="pre">IConstChartTag</span></code>)
+– the annotation surface in a constituent chart.</p>
+<p>Each chart row owns a sequence of cell-parts; a <code class="docutils literal notranslate"><span class="pre">IConstChartTag</span></code>
+is one cell-part subtype. Each tag is positioned in a column
+(<code class="docutils literal notranslate"><span class="pre">ColumnRA</span></code>) and references a marker from the project-wide
+vocabulary (<code class="docutils literal notranslate"><span class="pre">TagRA</span></code>). The vocabulary itself is managed by
+<code class="docutils literal notranslate"><span class="pre">ConstChartMarkerOperations</span></code>.</p>
+<p>Typical workflow:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">row</span>    <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">col</span>    <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">ColumnsOS</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">topic</span>  <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartMarkers</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="s2">&quot;Topic&quot;</span><span class="p">)</span>
+
+<span class="n">tag</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartCellTags</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">topic</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartCellTags</span><span class="o">.</span><span class="n">GetMarker</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span> <span class="ow">is</span> <span class="n">topic</span>
+</pre></div>
+</div>
+<p>Access via <code class="docutils literal notranslate"><span class="pre">FLExProject.ConstChartCellTags</span></code>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.GetMarker">
+<span class="sig-name descname"><span class="pre">GetMarker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.GetMarker" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.SetMarker">
+<span class="sig-name descname"><span class="pre">SetMarker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.SetMarker" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.GetColumn">
+<span class="sig-name descname"><span class="pre">GetColumn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.GetColumn" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Discourse.ConstChartClauseMarkerOperations">
+<span id="flexicon-code-discourse-constchartclausemarkeroperations-module"></span><h2>flexicon.code.Discourse.ConstChartClauseMarkerOperations module<a class="headerlink" href="#module-flexicon.code.Discourse.ConstChartClauseMarkerOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Discourse.ConstChartClauseMarkerOperations.</span></span><span class="sig-name descname"><span class="pre">ConstChartClauseMarkerOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Discourse/ConstChartClauseMarkerOperations.html#ConstChartClauseMarkerOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides operations for managing clause markers in constituent
+charts for discourse analysis in FieldWorks projects.</p>
+<p>Clause markers identify clausal relationships and dependencies within the
+discourse structure. They link word groups and mark clause boundaries.</p>
+<p>This class should be accessed via FLExProject.ConstChartClauseMarkers property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get a row and word group</span>
+<span class="n">chart</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstCharts</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="s2">&quot;Genesis 1 Analysis&quot;</span><span class="p">)</span>
+<span class="n">row</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartRows</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">chart</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">wg</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartWordGroups</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Create a clause marker</span>
+<span class="n">marker</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartClauseMarkers</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">wg</span><span class="p">)</span>
+
+<span class="c1"># Get all markers in a row</span>
+<span class="k">for</span> <span class="n">marker</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartClauseMarkers</span><span class="o">.</span><span class="n">GetAll</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+    <span class="c1"># Process clause marker</span>
+    <span class="k">pass</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.GetWordGroup">
+<span class="sig-name descname"><span class="pre">GetWordGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.GetWordGroup" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.GetDependentClauses">
+<span class="sig-name descname"><span class="pre">GetDependentClauses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.GetDependentClauses" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.AddDependentClause">
+<span class="sig-name descname"><span class="pre">AddDependentClause</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.AddDependentClause" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Discourse.ConstChartMarkerOperations">
+<span id="flexicon-code-discourse-constchartmarkeroperations-module"></span><h2>flexicon.code.Discourse.ConstChartMarkerOperations module<a class="headerlink" href="#module-flexicon.code.Discourse.ConstChartMarkerOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Discourse.ConstChartMarkerOperations.</span></span><span class="sig-name descname"><span class="pre">ConstChartMarkerOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Discourse/ConstChartMarkerOperations.html#ConstChartMarkerOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>Operations for managing the project-wide constituent-chart marker
+vocabulary (<code class="docutils literal notranslate"><span class="pre">LangProject.DiscourseDataOA.ChartMarkersOA</span></code>).</p>
+<p>Markers are <code class="docutils literal notranslate"><span class="pre">ICmPossibility</span></code> items that categorise content in
+discourse charts (Topic, Focus, Tail, etc.). They live in a single
+project-wide CmPossibilityList shared across every chart in the
+project, and can be organised hierarchically – a “Topic” marker
+may have “Sentence Topic” and “Contrastive Topic” children.</p>
+<p>Note: This is distinct from <code class="docutils literal notranslate"><span class="pre">IConstChartTag</span></code>, which is the
+per-cell annotation that references a marker. See
+<code class="docutils literal notranslate"><span class="pre">ConstChartCellTagOperations</span></code> for that surface.</p>
+<p>Access via <code class="docutils literal notranslate"><span class="pre">FLExProject.ConstChartMarkers</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartMarkers</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">ConstChartMarkers</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+
+<span class="n">topic</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartMarkers</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;Topic&quot;</span><span class="p">)</span>
+<span class="n">project</span><span class="o">.</span><span class="n">ConstChartMarkers</span><span class="o">.</span><span class="n">SetDescription</span><span class="p">(</span>
+    <span class="n">topic</span><span class="p">,</span> <span class="s2">&quot;Marks the sentence topic&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.GetName">
+<span class="sig-name descname"><span class="pre">GetName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.GetName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.SetName">
+<span class="sig-name descname"><span class="pre">SetName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.SetName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.GetDescription">
+<span class="sig-name descname"><span class="pre">GetDescription</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.GetDescription" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.SetDescription">
+<span class="sig-name descname"><span class="pre">SetDescription</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.SetDescription" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Discourse.ConstChartMovedTextOperations">
+<span id="flexicon-code-discourse-constchartmovedtextoperations-module"></span><h2>flexicon.code.Discourse.ConstChartMovedTextOperations module<a class="headerlink" href="#module-flexicon.code.Discourse.ConstChartMovedTextOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Discourse.ConstChartMovedTextOperations.</span></span><span class="sig-name descname"><span class="pre">ConstChartMovedTextOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Discourse/ConstChartMovedTextOperations.html#ConstChartMovedTextOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides operations for managing moved text markers in constituent
+charts for discourse analysis in FieldWorks projects.</p>
+<p>Moved text markers indicate that a word group represents text that has been
+moved from its canonical position (preposed or postposed) in the discourse
+structure.</p>
+<p>This class should be accessed via FLExProject.ConstChartMovedText property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get a word group</span>
+<span class="n">chart</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstCharts</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="s2">&quot;Genesis 1 Analysis&quot;</span><span class="p">)</span>
+<span class="n">row</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartRows</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">chart</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">wg</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartWordGroups</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Mark as preposed text</span>
+<span class="n">marker</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartMovedText</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">wg</span><span class="p">,</span> <span class="n">preposed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Check if preposed</span>
+<span class="k">if</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartMovedText</span><span class="o">.</span><span class="n">IsPreposed</span><span class="p">(</span><span class="n">marker</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Text is preposed&quot;</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.IsPreposed">
+<span class="sig-name descname"><span class="pre">IsPreposed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.IsPreposed" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.SetPreposed">
+<span class="sig-name descname"><span class="pre">SetPreposed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.SetPreposed" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.GetWordGroup">
+<span class="sig-name descname"><span class="pre">GetWordGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.GetWordGroup" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Discourse.ConstChartOperations">
+<span id="flexicon-code-discourse-constchartoperations-module"></span><h2>flexicon.code.Discourse.ConstChartOperations module<a class="headerlink" href="#module-flexicon.code.Discourse.ConstChartOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartOperations.ConstChartOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Discourse.ConstChartOperations.</span></span><span class="sig-name descname"><span class="pre">ConstChartOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Discourse/ConstChartOperations.html#ConstChartOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides operations for managing constituent charts in a
+FieldWorks project for discourse analysis.</p>
+<p>Constituent charts are used to analyze the structure of texts, showing
+how clauses, phrases, and other discourse elements are organized. Each
+chart contains rows that represent segments of the analyzed text.</p>
+<p>This class should be accessed via FLExProject.ConstCharts property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Create a new constituent chart</span>
+<span class="n">chart</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstCharts</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;Genesis 1 Analysis&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get all charts</span>
+<span class="k">for</span> <span class="n">chart</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstCharts</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstCharts</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">chart</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chart: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Find a specific chart</span>
+<span class="n">chart</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstCharts</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="s2">&quot;Genesis 1 Analysis&quot;</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.FindByHvo">
+<span class="sig-name descname"><span class="pre">FindByHvo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.FindByHvo" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetName">
+<span class="sig-name descname"><span class="pre">GetName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.SetName">
+<span class="sig-name descname"><span class="pre">SetName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.SetName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetTemplate">
+<span class="sig-name descname"><span class="pre">GetTemplate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetTemplate" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.SetTemplate">
+<span class="sig-name descname"><span class="pre">SetTemplate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.SetTemplate" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetRows">
+<span class="sig-name descname"><span class="pre">GetRows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetRows" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Discourse.ConstChartRowOperations">
+<span id="flexicon-code-discourse-constchartrowoperations-module"></span><h2>flexicon.code.Discourse.ConstChartRowOperations module<a class="headerlink" href="#module-flexicon.code.Discourse.ConstChartRowOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Discourse.ConstChartRowOperations.</span></span><span class="sig-name descname"><span class="pre">ConstChartRowOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Discourse/ConstChartRowOperations.html#ConstChartRowOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides operations for managing constituent chart rows in a
+FieldWorks project for discourse analysis.</p>
+<p>Chart rows represent segments or units of analyzed text within a constituent
+chart. Each row can contain word groups, labels, and notes describing the
+discourse structure.</p>
+<p>This class should be accessed via FLExProject.ConstChartRows property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get a chart</span>
+<span class="n">chart</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstCharts</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="s2">&quot;Genesis 1 Analysis&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create a new row</span>
+<span class="n">row</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartRows</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">chart</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Verse 1&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get all rows in a chart</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartRows</span><span class="o">.</span><span class="n">GetAll</span><span class="p">(</span><span class="n">chart</span><span class="p">):</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartRows</span><span class="o">.</span><span class="n">GetLabel</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Row: </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetLabel">
+<span class="sig-name descname"><span class="pre">GetLabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetLabel" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.SetLabel">
+<span class="sig-name descname"><span class="pre">SetLabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.SetLabel" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetNotes">
+<span class="sig-name descname"><span class="pre">GetNotes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetNotes" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.SetNotes">
+<span class="sig-name descname"><span class="pre">SetNotes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.SetNotes" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetWordGroups">
+<span class="sig-name descname"><span class="pre">GetWordGroups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetWordGroups" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.MoveTo">
+<span class="sig-name descname"><span class="pre">MoveTo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.MoveTo" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Discourse.ConstChartWordGroupOperations">
+<span id="flexicon-code-discourse-constchartwordgroupoperations-module"></span><h2>flexicon.code.Discourse.ConstChartWordGroupOperations module<a class="headerlink" href="#module-flexicon.code.Discourse.ConstChartWordGroupOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Discourse.ConstChartWordGroupOperations.</span></span><span class="sig-name descname"><span class="pre">ConstChartWordGroupOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Discourse/ConstChartWordGroupOperations.html#ConstChartWordGroupOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides operations for managing word groups in constituent chart rows
+for discourse analysis in FieldWorks projects.</p>
+<p>Word groups represent segments of text being analyzed in a discourse chart. Each
+word group references a range of segments (words/morphemes) from the analyzed text.</p>
+<p>This class should be accessed via FLExProject.ConstChartWordGroups property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get a row</span>
+<span class="n">chart</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstCharts</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="s2">&quot;Genesis 1 Analysis&quot;</span><span class="p">)</span>
+<span class="n">row</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartRows</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">chart</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Create a word group (referencing text segments)</span>
+<span class="n">wg</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartWordGroups</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">begin_segment</span><span class="p">,</span> <span class="n">end_segment</span><span class="p">)</span>
+
+<span class="c1"># Get all word groups in a row</span>
+<span class="k">for</span> <span class="n">wg</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">ConstChartWordGroups</span><span class="o">.</span><span class="n">GetAll</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+    <span class="c1"># Process word group</span>
+    <span class="k">pass</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetBeginSegment">
+<span class="sig-name descname"><span class="pre">GetBeginSegment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetBeginSegment" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.SetBeginSegment">
+<span class="sig-name descname"><span class="pre">SetBeginSegment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.SetBeginSegment" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetEndSegment">
+<span class="sig-name descname"><span class="pre">GetEndSegment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetEndSegment" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.SetEndSegment">
+<span class="sig-name descname"><span class="pre">SetEndSegment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.SetEndSegment" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetColumn">
+<span class="sig-name descname"><span class="pre">GetColumn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetColumn" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.SetColumn">
+<span class="sig-name descname"><span class="pre">SetColumn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.SetColumn" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Discourse">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-flexicon.code.Discourse" title="Link to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">flexicon.code.Discourse package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-flexicon.code.Discourse.ConstChartCellTagOperations">flexicon.code.Discourse.ConstChartCellTagOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations"><code class="docutils literal notranslate"><span class="pre">ConstChartCellTagOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.GetMarker"><code class="docutils literal notranslate"><span class="pre">GetMarker()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.SetMarker"><code class="docutils literal notranslate"><span class="pre">SetMarker()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartCellTagOperations.ConstChartCellTagOperations.GetColumn"><code class="docutils literal notranslate"><span class="pre">GetColumn()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Discourse.ConstChartClauseMarkerOperations">flexicon.code.Discourse.ConstChartClauseMarkerOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations"><code class="docutils literal notranslate"><span class="pre">ConstChartClauseMarkerOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.GetWordGroup"><code class="docutils literal notranslate"><span class="pre">GetWordGroup()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.GetDependentClauses"><code class="docutils literal notranslate"><span class="pre">GetDependentClauses()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartClauseMarkerOperations.ConstChartClauseMarkerOperations.AddDependentClause"><code class="docutils literal notranslate"><span class="pre">AddDependentClause()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Discourse.ConstChartMarkerOperations">flexicon.code.Discourse.ConstChartMarkerOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations"><code class="docutils literal notranslate"><span class="pre">ConstChartMarkerOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.GetName"><code class="docutils literal notranslate"><span class="pre">GetName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.SetName"><code class="docutils literal notranslate"><span class="pre">SetName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.GetDescription"><code class="docutils literal notranslate"><span class="pre">GetDescription()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMarkerOperations.ConstChartMarkerOperations.SetDescription"><code class="docutils literal notranslate"><span class="pre">SetDescription()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Discourse.ConstChartMovedTextOperations">flexicon.code.Discourse.ConstChartMovedTextOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations"><code class="docutils literal notranslate"><span class="pre">ConstChartMovedTextOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.IsPreposed"><code class="docutils literal notranslate"><span class="pre">IsPreposed()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.SetPreposed"><code class="docutils literal notranslate"><span class="pre">SetPreposed()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations.GetWordGroup"><code class="docutils literal notranslate"><span class="pre">GetWordGroup()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Discourse.ConstChartOperations">flexicon.code.Discourse.ConstChartOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations"><code class="docutils literal notranslate"><span class="pre">ConstChartOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.FindByHvo"><code class="docutils literal notranslate"><span class="pre">FindByHvo()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetName"><code class="docutils literal notranslate"><span class="pre">GetName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.SetName"><code class="docutils literal notranslate"><span class="pre">SetName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetTemplate"><code class="docutils literal notranslate"><span class="pre">GetTemplate()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.SetTemplate"><code class="docutils literal notranslate"><span class="pre">SetTemplate()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartOperations.ConstChartOperations.GetRows"><code class="docutils literal notranslate"><span class="pre">GetRows()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Discourse.ConstChartRowOperations">flexicon.code.Discourse.ConstChartRowOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations"><code class="docutils literal notranslate"><span class="pre">ConstChartRowOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetLabel"><code class="docutils literal notranslate"><span class="pre">GetLabel()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.SetLabel"><code class="docutils literal notranslate"><span class="pre">SetLabel()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetNotes"><code class="docutils literal notranslate"><span class="pre">GetNotes()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.SetNotes"><code class="docutils literal notranslate"><span class="pre">SetNotes()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.GetWordGroups"><code class="docutils literal notranslate"><span class="pre">GetWordGroups()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartRowOperations.ConstChartRowOperations.MoveTo"><code class="docutils literal notranslate"><span class="pre">MoveTo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Discourse.ConstChartWordGroupOperations">flexicon.code.Discourse.ConstChartWordGroupOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations"><code class="docutils literal notranslate"><span class="pre">ConstChartWordGroupOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetBeginSegment"><code class="docutils literal notranslate"><span class="pre">GetBeginSegment()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.SetBeginSegment"><code class="docutils literal notranslate"><span class="pre">SetBeginSegment()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetEndSegment"><code class="docutils literal notranslate"><span class="pre">GetEndSegment()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.SetEndSegment"><code class="docutils literal notranslate"><span class="pre">SetEndSegment()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.GetColumn"><code class="docutils literal notranslate"><span class="pre">GetColumn()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations.SetColumn"><code class="docutils literal notranslate"><span class="pre">SetColumn()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Discourse">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="flexicon.code.html"
+                          title="previous chapter">flexicon.code package</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="flexicon.code.Grammar.html"
+                          title="next chapter">flexicon.code.Grammar package</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Grammar.html" title="flexicon.code.Grammar package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.html" title="flexicon.code package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >flexicon</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="flexicon.html" >flexicon package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="flexicon.code.html" >flexicon.code package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Discourse package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Shared.MediaOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.MediaOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Shared.MediaOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   MediaOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: MediaOperations</span>
+<span class="c1">#          Media file operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ICmFile</span><span class="p">,</span>
+    <span class="n">ICmFileFactory</span><span class="p">,</span>
+    <span class="n">ICmFolder</span><span class="p">,</span>
+    <span class="n">ICmFolderFactory</span><span class="p">,</span>
+    <span class="n">ICmObjectRepository</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># --- Media Type Enum ---</span>
+
+
+<div class="viewcode-block" id="MediaType">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.MediaOperations.MediaType">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MediaType</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Media file type constants.&quot;&quot;&quot;</span>
+
+    <span class="n">UNKNOWN</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">AUDIO</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">VIDEO</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">IMAGE</span> <span class="o">=</span> <span class="mi">3</span></div>
+
+
+
+<span class="c1"># --- MediaOperations Class ---</span>
+
+
+<div class="viewcode-block" id="MediaOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.MediaOperations.MediaOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MediaOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Provides operations for managing media files in a FLEx project.</span>
+
+<span class="sd">    Media files include audio recordings, videos, and images that can be</span>
+<span class="sd">    attached to lexical entries, pronunciations, examples, and other objects.</span>
+<span class="sd">    This class handles both the database references (ICmFile) and file system</span>
+<span class="sd">    operations for project media.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.Media property.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; project = FLExProject()</span>
+<span class="sd">        &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
+<span class="sd">        &gt;&gt;&gt; # Get all media files</span>
+<span class="sd">        &gt;&gt;&gt; for media in project.Media.GetAll():</span>
+<span class="sd">        ...     path = project.Media.GetInternalPath(media)</span>
+<span class="sd">        ...     print(path)</span>
+<span class="sd">        &gt;&gt;&gt; # Add a new media file</span>
+<span class="sd">        &gt;&gt;&gt; media = project.Media.Create(&quot;/path/to/audio.wav&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; # Check media type</span>
+<span class="sd">        &gt;&gt;&gt; if project.Media.IsAudio(media):</span>
+<span class="sd">        ...     print(&quot;This is an audio file&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize MediaOperations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: FLExProject instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper to resolve writing system handle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Writing system handle (language tag or ID), or None for default</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Resolved writing system handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve all media files in the FLEx project.</span>
+
+<span class="sd">        This method returns an iterator over all ICmFile objects in the</span>
+<span class="sd">        project database, allowing iteration over the complete media inventory.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmFile: Each media file object in the project</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for media in project.Media.GetAll():</span>
+<span class="sd">            ...     path = project.Media.GetInternalPath(media)</span>
+<span class="sd">            ...     label = project.Media.GetLabel(media, &quot;en&quot;)</span>
+<span class="sd">            ...     print(f&quot;{label}: {path}&quot;)</span>
+<span class="sd">            Recording1: audio/recording1.wav</span>
+<span class="sd">            Video1: videos/intro.mp4</span>
+<span class="sd">            Photo1: images/photo1.jpg</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns an iterator for memory efficiency with large projects</span>
+<span class="sd">            - Media files are returned in database order</span>
+<span class="sd">            - Use GetInternalPath() to access the file path</span>
+<span class="sd">            - Includes all media types (audio, video, image)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create, GetMediaType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">ICmObjectRepository</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new media file reference in the FLEx project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file_path: The file path (internal to project or external)</span>
+<span class="sd">            label: Optional descriptive label for the media file</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmFile: The newly created media file object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If file_path is None</span>
+<span class="sd">            FP_ParameterError: If file_path is empty</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create media file reference</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Create(&quot;LinkedFiles/AudioVisual/audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Media.GetInternalPath(media))</span>
+<span class="sd">            LinkedFiles/AudioVisual/audio.wav</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with label</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Create(&quot;audio/recording.wav&quot;,</span>
+<span class="sd">            ...                               label=&quot;Speaker 1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Media.GetLabel(media, &quot;en&quot;))</span>
+<span class="sd">            Speaker 1</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Creates an ICmFile object in the database</span>
+<span class="sd">            - The file path is stored as-is (not validated)</span>
+<span class="sd">            - File is NOT copied to project - only reference is created</span>
+<span class="sd">            - Use CopyToProject() to import external files</span>
+<span class="sd">            - Label is optional and can be set later with SetLabel()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, CopyToProject, SetInternalPath</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;file_path&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_path</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">file_path</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;File path cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Get the factory and create the media file</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmFileFactory</span><span class="p">)</span>
+        <span class="n">new_media</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+        <span class="c1"># Set the internal path</span>
+        <span class="n">new_media</span><span class="o">.</span><span class="n">InternalPath</span> <span class="o">=</span> <span class="n">file_path</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c1"># Set label if provided</span>
+        <span class="k">if</span> <span class="n">label</span><span class="p">:</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_media</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_media</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a media file reference from the FLEx project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO (database ID)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if media:</span>
+<span class="sd">            ...     project.Media.Delete(media)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Delete by HVO</span>
+<span class="sd">            &gt;&gt;&gt; project.Media.Delete(12345)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - Removes the database reference only</span>
+<span class="sd">            - Does NOT delete the actual file from disk</span>
+<span class="sd">            - References from other objects will be removed</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only removes the ICmFile object from database</span>
+<span class="sd">            - The physical file remains in the file system</span>
+<span class="sd">            - Use os.remove() separately if you want to delete the file</span>
+<span class="sd">            - All references to this media from other objects are cleaned up</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Exists</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a media file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="c1"># Delete the object (this removes all references)</span>
+        <span class="c1"># Note: LCModel handles cascading deletion of references</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">DomainDataByFlid</span><span class="o">.</span><span class="n">DeleteObj</span><span class="p">(</span><span class="n">media</span><span class="o">.</span><span class="n">Hvo</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a media file reference, creating a new reference to the same file.</span>
+
+<span class="sd">        This method creates a copy of the media file reference (ICmFile object) in</span>
+<span class="sd">        the database. The duplicate points to the SAME physical file - the file</span>
+<span class="sd">        itself is NOT duplicated on disk. Use copy_file=True to create a physical</span>
+<span class="sd">        copy of the file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: Either an ICmFile object or its HVO (database ID)</span>
+<span class="sd">            deep (bool): If True, the physical file is also copied with a new name.</span>
+<span class="sd">                If False, only the database reference is duplicated (both references</span>
+<span class="sd">                point to the same file).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmFile: The newly created duplicate media file reference</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Shallow duplicate (reference only, same file)</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; duplicate = project.Media.Duplicate(media, deep=False)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Media.GetInternalPath(duplicate))</span>
+<span class="sd">            LinkedFiles/AudioVisual/audio.wav</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Media.GetLabel(duplicate, &quot;en&quot;))</span>
+<span class="sd">            Speaker 1 (copy)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Deep duplicate (copy the physical file too)</span>
+<span class="sd">            &gt;&gt;&gt; duplicate = project.Media.Duplicate(media, deep=True)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Media.GetInternalPath(duplicate))</span>
+<span class="sd">            LinkedFiles/AudioVisual/audio_copy.wav</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - With deep=False, both references point to the SAME file</span>
+<span class="sd">            - Deleting the file affects both references</span>
+<span class="sd">            - With deep=True, the file is physically copied (doubles disk space)</span>
+<span class="sd">            - The duplicate will have a &quot; (copy)&quot; suffix in the label</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Duplicated reference is added to the project database</span>
+<span class="sd">            - New GUID is auto-generated for the duplicate</span>
+<span class="sd">            - Internal path is copied (or modified if deep=True)</span>
+<span class="sd">            - Label is copied with &quot; (copy)&quot; suffix</span>
+<span class="sd">            - With deep=False, both references share the same physical file</span>
+<span class="sd">            - With deep=True, a new file is created with &quot;_copy&quot; suffix</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, CopyToProject</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">source_media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source_media</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a media file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">source_media</span> <span class="o">=</span> <span class="n">item_or_hvo</span>
+
+        <span class="c1"># Get source properties</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">internal_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetInternalPath</span><span class="p">(</span><span class="n">source_media</span><span class="p">)</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetLabel</span><span class="p">(</span><span class="n">source_media</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Create unique label by appending &quot; (copy)&quot;</span>
+        <span class="n">new_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> (copy)&quot;</span> <span class="k">if</span> <span class="n">label</span> <span class="k">else</span> <span class="s2">&quot;Media (copy)&quot;</span>
+
+        <span class="c1"># Handle deep copy (copy the physical file)</span>
+        <span class="n">new_path</span> <span class="o">=</span> <span class="n">internal_path</span>
+        <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="n">internal_path</span><span class="p">:</span>
+            <span class="c1"># Get the external path</span>
+            <span class="n">external_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetExternalPath</span><span class="p">(</span><span class="n">source_media</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">external_path</span><span class="p">):</span>
+                <span class="c1"># Create new filename with &quot;_copy&quot; suffix</span>
+                <span class="n">dir_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">internal_path</span><span class="p">)</span>
+                <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">internal_path</span><span class="p">)</span>
+                <span class="n">name_base</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+                <span class="n">new_file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name_base</span><span class="si">}</span><span class="s2">_copy</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">new_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_name</span><span class="p">,</span> <span class="n">new_file_name</span><span class="p">)</span>
+
+                <span class="c1"># Ensure uniqueness</span>
+                <span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">new_external_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">external_path</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">new_path</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">new_external_path</span><span class="p">):</span>
+                        <span class="k">break</span>
+                    <span class="n">new_file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name_base</span><span class="si">}</span><span class="s2">_copy</span><span class="si">{</span><span class="n">counter</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">new_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_name</span><span class="p">,</span> <span class="n">new_file_name</span><span class="p">)</span>
+                    <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="c1"># Copy the file</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">external_path</span><span class="p">,</span> <span class="n">new_external_path</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to copy physical file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="c1"># Continue with shallow copy if file copy fails</span>
+                    <span class="n">new_path</span> <span class="o">=</span> <span class="n">internal_path</span>
+
+        <span class="c1"># Create the new media reference</span>
+        <span class="n">new_media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">new_path</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">new_label</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Copy full Description MultiString (all writing systems)</span>
+        <span class="c1"># Create() only sets a single-WS label; CopyAlternatives preserves all WS</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_media</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_media</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
+            <span class="n">new_media</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_media</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_media</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all syncable properties of a media file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The ICmFile object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary of syncable properties with their values.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; props = project.Media.GetSyncableProperties(media)</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;InternalPath&#39;])</span>
+<span class="sd">            &#39;LinkedFiles/AudioVisual/audio.wav&#39;</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;Description&#39;])</span>
+<span class="sd">            {&#39;en&#39;: &#39;Speaker 1 recording&#39;}</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - InternalPath is a string property</span>
+<span class="sd">            - Description is a MultiString property (dict with WS keys)</span>
+<span class="sd">            - Does NOT include file content or metadata</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># String property - InternalPath</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;InternalPath&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">InternalPath</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;InternalPath&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">InternalPath</span>
+
+        <span class="c1"># MultiString property - Description</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two media files for differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First media object (from project 1)</span>
+<span class="sd">            item2: Second media object (from project 2)</span>
+<span class="sd">            ops1: Optional MediaOperations instance for project 1 (defaults to self)</span>
+<span class="sd">            ops2: Optional MediaOperations instance for project 2 (defaults to self)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict)</span>
+<span class="sd">                - is_different (bool): True if media files differ, False if identical</span>
+<span class="sd">                - differences_dict (dict): Maps property names to (value1, value2) tuples</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = ops1.CompareTo(media1, media2, ops1, ops2)</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} != {val2}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Compares InternalPath and Description</span>
+<span class="sd">            - MultiStrings are compared across all writing systems</span>
+<span class="sd">            - Empty/null values are treated as equivalent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Get all property keys from both items</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="c1"># Compare values</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_CompareValues</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">):</span>
+                <span class="c1"># Values are different</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a media file by its filename (internal path).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filename: The filename or path to search for (case-sensitive)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmFile or None: The media file object if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If filename is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if media:</span>
+<span class="sd">            ...     print(f&quot;Found: {project.Media.GetInternalPath(media)}&quot;)</span>
+<span class="sd">            Found: LinkedFiles/AudioVisual/audio.wav</span>
+
+<span class="sd">            &gt;&gt;&gt; # Search with full path</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;LinkedFiles/AudioVisual/audio.wav&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Search is case-sensitive</span>
+<span class="sd">            - Searches InternalPath field</span>
+<span class="sd">            - Can search by filename or full path</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+<span class="sd">            - Matches exact path or ending path component</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Exists, GetAll, GetInternalPath</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;filename&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filename</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">filename</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c1"># Search through all media files</span>
+        <span class="k">for</span> <span class="n">media</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="n">internal_path</span> <span class="o">=</span> <span class="n">media</span><span class="o">.</span><span class="n">InternalPath</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="c1"># Match exact path or filename at end of path</span>
+            <span class="k">if</span> <span class="n">internal_path</span> <span class="o">==</span> <span class="n">filename</span> <span class="ow">or</span> <span class="n">internal_path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="n">filename</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">media</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a media file exists in the FLEx project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filename: The filename or path to check</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the media file exists, False otherwise</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; if project.Media.Exists(&quot;audio.wav&quot;):</span>
+<span class="sd">            ...     media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     media = project.Media.Create(&quot;audio.wav&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-sensitive</span>
+<span class="sd">            - Returns False for empty or whitespace-only filenames</span>
+<span class="sd">            - Use Find() to get the actual media object</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filename</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">filename</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="c1"># --- File Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetInternalPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the internal path of a media file.</span>
+
+<span class="sd">        The internal path is the file location relative to the project&#39;s</span>
+<span class="sd">        LinkedFiles directory or an absolute path.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The internal path (empty string if not set)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; path = project.Media.GetInternalPath(media)</span>
+<span class="sd">            &gt;&gt;&gt; print(path)</span>
+<span class="sd">            LinkedFiles/AudioVisual/audio.wav</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if path not set</span>
+<span class="sd">            - Path may be relative or absolute</span>
+<span class="sd">            - Use GetExternalPath() to resolve to full system path</span>
+<span class="sd">            - Path uses forward slashes on all platforms</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetInternalPath, GetExternalPath</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a media file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="k">return</span> <span class="n">media</span><span class="o">.</span><span class="n">InternalPath</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetExternalPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the external (absolute) path of a media file.</span>
+
+<span class="sd">        This resolves the internal path to an absolute file system path,</span>
+<span class="sd">        relative to the project&#39;s LinkedFiles directory if needed.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The absolute file path (may not exist on disk)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; path = project.Media.GetExternalPath(media)</span>
+<span class="sd">            &gt;&gt;&gt; print(path)</span>
+<span class="sd">            C:/Users/Me/Documents/FieldWorks/Projects/MyProject/LinkedFiles/AudioVisual/audio.wav</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check if file exists on disk</span>
+<span class="sd">            &gt;&gt;&gt; import os</span>
+<span class="sd">            &gt;&gt;&gt; if os.path.exists(path):</span>
+<span class="sd">            ...     print(&quot;File exists&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns absolute path, resolved from internal path</span>
+<span class="sd">            - If internal path is absolute, returns it as-is</span>
+<span class="sd">            - If relative, resolves relative to project LinkedFiles directory</span>
+<span class="sd">            - Does NOT verify that file exists on disk</span>
+<span class="sd">            - Use IsValid() to check if file exists</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetInternalPath, IsValid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a media file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="n">internal_path</span> <span class="o">=</span> <span class="n">media</span><span class="o">.</span><span class="n">InternalPath</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="c1"># If already absolute, return as-is</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">internal_path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">internal_path</span>
+
+        <span class="c1"># Otherwise, resolve relative to project LinkedFiles directory</span>
+        <span class="c1"># Note: This assumes project has a LinkedFiles directory</span>
+        <span class="c1"># In actual FLEx, this would use the project&#39;s LinkedFilesRootDir</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s2">&quot;LinkedFilesRootDir&quot;</span><span class="p">):</span>
+            <span class="n">linked_files_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LinkedFilesRootDir</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">linked_files_dir</span><span class="p">,</span> <span class="n">internal_path</span><span class="p">)</span>
+
+        <span class="c1"># Fallback: return internal path if we can&#39;t resolve</span>
+        <span class="k">return</span> <span class="n">internal_path</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetInternalPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the internal path of a media file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+<span class="sd">            path: The new internal path to set</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo or path is None</span>
+<span class="sd">            FP_ParameterError: If path is empty or media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Media.SetInternalPath(media,</span>
+<span class="sd">            ...                                &quot;LinkedFiles/AudioVisual/new_audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Media.GetInternalPath(media))</span>
+<span class="sd">            LinkedFiles/AudioVisual/new_audio.wav</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Updates the internal path reference</span>
+<span class="sd">            - Does NOT move or rename the actual file</span>
+<span class="sd">            - Path can be relative or absolute</span>
+<span class="sd">            - Use forward slashes for cross-platform compatibility</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetInternalPath, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Path cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a media file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="n">media</span><span class="o">.</span><span class="n">InternalPath</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RenameMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rename a media file on disk and update the database reference.</span>
+
+<span class="sd">        This is an atomic operation that:</span>
+<span class="sd">        1. Validates parameters and checks write permissions</span>
+<span class="sd">        2. Gets current internal and external paths</span>
+<span class="sd">        3. Constructs new paths with new filename</span>
+<span class="sd">        4. Renames the physical file in LinkedFiles directory</span>
+<span class="sd">        5. Updates the InternalPath in the database</span>
+<span class="sd">        6. Handles filename conflicts (adds suffix if needed)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO (database ID)</span>
+<span class="sd">            new_filename: New filename (without path, just filename.ext)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The actual new internal path (may differ if conflict occurred)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo or new_filename is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist, filename is invalid,</span>
+<span class="sd">                or contains path separators</span>
+<span class="sd">            OSError: If file doesn&#39;t exist or rename operation fails</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Rename an audio file</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;LinkedFiles/AudioVisual/old_name.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; new_path = project.Media.RenameMediaFile(media, &quot;new_name.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(new_path)</span>
+<span class="sd">            LinkedFiles/AudioVisual/new_name.wav</span>
+
+<span class="sd">            &gt;&gt;&gt; # Handles conflicts automatically</span>
+<span class="sd">            &gt;&gt;&gt; media2 = project.Media.Find(&quot;LinkedFiles/AudioVisual/temp.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; new_path = project.Media.RenameMediaFile(media2, &quot;new_name.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(new_path)</span>
+<span class="sd">            LinkedFiles/AudioVisual/new_name_1.wav</span>
+
+<span class="sd">            &gt;&gt;&gt; # Rename by HVO</span>
+<span class="sd">            &gt;&gt;&gt; new_path = project.Media.RenameMediaFile(12345, &quot;recording.wav&quot;)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Renames the physical file on disk</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - If new filename already exists, adds _1, _2, etc. suffix</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Preserves the subdirectory (AudioVisual, Pictures, etc.)</span>
+<span class="sd">            - Only changes the filename, not the directory path</span>
+<span class="sd">            - Handles filename conflicts by adding _1, _2, etc.</span>
+<span class="sd">            - Updates InternalPath in database automatically</span>
+<span class="sd">            - Old file must exist on disk</span>
+<span class="sd">            - New filename cannot contain path separators (/ or \\)</span>
+<span class="sd">            - Validates that new_filename is just a filename, not a path</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetInternalPath, CopyToProject, GetExternalPath, GetInternalPath</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check write permissions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="c1"># Validate parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">new_filename</span><span class="p">,</span> <span class="s2">&quot;new_filename&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">new_filename</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">new_filename</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;New filename cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">new_filename</span> <span class="o">=</span> <span class="n">new_filename</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c1"># Validate that new_filename is just a filename, not a path</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="ow">in</span> <span class="n">new_filename</span> <span class="ow">or</span> <span class="s2">&quot;/&quot;</span> <span class="ow">in</span> <span class="n">new_filename</span> <span class="ow">or</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">new_filename</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;New filename cannot contain path separators: </span><span class="si">{</span><span class="n">new_filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a media file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="c1"># Get current paths</span>
+        <span class="n">old_internal_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetInternalPath</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">old_internal_path</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Media file has no internal path set&quot;</span><span class="p">)</span>
+
+        <span class="n">old_external_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetExternalPath</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
+
+        <span class="c1"># Check if old file exists</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">old_external_path</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File not found: </span><span class="si">{</span><span class="n">old_external_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File not found: </span><span class="si">{</span><span class="n">old_external_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Construct new path (preserve directory)</span>
+        <span class="n">dir_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">old_internal_path</span><span class="p">)</span>
+        <span class="n">new_internal_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_name</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">)</span>
+
+        <span class="c1"># Get the external directory path for constructing new external path</span>
+        <span class="n">old_external_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">old_external_path</span><span class="p">)</span>
+        <span class="n">new_external_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">old_external_dir</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">)</span>
+
+        <span class="c1"># Handle conflicts - check if target file already exists</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">new_external_path</span><span class="p">):</span>
+            <span class="n">base</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">new_filename</span><span class="p">)</span>
+            <span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">new_filename_conflict</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">counter</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">new_internal_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_name</span><span class="p">,</span> <span class="n">new_filename_conflict</span><span class="p">)</span>
+                <span class="n">new_external_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">old_external_dir</span><span class="p">,</span> <span class="n">new_filename_conflict</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">new_external_path</span><span class="p">):</span>
+                    <span class="k">break</span>
+                <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File </span><span class="si">{</span><span class="n">new_filename</span><span class="si">}</span><span class="s2"> already exists, using </span><span class="si">{</span><span class="n">new_filename_conflict</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Rename the physical file</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">old_external_path</span><span class="p">,</span> <span class="n">new_external_path</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Renamed media file: </span><span class="si">{</span><span class="n">old_external_path</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">new_external_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to rename file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+        <span class="c1"># Update database reference</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SetInternalPath</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="n">new_internal_path</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updated internal path: </span><span class="si">{</span><span class="n">old_internal_path</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">new_internal_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># If database update fails, try to roll back the file rename</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to update database, attempting rollback: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">new_external_path</span><span class="p">,</span> <span class="n">old_external_path</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Rolled back file rename&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">rollback_error</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Rollback failed: </span><span class="si">{</span><span class="n">rollback_error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+        <span class="k">return</span> <span class="n">new_internal_path</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the label/description of a media file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The label text (empty string if not set)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; label = project.Media.GetLabel(media, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(label)</span>
+<span class="sd">            Speaker 1 pronunciation</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; label_fr = project.Media.GetLabel(media, &quot;fr&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if label not set</span>
+<span class="sd">            - Returns empty string if label not set in specified writing system</span>
+<span class="sd">            - Labels are multi-string (can have different text per WS)</span>
+<span class="sd">            - Default writing system is analysis WS</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetLabel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a media file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Get the label/description string</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">media</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">return</span> <span class="n">label</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the label/description of a media file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+<span class="sd">            text: The label text to set</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo or text is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Media.SetLabel(media, &quot;Speaker 1 pronunciation&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Media.GetLabel(media, &quot;en&quot;))</span>
+<span class="sd">            Speaker 1 pronunciation</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set in multiple writing systems</span>
+<span class="sd">            &gt;&gt;&gt; project.Media.SetLabel(media, &quot;Pronunciation locuteur 1&quot;, &quot;fr&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Text can be empty string to clear the label</span>
+<span class="sd">            - Label is stored in the specified writing system</span>
+<span class="sd">            - Does not affect other writing systems</span>
+<span class="sd">            - Labels help identify media files in the UI</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetLabel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a media file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Set the label/description string</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">media</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="c1"># --- Media Type Detection ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMediaType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the media type (audio/video/image) based on file extension.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Media type constant (MediaType.AUDIO, VIDEO, IMAGE, or UNKNOWN)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; media_type = project.Media.GetMediaType(media)</span>
+<span class="sd">            &gt;&gt;&gt; if media_type == MediaType.AUDIO:</span>
+<span class="sd">            ...     print(&quot;This is an audio file&quot;)</span>
+<span class="sd">            This is an audio file</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check type name</span>
+<span class="sd">            &gt;&gt;&gt; type_names = {MediaType.AUDIO: &quot;Audio&quot;,</span>
+<span class="sd">            ...               MediaType.VIDEO: &quot;Video&quot;,</span>
+<span class="sd">            ...               MediaType.IMAGE: &quot;Image&quot;,</span>
+<span class="sd">            ...               MediaType.UNKNOWN: &quot;Unknown&quot;}</span>
+<span class="sd">            &gt;&gt;&gt; print(type_names[media_type])</span>
+<span class="sd">            Audio</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Detection is based on file extension only</span>
+<span class="sd">            - Audio extensions: .wav, .mp3, .ogg, .wma, .m4a, .flac</span>
+<span class="sd">            - Video extensions: .mp4, .avi, .mov, .wmv, .mpg, .mpeg</span>
+<span class="sd">            - Image extensions: .jpg, .jpeg, .png, .gif, .bmp, .tif, .tiff</span>
+<span class="sd">            - Returns MediaType.UNKNOWN for unrecognized extensions</span>
+<span class="sd">            - Does not verify actual file format</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsAudio, IsVideo, IsImage</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a media file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="n">internal_path</span> <span class="o">=</span> <span class="n">media</span><span class="o">.</span><span class="n">InternalPath</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">internal_path</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">UNKNOWN</span>
+
+        <span class="c1"># Get file extension</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">internal_path</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+
+        <span class="c1"># Define media type by extension</span>
+        <span class="n">audio_exts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;.wav&quot;</span><span class="p">,</span> <span class="s2">&quot;.mp3&quot;</span><span class="p">,</span> <span class="s2">&quot;.ogg&quot;</span><span class="p">,</span> <span class="s2">&quot;.wma&quot;</span><span class="p">,</span> <span class="s2">&quot;.m4a&quot;</span><span class="p">,</span> <span class="s2">&quot;.flac&quot;</span><span class="p">,</span> <span class="s2">&quot;.aac&quot;</span><span class="p">,</span> <span class="s2">&quot;.opus&quot;</span><span class="p">}</span>
+        <span class="n">video_exts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;.mp4&quot;</span><span class="p">,</span> <span class="s2">&quot;.avi&quot;</span><span class="p">,</span> <span class="s2">&quot;.mov&quot;</span><span class="p">,</span> <span class="s2">&quot;.wmv&quot;</span><span class="p">,</span> <span class="s2">&quot;.mpg&quot;</span><span class="p">,</span> <span class="s2">&quot;.mpeg&quot;</span><span class="p">,</span> <span class="s2">&quot;.mkv&quot;</span><span class="p">,</span> <span class="s2">&quot;.webm&quot;</span><span class="p">}</span>
+        <span class="n">image_exts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;.jpg&quot;</span><span class="p">,</span> <span class="s2">&quot;.jpeg&quot;</span><span class="p">,</span> <span class="s2">&quot;.png&quot;</span><span class="p">,</span> <span class="s2">&quot;.gif&quot;</span><span class="p">,</span> <span class="s2">&quot;.bmp&quot;</span><span class="p">,</span> <span class="s2">&quot;.tif&quot;</span><span class="p">,</span> <span class="s2">&quot;.tiff&quot;</span><span class="p">,</span> <span class="s2">&quot;.svg&quot;</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">audio_exts</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">AUDIO</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">video_exts</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">VIDEO</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">image_exts</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">IMAGE</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">UNKNOWN</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsAudio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a media file is an audio file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the file is audio, False otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.Media.IsAudio(media):</span>
+<span class="sd">            ...     print(&quot;This is an audio file&quot;)</span>
+<span class="sd">            This is an audio file</span>
+
+<span class="sd">            &gt;&gt;&gt; # Process all audio files</span>
+<span class="sd">            &gt;&gt;&gt; for media in project.Media.GetAll():</span>
+<span class="sd">            ...     if project.Media.IsAudio(media):</span>
+<span class="sd">            ...         # Process audio file</span>
+<span class="sd">            ...         pass</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Detection is based on file extension</span>
+<span class="sd">            - Audio extensions: .wav, .mp3, .ogg, .wma, .m4a, .flac, .aac, .opus</span>
+<span class="sd">            - Does not verify actual file format</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMediaType, IsVideo, IsImage</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetMediaType</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span> <span class="o">==</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">AUDIO</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsVideo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a media file is a video file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the file is video, False otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;intro.mp4&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.Media.IsVideo(media):</span>
+<span class="sd">            ...     print(&quot;This is a video file&quot;)</span>
+<span class="sd">            This is a video file</span>
+
+<span class="sd">            &gt;&gt;&gt; # Count video files</span>
+<span class="sd">            &gt;&gt;&gt; video_count = sum(1 for m in project.Media.GetAll()</span>
+<span class="sd">            ...                   if project.Media.IsVideo(m))</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Total videos: {video_count}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Detection is based on file extension</span>
+<span class="sd">            - Video extensions: .mp4, .avi, .mov, .wmv, .mpg, .mpeg, .mkv, .webm</span>
+<span class="sd">            - Does not verify actual file format</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMediaType, IsAudio, IsImage</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetMediaType</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span> <span class="o">==</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">VIDEO</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsImage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a media file is an image file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the file is image, False otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;photo.jpg&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.Media.IsImage(media):</span>
+<span class="sd">            ...     print(&quot;This is an image file&quot;)</span>
+<span class="sd">            This is an image file</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get all image files</span>
+<span class="sd">            &gt;&gt;&gt; images = [m for m in project.Media.GetAll()</span>
+<span class="sd">            ...           if project.Media.IsImage(m)]</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Detection is based on file extension</span>
+<span class="sd">            - Image extensions: .jpg, .jpeg, .png, .gif, .bmp, .tif, .tiff, .svg</span>
+<span class="sd">            - Does not verify actual file format</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMediaType, IsAudio, IsVideo</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetMediaType</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span> <span class="o">==</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">IMAGE</span>
+
+    <span class="c1"># --- Usage Tracking ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwners</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all objects that reference this media file.</span>
+
+<span class="sd">        Returns objects (entries, pronunciations, examples, etc.) that</span>
+<span class="sd">        have this media file attached.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of objects referencing this media file (empty if none)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; owners = project.Media.GetOwners(media)</span>
+<span class="sd">            &gt;&gt;&gt; for owner in owners:</span>
+<span class="sd">            ...     print(f&quot;Owner: {owner.ClassName} (HVO: {owner.Hvo})&quot;)</span>
+<span class="sd">            Owner: LexPronunciation (HVO: 12345)</span>
+<span class="sd">            Owner: LexExampleSentence (HVO: 67890)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns all objects with references to this media</span>
+<span class="sd">            - Common owner types: LexPronunciation, LexExampleSentence, etc.</span>
+<span class="sd">            - Empty list if media is not used anywhere</span>
+<span class="sd">            - Owners can be of various types</span>
+<span class="sd">            - Use owner.ClassName to determine type</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetOwnerCount</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a media file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="c1"># Get all incoming references</span>
+        <span class="c1"># ICmFile objects track their owners via the Owner property</span>
+        <span class="n">owners</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="s2">&quot;Owner&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">media</span><span class="o">.</span><span class="n">Owner</span><span class="p">:</span>
+            <span class="n">owners</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">media</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">owners</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwnerCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the count of objects referencing this media file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of objects using this media file</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; count = project.Media.GetOwnerCount(media)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Used by {count} objects&quot;)</span>
+<span class="sd">            Used by 3 objects</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check if media is orphaned</span>
+<span class="sd">            &gt;&gt;&gt; if project.Media.GetOwnerCount(media) == 0:</span>
+<span class="sd">            ...     print(&quot;This media file is not used anywhere&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns 0 if media is not used anywhere</span>
+<span class="sd">            - More efficient than len(GetOwners()) for large projects</span>
+<span class="sd">            - Useful for finding orphaned media files</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetOwners</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GetOwners</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">))</span>
+
+    <span class="c1"># --- Utility Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CopyToProject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">external_path</span><span class="p">,</span> <span class="n">internal_subdir</span><span class="o">=</span><span class="s2">&quot;AudioVisual&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Copy an external file into the project&#39;s LinkedFiles directory</span>
+<span class="sd">        and create a media reference.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            external_path: Path to the external file to import</span>
+<span class="sd">            internal_subdir: Subdirectory within LinkedFiles (default: &quot;AudioVisual&quot;)</span>
+<span class="sd">            label: Optional descriptive label for the media file</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmFile: The created media file object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If external_path is None</span>
+<span class="sd">            FP_ParameterError: If external_path is empty or file doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Import an external audio file</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.CopyToProject(</span>
+<span class="sd">            ...     &quot;/home/user/recordings/audio.wav&quot;,</span>
+<span class="sd">            ...     internal_subdir=&quot;AudioVisual&quot;,</span>
+<span class="sd">            ...     label=&quot;Speaker 1&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Media.GetInternalPath(media))</span>
+<span class="sd">            LinkedFiles/AudioVisual/audio.wav</span>
+
+<span class="sd">            &gt;&gt;&gt; # Import an image</span>
+<span class="sd">            &gt;&gt;&gt; photo = project.Media.CopyToProject(</span>
+<span class="sd">            ...     &quot;/home/user/photos/item.jpg&quot;,</span>
+<span class="sd">            ...     internal_subdir=&quot;Pictures&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Copies the file to project&#39;s LinkedFiles directory</span>
+<span class="sd">            - Creates the subdirectory if it doesn&#39;t exist</span>
+<span class="sd">            - Preserves the original filename</span>
+<span class="sd">            - If file already exists in destination, appends number</span>
+<span class="sd">            - Creates ICmFile reference with relative path</span>
+<span class="sd">            - Returns None if LinkedFilesRootDir not available</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, SetInternalPath</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">external_path</span><span class="p">,</span> <span class="s2">&quot;external_path&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">external_path</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">external_path</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;External path cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">external_path</span> <span class="o">=</span> <span class="n">external_path</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">external_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File not found: </span><span class="si">{</span><span class="n">external_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get LinkedFiles directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s2">&quot;LinkedFilesRootDir&quot;</span><span class="p">):</span>
+            <span class="c1"># If LinkedFilesRootDir not available, create reference only</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;LinkedFilesRootDir not available, creating reference without copying&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">external_path</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">linked_files_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LinkedFilesRootDir</span>
+        <span class="n">target_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">linked_files_dir</span><span class="p">,</span> <span class="n">internal_subdir</span><span class="p">)</span>
+
+        <span class="c1"># Create target directory if it doesn&#39;t exist</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">target_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">target_dir</span><span class="p">)</span>
+
+        <span class="c1"># Get filename and create target path</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">external_path</span><span class="p">)</span>
+        <span class="n">target_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">target_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+        <span class="c1"># If file exists, append number</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">target_path</span><span class="p">):</span>
+            <span class="n">base</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">target_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">counter</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)):</span>
+                <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">counter</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">target_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">target_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+        <span class="c1"># Copy the file</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">external_path</span><span class="p">,</span> <span class="n">target_path</span><span class="p">)</span>
+
+        <span class="c1"># Create internal path (relative to LinkedFiles)</span>
+        <span class="n">internal_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;LinkedFiles&quot;</span><span class="p">,</span> <span class="n">internal_subdir</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+        <span class="c1"># Create media reference</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">internal_path</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsValid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a media file&#39;s referenced file exists on disk.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the file exists on disk, False otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.Media.IsValid(media):</span>
+<span class="sd">            ...     print(&quot;File exists on disk&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;File is missing!&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find all missing media files</span>
+<span class="sd">            &gt;&gt;&gt; for media in project.Media.GetAll():</span>
+<span class="sd">            ...     if not project.Media.IsValid(media):</span>
+<span class="sd">            ...         path = project.Media.GetInternalPath(media)</span>
+<span class="sd">            ...         print(f&quot;Missing: {path}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Checks if the actual file exists on the file system</span>
+<span class="sd">            - Uses GetExternalPath() to resolve full path</span>
+<span class="sd">            - Returns False if path cannot be resolved</span>
+<span class="sd">            - Returns False if path is empty</span>
+<span class="sd">            - Useful for finding broken media references</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetExternalPath, GetInternalPath</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">external_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetExternalPath</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">external_path</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">external_path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">FP_ParameterError</span><span class="p">,</span> <span class="n">FP_NullParameterError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error checking media file existence: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID (Globally Unique Identifier) of a media file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.Guid: The media file&#39;s GUID</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; guid = project.Media.GetGuid(media)</span>
+<span class="sd">            &gt;&gt;&gt; print(guid)</span>
+<span class="sd">            a1b2c3d4-e5f6-7890-abcd-ef1234567890</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get as string</span>
+<span class="sd">            &gt;&gt;&gt; guid_str = str(guid)</span>
+<span class="sd">            &gt;&gt;&gt; print(guid_str)</span>
+<span class="sd">            a1b2c3d4-e5f6-7890-abcd-ef1234567890</span>
+
+<span class="sd">            &gt;&gt;&gt; # Use GUID to retrieve media later</span>
+<span class="sd">            &gt;&gt;&gt; media2 = project.Object(guid)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Media.GetInternalPath(media2))</span>
+<span class="sd">            audio.wav</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUIDs are unique across all FLEx projects</span>
+<span class="sd">            - GUIDs are persistent (don&#39;t change)</span>
+<span class="sd">            - Useful for linking media across projects</span>
+<span class="sd">            - Can be used with FLExProject.Object() to retrieve media</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FLExProject.Object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="n">ICmFile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a media file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="k">return</span> <span class="n">media</span><span class="o">.</span><span class="n">Guid</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetHvo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the HVO (database ID) of a media file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media: An ICmFile object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The media file&#39;s HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; hvo = project.Media.GetHvo(media)</span>
+<span class="sd">            &gt;&gt;&gt; print(hvo)</span>
+<span class="sd">            12345</span>
+
+<span class="sd">            &gt;&gt;&gt; # Use HVO to retrieve media later</span>
+<span class="sd">            &gt;&gt;&gt; media2 = project.Object(hvo)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Media.GetInternalPath(media2))</span>
+<span class="sd">            audio.wav</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - HVOs are database IDs (integers)</span>
+<span class="sd">            - HVOs are unique within a project</span>
+<span class="sd">            - HVOs may change if database is rebuilt</span>
+<span class="sd">            - Prefer GUIDs for persistent references</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetGuid, FLExProject.Object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="s2">&quot;media&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">media</span><span class="o">.</span><span class="n">Hvo</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFileSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the file size of a media file in bytes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_or_hvo: Either an ICmFile object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: File size in bytes, or -1 if file doesn&#39;t exist</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If media_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If media doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Media.Find(&quot;audio.wav&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; size = project.Media.GetFileSize(media)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;File size: {size / 1024:.2f} KB&quot;)</span>
+<span class="sd">            File size: 1234.56 KB</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get size in human-readable format</span>
+<span class="sd">            &gt;&gt;&gt; if size &gt; 1024 * 1024:</span>
+<span class="sd">            ...     print(f&quot;{size / (1024 * 1024):.2f} MB&quot;)</span>
+<span class="sd">            ... elif size &gt; 1024:</span>
+<span class="sd">            ...     print(f&quot;{size / 1024:.2f} KB&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(f&quot;{size} bytes&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns -1 if file doesn&#39;t exist on disk</span>
+<span class="sd">            - Uses GetExternalPath() to resolve file location</span>
+<span class="sd">            - Size is in bytes</span>
+<span class="sd">            - Returns actual file size from file system</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsValid, GetExternalPath</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">external_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetExternalPath</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">external_path</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">external_path</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">external_path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">FP_ParameterError</span><span class="p">,</span> <span class="n">FP_NullParameterError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error getting media file size: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAllByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all media files of a specific type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_type: Media type constant (MediaType.AUDIO, VIDEO, IMAGE)</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmFile: Each media file of the specified type</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If media_type is invalid</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get all audio files</span>
+<span class="sd">            &gt;&gt;&gt; for media in project.Media.GetAllByType(MediaType.AUDIO):</span>
+<span class="sd">            ...     path = project.Media.GetInternalPath(media)</span>
+<span class="sd">            ...     print(f&quot;Audio: {path}&quot;)</span>
+<span class="sd">            Audio: audio1.wav</span>
+<span class="sd">            Audio: audio2.mp3</span>
+
+<span class="sd">            &gt;&gt;&gt; # Count videos</span>
+<span class="sd">            &gt;&gt;&gt; video_count = sum(1 for _ in project.Media.GetAllByType(MediaType.VIDEO))</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Total videos: {video_count}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns an iterator for memory efficiency</span>
+<span class="sd">            - Valid types: MediaType.AUDIO, VIDEO, IMAGE, UNKNOWN</span>
+<span class="sd">            - Uses GetMediaType() for detection</span>
+<span class="sd">            - Detection is based on file extension</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, GetMediaType, IsAudio, IsVideo, IsImage</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">media_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">MediaType</span><span class="o">.</span><span class="n">AUDIO</span><span class="p">,</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">VIDEO</span><span class="p">,</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">IMAGE</span><span class="p">,</span> <span class="n">MediaType</span><span class="o">.</span><span class="n">UNKNOWN</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid media type: </span><span class="si">{</span><span class="n">media_type</span><span class="si">}</span><span class="s2">. &quot;</span> <span class="sa">f</span><span class="s2">&quot;Use MediaType.AUDIO, VIDEO, IMAGE, or UNKNOWN&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">media</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetMediaType</span><span class="p">(</span><span class="n">media</span><span class="p">)</span> <span class="o">==</span> <span class="n">media_type</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">media</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOrphanedMedia</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all media files that are not referenced by any object.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ICmFile: Each orphaned media file</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find orphaned media files</span>
+<span class="sd">            &gt;&gt;&gt; orphaned = list(project.Media.GetOrphanedMedia())</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(orphaned)} orphaned media files&quot;)</span>
+<span class="sd">            Found 5 orphaned media files</span>
+
+<span class="sd">            &gt;&gt;&gt; # Delete orphaned media</span>
+<span class="sd">            &gt;&gt;&gt; for media in project.Media.GetOrphanedMedia():</span>
+<span class="sd">            ...     path = project.Media.GetInternalPath(media)</span>
+<span class="sd">            ...     print(f&quot;Deleting orphaned: {path}&quot;)</span>
+<span class="sd">            ...     project.Media.Delete(media)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns an iterator for memory efficiency</span>
+<span class="sd">            - Orphaned media has no owners (GetOwnerCount() == 0)</span>
+<span class="sd">            - Useful for cleaning up unused media</span>
+<span class="sd">            - Consider backing up before deleting orphaned media</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetOwnerCount, GetOwners, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">media</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetOwnerCount</span><span class="p">(</span><span class="n">media</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">media</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.MediaOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,2199 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Notebook.AnthropologyOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Notebook.AnthropologyOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Notebook.AnthropologyOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   AnthropologyOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: AnthropologyOperations</span>
+<span class="c1">#          Anthropological/cultural item operations for FieldWorks Language</span>
+<span class="c1">#          Explorer projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+<span class="c1">#   KNOWN ISSUE: The property AnthroCode referenced in this class does NOT</span>
+<span class="c1">#   exist on CmAnthroItem in LibLCM. CmAnthroItem has NO unique properties -</span>
+<span class="c1">#   it only inherits from CmPossibility (Name, Abbreviation, Description, etc.).</span>
+<span class="c1">#</span>
+<span class="c1">#   OCM (Outline of Cultural Materials) codes may need to be stored in the</span>
+<span class="c1">#   Abbreviation field instead. The AnthroCode methods use hasattr() checks</span>
+<span class="c1">#   to prevent runtime errors, but they will silently do nothing if the</span>
+<span class="c1">#   property doesn&#39;t exist.</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ICmAnthroItem</span><span class="p">,</span>
+    <span class="n">ICmAnthroItemFactory</span><span class="p">,</span>
+    <span class="n">IText</span><span class="p">,</span>
+    <span class="n">ICmPerson</span><span class="p">,</span>
+    <span class="n">ICmPossibility</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">Guid</span><span class="p">,</span> <span class="n">DateTime</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.catalog_backed</span><span class="w"> </span><span class="kn">import</span> <span class="n">_LCMNativeCatalogImportMixin</span>
+
+
+<div class="viewcode-block" id="AnthropologyOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.AnthropologyOperations.AnthropologyOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AnthropologyOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">,</span> <span class="n">_LCMNativeCatalogImportMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing anthropological and cultural</span>
+<span class="sd">    items in a FieldWorks project.</span>
+
+<span class="sd">    Anthropological items (ICmAnthroItem) are used to categorize and organize</span>
+<span class="sd">    cultural information collected during fieldwork. They support hierarchical</span>
+<span class="sd">    organization, OCM (Outline of Cultural Materials) codes, and linking to</span>
+<span class="sd">    texts and researchers. These items help linguists document cultural context</span>
+<span class="sd">    alongside linguistic data.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.Anthropology property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Create a new anthropology item</span>
+<span class="sd">        item = project.Anthropology.Create(&quot;Marriage Customs&quot;, &quot;MAR&quot;)</span>
+
+<span class="sd">        # Set OCM code</span>
+<span class="sd">        project.Anthropology.SetAnthroCode(item, &quot;586&quot;)</span>
+
+<span class="sd">        # Set description</span>
+<span class="sd">        project.Anthropology.SetDescription(item,</span>
+<span class="sd">            &quot;Traditional marriage practices and ceremonies&quot;)</span>
+
+<span class="sd">        # Create hierarchical structure</span>
+<span class="sd">        subitem = project.Anthropology.CreateSubitem(item,</span>
+<span class="sd">            &quot;Wedding Ceremony&quot;, &quot;WED&quot;)</span>
+
+<span class="sd">        # Link to texts</span>
+<span class="sd">        text = project.Texts.Find(&quot;Wedding Story 1&quot;)</span>
+<span class="sd">        if text:</span>
+<span class="sd">            project.Anthropology.AddText(item, text)</span>
+
+<span class="sd">        # Get all items linked to a specific text</span>
+<span class="sd">        for anthro_item in project.Anthropology.GetItemsForText(text):</span>
+<span class="sd">            name = project.Anthropology.GetName(anthro_item)</span>
+<span class="sd">            code = project.Anthropology.GetAnthroCode(anthro_item)</span>
+<span class="sd">            print(f&quot;{name} ({code})&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># ---- _LCMNativeCatalogImportMixin configuration -------------------</span>
+    <span class="c1"># OCM ships as LCM-native XML in &lt;FWCodeDir&gt;/Templates/OCM.xml;</span>
+    <span class="c1"># ImportCatalog delegates to XmlList.ImportList via the mixin&#39;s</span>
+    <span class="c1"># _import_lcm_native_catalog helper. See catalog_backed.py.</span>
+    <span class="n">CATALOG_FILE</span> <span class="o">=</span> <span class="s2">&quot;OCM.xml&quot;</span>
+    <span class="n">FRAME_CATALOG_FILE</span> <span class="o">=</span> <span class="s2">&quot;OCM-Frame.xml&quot;</span>
+    <span class="n">CATALOG_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;Templates&quot;</span>
+    <span class="n">LCM_FIELD_NAME</span> <span class="o">=</span> <span class="s2">&quot;AnthroList&quot;</span>
+    <span class="n">LANG_PROJECT_LIST_ATTR</span> <span class="o">=</span> <span class="s2">&quot;AnthroListOA&quot;</span>
+    <span class="n">DOMAIN_ITEM_LABEL_SINGULAR</span> <span class="o">=</span> <span class="s2">&quot;anthropology item&quot;</span>
+    <span class="n">DOMAIN_ITEM_LABEL_PLURAL</span> <span class="o">=</span> <span class="s2">&quot;items&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize AnthropologyOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper for writing system handles.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Writing system handle or None for default analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ValidatedItemHvo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal function to validate and convert item_or_hvo to HVO.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: Either an ICmAnthroItem object or its HVO (integer).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The HVO of the anthropology item.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">hvo</span> <span class="o">=</span> <span class="n">item_or_hvo</span><span class="o">.</span><span class="n">Hvo</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">hvo</span> <span class="o">=</span> <span class="n">item_or_hvo</span>
+
+        <span class="k">return</span> <span class="n">hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetItemObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal function to get ICmAnthroItem object from item_or_hvo.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: Either an ICmAnthroItem object or its HVO (integer).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnthroItem: The anthropology item object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the object doesn&#39;t exist or isn&#39;t valid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hvo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ValidatedItemHvo</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">hvo</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ICmAnthroItem</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid anthropology item object or HVO: </span><span class="si">{</span><span class="n">item_or_hvo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all anthropology items in the project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            recursive (bool): If True (default), returns every item in the</span>
+<span class="sd">                hierarchy (depth-first, parents before children). If False,</span>
+<span class="sd">                returns only top-level items and the caller must descend via</span>
+<span class="sd">                GetSubitems.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmAnthroItem objects.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for item in project.Anthropology.GetAll():</span>
+<span class="sd">            ...     print(project.Anthropology.GetName(item))     # Includes subitems</span>
+
+<span class="sd">            &gt;&gt;&gt; # Top-level only</span>
+<span class="sd">            &gt;&gt;&gt; for item in project.Anthropology.GetAll(recursive=False):</span>
+<span class="sd">            ...     print(project.Anthropology.GetName(item))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, FindByCode, GetSubitems</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RejectLegacyKwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s2">&quot;flat&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recursive&quot;</span><span class="p">,</span> <span class="s2">&quot;semantics inverted: flat=True is now recursive=True&quot;</span><span class="p">),</span>
+        <span class="p">})</span>
+        <span class="n">anthro_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnthroListOA</span>
+        <span class="k">if</span> <span class="n">anthro_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">UnpackNestedPossibilityList</span><span class="p">(</span>
+            <span class="n">anthro_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">,</span> <span class="n">ICmAnthroItem</span><span class="p">,</span> <span class="n">recursive</span><span class="p">))</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">anthro_code</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new anthropology item.</span>
+
+<span class="sd">        Creates a new top-level ICmAnthroItem in the project&#39;s anthropology list.</span>
+<span class="sd">        Use CreateSubitem() to create hierarchical items.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the item (e.g., &quot;Marriage Customs&quot;).</span>
+<span class="sd">            abbreviation (str, optional): Short abbreviation (e.g., &quot;MAR&quot;).</span>
+<span class="sd">                If None, no abbreviation is set. Defaults to None.</span>
+<span class="sd">            anthro_code (str, optional): OCM (Outline of Cultural Materials) code</span>
+<span class="sd">                (e.g., &quot;586&quot; for marriage). If None, no code is set. Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnthroItem: The newly created anthropology item object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If name is None or empty.</span>
+<span class="sd">            FP_ParameterError: If an item with this name already exists.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create a simple item</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Create(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Anthropology.GetName(item))</span>
+<span class="sd">            Marriage Customs</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with abbreviation and OCM code</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Create(</span>
+<span class="sd">            ...     &quot;Marriage Customs&quot;,</span>
+<span class="sd">            ...     abbreviation=&quot;MAR&quot;,</span>
+<span class="sd">            ...     anthro_code=&quot;586&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Anthropology.GetAnthroCode(item))</span>
+<span class="sd">            586</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create multiple items</span>
+<span class="sd">            &gt;&gt;&gt; kinship = project.Anthropology.Create(&quot;Kinship&quot;, &quot;KIN&quot;, &quot;600&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; religion = project.Anthropology.Create(&quot;Religion&quot;, &quot;REL&quot;, &quot;770&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Name must be unique within the project</span>
+<span class="sd">            - Abbreviations don&#39;t need to be unique but should be distinct</span>
+<span class="sd">            - OCM codes follow the Outline of Cultural Materials standard</span>
+<span class="sd">            - The item is created in the default analysis writing system</span>
+<span class="sd">            - Use CreateSubitem() for hierarchical items</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateSubitem, Delete, Exists, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if item already exists</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Anthropology item &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; already exists&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Ensure anthropology list exists. List creation/assignment is project-state</span>
+        <span class="c1"># setup; resolve it before opening the per-item transaction so a missing</span>
+        <span class="c1"># list never leaves an orphaned ICmAnthroItem.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnthroListOA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">ICmPossibilityListFactory</span>
+
+            <span class="n">list_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityListFactory</span><span class="p">)</span>
+            <span class="n">anthro_list</span> <span class="o">=</span> <span class="n">list_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnthroListOA</span> <span class="o">=</span> <span class="n">anthro_list</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">anthro_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnthroListOA</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s1">&#39;Create Anthropology Item&#39;</span><span class="p">):</span>
+            <span class="c1"># Get the writing system handle</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+            <span class="c1"># Create the new item using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmAnthroItemFactory</span><span class="p">)</span>
+            <span class="n">new_item</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to the anthropology list (must be done before setting properties)</span>
+            <span class="n">anthro_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_item</span><span class="p">)</span>
+
+            <span class="c1"># Set name</span>
+            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+            <span class="c1"># Set abbreviation if provided</span>
+            <span class="k">if</span> <span class="n">abbreviation</span><span class="p">:</span>
+                <span class="n">mkstr_abbr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">new_item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
+
+            <span class="c1"># Set OCM code if provided (note: AnthroCode may not exist on CmAnthroItem)</span>
+            <span class="k">if</span> <span class="n">anthro_code</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_item</span><span class="p">,</span> <span class="s2">&quot;AnthroCode&quot;</span><span class="p">):</span>
+                <span class="n">new_item</span><span class="o">.</span><span class="n">AnthroCode</span> <span class="o">=</span> <span class="n">anthro_code</span>
+
+            <span class="k">return</span> <span class="n">new_item</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateSubitem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_item</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">anthro_code</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new anthropology item as a child of an existing item.</span>
+
+<span class="sd">        Creates a hierarchical relationship where the new item is a subcategory</span>
+<span class="sd">        or more specific aspect of the parent item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent_item: The parent ICmAnthroItem object or HVO.</span>
+<span class="sd">            name (str): The name of the subitem (e.g., &quot;Wedding Ceremony&quot;).</span>
+<span class="sd">            abbreviation (str, optional): Short abbreviation. Defaults to None.</span>
+<span class="sd">            anthro_code (str, optional): OCM code for the subitem. Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnthroItem: The newly created subitem object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If parent_item or name is None/empty.</span>
+<span class="sd">            FP_ParameterError: If parent_item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create parent item</span>
+<span class="sd">            &gt;&gt;&gt; marriage = project.Anthropology.Create(&quot;Marriage Customs&quot;, &quot;MAR&quot;, &quot;586&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Create subitems</span>
+<span class="sd">            &gt;&gt;&gt; wedding = project.Anthropology.CreateSubitem(</span>
+<span class="sd">            ...     marriage, &quot;Wedding Ceremony&quot;, &quot;WED&quot;, &quot;586.1&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; gifts = project.Anthropology.CreateSubitem(</span>
+<span class="sd">            ...     marriage, &quot;Marriage Gifts&quot;, &quot;GIFT&quot;, &quot;586.2&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Verify hierarchy</span>
+<span class="sd">            &gt;&gt;&gt; parent = project.Anthropology.GetParent(wedding)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Anthropology.GetName(parent))</span>
+<span class="sd">            Marriage Customs</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get all subitems</span>
+<span class="sd">            &gt;&gt;&gt; for sub in project.Anthropology.GetSubitems(marriage):</span>
+<span class="sd">            ...     print(project.Anthropology.GetName(sub))</span>
+<span class="sd">            Wedding Ceremony</span>
+<span class="sd">            Marriage Gifts</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Creates hierarchical organization of cultural data</span>
+<span class="sd">            - Subitems inherit context from parent</span>
+<span class="sd">            - OCM codes typically use decimal notation (e.g., 586.1, 586.2)</span>
+<span class="sd">            - Multiple levels of nesting are supported</span>
+<span class="sd">            - Parent item must exist before creating subitems</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetSubitems, GetParent, Delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">parent_item</span><span class="p">)</span>
+
+        <span class="c1"># Get the writing system handle</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s1">&#39;Create Anthropology Subitem&#39;</span><span class="p">):</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+            <span class="c1"># Create the new item using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmAnthroItemFactory</span><span class="p">)</span>
+            <span class="n">new_item</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to parent&#39;s subitems (must be done before setting properties)</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_item</span><span class="p">)</span>
+
+            <span class="c1"># Set name</span>
+            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+            <span class="c1"># Set abbreviation if provided</span>
+            <span class="k">if</span> <span class="n">abbreviation</span><span class="p">:</span>
+                <span class="n">mkstr_abbr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">new_item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
+
+            <span class="c1"># Set OCM code if provided (note: AnthroCode may not exist on CmAnthroItem)</span>
+            <span class="k">if</span> <span class="n">anthro_code</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_item</span><span class="p">,</span> <span class="s2">&quot;AnthroCode&quot;</span><span class="p">):</span>
+                <span class="n">new_item</span><span class="o">.</span><span class="n">AnthroCode</span> <span class="o">=</span> <span class="n">anthro_code</span>
+
+            <span class="k">return</span> <span class="n">new_item</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete an anthropology item.</span>
+
+<span class="sd">        Removes the item from the project. If the item has subitems, they</span>
+<span class="sd">        will also be deleted. Removes all links to texts and researchers.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Delete a specific item</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Obsolete Item&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if item:</span>
+<span class="sd">            ...     project.Anthropology.Delete(item)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Delete by HVO</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.Delete(item_hvo)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deleting an item also deletes all its subitems</span>
+<span class="sd">            - This operation cannot be undone (unless using UndoActionSequence)</span>
+<span class="sd">            - Text and researcher links are removed, but the texts and</span>
+<span class="sd">              researchers themselves are not deleted</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, CreateSubitem, Exists</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get the anthropology list</span>
+        <span class="n">anthro_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnthroListOA</span>
+        <span class="k">if</span> <span class="n">anthro_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Check if it&#39;s a top-level item</span>
+            <span class="k">if</span> <span class="n">anthro_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                <span class="n">anthro_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># It&#39;s a subitem, remove from parent. item.Owner is</span>
+                <span class="c1"># typed as ICmObject; cast to the concrete possibility</span>
+                <span class="c1"># so SubPossibilitiesOS is reachable. The previous</span>
+                <span class="c1"># implementation wrapped this in a broad `except: pass`</span>
+                <span class="c1"># that swallowed real failures (including the no-op</span>
+                <span class="c1"># case where the inner cast actually succeeded but</span>
+                <span class="c1"># nothing happened because hasattr lied on a base</span>
+                <span class="c1"># interface) -- let exceptions propagate so callers</span>
+                <span class="c1"># see the failure.</span>
+                <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                        <span class="s2">&quot;Anthropology subitem has no resolvable owner&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if an anthropology item with the given name exists.</span>
+
+<span class="sd">        Performs a case-sensitive comparison of item names in the default</span>
+<span class="sd">        analysis writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the item to check.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if an item with the given name exists, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None or empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; if project.Anthropology.Exists(&quot;Marriage Customs&quot;):</span>
+<span class="sd">            ...     print(&quot;Item already exists&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     item = project.Anthropology.Create(&quot;Marriage Customs&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Case-sensitive check</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Anthropology.Exists(&quot;marriage customs&quot;))</span>
+<span class="sd">            False</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-sensitive</span>
+<span class="sd">            - Searches through all items (including subitems)</span>
+<span class="sd">            - Returns False for empty or whitespace-only names</span>
+<span class="sd">            - More efficient than Find() when you only need existence check</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, FindByCode, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find an anthropology item by its name.</span>
+
+<span class="sd">        Searches through all anthropology items (including subitems) and</span>
+<span class="sd">        returns the first item with a matching name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name to search for.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnthroItem or None: The item object if found, None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find by name</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if item:</span>
+<span class="sd">            ...     code = project.Anthropology.GetAnthroCode(item)</span>
+<span class="sd">            ...     print(f&quot;Found item with code: {code}&quot;)</span>
+<span class="sd">            Found item with code: 586</span>
+
+<span class="sd">            &gt;&gt;&gt; # Handle not found</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Nonexistent Item&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if not item:</span>
+<span class="sd">            ...     print(&quot;Item not found&quot;)</span>
+<span class="sd">            Item not found</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-sensitive</span>
+<span class="sd">            - Searches in default analysis writing system</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+<span class="sd">            - For OCM code search, use FindByCode()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindByCode, Exists, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Search through all items</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="n">item_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">item_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anthro_code</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find an anthropology item by its OCM code.</span>
+
+<span class="sd">        Searches through all anthropology items and returns the first item</span>
+<span class="sd">        with a matching AnthroCode (Outline of Cultural Materials code).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anthro_code (str): The OCM code to search for (e.g., &quot;586&quot;).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnthroItem or None: The item object if found, None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If anthro_code is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find by OCM code</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.FindByCode(&quot;586&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if item:</span>
+<span class="sd">            ...     name = project.Anthropology.GetName(item)</span>
+<span class="sd">            ...     print(f&quot;Code 586 is: {name}&quot;)</span>
+<span class="sd">            Code 586 is: Marriage Customs</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find hierarchical codes</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.FindByCode(&quot;586.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if item:</span>
+<span class="sd">            ...     name = project.Anthropology.GetName(item)</span>
+<span class="sd">            ...     parent = project.Anthropology.GetParent(item)</span>
+<span class="sd">            ...     parent_name = project.Anthropology.GetName(parent)</span>
+<span class="sd">            ...     print(f&quot;{name} is subcategory of {parent_name}&quot;)</span>
+<span class="sd">            Wedding Ceremony is subcategory of Marriage Customs</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-sensitive</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Returns None if not found</span>
+<span class="sd">            - OCM codes are standard anthropological classification system</span>
+<span class="sd">            - Common OCM code ranges:</span>
+<span class="sd">              - 100-199: Orientation</span>
+<span class="sd">              - 200-299: Food and Clothing</span>
+<span class="sd">              - 300-399: Housing</span>
+<span class="sd">              - 400-499: Economy</span>
+<span class="sd">              - 500-599: Kinship and Family</span>
+<span class="sd">              - 600-699: Political Behavior</span>
+<span class="sd">              - 700-799: Religion</span>
+<span class="sd">              - 800-899: Social Structure</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, GetAnthroCode, SetAnthroCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anthro_code</span><span class="p">,</span> <span class="s2">&quot;anthro_code&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">anthro_code</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">anthro_code</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">anthro_code</span> <span class="o">=</span> <span class="n">anthro_code</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c1"># Search through all items</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;AnthroCode&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">AnthroCode</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">AnthroCode</span> <span class="o">==</span> <span class="n">anthro_code</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByCategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find all anthropology items in a specific category.</span>
+
+<span class="sd">        Searches for items that have been assigned to a particular category</span>
+<span class="sd">        possibility.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            category: ICmPossibility object representing the category.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmAnthroItem objects in that category.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If category is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get a category from the categories list</span>
+<span class="sd">            &gt;&gt;&gt; categories = project.lp.AnthroListOA</span>
+<span class="sd">            &gt;&gt;&gt; if categories and categories.PossibilitiesOS.Count &gt; 0:</span>
+<span class="sd">            ...     category = categories.PossibilitiesOS[0]</span>
+<span class="sd">            ...     items = project.Anthropology.FindByCategory(category)</span>
+<span class="sd">            ...     for item in items:</span>
+<span class="sd">            ...         name = project.Anthropology.GetName(item)</span>
+<span class="sd">            ...         print(f&quot;Item: {name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if no items found</span>
+<span class="sd">            - Category must be a valid ICmPossibility</span>
+<span class="sd">            - Items can belong to multiple categories</span>
+<span class="sd">            - This searches the item&#39;s category reference</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, FindByCode, GetCategory, SetCategory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Search through all items</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="c1"># Check if item has this category</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;CategoryRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">CategoryRA</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">CategoryRA</span> <span class="o">==</span> <span class="n">category</span><span class="p">:</span>
+                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="c1"># --- Property Access Methods ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The item name, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; name = project.Anthropology.GetName(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(name)</span>
+<span class="sd">            Marriage Customs</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get name in a specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; name_fr = project.Anthropology.GetName(item,</span>
+<span class="sd">            ...                                         project.WSHandle(&#39;fr&#39;))</span>
+<span class="sd">            &gt;&gt;&gt; print(name_fr)</span>
+<span class="sd">            Coutumes matrimoniales</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if name not set in specified writing system</span>
+<span class="sd">            - Names are typically set in multiple writing systems</span>
+<span class="sd">            - Default writing system is the default analysis WS</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetName, GetAbbreviation, GetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            name (str): The new name.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo or name is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetName(item, &quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Anthropology.GetName(item))</span>
+<span class="sd">            Marriage Customs</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set in multiple writing systems</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetName(item, &quot;Marriage Customs&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetName(item, &quot;Coutumes matrimoniales&quot;,</span>
+<span class="sd">            ...                               project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Name is stored in the specified writing system</span>
+<span class="sd">            - Can set different names for different writing systems</span>
+<span class="sd">            - Empty string clears the name in that writing system</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetName, SetAbbreviation, SetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the abbreviation of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The abbreviation, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; abbr = project.Anthropology.GetAbbreviation(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(abbr)</span>
+<span class="sd">            MAR</span>
+
+<span class="sd">            &gt;&gt;&gt; # Use in display</span>
+<span class="sd">            &gt;&gt;&gt; for item in project.Anthropology.GetAll():</span>
+<span class="sd">            ...     name = project.Anthropology.GetName(item)</span>
+<span class="sd">            ...     abbr = project.Anthropology.GetAbbreviation(item)</span>
+<span class="sd">            ...     if abbr:</span>
+<span class="sd">            ...         print(f&quot;{abbr}: {name}&quot;)</span>
+<span class="sd">            ...     else:</span>
+<span class="sd">            ...         print(name)</span>
+<span class="sd">            MAR: Marriage Customs</span>
+<span class="sd">            WED: Wedding Ceremony</span>
+<span class="sd">            KIN: Kinship</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if abbreviation not set</span>
+<span class="sd">            - Abbreviations are shorter identifiers for display</span>
+<span class="sd">            - Typically 2-5 characters</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetAbbreviation, GetName, GetAnthroCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">abbr</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the abbreviation of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            abbreviation (str): The new abbreviation.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo or abbreviation is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetAbbreviation(item, &quot;MAR&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Anthropology.GetAbbreviation(item))</span>
+<span class="sd">            MAR</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear abbreviation</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetAbbreviation(item, &quot;&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Abbreviation is stored in the specified writing system</span>
+<span class="sd">            - Can set different abbreviations for different writing systems</span>
+<span class="sd">            - Empty string clears the abbreviation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAbbreviation, SetName, SetAnthroCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="s2">&quot;abbreviation&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the description of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The description, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; desc = project.Anthropology.GetDescription(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(desc)</span>
+<span class="sd">            Traditional marriage practices, including courtship,</span>
+<span class="sd">            betrothal, wedding ceremonies, and gift exchanges.</span>
+
+<span class="sd">            &gt;&gt;&gt; # Display full item information</span>
+<span class="sd">            &gt;&gt;&gt; name = project.Anthropology.GetName(item)</span>
+<span class="sd">            &gt;&gt;&gt; code = project.Anthropology.GetAnthroCode(item)</span>
+<span class="sd">            &gt;&gt;&gt; desc = project.Anthropology.GetDescription(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;{name} ({code})&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Description: {desc}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if description not set</span>
+<span class="sd">            - Descriptions can be multi-paragraph text</span>
+<span class="sd">            - Use descriptions to document cultural context</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDescription, GetName, GetAnthroCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">desc</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the description of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            description (str): The new description.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo or description is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetDescription(item,</span>
+<span class="sd">            ...     &quot;Traditional marriage practices, including courtship, &quot;</span>
+<span class="sd">            ...     &quot;betrothal, wedding ceremonies, and gift exchanges.&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set in multiple languages</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetDescription(item,</span>
+<span class="sd">            ...     &quot;Traditional marriage practices...&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetDescription(item,</span>
+<span class="sd">            ...     &quot;Pratiques matrimoniales traditionnelles...&quot;,</span>
+<span class="sd">            ...     project.WSHandle(&#39;fr&#39;))</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear description</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetDescription(item, &quot;&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Description is stored in the specified writing system</span>
+<span class="sd">            - Can set different descriptions for different writing systems</span>
+<span class="sd">            - Empty string clears the description</span>
+<span class="sd">            - Descriptions support multi-paragraph text</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDescription, SetName, SetAnthroCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAnthroCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the OCM (Outline of Cultural Materials) code of an item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The OCM code, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; code = project.Anthropology.GetAnthroCode(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(code)</span>
+<span class="sd">            586</span>
+
+<span class="sd">            &gt;&gt;&gt; # Display all items with their codes</span>
+<span class="sd">            &gt;&gt;&gt; for item in project.Anthropology.GetAll():</span>
+<span class="sd">            ...     name = project.Anthropology.GetName(item)</span>
+<span class="sd">            ...     code = project.Anthropology.GetAnthroCode(item)</span>
+<span class="sd">            ...     if code:</span>
+<span class="sd">            ...         print(f&quot;{code}: {name}&quot;)</span>
+<span class="sd">            ...     else:</span>
+<span class="sd">            ...         print(f&quot;No code: {name}&quot;)</span>
+<span class="sd">            586: Marriage Customs</span>
+<span class="sd">            586.1: Wedding Ceremony</span>
+<span class="sd">            587: Divorce</span>
+<span class="sd">            No code: Custom Category</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - OCM (Outline of Cultural Materials) is a standard classification</span>
+<span class="sd">            - Returns empty string if no code is set</span>
+<span class="sd">            - Codes typically use decimal notation for hierarchy</span>
+<span class="sd">            - Common OCM code ranges documented in FindByCode()</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetAnthroCode, FindByCode, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;AnthroCode&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">AnthroCode</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">AnthroCode</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAnthroCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">anthro_code</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the OCM (Outline of Cultural Materials) code of an item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            anthro_code (str): The OCM code to set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo or anthro_code is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetAnthroCode(item, &quot;586&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Anthropology.GetAnthroCode(item))</span>
+<span class="sd">            586</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set hierarchical codes</span>
+<span class="sd">            &gt;&gt;&gt; subitem = project.Anthropology.Find(&quot;Wedding Ceremony&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetAnthroCode(subitem, &quot;586.1&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear code</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetAnthroCode(item, &quot;&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - OCM codes follow standard anthropological classification</span>
+<span class="sd">            - Empty string clears the code</span>
+<span class="sd">            - Codes are stored as strings, not validated</span>
+<span class="sd">            - Use decimal notation for hierarchical codes (e.g., 586.1)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAnthroCode, FindByCode, SetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">anthro_code</span><span class="p">,</span> <span class="s2">&quot;anthro_code&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Note: AnthroCode may not exist on CmAnthroItem</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;AnthroCode&quot;</span><span class="p">):</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">AnthroCode</span> <span class="o">=</span> <span class="n">anthro_code</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the category of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility or None: The category object if set, None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; category = project.Anthropology.GetCategory(item)</span>
+<span class="sd">            &gt;&gt;&gt; if category:</span>
+<span class="sd">            ...     cat_name = category.Name.BestAnalysisAlternative.Text</span>
+<span class="sd">            ...     print(f&quot;Category: {cat_name}&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;No category assigned&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if no category is assigned</span>
+<span class="sd">            - Category is a reference to a possibility item</span>
+<span class="sd">            - Categories help organize anthropology items</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetCategory, FindByCategory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;CategoryRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">CategoryRA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">CategoryRA</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetCategory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">category</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the category of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            category: ICmPossibility object or None to clear.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item or category is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Set category from a possibility list</span>
+<span class="sd">            &gt;&gt;&gt; # (assuming categories are defined in a list)</span>
+<span class="sd">            &gt;&gt;&gt; category = project.lp.AnthroListOA.PossibilitiesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetCategory(item, category)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Clear category</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.SetCategory(item, None)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Category must be a valid ICmPossibility object</span>
+<span class="sd">            - Setting to None clears the category</span>
+<span class="sd">            - Categories help organize and filter items</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetCategory, FindByCategory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">category</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">CategoryRA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cat_poss</span> <span class="o">=</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">category</span><span class="p">)</span>
+                <span class="n">item</span><span class="o">.</span><span class="n">CategoryRA</span> <span class="o">=</span> <span class="n">cat_poss</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;category must be a valid ICmPossibility object&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Hierarchy Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSubitems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the subitems of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            recursive (bool): If True (default), returns every descendant</span>
+<span class="sd">                (depth-first, parents before children). If False, returns</span>
+<span class="sd">                only direct children.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmAnthroItem objects.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; marriage = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for sub in project.Anthropology.GetSubitems(marriage):</span>
+<span class="sd">            ...     print(project.Anthropology.GetName(sub))      # All descendants</span>
+
+<span class="sd">            &gt;&gt;&gt; # Direct children only</span>
+<span class="sd">            &gt;&gt;&gt; for sub in project.Anthropology.GetSubitems(marriage, recursive=False):</span>
+<span class="sd">            ...     print(project.Anthropology.GetName(sub))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            CreateSubitem, GetParent, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RejectLegacyKwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s2">&quot;flat&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recursive&quot;</span><span class="p">,</span> <span class="s2">&quot;semantics inverted: flat=True is now recursive=True&quot;</span><span class="p">),</span>
+        <span class="p">})</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">walk</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="n">walk</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the parent item of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnthroItem or None: The parent item if this is a subitem,</span>
+<span class="sd">                None if this is a top-level item.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get parent of a subitem</span>
+<span class="sd">            &gt;&gt;&gt; wedding = project.Anthropology.Find(&quot;Wedding Ceremony&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; parent = project.Anthropology.GetParent(wedding)</span>
+<span class="sd">            &gt;&gt;&gt; if parent:</span>
+<span class="sd">            ...     parent_name = project.Anthropology.GetName(parent)</span>
+<span class="sd">            ...     print(f&quot;Parent: {parent_name}&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;This is a top-level item&quot;)</span>
+<span class="sd">            Parent: Marriage Customs</span>
+
+<span class="sd">            &gt;&gt;&gt; # Build breadcrumb trail</span>
+<span class="sd">            &gt;&gt;&gt; def get_path(item):</span>
+<span class="sd">            ...     path = []</span>
+<span class="sd">            ...     current = item</span>
+<span class="sd">            ...     while current:</span>
+<span class="sd">            ...         name = project.Anthropology.GetName(current)</span>
+<span class="sd">            ...         path.insert(0, name)</span>
+<span class="sd">            ...         current = project.Anthropology.GetParent(current)</span>
+<span class="sd">            ...     return &quot; &gt; &quot;.join(path)</span>
+<span class="sd">            &gt;&gt;&gt; print(get_path(wedding))</span>
+<span class="sd">            Marriage Customs &gt; Wedding Ceremony</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None for top-level items</span>
+<span class="sd">            - Parent is always an ICmAnthroItem or the AnthroList</span>
+<span class="sd">            - Useful for navigation and breadcrumb displays</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetSubitems, CreateSubitem, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># .Owner is on every ICmObject; the truthiness check still</span>
+        <span class="c1"># discriminates orphans / detached items. (issue #133 sweep)</span>
+        <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">Owner</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Check if owner is an ICmAnthroItem (not the list)</span>
+                <span class="n">parent</span> <span class="o">=</span> <span class="n">ICmAnthroItem</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">parent</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="c1"># Owner is the AnthroListOA, so this is a top-level item</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Text Linking Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetTexts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all texts linked to an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IText objects linked to this item.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; texts = project.Anthropology.GetTexts(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(texts)} texts&quot;)</span>
+<span class="sd">            Found 3 texts</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; for text in texts:</span>
+<span class="sd">            ...     name = text.Name.BestAnalysisAlternative.Text</span>
+<span class="sd">            ...     print(f&quot;  - {name}&quot;)</span>
+<span class="sd">              - Wedding Story 1</span>
+<span class="sd">              - Wedding Story 2</span>
+<span class="sd">              - Marriage Interview</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if no texts are linked</span>
+<span class="sd">            - Texts can be linked to multiple anthropology items</span>
+<span class="sd">            - Use AddText() to create links</span>
+<span class="sd">            - Use RemoveText() to remove links</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddText, RemoveText, GetTextCount, GetItemsForText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;TextsRC&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">TextsRC</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Link a text to an anthropology item.</span>
+
+<span class="sd">        Creates a bidirectional link between the item and the text. The same</span>
+<span class="sd">        text can be linked to multiple anthropology items.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            text: The IText object to link.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo or text is None.</span>
+<span class="sd">            FP_ParameterError: If the item or text is invalid, or if the</span>
+<span class="sd">                text is already linked to this item.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Texts.Find(&quot;Wedding Story 1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Link text to item</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.AddText(item, text)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Verify link</span>
+<span class="sd">            &gt;&gt;&gt; texts = project.Anthropology.GetTexts(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Item now has {len(texts)} text(s)&quot;)</span>
+<span class="sd">            Item now has 1 text(s)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Link same text to multiple items</span>
+<span class="sd">            &gt;&gt;&gt; wedding = project.Anthropology.Find(&quot;Wedding Ceremony&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.AddText(wedding, text)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Text can be linked to multiple items</span>
+<span class="sd">            - Item can have multiple texts</span>
+<span class="sd">            - Link is bidirectional (stored in both objects)</span>
+<span class="sd">            - Raises error if text is already linked to this item</span>
+<span class="sd">            - Use RemoveText() to remove the link</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RemoveText, GetTexts, GetItemsForText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">text_obj</span> <span class="o">=</span> <span class="n">IText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;text must be a valid IText object&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if already linked</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;TextsRC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">TextsRC</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">text_obj</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Text is already linked to this item&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Add the text to the item&#39;s collection</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;TextsRC&quot;</span><span class="p">):</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">TextsRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">text_obj</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a text link from an anthropology item.</span>
+
+<span class="sd">        Removes the bidirectional link between the item and the text. The</span>
+<span class="sd">        text itself is not deleted, only the link.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            text: The IText object to unlink.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo or text is None.</span>
+<span class="sd">            FP_ParameterError: If the item or text is invalid, or if the</span>
+<span class="sd">                text is not linked to this item.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Texts.Find(&quot;Wedding Story 1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Remove text link</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.RemoveText(item, text)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Verify removal</span>
+<span class="sd">            &gt;&gt;&gt; texts = project.Anthropology.GetTexts(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Item now has {len(texts)} text(s)&quot;)</span>
+<span class="sd">            Item now has 0 text(s)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only removes the link, not the text itself</span>
+<span class="sd">            - Text may still be linked to other items</span>
+<span class="sd">            - Raises error if text is not linked to this item</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddText, GetTexts, GetItemsForText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">text_obj</span> <span class="o">=</span> <span class="n">IText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;text must be a valid IText object&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if linked</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;TextsRC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">TextsRC</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">text_obj</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Text is not linked to this item&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Remove the text from the item&#39;s collection</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;TextsRC&quot;</span><span class="p">):</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">TextsRC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">text_obj</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetTextCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the count of texts linked to an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The number of texts linked to this item.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; count = project.Anthropology.GetTextCount(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Item has {count} linked text(s)&quot;)</span>
+<span class="sd">            Item has 3 linked text(s)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find items with linked texts</span>
+<span class="sd">            &gt;&gt;&gt; for item in project.Anthropology.GetAll():</span>
+<span class="sd">            ...     count = project.Anthropology.GetTextCount(item)</span>
+<span class="sd">            ...     if count &gt; 0:</span>
+<span class="sd">            ...         name = project.Anthropology.GetName(item)</span>
+<span class="sd">            ...         print(f&quot;{name}: {count} text(s)&quot;)</span>
+<span class="sd">            Marriage Customs: 3 text(s)</span>
+<span class="sd">            Kinship: 5 text(s)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns 0 if no texts are linked</span>
+<span class="sd">            - More efficient than len(GetTexts()) for counting only</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetTexts, AddText, RemoveText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;TextsRC&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">TextsRC</span><span class="o">.</span><span class="n">Count</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetItemsForText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all anthropology items linked to a specific text.</span>
+
+<span class="sd">        Searches through all anthropology items to find which ones are</span>
+<span class="sd">        linked to the specified text.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text: The IText object to search for.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmAnthroItem objects linked to this text.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Texts.Find(&quot;Wedding Story 1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; items = project.Anthropology.GetItemsForText(text)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Text is linked to {len(items)} item(s)&quot;)</span>
+<span class="sd">            Text is linked to 2 item(s)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; for item in items:</span>
+<span class="sd">            ...     name = project.Anthropology.GetName(item)</span>
+<span class="sd">            ...     code = project.Anthropology.GetAnthroCode(item)</span>
+<span class="sd">            ...     print(f&quot;  {code}: {name}&quot;)</span>
+<span class="sd">              586: Marriage Customs</span>
+<span class="sd">              586.1: Wedding Ceremony</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find texts not linked to any items</span>
+<span class="sd">            &gt;&gt;&gt; for text in project.Texts.GetAll():</span>
+<span class="sd">            ...     items = project.Anthropology.GetItemsForText(text)</span>
+<span class="sd">            ...     if not items:</span>
+<span class="sd">            ...         name = text.Name.BestAnalysisAlternative.Text</span>
+<span class="sd">            ...         print(f&quot;Unlinked text: {name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if text is not linked to any items</span>
+<span class="sd">            - Text can be linked to multiple items</span>
+<span class="sd">            - Useful for finding cultural context of a text</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetTexts, AddText, RemoveText</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">text_obj</span> <span class="o">=</span> <span class="n">IText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;text must be a valid IText object&quot;</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Search through all items</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;TextsRC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">TextsRC</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">text_obj</span><span class="p">):</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="c1"># --- Researcher/People Linking Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetResearchers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all researchers (people) linked to an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmPerson objects linked to this item.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; researchers = project.Anthropology.GetResearchers(item)</span>
+<span class="sd">            &gt;&gt;&gt; for person in researchers:</span>
+<span class="sd">            ...     name = person.Name.BestAnalysisAlternative.Text</span>
+<span class="sd">            ...     print(f&quot;Researcher: {name}&quot;)</span>
+<span class="sd">            Researcher: John Smith</span>
+<span class="sd">            Researcher: Jane Doe</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if no researchers are linked</span>
+<span class="sd">            - Researchers are ICmPerson objects from the project</span>
+<span class="sd">            - Use AddResearcher() to create links</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddResearcher, RemoveResearcher</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;ResearchersRC&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">ResearchersRC</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddResearcher</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Link a researcher (person) to an anthropology item.</span>
+
+<span class="sd">        Creates a link between the item and a person object, typically used</span>
+<span class="sd">        to track which researchers are responsible for documenting particular</span>
+<span class="sd">        cultural items.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            person: The ICmPerson object to link.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo or person is None.</span>
+<span class="sd">            FP_ParameterError: If the item or person is invalid, or if the</span>
+<span class="sd">                person is already linked to this item.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get or create a person</span>
+<span class="sd">            &gt;&gt;&gt; # (assuming people are in project.lp.PeopleOA)</span>
+<span class="sd">            &gt;&gt;&gt; person = project.lp.PeopleOA.PossibilitiesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Link person to item</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.AddResearcher(item, person)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Verify link</span>
+<span class="sd">            &gt;&gt;&gt; researchers = project.Anthropology.GetResearchers(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Item has {len(researchers)} researcher(s)&quot;)</span>
+<span class="sd">            Item has 1 researcher(s)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Person must be a valid ICmPerson object</span>
+<span class="sd">            - Same person can be linked to multiple items</span>
+<span class="sd">            - Item can have multiple researchers</span>
+<span class="sd">            - Raises error if person is already linked</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RemoveResearcher, GetResearchers</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="s2">&quot;person&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">person_obj</span> <span class="o">=</span> <span class="n">ICmPerson</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;person must be a valid ICmPerson object&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if already linked</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;ResearchersRC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">ResearchersRC</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">person_obj</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Person is already linked to this item&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Add the person to the item&#39;s collection</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;ResearchersRC&quot;</span><span class="p">):</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">ResearchersRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">person_obj</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveResearcher</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a researcher link from an anthropology item.</span>
+
+<span class="sd">        Removes the link between the item and the person. The person object</span>
+<span class="sd">        itself is not deleted, only the link.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+<span class="sd">            person: The ICmPerson object to unlink.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo or person is None.</span>
+<span class="sd">            FP_ParameterError: If the item or person is invalid, or if the</span>
+<span class="sd">                person is not linked to this item.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; person = project.lp.PeopleOA.PossibilitiesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Remove person link</span>
+<span class="sd">            &gt;&gt;&gt; project.Anthropology.RemoveResearcher(item, person)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Verify removal</span>
+<span class="sd">            &gt;&gt;&gt; researchers = project.Anthropology.GetResearchers(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Item has {len(researchers)} researcher(s)&quot;)</span>
+<span class="sd">            Item has 0 researcher(s)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Only removes the link, not the person object</span>
+<span class="sd">            - Person may still be linked to other items</span>
+<span class="sd">            - Raises error if person is not linked to this item</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddResearcher, GetResearchers</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="s2">&quot;person&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">person_obj</span> <span class="o">=</span> <span class="n">ICmPerson</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;person must be a valid ICmPerson object&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if linked</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;ResearchersRC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">ResearchersRC</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">person_obj</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Person is not linked to this item&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Remove the person from the item&#39;s collection</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;ResearchersRC&quot;</span><span class="p">):</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">ResearchersRC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">person_obj</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate an anthropology item, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source item.</span>
+<span class="sd">                                If False, insert at end of parent&#39;s subitems list.</span>
+<span class="sd">            deep (bool): If True (default), also duplicate owned objects (subitems).</span>
+<span class="sd">                        If False, only copy simple properties and references.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmAnthroItem: The newly created duplicate item with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Shallow duplicate (no subitems)</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; dup = project.Anthropology.Duplicate(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Original: {project.Anthropology.GetGuid(item)}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Duplicate: {project.Anthropology.GetGuid(dup)}&quot;)</span>
+<span class="sd">            Original: 12345678-1234-1234-1234-123456789abc</span>
+<span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
+
+<span class="sd">            &gt;&gt;&gt; # Deep duplicate (includes all subitems)</span>
+<span class="sd">            &gt;&gt;&gt; deep_dup = project.Anthropology.Duplicate(item, deep=True)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Subitems: {len(project.Anthropology.GetSubitems(deep_dup))}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original item&#39;s position</span>
+<span class="sd">            - Simple properties copied: Name, Abbreviation, Description, AnthroCode</span>
+<span class="sd">            - Reference properties copied: CategoryRA</span>
+<span class="sd">            - Owned objects (deep=True): SubPossibilitiesOS (subitems)</span>
+<span class="sd">            - TextsRC and ResearchersRC collections are NOT duplicated</span>
+<span class="sd">            - DateCreated and DateModified are NOT copied (set to current time)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetGuid, GetSubitems</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source item and parent</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Determine parent (owner)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s1">&#39;Duplicate Anthropology Item&#39;</span><span class="p">):</span>
+            <span class="n">raw_owner</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Owner</span>
+
+            <span class="c1"># Create new item using factory (auto-generates new GUID)</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmAnthroItemFactory</span><span class="p">)</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Determine insertion position and add to parent FIRST</span>
+            <span class="c1"># SubPossibilitiesOS is declared on ICmAnthroItem; cast by ClassName so</span>
+            <span class="c1"># pythonnet surfaces the typed collection accessor. The top-level branch</span>
+            <span class="c1"># bypasses the owner entirely via lp.AnthroListOA — no cast needed there.</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">raw_owner</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">raw_owner</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;CmAnthroItem&quot;</span><span class="p">:</span>
+                <span class="n">owner</span> <span class="o">=</span> <span class="n">ICmAnthroItem</span><span class="p">(</span><span class="n">raw_owner</span><span class="p">)</span>
+                <span class="c1"># Parent is another anthropology item</span>
+                <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">owner</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Parent is the top-level list</span>
+                <span class="n">anthro_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">AnthroListOA</span>
+                <span class="k">if</span> <span class="n">anthro_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                        <span class="n">source_index</span> <span class="o">=</span> <span class="n">anthro_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                        <span class="n">anthro_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">anthro_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy simple MultiString properties</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+            <span class="c1"># Copy simple string property</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;AnthroCode&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">AnthroCode</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">AnthroCode</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">AnthroCode</span>
+
+            <span class="c1"># Copy Reference Atomic (RA) properties</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;CategoryRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">CategoryRA</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">CategoryRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">CategoryRA</span>
+
+            <span class="c1"># Handle owned objects if deep=True</span>
+            <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+                <span class="c1"># Duplicate subitems into the NEW duplicate (not the original&#39;s parent)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">subitem</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateSubitemInto</span><span class="p">(</span><span class="n">subitem</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_DuplicateSubitemInto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_item</span><span class="p">,</span> <span class="n">parent_dup</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate an anthropology subitem into the specified parent&#39;s SubPossibilitiesOS.&quot;&quot;&quot;</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmAnthroItemFactory</span><span class="p">)</span>
+        <span class="n">dup_item</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+        <span class="n">parent_dup</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">dup_item</span><span class="p">)</span>
+
+        <span class="c1"># Copy properties</span>
+        <span class="n">dup_item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_item</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+        <span class="n">dup_item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+        <span class="n">dup_item</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_item</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_item</span><span class="p">,</span> <span class="s2">&quot;AnthroCode&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_item</span><span class="o">.</span><span class="n">AnthroCode</span><span class="p">:</span>
+            <span class="n">dup_item</span><span class="o">.</span><span class="n">AnthroCode</span> <span class="o">=</span> <span class="n">source_item</span><span class="o">.</span><span class="n">AnthroCode</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_item</span><span class="p">,</span> <span class="s2">&quot;CategoryRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_item</span><span class="o">.</span><span class="n">CategoryRA</span><span class="p">:</span>
+            <span class="n">dup_item</span><span class="o">.</span><span class="n">CategoryRA</span> <span class="o">=</span> <span class="n">source_item</span><span class="o">.</span><span class="n">CategoryRA</span>
+
+        <span class="c1"># Recurse into nested subitems</span>
+        <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_item</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">nested_item</span> <span class="ow">in</span> <span class="n">source_item</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateSubitemInto</span><span class="p">(</span><span class="n">nested_item</span><span class="p">,</span> <span class="n">dup_item</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># ========== CATALOG IMPORT METHODS ==========</span>
+    <span class="c1">#</span>
+    <span class="c1"># Unlike POS / PhonFeatures / InflectionFeatures (which use the etic</span>
+    <span class="c1"># CatalogEntry parser via CatalogBackedMixin), the anthropology</span>
+    <span class="c1"># catalog ships as LCM-native XML at:</span>
+    <span class="c1">#</span>
+    <span class="c1">#     &lt;FWCodeDir&gt;/Templates/OCM.xml</span>
+    <span class="c1">#</span>
+    <span class="c1"># i.e. &lt;LangProject&gt;&lt;AnthroList&gt;&lt;CmPossibilityList&gt;... with</span>
+    <span class="c1"># &lt;CmAnthroItem guid=&quot;...&quot;&gt; items. That shape is what</span>
+    <span class="c1"># SIL.LCModel.Application.ApplicationServices.XmlList.ImportList</span>
+    <span class="c1"># consumes natively, so we delegate to it directly rather than</span>
+    <span class="c1"># reimplementing the parser. Items whose canonical GUIDs already</span>
+    <span class="c1"># exist in the project are reused; new ones are created; localized</span>
+    <span class="c1"># Name/Abbreviation/Description and nested SubPossibilities all come</span>
+    <span class="c1"># from the catalog.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Note: OCM-Frame.xml is a sibling catalog (also in Templates/) and</span>
+    <span class="c1"># is NOT wrapped by this method -- this phase covers OCM.xml only.</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ImportCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Import the full OCM anthropology catalog into this project.</span>
+
+<span class="sd">        Loads SIL&#39;s standard Outline of Cultural Materials (OCM) hierarchy</span>
+<span class="sd">        from ``&lt;FWCodeDir&gt;/Templates/OCM.xml`` via LCM&#39;s native</span>
+<span class="sd">        ``XmlList.ImportList``. The catalog supplies localized Name /</span>
+<span class="sd">        Abbreviation / Description and the full nested SubPossibilities</span>
+<span class="sd">        hierarchy of anthropology items.</span>
+
+<span class="sd">        **Idempotency guard**: LCM&#39;s underlying ``XmlList.ImportList``</span>
+<span class="sd">        APPENDS items into ``AnthroListOA.PossibilitiesOS`` without</span>
+<span class="sd">        checking for canonical-GUID duplicates -- each call adds another</span>
+<span class="sd">        full set of top-level anthropology items. To prevent accidental</span>
+<span class="sd">        duplication, this method refuses by default when the list is</span>
+<span class="sd">        already non-empty. Pass ``force=True`` to import anyway (e.g. to</span>
+<span class="sd">        layer a second-language localization on top of an existing</span>
+<span class="sd">        import). The caller then takes responsibility for any resulting</span>
+<span class="sd">        duplicates.</span>
+
+<span class="sd">        **Recovery from past duplication**: If a project already has</span>
+<span class="sd">        duplicate top-level anthropology items from prior unguarded</span>
+<span class="sd">        imports, this method does NOT clean them up automatically --</span>
+<span class="sd">        that would be destructive. Recovery requires either manual</span>
+<span class="sd">        cleanup via the FieldWorks GUI, or deliberate ``bulk_delete``-</span>
+<span class="sd">        style code the caller writes to remove duplicate GUID groups.</span>
+
+<span class="sd">        Note: single-item import via ``CreateFromCatalog(source_id)``</span>
+<span class="sd">        is not yet supported for this catalog. The OCM catalog is</span>
+<span class="sd">        hierarchical; the typical workflow is a full import, after which</span>
+<span class="sd">        existing operations (``Find``, ``FindByCode``, ``GetAll``) work</span>
+<span class="sd">        normally. File a request if you need single-item import.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            progress: Optional ``SIL.LCModel.Utils.IProgress`` instance</span>
+<span class="sd">                      to report import progress. Pass ``None`` (the</span>
+<span class="sd">                      default) for silent import.</span>
+<span class="sd">            force: If True, skip the non-empty list check and import</span>
+<span class="sd">                   anyway. Default False (refuse if list is non-empty).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of top-level anthropology items in</span>
+<span class="sd">                 ``LangProject.AnthroListOA.PossibilitiesOS`` after</span>
+<span class="sd">                 import. Useful as a sanity check for callers.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not write-enabled.</span>
+<span class="sd">            FP_FileNotFoundError: If OCM.xml cannot be located under</span>
+<span class="sd">                                  the FieldWorks install.</span>
+<span class="sd">            FP_ParameterError: If ``AnthroListOA`` already has anthro</span>
+<span class="sd">                               items and ``force`` is False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Body extracted to _LCMNativeCatalogImportMixin in Phase Q-3a;</span>
+        <span class="c1"># this thin wrapper preserves the @OperationsMethod descriptor</span>
+        <span class="c1"># on the class itself (tests introspect via __dict__).</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_import_lcm_native_catalog</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ImportFrameCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Import the OCM-Frame catalog into this project.</span>
+
+<span class="sd">        ``OCM-Frame.xml`` is an alternative complete anthropology</span>
+<span class="sd">        catalog that ships alongside ``OCM.xml`` under</span>
+<span class="sd">        ``&lt;FWCodeDir&gt;/Templates/``. It targets the same</span>
+<span class="sd">        ``LangProject.AnthroListOA`` list but carries a different set</span>
+<span class="sd">        of items: 116 GUIDs present in OCM-Frame are absent from OCM,</span>
+<span class="sd">        so the two catalogs are NOT additive layers -- use one or the</span>
+<span class="sd">        other as the primary catalog for a given project.</span>
+
+<span class="sd">        Same XmlList.ImportList plumbing, same non-empty-list guard,</span>
+<span class="sd">        same caveats around appending without GUID deduplication. See</span>
+<span class="sd">        ``ImportCatalog`` for the full contract; only the catalog file</span>
+<span class="sd">        differs. (issue #29 item 1)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            progress: Optional ``SIL.LCModel.Utils.IProgress`` instance.</span>
+<span class="sd">                Pass ``None`` (default) for silent import.</span>
+<span class="sd">            force: If True, skip the non-empty list check. Default</span>
+<span class="sd">                False -- which means ``ImportFrameCatalog`` will refuse</span>
+<span class="sd">                whenever ``AnthroListOA`` already has items (including</span>
+<span class="sd">                the items ``ImportCatalog`` just added). Layered</span>
+<span class="sd">                imports therefore need ``force=True`` after the main</span>
+<span class="sd">                OCM import.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of top-level items in ``AnthroListOA`` after</span>
+<span class="sd">                import.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not write-enabled.</span>
+<span class="sd">            FP_FileNotFoundError: If OCM-Frame.xml cannot be located.</span>
+<span class="sd">            FP_ParameterError: If ``AnthroListOA`` already has items</span>
+<span class="sd">                and ``force`` is False.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            ``FLExProject.LocalizedLists.Import``: localisation packs</span>
+<span class="sd">            match by canonical GUID. ``OCM-Frame.xml`` carries 116</span>
+<span class="sd">            GUIDs that ``OCM.xml`` does not. An OCM-only pack against</span>
+<span class="sd">            an OCM-Frame project will leave the 116 frame-specific</span>
+<span class="sd">            items untranslated; an OCM-Frame-aware pack against an</span>
+<span class="sd">            OCM-only project will silently drop translations for the</span>
+<span class="sd">            116 GUIDs the project doesn&#39;t have. If you call</span>
+<span class="sd">            ``LocalizedLists.Import``, do so **after** the relevant</span>
+<span class="sd">            catalog import and verify counts. (issue #82)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_import_lcm_native_catalog</span><span class="p">(</span>
+            <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">,</span> <span class="n">catalog_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">FRAME_CATALOG_FILE</span>
+        <span class="p">)</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get syncable properties for cross-project synchronization.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;item&quot;</span><span class="p">)</span>
+
+        <span class="n">anthro_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">anthro_item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Abbreviation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">anthro_item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">anthro_item</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anthro_item</span><span class="p">,</span> <span class="s2">&quot;AnthroCode&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">anthro_item</span><span class="o">.</span><span class="n">AnthroCode</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;AnthroCode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">anthro_item</span><span class="o">.</span><span class="n">AnthroCode</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;AnthroCode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anthro_item</span><span class="p">,</span> <span class="s2">&quot;CategoryRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">anthro_item</span><span class="o">.</span><span class="n">CategoryRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Category&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">anthro_item</span><span class="o">.</span><span class="n">CategoryRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Category&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compare two anthropology items and return detailed differences.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">is_different</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">differences</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">val1</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">val2</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;modified&quot;</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span>
+
+    <span class="c1"># --- Metadata Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID (Globally Unique Identifier) of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.Guid: The GUID of the item.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; guid = project.Anthropology.GetGuid(item)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;GUID: {guid}&quot;)</span>
+<span class="sd">            GUID: 12345678-1234-1234-1234-123456789abc</span>
+
+<span class="sd">            &gt;&gt;&gt; # Use GUID for stable cross-references</span>
+<span class="sd">            &gt;&gt;&gt; guid_str = str(guid)</span>
+<span class="sd">            &gt;&gt;&gt; # Store guid_str in external database...</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUID is unique across all FLEx databases</span>
+<span class="sd">            - GUID is permanent and never changes</span>
+<span class="sd">            - Use GUIDs for stable references in external systems</span>
+<span class="sd">            - Returns System.Guid object (use str() to convert to string)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDateCreated, GetDateModified</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">Guid</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the creation date of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.DateTime or None: The creation date, or None if not available.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; date = project.Anthropology.GetDateCreated(item)</span>
+<span class="sd">            &gt;&gt;&gt; if date:</span>
+<span class="sd">            ...     print(f&quot;Created: {date}&quot;)</span>
+<span class="sd">            Created: 2024-01-15 10:30:00</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find recently created items</span>
+<span class="sd">            &gt;&gt;&gt; from System import DateTime, TimeSpan</span>
+<span class="sd">            &gt;&gt;&gt; week_ago = DateTime.Now - TimeSpan.FromDays(7)</span>
+<span class="sd">            &gt;&gt;&gt; recent = []</span>
+<span class="sd">            &gt;&gt;&gt; for item in project.Anthropology.GetAll():</span>
+<span class="sd">            ...     date = project.Anthropology.GetDateCreated(item)</span>
+<span class="sd">            ...     if date and date &gt; week_ago:</span>
+<span class="sd">            ...         name = project.Anthropology.GetName(item)</span>
+<span class="sd">            ...         recent.append(name)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Items created in last week: {recent}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns System.DateTime object</span>
+<span class="sd">            - May return None if date is not set or available</span>
+<span class="sd">            - Date is set automatically when item is created</span>
+<span class="sd">            - Dates are in UTC</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDateModified, GetGuid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;DateCreated&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">DateCreated</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the last modification date of an anthropology item.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ICmAnthroItem object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.DateTime or None: The modification date, or None if not available.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the item is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; item = project.Anthropology.Find(&quot;Marriage Customs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; date = project.Anthropology.GetDateModified(item)</span>
+<span class="sd">            &gt;&gt;&gt; if date:</span>
+<span class="sd">            ...     print(f&quot;Last modified: {date}&quot;)</span>
+<span class="sd">            Last modified: 2024-03-20 14:45:00</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find recently modified items</span>
+<span class="sd">            &gt;&gt;&gt; from System import DateTime, TimeSpan</span>
+<span class="sd">            &gt;&gt;&gt; day_ago = DateTime.Now - TimeSpan.FromDays(1)</span>
+<span class="sd">            &gt;&gt;&gt; modified = []</span>
+<span class="sd">            &gt;&gt;&gt; for item in project.Anthropology.GetAll():</span>
+<span class="sd">            ...     date = project.Anthropology.GetDateModified(item)</span>
+<span class="sd">            ...     if date and date &gt; day_ago:</span>
+<span class="sd">            ...         name = project.Anthropology.GetName(item)</span>
+<span class="sd">            ...         modified.append(name)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Modified today: {modified}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns System.DateTime object</span>
+<span class="sd">            - May return None if date is not set or available</span>
+<span class="sd">            - Date is updated automatically when item is modified</span>
+<span class="sd">            - Dates are in UTC</span>
+<span class="sd">            - Tracks all modifications (name, description, links, etc.)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDateCreated, GetGuid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetItemObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">DateModified</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Notebook.AnthropologyOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

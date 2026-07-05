@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Shared.rule_patterns &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.rule_patterns</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Shared.rule_patterns</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   rule_patterns.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Module: Pattern-element types for the</span>
+<span class="c1">#           PhonologicalRuleOperations.WireRule composer.</span>
+<span class="c1">#</span>
+<span class="c1">#           These are inert dataclasses used to describe rule contexts</span>
+<span class="c1">#           at the wrapper level. The composer translates them into</span>
+<span class="c1">#           LCM simple-context objects.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Pattern-element types for the PhonologicalRuleOperations.WireRule composer.</span>
+
+<span class="sd">These are inert dataclasses used to describe rule contexts at the wrapper</span>
+<span class="sd">level. The composer translates them into LCM simple-context objects.</span>
+
+<span class="sd">Usage::</span>
+
+<span class="sd">    from flexlibs2 import Seg, NC, Boundary</span>
+
+<span class="sd">    # Build context elements</span>
+<span class="sd">    seg_t = Seg(phoneme_t)</span>
+<span class="sd">    vowels_back = NC(vowel_class, plus=[alpha_back])</span>
+<span class="sd">    word_bdry = Boundary(&quot;#&quot;)</span>
+
+<span class="sd">Greek-variable identity is preserved by re-using the SAME</span>
+<span class="sd">IPhFeatureConstraint object across multiple NC pattern elements.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+
+
+<div class="viewcode-block" id="Seg">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.rule_patterns.Seg">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Seg</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A single-phoneme pattern element.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        phoneme: An IPhPhoneme, HVO (int), or wrapper representing a</span>
+<span class="sd">            single phoneme.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        Seg carries no alpha-feature constraints: LCM&#39;s</span>
+<span class="sd">        ``IPhSimpleContextSeg`` has no ``PlusConstrRS`` / ``MinusConstrRS``</span>
+<span class="sd">        slots -- only ``IPhSimpleContextNC`` does. To express alpha-feature</span>
+<span class="sd">        constraints on a single phoneme, wrap it in a singleton</span>
+<span class="sd">        ``IPhNaturalClass`` and use ``NC(class, plus=[...], minus=[...])``</span>
+<span class="sd">        instead. A singleton NC can be reused across rules that target</span>
+<span class="sd">        the same phoneme. (Linguistic context: e.g. Bantu N-place</span>
+<span class="sd">        assimilation -- see issue #23.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phoneme</span><span class="p">:</span> <span class="nb">object</span></div>
+
+
+
+<div class="viewcode-block" id="NC">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.rule_patterns.NC">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NC</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A natural-class pattern element, optionally with alpha-feature constraints.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        natural_class: An IPhNaturalClass, HVO (int), or wrapper.</span>
+<span class="sd">        plus: Sequence of IPhFeatureConstraint objects to attach to</span>
+<span class="sd">            ``PlusConstrRS`` (positive alpha-variable bindings, e.g. [+aBack]).</span>
+<span class="sd">        minus: Sequence of IPhFeatureConstraint objects to attach to</span>
+<span class="sd">            ``MinusConstrRS`` (negative alpha-variable bindings, e.g. [-aBack]).</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        Re-use the SAME IPhFeatureConstraint object across multiple</span>
+<span class="sd">        positions to express alpha/beta/gamma agreement.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">natural_class</span><span class="p">:</span> <span class="nb">object</span>
+    <span class="n">plus</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">minus</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="Boundary">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.rule_patterns.Boundary">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Boundary</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A boundary marker pattern element, identified by its FW-shipped name.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        marker: One of FieldWorks&#39; standard boundary marker names. The</span>
+<span class="sd">            default project ships with ``&quot;#&quot;`` (word boundary), ``&quot;+&quot;``</span>
+<span class="sd">            (morpheme boundary), and ``&quot;.&quot;`` (syllable boundary).</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        Boundary elements appear only in left/right contexts (never in</span>
+<span class="sd">        the structural change). The composer looks the marker up by</span>
+<span class="sd">        name from ``PhonemeSetsOS[0].BoundaryMarkersOC`` rather than</span>
+<span class="sd">        creating new markers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">marker</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#&quot;</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Seg&quot;</span><span class="p">,</span> <span class="s2">&quot;NC&quot;</span><span class="p">,</span> <span class="s2">&quot;Boundary&quot;</span><span class="p">]</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.rule_patterns</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

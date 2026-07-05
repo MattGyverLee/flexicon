@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Lexicon.PronunciationOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.PronunciationOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Lexicon.PronunciationOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   PronunciationOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: PronunciationOperations</span>
+<span class="c1">#          Pronunciation operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ILexEntry</span><span class="p">,</span>
+    <span class="n">ILexPronunciation</span><span class="p">,</span>
+    <span class="n">ILexPronunciationFactory</span><span class="p">,</span>
+    <span class="n">ICmFile</span><span class="p">,</span>
+    <span class="n">ICmFileFactory</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Import string utilities</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span>
+
+
+<div class="viewcode-block" id="PronunciationOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.PronunciationOperations.PronunciationOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PronunciationOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing pronunciations in a FieldWorks project.</span>
+
+<span class="sd">    Pronunciations represent the phonetic representation of lexical entries, typically</span>
+<span class="sd">    using IPA (International Phonetic Alphabet) notation. Each pronunciation can have</span>
+<span class="sd">    forms in multiple writing systems (e.g., en-fonipa for IPA), associated audio files,</span>
+<span class="sd">    and optional CV (consonant-vowel) pattern location information.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.Pronunciations property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get all pronunciations for an entry</span>
+<span class="sd">        entry = list(project.LexiconAllEntries())[0]</span>
+<span class="sd">        for pron in project.Pronunciations.GetAll(entry):</span>
+<span class="sd">            ipa = project.Pronunciations.GetForm(pron, &quot;en-fonipa&quot;)</span>
+<span class="sd">            print(f&quot;IPA: {ipa}&quot;)</span>
+
+<span class="sd">        # Create a new pronunciation</span>
+<span class="sd">        pron = project.Pronunciations.Create(entry, &quot;rʌn&quot;, &quot;en-fonipa&quot;)</span>
+
+<span class="sd">        # Add audio file</span>
+<span class="sd">        project.Pronunciations.AddMediaFile(pron, &quot;/path/to/audio.wav&quot;)</span>
+
+<span class="sd">        # Get media files</span>
+<span class="sd">        media = project.Pronunciations.GetMediaFiles(pron)</span>
+<span class="sd">        print(f&quot;Audio files: {len(media)}&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize PronunciationOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Specify which sequence to reorder for pronunciations.</span>
+<span class="sd">        For Pronunciation, we reorder entry.PronunciationsOS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">PronunciationsOS</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all pronunciations for a lexical entry, or all pronunciations in the entire project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: The ILexEntry object or HVO. If None, iterates all pronunciations</span>
+<span class="sd">                         in the entire project.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            ILexPronunciation: Each pronunciation for the entry (or project).</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get pronunciations for specific entry</span>
+<span class="sd">            &gt;&gt;&gt; entry = list(project.LexiconAllEntries())[0]</span>
+<span class="sd">            &gt;&gt;&gt; for pron in project.Pronunciations.GetAll(entry):</span>
+<span class="sd">            ...     ipa = project.Pronunciations.GetForm(pron, &quot;en-fonipa&quot;)</span>
+<span class="sd">            ...     print(f&quot;IPA: {ipa}&quot;)</span>
+<span class="sd">            IPA: rʌn</span>
+<span class="sd">            IPA: ɹʌn</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get ALL pronunciations in entire project</span>
+<span class="sd">            &gt;&gt;&gt; for pron in project.Pronunciations.GetAll():</span>
+<span class="sd">            ...     ipa = project.Pronunciations.GetForm(pron, &quot;en-fonipa&quot;)</span>
+<span class="sd">            ...     print(f&quot;IPA: {ipa}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - When entry_or_hvo is provided:</span>
+<span class="sd">              - Returns pronunciations in the order they appear in FLEx</span>
+<span class="sd">              - Returns empty generator if entry has no pronunciations</span>
+<span class="sd">              - Pronunciations are ordered collections (can be reordered)</span>
+<span class="sd">            - When entry_or_hvo is None:</span>
+<span class="sd">              - Iterates ALL entries in the project</span>
+<span class="sd">              - For each entry, yields all pronunciations</span>
+<span class="sd">              - Useful for project-wide pronunciation operations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, Reorder</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">entry_or_hvo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Iterate ALL pronunciations in entire project</span>
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lexDB</span><span class="o">.</span><span class="n">Entries</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="s2">&quot;PronunciationsOS&quot;</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">pronunciation</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="p">:</span>
+                        <span class="k">yield</span> <span class="n">pronunciation</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Iterate pronunciations for specific entry</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="s2">&quot;PronunciationsOS&quot;</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">pronunciation</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">pronunciation</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new pronunciation for a lexical entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: The ILexEntry object or HVO.</span>
+<span class="sd">            form (str): The pronunciation form (typically IPA notation).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Use &quot;en-fonipa&quot; for IPA,</span>
+<span class="sd">                     or defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexPronunciation: The newly created pronunciation object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If entry_or_hvo or form is None.</span>
+<span class="sd">            FP_ParameterError: If form is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = list(project.LexiconAllEntries())[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Create IPA pronunciation</span>
+<span class="sd">            &gt;&gt;&gt; pron = project.Pronunciations.Create(entry, &quot;rʌn&quot;, &quot;en-fonipa&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Pronunciations.GetForm(pron, &quot;en-fonipa&quot;))</span>
+<span class="sd">            rʌn</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with default WS</span>
+<span class="sd">            &gt;&gt;&gt; pron = project.Pronunciations.Create(entry, &quot;run&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - The pronunciation is added to the end of the entry&#39;s pronunciations list</span>
+<span class="sd">            - For IPA notation, use &quot;en-fonipa&quot; writing system (English IPA)</span>
+<span class="sd">            - Other IPA writing systems follow pattern: &quot;{lang}-fonipa&quot; (e.g., &quot;fr-fonipa&quot;)</span>
+<span class="sd">            - Audio files can be added after creation using AddMediaFile()</span>
+<span class="sd">            - Pronunciation form is set immediately</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, SetForm, AddMediaFile</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateStringNotEmpty</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
+
+        <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Create the new pronunciation using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexPronunciationFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create pronunciation&quot;</span><span class="p">):</span>
+            <span class="n">pronunciation</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to entry&#39;s pronunciations collection (must be done before setting properties)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="s2">&quot;PronunciationsOS&quot;</span><span class="p">):</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">pronunciation</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Entry does not support pronunciations&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Set pronunciation form</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">pronunciation</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">pronunciation</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a pronunciation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: The ILexPronunciation object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If pronunciation_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = list(project.LexiconAllEntries())[0]</span>
+<span class="sd">            &gt;&gt;&gt; pronunciations = list(project.Pronunciations.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if pronunciations:</span>
+<span class="sd">            ...     project.Pronunciations.Delete(pronunciations[0])</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Permanently removes the pronunciation from the database</span>
+<span class="sd">            - Associated media files are NOT automatically deleted from disk</span>
+<span class="sd">            - Cannot be undone</span>
+<span class="sd">            - The pronunciation is removed from the owning entry&#39;s collection</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pronunciation_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pronunciation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># pronunciation.Owner is typed as ICmObject in LCM. pythonnet only</span>
+        <span class="c1"># surfaces attributes from the static type, so</span>
+        <span class="c1"># hasattr(entry, &quot;PronunciationsOS&quot;) returns False without a cast</span>
+        <span class="c1"># and the Remove() silently never runs (issue #151).</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">pronunciation</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">pronunciation</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a pronunciation, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The ILexPronunciation object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source pronunciation.</span>
+<span class="sd">                                If False, insert at end of parent&#39;s pronunciations list.</span>
+<span class="sd">            deep (bool): If True, also duplicate owned objects (media files).</span>
+<span class="sd">                        If False (default), only copy simple properties and references.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexPronunciation: The newly created duplicate pronunciation with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = list(project.LexiconAllEntries())[0]</span>
+<span class="sd">            &gt;&gt;&gt; pronunciations = list(project.Pronunciations.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if pronunciations:</span>
+<span class="sd">            ...     # Shallow duplicate (no media files)</span>
+<span class="sd">            ...     dup = project.Pronunciations.Duplicate(pronunciations[0])</span>
+<span class="sd">            ...     print(f&quot;Original: {project.Pronunciations.GetGuid(pronunciations[0])}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Duplicate: {project.Pronunciations.GetGuid(dup)}&quot;)</span>
+<span class="sd">            ...     ipa = project.Pronunciations.GetForm(dup, &quot;en-fonipa&quot;)</span>
+<span class="sd">            ...     print(f&quot;IPA: {ipa}&quot;)</span>
+<span class="sd">            Original: 12345678-1234-1234-1234-123456789abc</span>
+<span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
+<span class="sd">            IPA: rʌn</span>
+<span class="sd">            ...</span>
+<span class="sd">            ...     # Deep duplicate (includes media files)</span>
+<span class="sd">            ...     deep_dup = project.Pronunciations.Duplicate(pronunciations[0], deep=True)</span>
+<span class="sd">            ...     count = project.Pronunciations.GetMediaCount(deep_dup)</span>
+<span class="sd">            ...     print(f&quot;Media files: {count}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original pronunciation&#39;s position/priority</span>
+<span class="sd">            - Simple properties copied: Form (MultiString)</span>
+<span class="sd">            - Reference properties copied: LocationRA</span>
+<span class="sd">            - Owned objects (deep=True): MediaFilesOS</span>
+<span class="sd">            - Media files are duplicated by creating new ICmFile objects with same properties</span>
+<span class="sd">            - LiftResidue is not copied (import-specific data)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetGuid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source pronunciation and parent</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="c1"># PronunciationsOS is declared only on ILexEntry; cast so pythonnet</span>
+        <span class="c1"># surfaces the typed collection accessor.</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+
+        <span class="c1"># Create new pronunciation using factory (auto-generates new GUID)</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexPronunciationFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate pronunciation&quot;</span><span class="p">):</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Determine insertion position</span>
+            <span class="k">if</span> <span class="n">insert_after</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;PronunciationsOS&quot;</span><span class="p">):</span>
+                <span class="c1"># Insert after source pronunciation</span>
+                <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Insert at end</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;PronunciationsOS&quot;</span><span class="p">):</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy simple MultiString properties (AFTER adding to parent)</span>
+            <span class="c1"># Use GetString/SetString instead of CopyAlternatives for safer copying</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Form</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">System</span><span class="o">.</span><span class="n">NullReferenceException</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+                <span class="c1"># Fallback: copy string by string if CopyAlternatives fails</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;Form&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">Form</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">ws_id</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">AvailableWritingSystems</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">form_string</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_id</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">form_string</span><span class="p">:</span>
+                                <span class="n">duplicate</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">ws_id</span><span class="p">,</span> <span class="n">form_string</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                            <span class="c1"># Skip individual strings that fail to copy</span>
+                            <span class="k">pass</span>
+
+            <span class="c1"># Copy Reference Atomic (RA) properties</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;LocationRA&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">LocationRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">LocationRA</span>
+
+            <span class="c1"># Handle owned objects if deep=True</span>
+            <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOS&quot;</span><span class="p">):</span>
+                <span class="c1"># Duplicate media files</span>
+                <span class="k">for</span> <span class="n">media</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="p">:</span>
+                    <span class="n">media_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmFileFactory</span><span class="p">)</span>
+                    <span class="n">new_media</span> <span class="o">=</span> <span class="n">media_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                    <span class="n">duplicate</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_media</span><span class="p">)</span>
+
+                    <span class="c1"># Copy media file properties</span>
+                    <span class="n">new_media</span><span class="o">.</span><span class="n">InternalPath</span> <span class="o">=</span> <span class="n">media</span><span class="o">.</span><span class="n">InternalPath</span>
+                    <span class="n">new_media</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">media</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">media</span><span class="p">,</span> <span class="s2">&quot;Copyright&quot;</span><span class="p">):</span>
+                        <span class="n">new_media</span><span class="o">.</span><span class="n">Copyright</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">media</span><span class="o">.</span><span class="n">Copyright</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all syncable properties of a pronunciation for comparison.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The ILexPronunciation object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary mapping property names to their values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties</span>
+        <span class="c1"># Form - the pronunciation form (typically IPA)</span>
+        <span class="n">form_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Form&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                    <span class="n">form_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Form&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">form_dict</span>
+
+        <span class="c1"># Reference Atomic (RA) properties</span>
+        <span class="c1"># LocationRA - CV pattern location</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;LocationRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">LocationRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;LocationRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">LocationRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;LocationRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Note: MediaFilesOS is an Owning Sequence (OS) - not included</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two pronunciations and return their differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: The first ILexPronunciation object.</span>
+<span class="sd">            item2: The second ILexPronunciation object.</span>
+<span class="sd">            ops1: Optional PronunciationOperations instance for item1.</span>
+<span class="sd">            ops2: Optional PronunciationOperations instance for item2.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ops1</span> <span class="o">=</span> <span class="n">ops1</span> <span class="ow">or</span> <span class="bp">self</span>
+        <span class="n">ops2</span> <span class="o">=</span> <span class="n">ops2</span> <span class="ow">or</span> <span class="bp">self</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Reorder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">pronunciation_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reorder pronunciations for a lexical entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: The ILexEntry object or HVO.</span>
+<span class="sd">            pronunciation_list: List of ILexPronunciation objects in desired order.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If entry_or_hvo or pronunciation_list is None.</span>
+<span class="sd">            FP_ParameterError: If pronunciation_list is invalid or contains</span>
+<span class="sd">                              pronunciations not owned by this entry.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; entry = list(project.LexiconAllEntries())[0]</span>
+<span class="sd">            &gt;&gt;&gt; prons = list(project.Pronunciations.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if len(prons) &gt; 1:</span>
+<span class="sd">            ...     # Reverse the order</span>
+<span class="sd">            ...     project.Pronunciations.Reorder(entry, list(reversed(prons)))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - All pronunciations in the list must belong to the entry</span>
+<span class="sd">            - The list must contain all current pronunciations (no partial reordering)</span>
+<span class="sd">            - Useful for prioritizing preferred pronunciations</span>
+<span class="sd">            - Order affects display in FLEx UI</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAll, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_list</span><span class="p">,</span> <span class="s2">&quot;pronunciation_list&quot;</span><span class="p">)</span>
+
+        <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="s2">&quot;PronunciationsOS&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Entry does not support pronunciations&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Validate that all pronunciations belong to this entry</span>
+        <span class="n">current_count</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="o">.</span><span class="n">Count</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pronunciation_list</span><span class="p">)</span> <span class="o">!=</span> <span class="n">current_count</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pronunciation list must contain all </span><span class="si">{</span><span class="n">current_count</span><span class="si">}</span><span class="s2"> pronunciations&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Clear and re-add in new order</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Reorder pronunciations&quot;</span><span class="p">):</span>
+            <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">pron</span> <span class="ow">in</span> <span class="n">pronunciation_list</span><span class="p">:</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">PronunciationsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">pron</span><span class="p">)</span>
+
+    <span class="c1"># --- Form Management ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the pronunciation form (e.g., IPA transcription).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: The ILexPronunciation object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle or tag (e.g., &quot;en-fonipa&quot; for IPA).</span>
+<span class="sd">                     Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The pronunciation form text, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pronunciation_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pron = list(project.Pronunciations.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Get IPA form</span>
+<span class="sd">            &gt;&gt;&gt; ipa = project.Pronunciations.GetForm(pron, &quot;en-fonipa&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;IPA: {ipa}&quot;)</span>
+<span class="sd">            IPA: rʌn</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get default WS form</span>
+<span class="sd">            &gt;&gt;&gt; form = project.Pronunciations.GetForm(pron)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For IPA notation, use &quot;{lang}-fonipa&quot; writing system (e.g., &quot;en-fonipa&quot;)</span>
+<span class="sd">            - Returns empty string if form is not set for the specified WS</span>
+<span class="sd">            - Can retrieve forms in multiple writing systems if set</span>
+<span class="sd">            - Pronunciation forms are typically phonetic transcriptions</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetForm, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pronunciation_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pronunciation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># MultiUnicodeAccessor</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">pronunciation</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the pronunciation form (e.g., IPA transcription).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: The ILexPronunciation object or HVO.</span>
+<span class="sd">            text (str): The pronunciation form text (typically IPA notation).</span>
+<span class="sd">            wsHandle: Optional writing system handle or tag (e.g., &quot;en-fonipa&quot; for IPA).</span>
+<span class="sd">                     Defaults to vernacular WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If pronunciation_or_hvo or text is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pron = list(project.Pronunciations.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Set IPA form</span>
+<span class="sd">            &gt;&gt;&gt; project.Pronunciations.SetForm(pron, &quot;ɹʌn&quot;, &quot;en-fonipa&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Update default WS form</span>
+<span class="sd">            &gt;&gt;&gt; project.Pronunciations.SetForm(pron, &quot;run&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For IPA notation, use &quot;{lang}-fonipa&quot; writing system (e.g., &quot;en-fonipa&quot;)</span>
+<span class="sd">            - Can set forms in multiple writing systems</span>
+<span class="sd">            - Empty string clears the form for that writing system</span>
+<span class="sd">            - Forms can contain Unicode IPA characters</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetForm, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pronunciation_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">pronunciation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleVern</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># MultiUnicodeAccessor</span>
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">pronunciation</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="c1"># --- Media Files ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMediaFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all media files (typically audio) associated with a pronunciation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: The ILexPronunciation object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of media file objects (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pronunciation_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pron = list(project.Pronunciations.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Pronunciations.GetMediaFiles(pron)</span>
+<span class="sd">            &gt;&gt;&gt; for m in media:</span>
+<span class="sd">            ...     print(f&quot;Media: {m}&quot;)</span>
+<span class="sd">            Media: audio_recording.wav</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns media file objects from MediaFilesOS collection</span>
+<span class="sd">            - Media files are typically audio recordings of pronunciation</span>
+<span class="sd">            - Can also include video or other media types</span>
+<span class="sd">            - File objects contain path and metadata information</span>
+<span class="sd">            - Empty list if no media files attached</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMediaCount, AddMediaFile, RemoveMediaFile</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pronunciation_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pronunciation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pronunciation</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">pronunciation</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMediaCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the count of media files associated with a pronunciation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: The ILexPronunciation object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The number of media files.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pronunciation_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pron = list(project.Pronunciations.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; count = project.Pronunciations.GetMediaCount(pron)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;This pronunciation has {count} audio files&quot;)</span>
+<span class="sd">            This pronunciation has 2 audio files</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - More efficient than len(GetMediaFiles()) for just counting</span>
+<span class="sd">            - Returns 0 if no media files attached</span>
+<span class="sd">            - Includes all media types (audio, video, etc.)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMediaFiles, AddMediaFile</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pronunciation_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pronunciation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pronunciation</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">pronunciation</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Count</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a media file (typically audio) to a pronunciation.</span>
+
+<span class="sd">        Copies the file to the project&#39;s LinkedFiles directory and creates</span>
+<span class="sd">        a media reference linked to the pronunciation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: The ILexPronunciation object or HVO.</span>
+<span class="sd">            file_path (str): Path to the external media file to import.</span>
+<span class="sd">            label (str, optional): Descriptive label for the media file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmFile: The created media file object with proper path.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If pronunciation_or_hvo or file_path is None.</span>
+<span class="sd">            FP_ParameterError: If file_path is empty or file doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pron = list(project.Pronunciations.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Add audio recording</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Pronunciations.AddMediaFile(</span>
+<span class="sd">            ...     pron,</span>
+<span class="sd">            ...     &quot;/path/to/audio.wav&quot;,</span>
+<span class="sd">            ...     label=&quot;Speaker pronunciation&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Added media file&quot;)</span>
+<span class="sd">            Added media file</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - File is copied to LinkedFiles/AudioVisual directory</span>
+<span class="sd">            - Unique filename generated if collision occurs (audio_1.wav, etc.)</span>
+<span class="sd">            - Creates ICmFile object with proper LinkedFiles path</span>
+<span class="sd">            - Supported formats: WAV, MP3, OGG, WMA (audio), MP4, AVI (video)</span>
+<span class="sd">            - Multiple media files can be added to one pronunciation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            RemoveMediaFile, GetMediaFiles, GetMediaCount, project.Media.CopyToProject</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pronunciation_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;file_path&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateStringNotEmpty</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;file_path&quot;</span><span class="p">)</span>
+
+        <span class="n">pronunciation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Use MediaOperations to properly copy file and create ICmFile</span>
+        <span class="c1"># Copy file to project and get ICmFile reference</span>
+        <span class="n">media_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Media</span><span class="o">.</span><span class="n">CopyToProject</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">internal_subdir</span><span class="o">=</span><span class="s2">&quot;AudioVisual&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+
+        <span class="c1"># Add to pronunciation&#39;s media collection</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pronunciation</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOS&quot;</span><span class="p">):</span>
+            <span class="n">pronunciation</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">media_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Pronunciation does not support media files&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">media_file</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="n">media_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a media file from a pronunciation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: The ILexPronunciation object or HVO.</span>
+<span class="sd">            media_or_hvo: The ICmFile object or HVO to remove.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If pronunciation_or_hvo or media_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pron = list(project.Pronunciations.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; media_files = project.Pronunciations.GetMediaFiles(pron)</span>
+<span class="sd">            &gt;&gt;&gt; if media_files:</span>
+<span class="sd">            ...     project.Pronunciations.RemoveMediaFile(pron, media_files[0])</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Removes the media file reference from the pronunciation</span>
+<span class="sd">            - Does NOT delete the actual file from disk</span>
+<span class="sd">            - The media file object is deleted from the database</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddMediaFile, GetMediaFiles</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pronunciation_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="s2">&quot;media_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pronunciation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Resolve media object</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">media_or_hvo</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_or_hvo</span>
+
+        <span class="c1"># Remove from collection</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pronunciation</span><span class="p">,</span> <span class="s2">&quot;MediaFilesOS&quot;</span><span class="p">):</span>
+            <span class="n">pronunciation</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media</span><span class="p">,</span> <span class="n">from_pronunciation_or_hvo</span><span class="p">,</span> <span class="n">to_pronunciation_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Move a media file from one pronunciation to another pronunciation.</span>
+
+<span class="sd">        This is useful when reorganizing pronunciations or moving audio recordings to the</span>
+<span class="sd">        correct pronunciation variant.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media: ICmFile object to move</span>
+<span class="sd">            from_pronunciation_or_hvo: Source ILexPronunciation object or HVO</span>
+<span class="sd">            to_pronunciation_or_hvo: Destination ILexPronunciation object or HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if media was successfully moved, False if source and destination</span>
+<span class="sd">                 are the same pronunciation (no-op)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project not writable</span>
+<span class="sd">            FP_ParameterError: If media not in source pronunciation&#39;s collection</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Move audio from one pronunciation to another</span>
+<span class="sd">            &gt;&gt;&gt; entry = list(project.LexiconAllEntries())[0]</span>
+<span class="sd">            &gt;&gt;&gt; pron1 = entry.PronunciationsOS[0]  # IPA: [rʌn]</span>
+<span class="sd">            &gt;&gt;&gt; pron2 = entry.PronunciationsOS[1]  # IPA: [ɹʌn]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; media_files = project.Pronunciations.GetMediaFiles(pron1)</span>
+<span class="sd">            &gt;&gt;&gt; # Move the audio to the correct pronunciation variant</span>
+<span class="sd">            &gt;&gt;&gt; project.Pronunciations.MoveMediaFile(media_files[0], pron1, pron2)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Verify the move</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Pron 1 media: {project.Pronunciations.GetMediaCount(pron1)}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Pron 2 media: {project.Pronunciations.GetMediaCount(pron2)}&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Can also move between different entries</span>
+<span class="sd">            &gt;&gt;&gt; entry2 = list(project.LexiconAllEntries())[1]</span>
+<span class="sd">            &gt;&gt;&gt; other_pron = entry2.PronunciationsOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; project.Pronunciations.MoveMediaFile(media_files[1], pron1, other_pron)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Media is removed from source MediaFilesOS and added to destination</span>
+<span class="sd">            - File reference and description are preserved</span>
+<span class="sd">            - The physical media file is NOT moved/copied</span>
+<span class="sd">            - Cannot move to the same pronunciation (no-op, returns False)</span>
+<span class="sd">            - Media object&#39;s GUID remains the same</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Moving media between different entries&#39; pronunciations is allowed</span>
+<span class="sd">            - Ensure the audio is appropriate for the target pronunciation</span>
+<span class="sd">            - The media will be associated with the new pronunciation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddMediaFile, RemoveMediaFile, GetMediaFiles</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">from_pron</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">from_pronunciation_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">from_pronunciation_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">from_pronunciation_or_hvo</span>
+        <span class="p">)</span>
+        <span class="n">to_pron</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">to_pronunciation_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">to_pronunciation_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">to_pronunciation_or_hvo</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Can&#39;t move to same pronunciation</span>
+        <span class="k">if</span> <span class="n">from_pron</span> <span class="o">==</span> <span class="n">to_pron</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Source and destination are the same pronunciation&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Verify media is in source collection</span>
+        <span class="k">if</span> <span class="n">media</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">from_pron</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Media file not found in source pronunciation&#39;s media collection&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Move the media (remove from source, add to destination)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Move media file&quot;</span><span class="p">):</span>
+            <span class="n">from_pron</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
+            <span class="n">to_pron</span><span class="o">.</span><span class="n">MediaFilesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Moved media from pronunciation </span><span class="si">{</span><span class="n">from_pron</span><span class="o">.</span><span class="n">Guid</span><span class="si">}</span><span class="s2"> to pronunciation </span><span class="si">{</span><span class="n">to_pron</span><span class="o">.</span><span class="n">Guid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="c1"># --- CV Pattern/Location ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the CV pattern location for the pronunciation.</span>
+
+<span class="sd">        The location refers to where in a CV (consonant-vowel) pattern analysis</span>
+<span class="sd">        this pronunciation applies. This is used in phonological analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: The ILexPronunciation object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object: The location object, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pronunciation_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pron = list(project.Pronunciations.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Pronunciations.GetLocation(pron)</span>
+<span class="sd">            &gt;&gt;&gt; if location:</span>
+<span class="sd">            ...     print(f&quot;CV Location: {location}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Location is used for phonological CV pattern analysis</span>
+<span class="sd">            - Returns None if no location is set</span>
+<span class="sd">            - Location objects reference phonological environments</span>
+<span class="sd">            - Not commonly used in basic pronunciation entry</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetLocation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pronunciation_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pronunciation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pronunciation</span><span class="p">,</span> <span class="s2">&quot;LocationRA&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">pronunciation</span><span class="o">.</span><span class="n">LocationRA</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the CV pattern location for the pronunciation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: The ILexPronunciation object or HVO.</span>
+<span class="sd">            location: The location object (phonological environment) to set,</span>
+<span class="sd">                     or None to clear.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If pronunciation_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pron = list(project.Pronunciations.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Set location (requires a valid phonological environment object)</span>
+<span class="sd">            &gt;&gt;&gt; # env = project.Environments.Find(&quot;word-final&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # project.Pronunciations.SetLocation(pron, env)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear location</span>
+<span class="sd">            &gt;&gt;&gt; project.Pronunciations.SetLocation(pron, None)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Location must be a valid phonological environment object</span>
+<span class="sd">            - Pass None to clear the location</span>
+<span class="sd">            - Used for phonological CV pattern analysis</span>
+<span class="sd">            - Not commonly used in basic pronunciation entry</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetLocation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pronunciation_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pronunciation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pronunciation</span><span class="p">,</span> <span class="s2">&quot;LocationRA&quot;</span><span class="p">):</span>
+            <span class="n">pronunciation</span><span class="o">.</span><span class="n">LocationRA</span> <span class="o">=</span> <span class="n">location</span>
+
+    <span class="c1"># --- Utilities ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetOwningEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the lexical entry that owns this pronunciation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: The ILexPronunciation object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexEntry: The owning entry object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pronunciation_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pron = list(project.Pronunciations.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; owner = project.Pronunciations.GetOwningEntry(pron)</span>
+<span class="sd">            &gt;&gt;&gt; headword = project.LexEntry.GetHeadword(owner)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Pronunciation belongs to: {headword}&quot;)</span>
+<span class="sd">            Pronunciation belongs to: run</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns the ILexEntry that contains this pronunciation</span>
+<span class="sd">            - Useful when you have a pronunciation object without context</span>
+<span class="sd">            - The owner is determined by the LCM ownership hierarchy</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetGuid, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pronunciation_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pronunciation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+        <span class="c1"># Cast to declared return type ILexEntry. Raw pronunciation.Owner is</span>
+        <span class="c1"># typed as ICmObject in LCM; pythonnet only surfaces ILexEntry</span>
+        <span class="c1"># properties after the explicit interface cast.</span>
+        <span class="k">return</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">pronunciation</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID of a pronunciation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: The ILexPronunciation object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.Guid: The GUID of the pronunciation.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If pronunciation_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; pron = list(project.Pronunciations.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; guid = project.Pronunciations.GetGuid(pron)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Pronunciation GUID: {guid}&quot;)</span>
+<span class="sd">            Pronunciation GUID: 12345678-1234-1234-1234-123456789abc</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUIDs are globally unique identifiers</span>
+<span class="sd">            - Persistent across project versions</span>
+<span class="sd">            - Use for external references and tracking</span>
+<span class="sd">            - Same GUID across different copies of the project</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetOwningEntry</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="s2">&quot;pronunciation_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">pronunciation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPronunciationObject</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pronunciation</span><span class="o">.</span><span class="n">Guid</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetEntryObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to ILexEntry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: Either an ILexEntry object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexEntry: The resolved entry object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">entry_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetPronunciationObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pronunciation_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to ILexPronunciation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pronunciation_or_hvo: Either an ILexPronunciation object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexPronunciation: The resolved pronunciation object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">pronunciation_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pronunciation_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to vernacular WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle or tag.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+
+        <span class="c1"># If it&#39;s a string (like &quot;en-fonipa&quot;), convert to handle</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">handle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Fallback to default vernacular if WS not found</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+            <span class="k">return</span> <span class="n">handle</span>
+
+        <span class="k">return</span> <span class="n">wsHandle</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleVern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to vernacular WS for pronunciation forms.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle or tag (e.g., &quot;en-fonipa&quot;).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.PronunciationOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

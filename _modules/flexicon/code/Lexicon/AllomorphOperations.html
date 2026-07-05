@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Lexicon.AllomorphOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.AllomorphOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Lexicon.AllomorphOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   AllomorphOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: AllomorphOperations</span>
+<span class="c1">#          Allomorph operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IMoForm</span><span class="p">,</span>
+    <span class="n">IMoStemAllomorphFactory</span><span class="p">,</span>
+    <span class="n">IMoAffixAllomorphFactory</span><span class="p">,</span>
+    <span class="n">ILexEntry</span><span class="p">,</span>
+    <span class="n">IPhEnvironment</span><span class="p">,</span>
+    <span class="n">MoMorphTypeTags</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Import string utilities</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span>
+
+<span class="c1"># Import wrapper classes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.allomorph</span><span class="w"> </span><span class="kn">import</span> <span class="n">Allomorph</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.allomorph_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">AllomorphCollection</span>
+
+
+<div class="viewcode-block" id="AllomorphOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.AllomorphOperations.AllomorphOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AllomorphOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing allomorphs in a FieldWorks project.</span>
+
+<span class="sd">    Allomorphs are variant forms of morphemes that appear in different phonological</span>
+<span class="sd">    or morphological contexts. For example, the English plural morpheme has</span>
+<span class="sd">    allomorphs &quot;-s&quot;, &quot;-es&quot;, and &quot;-en&quot; (ox/oxen).</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject, AllomorphOperations</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        allomorphOps = AllomorphOperations(project)</span>
+
+<span class="sd">        # Get entry</span>
+<span class="sd">        entry = project.LexiconAllEntries()[0]</span>
+
+<span class="sd">        # Get all allomorphs for an entry</span>
+<span class="sd">        for allomorph in allomorphOps.GetAll(entry):</span>
+<span class="sd">            form = allomorphOps.GetForm(allomorph)</span>
+<span class="sd">            print(f&quot;Allomorph: {form}&quot;)</span>
+
+<span class="sd">        # Create a new allomorph</span>
+<span class="sd">        morphType = project.lp.MorphTypesOA.PossibilitiesOS[0]</span>
+<span class="sd">        allomorph = allomorphOps.Create(entry, &quot;walk&quot;, morphType)</span>
+
+<span class="sd">        # Set phonological environment</span>
+<span class="sd">        env = project.lp.PhonologicalDataOA.EnvironmentsOS[0]</span>
+<span class="sd">        allomorphOps.AddPhoneEnv(allomorph, env)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize AllomorphOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Specify which sequence to reorder for allomorphs.</span>
+<span class="sd">        For Allomorph, we reorder entry.AlternateFormsOS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">AlternateFormsOS</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all allomorphs for a lexical entry, or all allomorphs in the entire project.</span>
+
+<span class="sd">        Returns a smart collection of wrapped allomorph objects that transparently</span>
+<span class="sd">        handle the two concrete types (MoStemAllomorph and MoAffixAllomorph).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: The ILexEntry object or HVO. If None, iterates all allomorphs</span>
+<span class="sd">                         in the entire project.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AllomorphCollection: Smart collection of Allomorph wrapper objects</span>
+<span class="sd">                showing type breakdown and supporting filtered queries.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get all allomorphs for specific entry</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = allomorphOps.GetAll(entry)</span>
+<span class="sd">            &gt;&gt;&gt; print(allomorphs)  # Shows type breakdown</span>
+<span class="sd">            # AllomorphCollection (8 total)</span>
+<span class="sd">            #   MoStemAllomorph: 5 (62%)</span>
+<span class="sd">            #   MoAffixAllomorph: 3 (38%)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Iterate through wrapped objects</span>
+<span class="sd">            &gt;&gt;&gt; for allomorph in allomorphs:</span>
+<span class="sd">            ...     print(f&quot;Form: {allomorph.form}, Type: {allomorph.class_type}&quot;)</span>
+<span class="sd">            Form: run, Type: MoStemAllomorph</span>
+<span class="sd">            Form: ran, Type: MoStemAllomorph</span>
+<span class="sd">            Form: running, Type: MoStemAllomorph</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Filter by type</span>
+<span class="sd">            &gt;&gt;&gt; stems = allomorphs.stem_allomorphs()</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(stems)} stem allomorphs&quot;)</span>
+<span class="sd">            Found 5 stem allomorphs</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Filter by form</span>
+<span class="sd">            &gt;&gt;&gt; ing_forms = allomorphs.filter(form_contains=&#39;ing&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; for allomorph in ing_forms:</span>
+<span class="sd">            ...     print(allomorph.form)</span>
+<span class="sd">            running</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Chain filters</span>
+<span class="sd">            &gt;&gt;&gt; ing_stems = allomorphs.stem_allomorphs().filter(form_contains=&#39;ing&#39;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get ALL allomorphs in entire project</span>
+<span class="sd">            &gt;&gt;&gt; all_project_allomorphs = allomorphOps.GetAll()</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Project has {len(all_project_allomorphs)} allomorphs&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns AllomorphCollection (smart collection) not raw generator</span>
+<span class="sd">            - When entry_or_hvo is provided:</span>
+<span class="sd">              - Returns the lexeme form first (if it exists)</span>
+<span class="sd">              - Then returns all alternate forms</span>
+<span class="sd">              - Order follows FLEx database order</span>
+<span class="sd">              - Returns empty collection if entry has no allomorphs</span>
+<span class="sd">            - When entry_or_hvo is None:</span>
+<span class="sd">              - Iterates ALL entries in the project</span>
+<span class="sd">              - For each entry, yields lexeme form then alternate forms</span>
+<span class="sd">              - Useful for project-wide allomorph operations</span>
+<span class="sd">            - AllomorphCollection shows type breakdown and supports filtering</span>
+<span class="sd">            - Use convenience methods like stem_allomorphs() and affix_allomorphs()</span>
+<span class="sd">            - Use filter() for form-based filtering</span>
+<span class="sd">            - Use where() for complex custom filtering</span>
+<span class="sd">            - Individual items are Allomorph wrapper objects with properties like</span>
+<span class="sd">              form, environment, is_stem_allomorph, is_affix_allomorph</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetForm, AllomorphCollection, Allomorph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Collect all allomorphs</span>
+        <span class="n">allomorphs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">entry_or_hvo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Iterate ALL allomorphs in entire project</span>
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lexDB</span><span class="o">.</span><span class="n">Entries</span><span class="p">:</span>
+                <span class="c1"># First add the lexeme form if it exists</span>
+                <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="p">:</span>
+                    <span class="n">allomorphs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Allomorph</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="p">))</span>
+
+                <span class="c1"># Then add all alternate forms</span>
+                <span class="k">for</span> <span class="n">allomorph</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="p">:</span>
+                    <span class="n">allomorphs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Allomorph</span><span class="p">(</span><span class="n">allomorph</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Iterate allomorphs for specific entry</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+
+            <span class="c1"># First add the lexeme form if it exists</span>
+            <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="p">:</span>
+                <span class="n">allomorphs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Allomorph</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="p">))</span>
+
+            <span class="c1"># Then add all alternate forms</span>
+            <span class="k">for</span> <span class="n">allomorph</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="p">:</span>
+                <span class="n">allomorphs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Allomorph</span><span class="p">(</span><span class="n">allomorph</span><span class="p">))</span>
+
+        <span class="c1"># Return smart collection</span>
+        <span class="k">return</span> <span class="n">AllomorphCollection</span><span class="p">(</span><span class="n">allomorphs</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">morphType</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new allomorph for a lexical entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: The ILexEntry object or HVO.</span>
+<span class="sd">            form (str): The allomorph form (e.g., &quot;-ing&quot;, &quot;walk&quot;, &quot;pre-&quot;).</span>
+<span class="sd">            morphType (IMoMorphType | str | None): The morpheme type.  Pass an</span>
+<span class="sd">                IMoMorphType object, a name string (e.g. &#39;suffix&#39;, &#39;=enclitic&#39;,</span>
+<span class="sd">                &#39;-prefix&#39;), or None to inherit from the entry&#39;s LexemeFormOA</span>
+<span class="sd">                morph type (matching FLEx GUI behaviour).  Display markers are</span>
+<span class="sd">                stripped automatically so UI-copied names resolve correctly.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoForm: The newly created allomorph object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If entry_or_hvo or form is None.</span>
+<span class="sd">            FP_ParameterError: If form is empty or entry has no LexemeFormOA when</span>
+<span class="sd">                morphType is not provided.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create allomorph with inherited morph type (default)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Create(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; allomorph = project.Allomorphs.Create(entry, &quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Allomorphs.GetForm(allomorph))</span>
+<span class="sd">            running</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with explicit morph type</span>
+<span class="sd">            &gt;&gt;&gt; morphType = project.lexDB.MorphTypesOA.PossibilitiesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorph = project.Allomorphs.Create(entry, &quot;ran&quot;, morphType)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; allomorph = project.Allomorphs.Create(entry, &quot;rʌn&quot;,</span>
+<span class="sd">            ...                                        wsHandle=project.WSHandle(&#39;en-fonipa&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - The allomorph is added to the entry&#39;s alternate forms list</span>
+<span class="sd">            - If the entry has no lexeme form, this becomes the lexeme form</span>
+<span class="sd">            - Otherwise, it&#39;s added as an alternate form</span>
+<span class="sd">            - By default, inherits morph type from entry&#39;s LexemeFormOA (matches FLEx)</span>
+<span class="sd">            - Correct allomorph class (MoStemAllomorph vs MoAffixAllomorph) is</span>
+<span class="sd">              automatically chosen based on morph type</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, GetAll, SetForm</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateStringNotEmpty</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
+
+        <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Accept morph type as a string name (with or without display markers).</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">morphType</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">bare</span> <span class="o">=</span> <span class="n">morphType</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;-=~&lt;&gt;&#39;</span><span class="p">)</span>
+            <span class="n">morph_types</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LexDbOA</span><span class="o">.</span><span class="n">MorphTypesOA</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span><span class="p">,</span> <span class="n">best_analysis_text</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">bare</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">_find</span><span class="p">(</span><span class="n">possibilities</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">mt</span> <span class="ow">in</span> <span class="n">possibilities</span><span class="p">:</span>
+                    <span class="n">mt_name</span> <span class="o">=</span> <span class="n">best_analysis_text</span><span class="p">(</span><span class="n">mt</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">mt_name</span> <span class="ow">and</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">mt_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">mt</span>
+                    <span class="k">if</span> <span class="n">mt</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">found</span> <span class="o">=</span> <span class="n">_find</span><span class="p">(</span><span class="n">mt</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="n">found</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">resolved</span> <span class="o">=</span> <span class="n">_find</span><span class="p">(</span><span class="n">morph_types</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">)</span> <span class="k">if</span> <span class="n">morph_types</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">resolved</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Morph type &#39;</span><span class="si">{</span><span class="n">morphType</span><span class="si">}</span><span class="s2">&#39; not found. &quot;</span>
+                    <span class="s2">&quot;Use project.LexEntry.GetAvailableMorphTypes() to see valid names.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">morphType</span> <span class="o">=</span> <span class="n">resolved</span>
+
+        <span class="c1"># If no morphType provided, inherit from entry&#39;s LexemeFormOA (FLEx behavior)</span>
+        <span class="k">if</span> <span class="n">morphType</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="o">.</span><span class="n">MorphTypeRA</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;Cannot inherit morph type: entry has no LexemeFormOA with MorphTypeRA. &quot;</span>
+                    <span class="s2">&quot;Either provide morphType parameter or ensure entry has a lexeme form.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">morphType</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="o">.</span><span class="n">MorphTypeRA</span>
+
+        <span class="c1"># Create the new allomorph using the appropriate factory based on morph type</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__IsStemType</span><span class="p">(</span><span class="n">morphType</span><span class="p">):</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IMoStemAllomorphFactory</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IMoAffixAllomorphFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create allomorph &#39;</span><span class="si">{</span><span class="n">form</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="n">allomorph</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to entry (must be done before setting properties)</span>
+            <span class="c1"># If no lexeme form, set as lexeme, else add as alternate</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="p">:</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span> <span class="o">=</span> <span class="n">allomorph</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">allomorph</span><span class="p">)</span>
+
+            <span class="c1"># Set form</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">allomorph</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="c1"># Set morph type</span>
+            <span class="n">allomorph</span><span class="o">.</span><span class="n">MorphTypeRA</span> <span class="o">=</span> <span class="n">morphType</span>
+
+            <span class="k">return</span> <span class="n">allomorph</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete an allomorph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the allomorph is in use or cannot be deleted.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = list(allomorphOps.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if len(allomorphs) &gt; 1:</span>
+<span class="sd">            ...     allomorphOps.Delete(allomorphs[-1])</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deleting an allomorph that is in use in analyses may cause issues</span>
+<span class="sd">            - If deleting the lexeme form and alternates exist, the first</span>
+<span class="sd">              alternate becomes the new lexeme form</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - Consider checking usage in texts before deletion</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Removes the allomorph from the entry&#39;s forms collection</span>
+<span class="sd">            - All references to this allomorph in analyses are affected</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get the owning entry. allomorph.Owner is typed as ICmObject and</span>
+        <span class="c1"># does not expose LexemeFormOA / AlternateFormsOS; cast to the</span>
+        <span class="c1"># concrete interface so the typed collections are reachable.</span>
+        <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">allomorph</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Allomorph has no owning entry&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if this is the lexeme form or an alternate</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete allomorph&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;LexemeFormOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">owner</span><span class="o">.</span><span class="n">LexemeFormOA</span> <span class="o">==</span> <span class="n">allomorph</span><span class="p">:</span>
+                <span class="c1"># Deleting the lexeme form</span>
+                <span class="c1"># If there are alternates, promote the first one to lexeme</span>
+                <span class="k">if</span> <span class="n">owner</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">new_lexeme</span> <span class="o">=</span> <span class="n">owner</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">RemoveAt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">LexemeFormOA</span> <span class="o">=</span> <span class="n">new_lexeme</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># No alternates, just clear the lexeme form</span>
+                    <span class="n">owner</span><span class="o">.</span><span class="n">LexemeFormOA</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;AlternateFormsOS&quot;</span><span class="p">):</span>
+                <span class="c1"># Deleting an alternate form</span>
+                <span class="n">owner</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">allomorph</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate an allomorph, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The IMoForm object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source allomorph.</span>
+<span class="sd">                                If False, insert at end of parent&#39;s alternate forms list.</span>
+<span class="sd">            deep (bool): Reserved for future use (allomorphs have no owned objects).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoForm: The newly created duplicate allomorph with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = list(allomorphOps.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if len(allomorphs) &gt; 1:  # Don&#39;t duplicate lexeme form</span>
+<span class="sd">            ...     # Duplicate an alternate form</span>
+<span class="sd">            ...     dup = allomorphOps.Duplicate(allomorphs[1])</span>
+<span class="sd">            ...     print(f&quot;Original: {allomorphOps.GetGuid(allomorphs[1])}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Duplicate: {allomorphOps.GetGuid(dup)}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Form: {allomorphOps.GetForm(dup)}&quot;)</span>
+<span class="sd">            Original: 12345678-1234-1234-1234-123456789abc</span>
+<span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
+<span class="sd">            Form: walk</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - Factory type determined by source ClassName (MoStemAllomorph, MoAffixAllomorph, etc.)</span>
+<span class="sd">            - insert_after=True preserves the original allomorph&#39;s position/priority</span>
+<span class="sd">            - Simple properties copied: Form (MultiString)</span>
+<span class="sd">            - Reference properties copied: MorphTypeRA, PhoneEnvRC</span>
+<span class="sd">            - Allomorphs have no owned objects, so deep parameter has no effect</span>
+<span class="sd">            - Only duplicates alternate forms, not lexeme forms</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetGuid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source allomorph and parent. source.Owner is typed as</span>
+        <span class="c1"># ICmObject; cast to the concrete owning entry so AlternateFormsOS</span>
+        <span class="c1"># and LexemeFormOA are reachable and the duplicate actually gets</span>
+        <span class="c1"># attached (raw .Owner.AlternateFormsOS would orphan the dup).</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Allomorph has no owning entry&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Determine the factory type based on the source&#39;s ClassName</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">ClassName</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoStemAllomorph&quot;</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IMoStemAllomorphFactory</span>
+
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IMoStemAllomorphFactory</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoAffixAllomorph&quot;</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IMoAffixAllomorphFactory</span>
+
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IMoAffixAllomorphFactory</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Unrecognized allomorph type - raise error instead of defaulting</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unrecognized allomorph type: </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">. &quot;</span> <span class="sa">f</span><span class="s2">&quot;Expected &#39;MoStemAllomorph&#39; or &#39;MoAffixAllomorph&#39;.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Create new allomorph using factory (auto-generates new GUID)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate allomorph&quot;</span><span class="p">):</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Determine insertion position</span>
+            <span class="c1"># Note: Allomorphs can be lexeme forms or alternate forms</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;LexemeFormOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">parent</span><span class="o">.</span><span class="n">LexemeFormOA</span> <span class="o">==</span> <span class="n">source</span><span class="p">:</span>
+                <span class="c1"># Source is lexeme form - add duplicate as alternate form</span>
+                <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;AlternateFormsOS&quot;</span><span class="p">):</span>
+                <span class="c1"># Source is alternate form</span>
+                <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">AlternateFormsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy simple MultiString properties (AFTER adding to parent)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Form</span><span class="p">)</span>
+
+            <span class="c1"># Copy Reference Atomic (RA) properties</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">MorphTypeRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">MorphTypeRA</span>
+
+            <span class="c1"># Copy Reference Collection (RC) properties</span>
+            <span class="k">for</span> <span class="n">env</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all syncable properties of an allomorph for comparison.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The IMoForm object (allomorph).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary mapping property names to their values:</span>
+<span class="sd">                - MultiString properties as dicts {ws: text}</span>
+<span class="sd">                - Atomic properties as simple values</span>
+<span class="sd">                - Reference Atomic (RA) properties as GUID strings</span>
+<span class="sd">                - Does NOT include Owning Sequence (OS) properties</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allo = list(project.Allomorphs.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt; props = project.Allomorphs.GetSyncableProperties(allo)</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;Form&#39;])  # MultiString</span>
+<span class="sd">            {&#39;en&#39;: &#39;run&#39;, &#39;fr&#39;: &#39;courir&#39;}</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;IsAbstract&#39;])  # Boolean</span>
+<span class="sd">            True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties</span>
+        <span class="c1"># Form - the allomorph form in various writing systems</span>
+        <span class="n">form_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Form&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                    <span class="n">form_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Form&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">form_dict</span>
+
+        <span class="c1"># Atomic properties</span>
+        <span class="c1"># IsAbstract - whether this is an abstract form</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;IsAbstract&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;IsAbstract&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">IsAbstract</span>
+
+        <span class="c1"># Reference Atomic (RA) properties</span>
+        <span class="c1"># MorphTypeRA - morpheme type (prefix, suffix, stem, etc.)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;MorphTypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">MorphTypeRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;MorphTypeRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">MorphTypeRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;MorphTypeRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two allomorphs and return their differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: The first IMoForm object.</span>
+<span class="sd">            item2: The second IMoForm object.</span>
+<span class="sd">            ops1: Optional AllomorphOperations instance for item1 (for cross-project comparison).</span>
+<span class="sd">                 If None, uses self.</span>
+<span class="sd">            ops2: Optional AllomorphOperations instance for item2 (for cross-project comparison).</span>
+<span class="sd">                 If None, uses self.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict) where:</span>
+<span class="sd">                - is_different: True if items differ, False otherwise</span>
+<span class="sd">                - differences_dict: Maps property names to (value1, value2) tuples for differing properties</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allo1 = list(project1.Allomorphs.GetAll(entry1))[0]</span>
+<span class="sd">            &gt;&gt;&gt; allo2 = list(project2.Allomorphs.GetAll(entry2))[0]</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = project1.Allomorphs.CompareTo(allo1, allo2,</span>
+<span class="sd">            ...                                                  project1.Allomorphs,</span>
+<span class="sd">            ...                                                  project2.Allomorphs)</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} -&gt; {val2}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Use provided ops or default to self</span>
+        <span class="n">ops1</span> <span class="o">=</span> <span class="n">ops1</span> <span class="ow">or</span> <span class="bp">self</span>
+        <span class="n">ops2</span> <span class="o">=</span> <span class="n">ops2</span> <span class="ow">or</span> <span class="bp">self</span>
+
+        <span class="c1"># Get syncable properties from both items</span>
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Compare all properties</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="c1"># Handle MultiString comparison (dict comparison)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val2</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                    <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+            <span class="c1"># Handle None values</span>
+            <span class="k">elif</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the form (text) of an allomorph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The allomorph form, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = list(allomorphOps.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if allomorphs:</span>
+<span class="sd">            ...     form = allomorphOps.GetForm(allomorphs[0])</span>
+<span class="sd">            ...     print(form)</span>
+<span class="sd">            walk</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get form in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; form_ipa = allomorphOps.GetForm(allomorphs[0],</span>
+<span class="sd">            ...                                  project.WSHandle(&#39;en-fonipa&#39;))</span>
+<span class="sd">            &gt;&gt;&gt; print(form_ipa)</span>
+<span class="sd">            wɔk</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if form not set in specified writing system</span>
+<span class="sd">            - Use different writing systems for pronunciation variants</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetForm, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">form</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">allomorph</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the form (text) of an allomorph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO.</span>
+<span class="sd">            form (str): The new allomorph form.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo or form is None.</span>
+<span class="sd">            FP_ParameterError: If form is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = list(allomorphOps.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if allomorphs:</span>
+<span class="sd">            ...     allomorphOps.SetForm(allomorphs[0], &quot;walked&quot;)</span>
+<span class="sd">            ...     print(allomorphOps.GetForm(allomorphs[0]))</span>
+<span class="sd">            walked</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set IPA pronunciation</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps.SetForm(allomorphs[0], &quot;wɔkt&quot;,</span>
+<span class="sd">            ...                      project.WSHandle(&#39;en-fonipa&#39;))</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Changing the form affects all analyses using this allomorph</span>
+<span class="sd">            - Parser may need to be rerun after form changes</span>
+<span class="sd">            - Use different writing systems for different representations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetForm, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateStringNotEmpty</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">allomorph</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetFormAudio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set an audio recording for an allomorph&#39;s Form field.</span>
+
+<span class="sd">        This is a convenience method for working with audio writing systems.</span>
+<span class="sd">        The audio file is embedded as a file path reference in the Form field</span>
+<span class="sd">        for an audio writing system (e.g., en-Zxxx-x-audio).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO.</span>
+<span class="sd">            file_path: Path to audio file. This should be either:</span>
+<span class="sd">                      - A path within LinkedFiles (e.g., &quot;LinkedFiles/AudioVisual/audio.wav&quot;)</span>
+<span class="sd">                      - An external path (will be copied to LinkedFiles automatically)</span>
+<span class="sd">            wsHandle: Optional audio writing system handle. If None, uses the first</span>
+<span class="sd">                     audio writing system found in the project.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The internal path where the audio file was stored (relative to project).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo or file_path is None.</span>
+<span class="sd">            FP_ParameterError: If no audio writing system is available, or if the</span>
+<span class="sd">                              wsHandle provided is not an audio writing system.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorph = list(allomorphOps.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Set audio from external file (will be copied to LinkedFiles)</span>
+<span class="sd">            &gt;&gt;&gt; audio_path = allomorphOps.SetFormAudio(</span>
+<span class="sd">            ...     allomorph,</span>
+<span class="sd">            ...     &quot;/path/to/recordings/pronunciation.wav&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Audio stored at: {audio_path}&quot;)</span>
+<span class="sd">            LinkedFiles/AudioVisual/pronunciation.wav</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set audio with specific audio writing system</span>
+<span class="sd">            &gt;&gt;&gt; audio_ws = project.WSHandle(&#39;en-Zxxx-x-audio&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps.SetFormAudio(allomorph, &quot;/path/to/audio.wav&quot;, audio_ws)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Audio writing systems use the Zxxx script code (ISO 15924 for &quot;no written form&quot;)</span>
+<span class="sd">            - Tag format: {lang}-Zxxx-x-audio (e.g., &quot;en-Zxxx-x-audio&quot;)</span>
+<span class="sd">            - The audio WS must already exist in the project (create it in FLEx UI first)</span>
+<span class="sd">            - If file_path is external, it will be copied to LinkedFiles/AudioVisual</span>
+<span class="sd">            - The file path is embedded as an ORC (Object Replacement Character) reference</span>
+<span class="sd">            - FLEx will display this as a playable audio control in the UI</span>
+<span class="sd">            - This is different from attaching media files via MediaFilesOS</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetFormAudio, SetForm, project.SetAudioPath, project.IsAudioWritingSystem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;file_path&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Find or validate audio writing system</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Auto-detect first audio WS</span>
+            <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">IsAudioWritingSystem</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">):</span>
+                    <span class="n">wsHandle</span> <span class="o">=</span> <span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span>
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;No audio writing system found in project. &quot;</span> <span class="s2">&quot;Create one in FLEx first (e.g., en-Zxxx-x-audio)&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Validate that provided WS is audio</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">IsAudioWritingSystem</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;The provided writing system is not an audio writing system. &quot;</span>
+                    <span class="s2">&quot;Use project.IsAudioWritingSystem() to check.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Determine if we need to copy the file to LinkedFiles</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+        <span class="n">internal_path</span> <span class="o">=</span> <span class="n">file_path</span>
+
+        <span class="c1"># If file_path is an external file (not already in LinkedFiles)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">file_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;LinkedFiles&quot;</span><span class="p">):</span>
+            <span class="c1"># Copy file to project using Media operations</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.MediaOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">MediaOperations</span>
+
+                <span class="n">media_ops</span> <span class="o">=</span> <span class="n">MediaOperations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
+
+                <span class="c1"># Copy file to LinkedFiles/AudioVisual</span>
+                <span class="n">media_file</span> <span class="o">=</span> <span class="n">media_ops</span><span class="o">.</span><span class="n">CopyToProject</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">internal_subdir</span><span class="o">=</span><span class="s2">&quot;AudioVisual&quot;</span><span class="p">)</span>
+                <span class="n">internal_path</span> <span class="o">=</span> <span class="n">media_ops</span><span class="o">.</span><span class="n">GetInternalPath</span><span class="p">(</span><span class="n">media_file</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># If Media operations fail, just use the path as-is</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not copy audio file to LinkedFiles: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">internal_path</span> <span class="o">=</span> <span class="n">file_path</span>
+
+        <span class="c1"># Set audio path in Form field</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">SetAudioPath</span><span class="p">(</span><span class="n">allomorph</span><span class="o">.</span><span class="n">Form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">,</span> <span class="n">internal_path</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">internal_path</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFormAudio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the audio file path from an allomorph&#39;s Form field.</span>
+
+<span class="sd">        This is a convenience method for extracting audio file references from</span>
+<span class="sd">        audio writing system fields.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO.</span>
+<span class="sd">            wsHandle: Optional audio writing system handle. If None, uses the first</span>
+<span class="sd">                     audio writing system found in the project.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Path to audio file (relative to project root), or None if no audio is set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorph = list(allomorphOps.GetAll(entry))[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get audio file path</span>
+<span class="sd">            &gt;&gt;&gt; audio_path = allomorphOps.GetFormAudio(allomorph)</span>
+<span class="sd">            &gt;&gt;&gt; if audio_path:</span>
+<span class="sd">            ...     print(f&quot;Audio file: {audio_path}&quot;)</span>
+<span class="sd">            ...     # Construct full path if needed</span>
+<span class="sd">            ...     import os</span>
+<span class="sd">            ...     full_path = os.path.join(</span>
+<span class="sd">            ...         project.GetLinkedFilesDir(),</span>
+<span class="sd">            ...         audio_path.replace(&quot;LinkedFiles/&quot;, &quot;&quot;)</span>
+<span class="sd">            ...     )</span>
+<span class="sd">            ...     print(f&quot;Full path: {full_path}&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;No audio recording&quot;)</span>
+<span class="sd">            Audio file: LinkedFiles/AudioVisual/pronunciation.wav</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get audio with specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; audio_ws = project.WSHandle(&#39;en-Zxxx-x-audio&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; audio_path = allomorphOps.GetFormAudio(allomorph, audio_ws)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if no audio writing system is found in the project</span>
+<span class="sd">            - Returns None if the specified writing system has no audio data</span>
+<span class="sd">            - The returned path is relative to the project root</span>
+<span class="sd">            - Use project.GetLinkedFilesDir() to construct absolute paths</span>
+<span class="sd">            - Audio must have been set using SetFormAudio() or project.SetAudioPath()</span>
+<span class="sd">            - This only retrieves the file path; it doesn&#39;t play the audio</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetFormAudio, GetForm, project.GetAudioPath, project.IsAudioWritingSystem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Find audio writing system if not provided</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">IsAudioWritingSystem</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">):</span>
+                    <span class="n">wsHandle</span> <span class="o">=</span> <span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span>
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># No audio WS in project</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Get audio path from Form field</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetAudioPath</span><span class="p">(</span><span class="n">allomorph</span><span class="o">.</span><span class="n">Form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">FP_ParameterError</span><span class="p">:</span>
+            <span class="c1"># Not an audio writing system</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the morpheme type of an allomorph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoMorphType: The morpheme type (stem, prefix, suffix, etc.).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = list(allomorphOps.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if allomorphs:</span>
+<span class="sd">            ...     morphType = allomorphOps.GetMorphType(allomorphs[0])</span>
+<span class="sd">            ...     # Get type name</span>
+<span class="sd">            ...     wsHandle = project.project.DefaultAnalWs</span>
+<span class="sd">            ...     type_name = ITsString(morphType.Name.get_String(wsHandle)).Text</span>
+<span class="sd">            ...     print(type_name)</span>
+<span class="sd">            stem</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Morpheme types include: stem, root, bound root, prefix, suffix,</span>
+<span class="sd">              infix, circumfix, clitic, proclitic, enclitic, simulfix, etc.</span>
+<span class="sd">            - Type determines parsing behavior and template slots</span>
+<span class="sd">            - Returns the IMoMorphType object which can be queried for details</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetMorphType, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">allomorph</span><span class="o">.</span><span class="n">MorphTypeRA</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetMorphType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">morphType</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the morpheme type of an allomorph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO.</span>
+<span class="sd">            morphType: The new morpheme type (IMoMorphType object).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo or morphType is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = list(allomorphOps.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if allomorphs:</span>
+<span class="sd">            ...     # Get a different morph type</span>
+<span class="sd">            ...     morphTypes = project.lp.MorphTypesOA.PossibilitiesOS</span>
+<span class="sd">            ...     prefix_type = [mt for mt in morphTypes</span>
+<span class="sd">            ...                    if &quot;prefix&quot; in str(mt).lower()][0]</span>
+<span class="sd">            ...     allomorphOps.SetMorphType(allomorphs[0], prefix_type)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Changing type affects parsing and morphological analysis</span>
+<span class="sd">            - Incompatible changes may require template updates</span>
+<span class="sd">            - Parser should be rerun after type changes</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMorphType, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">morphType</span><span class="p">,</span> <span class="s2">&quot;morphType&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+        <span class="n">allomorph</span><span class="o">.</span><span class="n">MorphTypeRA</span> <span class="o">=</span> <span class="n">morphType</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetPhoneEnv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the phonological environments for an allomorph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IPhEnvironment objects (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = list(allomorphOps.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if allomorphs:</span>
+<span class="sd">            ...     envs = allomorphOps.GetPhoneEnv(allomorphs[0])</span>
+<span class="sd">            ...     for env in envs:</span>
+<span class="sd">            ...         wsHandle = project.project.DefaultAnalWs</span>
+<span class="sd">            ...         name = ITsString(env.Name.get_String(wsHandle)).Text</span>
+<span class="sd">            ...         print(f&quot;Environment: {name}&quot;)</span>
+<span class="sd">            Environment: After voiceless consonant</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Phonological environments define distribution of allomorphs</span>
+<span class="sd">            - Empty list means allomorph appears in all contexts</span>
+<span class="sd">            - Multiple environments are OR&#39;d (any match allows allomorph)</span>
+<span class="sd">            - Used by the parser to select appropriate allomorph</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddPhoneEnv, RemovePhoneEnv</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">allomorph</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddPhoneEnv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a phonological environment to an allomorph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO.</span>
+<span class="sd">            env_or_hvo: The IPhEnvironment object or HVO to add.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo or env_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = list(allomorphOps.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if allomorphs and project.lp.PhonologicalDataOA:</span>
+<span class="sd">            ...     envs = project.lp.PhonologicalDataOA.EnvironmentsOS</span>
+<span class="sd">            ...     if envs.Count &gt; 0:</span>
+<span class="sd">            ...         allomorphOps.AddPhoneEnv(allomorphs[0], envs[0])</span>
+
+<span class="sd">            &gt;&gt;&gt; # Define that &quot;-es&quot; appears after sibilants</span>
+<span class="sd">            &gt;&gt;&gt; # (assuming you have created the environment)</span>
+<span class="sd">            &gt;&gt;&gt; sibilant_env = project.lp.PhonologicalDataOA.EnvironmentsOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps.AddPhoneEnv(allomorphs[0], sibilant_env)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Multiple environments can be added (OR logic)</span>
+<span class="sd">            - If environment already exists in the list, it&#39;s still added</span>
+<span class="sd">              (duplicates are allowed but not recommended)</span>
+<span class="sd">            - Environments guide parser in selecting appropriate allomorph</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetPhoneEnv, RemovePhoneEnv</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">,</span> <span class="s2">&quot;env_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEnvironmentObject</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
+
+        <span class="n">allomorph</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemovePhoneEnv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a phonological environment from an allomorph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: The IMoForm object or HVO.</span>
+<span class="sd">            env_or_hvo: The IPhEnvironment object or HVO to remove.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If allomorph_or_hvo or env_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; allomorphOps = AllomorphOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexiconAllEntries()[0]</span>
+<span class="sd">            &gt;&gt;&gt; allomorphs = list(allomorphOps.GetAll(entry))</span>
+<span class="sd">            &gt;&gt;&gt; if allomorphs:</span>
+<span class="sd">            ...     envs = allomorphOps.GetPhoneEnv(allomorphs[0])</span>
+<span class="sd">            ...     if envs:</span>
+<span class="sd">            ...         # Remove the first environment</span>
+<span class="sd">            ...         allomorphOps.RemovePhoneEnv(allomorphs[0], envs[0])</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - If environment not in list, this is a no-op (no error)</span>
+<span class="sd">            - Removing all environments means allomorph appears in all contexts</span>
+<span class="sd">            - Parser behavior changes when environments are modified</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetPhoneEnv, AddPhoneEnv</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="s2">&quot;allomorph_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">,</span> <span class="s2">&quot;env_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">allomorph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetAllomorphObject</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEnvironmentObject</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Only remove if it&#39;s actually in the collection</span>
+        <span class="k">if</span> <span class="n">env</span> <span class="ow">in</span> <span class="n">allomorph</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="p">:</span>
+            <span class="n">allomorph</span><span class="o">.</span><span class="n">PhoneEnvRC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetEntryObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to ILexEntry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entry_or_hvo: Either an ILexEntry object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ILexEntry: The resolved entry object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">entry_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetAllomorphObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allomorph_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IMoForm.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            allomorph_or_hvo: Either an IMoForm object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoForm: The resolved allomorph object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">allomorph_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">allomorph_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetEnvironmentObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IPhEnvironment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env_or_hvo: Either an IPhEnvironment object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhEnvironment: The resolved environment object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">env_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">env_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__IsStemType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">morph_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determine if a morph type should use MoStemAllomorph or MoAffixAllomorph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            morph_type: IMoMorphType object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if stem type (uses MoStemAllomorph), False if affix type</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            Based on FLEx logic - matches LexEntryOperations.__IsStemType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">morph_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># Default to stem</span>
+
+        <span class="c1"># Check GUID against known stem types</span>
+        <span class="n">stem_guids</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">MoMorphTypeTags</span><span class="o">.</span><span class="n">kguidMorphStem</span><span class="p">,</span>
+            <span class="n">MoMorphTypeTags</span><span class="o">.</span><span class="n">kguidMorphRoot</span><span class="p">,</span>
+            <span class="n">MoMorphTypeTags</span><span class="o">.</span><span class="n">kguidMorphBoundRoot</span><span class="p">,</span>
+            <span class="n">MoMorphTypeTags</span><span class="o">.</span><span class="n">kguidMorphBoundStem</span><span class="p">,</span>
+            <span class="n">MoMorphTypeTags</span><span class="o">.</span><span class="n">kguidMorphClitic</span><span class="p">,</span>
+            <span class="n">MoMorphTypeTags</span><span class="o">.</span><span class="n">kguidMorphEnclitic</span><span class="p">,</span>
+            <span class="n">MoMorphTypeTags</span><span class="o">.</span><span class="n">kguidMorphProclitic</span><span class="p">,</span>
+            <span class="n">MoMorphTypeTags</span><span class="o">.</span><span class="n">kguidMorphParticle</span><span class="p">,</span>
+            <span class="n">MoMorphTypeTags</span><span class="o">.</span><span class="n">kguidMorphPhrase</span><span class="p">,</span>
+            <span class="n">MoMorphTypeTags</span><span class="o">.</span><span class="n">kguidMorphDiscontiguousPhrase</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">morph_type</span><span class="o">.</span><span class="n">Guid</span> <span class="ow">in</span> <span class="n">stem_guids</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to vernacular WS for allomorph forms.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.AllomorphOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

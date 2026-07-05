@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Reversal.ReversalIndexOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Reversal.ReversalIndexOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Reversal.ReversalIndexOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ReversalIndexOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ReversalIndexOperations</span>
+<span class="c1">#          Reversal index operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IReversalIndex</span><span class="p">,</span>
+    <span class="n">IReversalIndexFactory</span><span class="p">,</span>
+    <span class="n">IReversalIndexRepository</span><span class="p">,</span>
+    <span class="n">ILangProject</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ReversalIndexOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Reversal.html#flexicon.code.Reversal.ReversalIndexOperations.ReversalIndexOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReversalIndexOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing reversal indexes in a FieldWorks project.</span>
+
+<span class="sd">    Reversal indexes provide reverse dictionaries for analysis languages (e.g., English</span>
+<span class="sd">    to vernacular). Each index is tied to a specific writing system and contains reversal</span>
+<span class="sd">    entries that link back to lexical senses.</span>
+
+<span class="sd">    This is a core dictionary feature with LIFT import/export capabilities (753 occurrences</span>
+<span class="sd">    in codebase).</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Create a reversal index</span>
+<span class="sd">        en_ws = project.WSHandle(&#39;en&#39;)</span>
+<span class="sd">        rev_index = project.ReversalIndexes.Create(&quot;English&quot;, en_ws)</span>
+
+<span class="sd">        # Get all reversal indexes</span>
+<span class="sd">        for idx in project.ReversalIndexes.GetAll():</span>
+<span class="sd">            name = project.ReversalIndexes.GetName(idx)</span>
+<span class="sd">            print(f&quot;Reversal Index: {name}&quot;)</span>
+
+<span class="sd">        # Find by writing system</span>
+<span class="sd">        idx = project.ReversalIndexes.FindByWritingSystem(en_ws)</span>
+
+<span class="sd">        # Get entries</span>
+<span class="sd">        entries = project.ReversalIndexes.GetEntries(idx)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ReversalIndexOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all reversal indexes in the project.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            IReversalIndex: Each reversal index object in the project</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for idx in project.ReversalIndexes.GetAll():</span>
+<span class="sd">            ...     name = project.ReversalIndexes.GetName(idx)</span>
+<span class="sd">            ...     ws = project.ReversalIndexes.GetWritingSystem(idx)</span>
+<span class="sd">            ...     entry_count = len(list(project.ReversalIndexes.GetEntries(idx)))</span>
+<span class="sd">            ...     print(f&quot;{name} ({ws}): {entry_count} entries&quot;)</span>
+<span class="sd">            English (en): 250 entries</span>
+<span class="sd">            French (fr): 120 entries</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns an iterator for memory efficiency</span>
+<span class="sd">            - Indexes are returned in database order</span>
+<span class="sd">            - Each index is tied to a specific analysis writing system</span>
+<span class="sd">            - Empty project returns empty iterator</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Find, FindByWritingSystem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">IReversalIndexRepository</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">writing_system</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new reversal index for an analysis writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): Name for the reversal index (e.g., &quot;English&quot;, &quot;French&quot;)</span>
+<span class="sd">            writing_system: Writing system handle (must be analysis WS)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IReversalIndex: The newly created reversal index</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If name or writing_system is None</span>
+<span class="sd">            FP_ParameterError: If name is empty or index already exists for WS</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create English reversal index</span>
+<span class="sd">            &gt;&gt;&gt; en_ws = project.WSHandle(&#39;en&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; rev_index = project.ReversalIndexes.Create(&quot;English&quot;, en_ws)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.ReversalIndexes.GetName(rev_index))</span>
+<span class="sd">            English</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create French reversal index</span>
+<span class="sd">            &gt;&gt;&gt; fr_ws = project.WSHandle(&#39;fr&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; rev_index = project.ReversalIndexes.Create(&quot;French&quot;, fr_ws)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Name is stored in the default analysis writing system</span>
+<span class="sd">            - One reversal index per writing system</span>
+<span class="sd">            - Writing system must be an analysis writing system</span>
+<span class="sd">            - Index is automatically added to project&#39;s reversal indexes</span>
+<span class="sd">            - New index starts with zero entries</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Find, FindByWritingSystem, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">writing_system</span><span class="p">,</span> <span class="s2">&quot;writing_system&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Reversal index name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if index already exists for this writing system</span>
+        <span class="n">existing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindByWritingSystem</span><span class="p">(</span><span class="n">writing_system</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">existing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reversal index already exists for writing system </span><span class="si">{</span><span class="n">writing_system</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create reversal index &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the reversal index using factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IReversalIndexFactory</span><span class="p">)</span>
+            <span class="n">new_index</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to language project&#39;s reversal indexes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LexDbOA</span><span class="o">.</span><span class="n">ReversalIndexesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_index</span><span class="p">)</span>
+
+            <span class="c1"># Set the writing system</span>
+            <span class="n">new_index</span><span class="o">.</span><span class="n">WritingSystem</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">writing_system</span><span class="p">)</span>
+
+            <span class="c1"># Set the name</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_index</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_index</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a reversal index from the project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index_or_hvo: Either an IReversalIndex object or its HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If index_or_hvo is None</span>
+<span class="sd">            FP_ParameterError: If index doesn&#39;t exist</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.Find(&quot;French&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if idx:</span>
+<span class="sd">            ...     project.ReversalIndexes.Delete(idx)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - All reversal entries in the index will be deleted</span>
+<span class="sd">            - Links to lexical senses will be removed</span>
+<span class="sd">            - Cannot be undone</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Deletion cascades to all reversal entries</span>
+<span class="sd">            - Safe to delete unused reversal indexes</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">,</span> <span class="s2">&quot;index_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Delete the index (LCM handles removal from repository)</span>
+        <span class="n">index</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a reversal index by its name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The reversal index name to search for</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IReversalIndex or None: The index object if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.Find(&quot;English&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if idx:</span>
+<span class="sd">            ...     entries = list(project.ReversalIndexes.GetEntries(idx))</span>
+<span class="sd">            ...     print(f&quot;English index has {len(entries)} entries&quot;)</span>
+<span class="sd">            English index has 250 entries</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Search is case-sensitive</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindByWritingSystem, GetAll, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Search through all reversal indexes</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="n">idx_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">idx</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">idx_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">idx</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByWritingSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a reversal index by its writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ws: Writing system handle or string identifier</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IReversalIndex or None: The index object if found, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If ws is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; en_ws = project.WSHandle(&#39;en&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.FindByWritingSystem(en_ws)</span>
+<span class="sd">            &gt;&gt;&gt; if idx:</span>
+<span class="sd">            ...     name = project.ReversalIndexes.GetName(idx)</span>
+<span class="sd">            ...     print(f&quot;Found reversal index: {name}&quot;)</span>
+<span class="sd">            Found reversal index: English</span>
+
+<span class="sd">            &gt;&gt;&gt; # Can also use string identifier</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.FindByWritingSystem(&#39;en&#39;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Each writing system has at most one reversal index</span>
+<span class="sd">            - Returns None if no index exists for that writing system</span>
+<span class="sd">            - Writing system must be an analysis writing system</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, GetWritingSystem, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">&quot;ws&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Convert to string if handle provided</span>
+        <span class="n">ws_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+
+        <span class="c1"># Search through all reversal indexes</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">idx</span><span class="o">.</span><span class="n">WritingSystem</span> <span class="o">==</span> <span class="n">ws_str</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">idx</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Property Access ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of a reversal index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index_or_hvo: Either an IReversalIndex object or its HVO</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The index name (empty string if not set)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If index_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.FindByWritingSystem(&#39;en&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; name = project.ReversalIndexes.GetName(idx)</span>
+<span class="sd">            &gt;&gt;&gt; print(name)</span>
+<span class="sd">            English</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetName, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">,</span> <span class="s2">&quot;index_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of a reversal index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index_or_hvo: Either an IReversalIndex object or its HVO</span>
+<span class="sd">            name (str): The new index name</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If index_or_hvo or name is None</span>
+<span class="sd">            FP_ParameterError: If name is empty</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.FindByWritingSystem(&#39;en&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; project.ReversalIndexes.SetName(idx, &quot;English Reversal&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.ReversalIndexes.GetName(idx))</span>
+<span class="sd">            English Reversal</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">,</span> <span class="s2">&quot;index_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Reversal index name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">index</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetWritingSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the writing system of a reversal index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index_or_hvo: Either an IReversalIndex object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The writing system identifier (e.g., &#39;en&#39;, &#39;fr&#39;)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If index_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.Find(&quot;English&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; ws = project.ReversalIndexes.GetWritingSystem(idx)</span>
+<span class="sd">            &gt;&gt;&gt; print(ws)</span>
+<span class="sd">            en</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindByWritingSystem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">,</span> <span class="s2">&quot;index_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">index</span><span class="o">.</span><span class="n">WritingSystem</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetEntries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all reversal entries in a reversal index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index_or_hvo: Either an IReversalIndex object or its HVO</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            IReversalIndexEntry: Each reversal entry in the index</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If index_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.Find(&quot;English&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for entry in project.ReversalIndexes.GetEntries(idx):</span>
+<span class="sd">            ...     form = project.ReversalEntries.GetForm(entry)</span>
+<span class="sd">            ...     senses = project.ReversalEntries.GetSenses(entry)</span>
+<span class="sd">            ...     print(f&quot;{form}: {len(list(senses))} senses&quot;)</span>
+<span class="sd">            run: 3 senses</span>
+<span class="sd">            walk: 2 senses</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns an iterator for memory efficiency</span>
+<span class="sd">            - Entries are in hierarchical order (top-level first)</span>
+<span class="sd">            - Does not include subentries (use GetSubentries for those)</span>
+<span class="sd">            - Returns empty iterator if index has no entries</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            project.ReversalEntries.GetAll, project.ReversalEntries.Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">,</span> <span class="s2">&quot;index_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Iterate through all entries in the index</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">index</span><span class="o">.</span><span class="n">EntriesOC</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">entry</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ExportToLIFT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_or_hvo</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export a reversal index to LIFT format.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index_or_hvo: Either an IReversalIndex object or its HVO</span>
+<span class="sd">            path (str): File path for the exported LIFT file</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If index_or_hvo or path is None</span>
+<span class="sd">            FP_ParameterError: If path is invalid or index has no entries</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; idx = project.ReversalIndexes.Find(&quot;English&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.ReversalIndexes.ExportToLIFT(idx, &quot;english_reversal.lift&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - LIFT (Lexicon Interchange FormaT) is an XML format</span>
+<span class="sd">            - Exports reversal entries with their linked senses</span>
+<span class="sd">            - Compatible with other lexicography tools</span>
+<span class="sd">            - Not implemented in this version (placeholder for future feature)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            This method is a placeholder and not yet implemented.</span>
+<span class="sd">            Use FLEx&#39;s built-in export functionality for now.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetEntries</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">,</span> <span class="s2">&quot;index_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Placeholder for future implementation</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;ExportToLIFT not yet implemented. &quot;</span> <span class="s2">&quot;Use FLEx&#39;s built-in LIFT export functionality.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IReversalIndex.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index_or_hvo: Either an IReversalIndex object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IReversalIndex: The resolved index object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a reversal index</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">index_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IReversalIndex</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a reversal index&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">index_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Reversal.ReversalIndexOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

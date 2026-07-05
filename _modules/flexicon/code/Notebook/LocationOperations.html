@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Notebook.LocationOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Notebook.LocationOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Notebook.LocationOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   LocationOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: LocationOperations</span>
+<span class="c1">#          Geographic location operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ICmLocation</span><span class="p">,</span>
+    <span class="n">ICmLocationFactory</span><span class="p">,</span>
+    <span class="n">ICmPossibilityRepository</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">DateTime</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+
+<div class="viewcode-block" id="LocationOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.LocationOperations.LocationOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LocationOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing geographic locations in a</span>
+<span class="sd">    FieldWorks project.</span>
+
+<span class="sd">    Locations in FLEx represent geographic places where linguistic data was</span>
+<span class="sd">    collected, where speakers live, or where languages are spoken. Locations</span>
+<span class="sd">    support hierarchical organization (regions, subregions, cities), geographic</span>
+<span class="sd">    coordinates, elevation data, and descriptive information.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.Location property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get all locations</span>
+<span class="sd">        for location in project.Location.GetAll():</span>
+<span class="sd">            name = project.Location.GetName(location)</span>
+<span class="sd">            coords = project.Location.GetCoordinates(location)</span>
+<span class="sd">            print(f&quot;{name}: {coords}&quot;)</span>
+
+<span class="sd">        # Create a new location</span>
+<span class="sd">        village = project.Location.Create(&quot;Barasana Village&quot;, &quot;en&quot;)</span>
+<span class="sd">        project.Location.SetCoordinates(village, -1.2345, -70.6789)</span>
+<span class="sd">        project.Location.SetElevation(village, 150)</span>
+
+<span class="sd">        # Create hierarchical locations</span>
+<span class="sd">        region = project.Location.Create(&quot;Vaupés Region&quot;, &quot;en&quot;)</span>
+<span class="sd">        subregion = project.Location.CreateSublocation(</span>
+<span class="sd">            region, &quot;Papurí River Area&quot;, &quot;en&quot;)</span>
+
+<span class="sd">        # Find locations by coordinates</span>
+<span class="sd">        nearby = project.Location.FindByCoordinates(-1.23, -70.67, radius_km=50)</span>
+<span class="sd">        print(f&quot;Found {len(nearby)} locations within 50 km&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize LocationOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all locations in the project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            recursive (bool): If True (default), returns every location in</span>
+<span class="sd">                the hierarchy (depth-first, parents before children). If</span>
+<span class="sd">                False, returns only top-level locations and the caller must</span>
+<span class="sd">                descend via GetSublocations.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmLocation objects.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for location in project.Location.GetAll():</span>
+<span class="sd">            ...     print(project.Location.GetName(location))   # Includes sublocations</span>
+
+<span class="sd">            &gt;&gt;&gt; # Top-level only</span>
+<span class="sd">            &gt;&gt;&gt; for location in project.Location.GetAll(recursive=False):</span>
+<span class="sd">            ...     print(project.Location.GetName(location))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create, GetSublocations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RejectLegacyKwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s2">&quot;flat&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recursive&quot;</span><span class="p">,</span> <span class="s2">&quot;semantics inverted: flat=True is now recursive=True&quot;</span><span class="p">),</span>
+        <span class="p">})</span>
+        <span class="n">location_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">location_list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">UnpackNestedPossibilityList</span><span class="p">(</span>
+            <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">,</span> <span class="n">ICmLocation</span><span class="p">,</span> <span class="n">recursive</span><span class="p">))</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new top-level location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the new location.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+<span class="sd">            alias (str): Optional alias/abbreviation for the location.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmLocation: The newly created location object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create a simple location</span>
+<span class="sd">            &gt;&gt;&gt; village = project.Location.Create(&quot;Barasana Village&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Location.GetName(village))</span>
+<span class="sd">            Barasana Village</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with alias</span>
+<span class="sd">            &gt;&gt;&gt; region = project.Location.Create(&quot;Vaupés Department&quot;, &quot;en&quot;,</span>
+<span class="sd">            ...                                   alias=&quot;VAU&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Location.GetAlias(region))</span>
+<span class="sd">            VAU</span>
+
+<span class="sd">            &gt;&gt;&gt; # Add coordinates and elevation</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetCoordinates(village, -1.2345, -70.6789)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetElevation(village, 150)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Creates a top-level location (no parent region)</span>
+<span class="sd">            - Use CreateSublocation() to create hierarchical locations</span>
+<span class="sd">            - Name is set in specified writing system</span>
+<span class="sd">            - Alias is optional and can be set later with SetAlias()</span>
+<span class="sd">            - Coordinates and elevation should be set separately</span>
+<span class="sd">            - GUID is auto-generated</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, CreateSublocation, SetName, SetCoordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Get the locations list</span>
+        <span class="n">location_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">location_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Locations list not found in project&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Create the new location using the factory</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create location &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmLocationFactory</span><span class="p">)</span>
+            <span class="n">new_location</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to top-level list (must be done before setting properties)</span>
+            <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_location</span><span class="p">)</span>
+
+            <span class="c1"># Set name</span>
+            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_location</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+            <span class="c1"># Set alias if provided</span>
+            <span class="k">if</span> <span class="n">alias</span><span class="p">:</span>
+                <span class="n">mkstr_alias</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">alias</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">new_location</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_alias</span><span class="p">)</span>
+
+            <span class="c1"># Set creation date</span>
+            <span class="n">new_location</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+            <span class="k">return</span> <span class="n">new_location</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a location from the project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Delete a location</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Old Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if location:</span>
+<span class="sd">            ...     project.Location.Delete(location)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Delete by HVO</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.Delete(12345)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - Deletes all sublocations recursively</span>
+<span class="sd">            - Any references to this location will be removed</span>
+<span class="sd">            - Data collected at this location will lose location reference</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Deletion cascades to all sublocations</span>
+<span class="sd">            - Parent-child relationships are automatically cleaned up</span>
+<span class="sd">            - References from other objects are removed</span>
+<span class="sd">            - Use with caution on shared projects</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetSublocations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get the parent or top-level list</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetRegion</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Delete location&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">parent</span><span class="p">:</span>
+                <span class="c1"># Remove from parent&#39;s sublocations</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Remove from top-level list</span>
+                <span class="n">location_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span>
+                <span class="k">if</span> <span class="n">location_list</span><span class="p">:</span>
+                    <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a location by its name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The location name to search for (case-insensitive).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmLocation or None: The location object if found, None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find by name</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if location:</span>
+<span class="sd">            ...     coords = project.Location.GetCoordinates(location)</span>
+<span class="sd">            ...     print(f&quot;Found at: {coords}&quot;)</span>
+<span class="sd">            Found at: (-1.2345, -70.6789)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Case-insensitive search</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;barasana village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(location is not None)</span>
+<span class="sd">            True</span>
+
+<span class="sd">            &gt;&gt;&gt; # Not found</span>
+<span class="sd">            &gt;&gt;&gt; missing = project.Location.Find(&quot;Nonexistent Place&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(missing)</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-insensitive</span>
+<span class="sd">            - Searches in default analysis writing system</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+<span class="sd">            - For multilingual searches, iterate GetAll() manually</span>
+<span class="sd">            - Searches both top-level and nested locations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Exists, GetAll, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Search through all locations</span>
+        <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="n">location_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">location_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">location</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a location with the given name exists.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The location name to check.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if location exists, False otherwise.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; if project.Location.Exists(&quot;Barasana Village&quot;):</span>
+<span class="sd">            ...     print(&quot;Village location exists&quot;)</span>
+<span class="sd">            Village location exists</span>
+
+<span class="sd">            &gt;&gt;&gt; if not project.Location.Exists(&quot;Unknown Place&quot;):</span>
+<span class="sd">            ...     location = project.Location.Create(&quot;Unknown Place&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-insensitive</span>
+<span class="sd">            - Returns False for empty or whitespace-only names</span>
+<span class="sd">            - More efficient than Find() when you only need existence check</span>
+<span class="sd">            - Use Find() if you need the actual location object</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Name and Alias Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The location name, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; name = project.Location.GetName(location)</span>
+<span class="sd">            &gt;&gt;&gt; print(name)</span>
+<span class="sd">            Barasana Village</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get name in specific writing system</span>
+<span class="sd">            &gt;&gt;&gt; name_es = project.Location.GetName(location,</span>
+<span class="sd">            ...                                     project.WSHandle(&#39;es&#39;))</span>
+<span class="sd">            &gt;&gt;&gt; print(name_es)</span>
+<span class="sd">            Pueblo Barasana</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if name not set in specified writing system</span>
+<span class="sd">            - Names can be set in multiple writing systems</span>
+<span class="sd">            - Default writing system is the default analysis WS</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetName, GetAlias</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+<span class="sd">            name (str): The new name.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo or name is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Old Name&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetName(location, &quot;New Name&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Location.GetName(location))</span>
+<span class="sd">            New Name</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set name in multiple writing systems</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetName(location, &quot;Village&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetName(location, &quot;Pueblo&quot;, &quot;es&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Empty string is allowed (clears the name in that WS)</span>
+<span class="sd">            - Name is stored in the specified writing system</span>
+<span class="sd">            - Does not affect other writing systems</span>
+<span class="sd">            - Use different writing systems for multilingual names</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetName, SetAlias</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set location name &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">location</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="c1"># Update modification date</span>
+            <span class="n">location</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAlias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the alias/abbreviation of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The location alias, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Vaupés Department&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; alias = project.Location.GetAlias(location)</span>
+<span class="sd">            &gt;&gt;&gt; print(alias)</span>
+<span class="sd">            VAU</span>
+
+<span class="sd">            &gt;&gt;&gt; # Common use case: display alias when available</span>
+<span class="sd">            &gt;&gt;&gt; name = project.Location.GetName(location)</span>
+<span class="sd">            &gt;&gt;&gt; alias = project.Location.GetAlias(location)</span>
+<span class="sd">            &gt;&gt;&gt; display = f&quot;{name} ({alias})&quot; if alias else name</span>
+<span class="sd">            &gt;&gt;&gt; print(display)</span>
+<span class="sd">            Vaupés Department (VAU)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if alias not set in specified writing system</span>
+<span class="sd">            - Aliases are typically abbreviations or short codes</span>
+<span class="sd">            - Useful for map labels and compact displays</span>
+<span class="sd">            - Can be multilingual (different alias per writing system)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetAlias, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">alias</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">alias</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetAlias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the alias/abbreviation of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+<span class="sd">            alias (str): The new alias.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo or alias is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Vaupés Department&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetAlias(location, &quot;VAU&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Location.GetAlias(location))</span>
+<span class="sd">            VAU</span>
+
+<span class="sd">            &gt;&gt;&gt; # Clear alias</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetAlias(location, &quot;&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Empty string is allowed (clears the alias)</span>
+<span class="sd">            - Alias is stored in the specified writing system</span>
+<span class="sd">            - Common aliases include state/province codes, airport codes, etc.</span>
+<span class="sd">            - Keep aliases short for display purposes</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetAlias, SetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">alias</span><span class="p">,</span> <span class="s2">&quot;alias&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set location alias &#39;</span><span class="si">{</span><span class="n">alias</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">alias</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">location</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="c1"># Update modification date</span>
+            <span class="n">location</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+    <span class="c1"># --- Geographic Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the geographic coordinates (latitude, longitude) of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple or None: A tuple of (latitude, longitude) as floats in decimal</span>
+<span class="sd">                degrees, or None if coordinates are not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; coords = project.Location.GetCoordinates(location)</span>
+<span class="sd">            &gt;&gt;&gt; if coords:</span>
+<span class="sd">            ...     lat, lon = coords</span>
+<span class="sd">            ...     print(f&quot;Latitude: {lat}, Longitude: {lon}&quot;)</span>
+<span class="sd">            Latitude: -1.2345, Longitude: -70.6789</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check if coordinates are set</span>
+<span class="sd">            &gt;&gt;&gt; if project.Location.GetCoordinates(location):</span>
+<span class="sd">            ...     print(&quot;Location has coordinates&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;Location coordinates not set&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if either latitude or longitude is not set</span>
+<span class="sd">            - Latitude range: -90 (South Pole) to +90 (North Pole)</span>
+<span class="sd">            - Longitude range: -180 (West) to +180 (East)</span>
+<span class="sd">            - Coordinates are stored as GenDate fields in LCM</span>
+<span class="sd">            - Use decimal degrees format (not degrees/minutes/seconds)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetCoordinates, GetElevation, FindByCoordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Coordinates are stored in GenDate fields</span>
+        <span class="c1"># Latitude in GenDate.GenDateVal1</span>
+        <span class="c1"># Longitude in GenDate.GenDateVal2</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
+            <span class="n">date_info</span> <span class="o">=</span> <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">date_info</span><span class="p">,</span> <span class="s2">&quot;GenDateVal1&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">date_info</span><span class="p">,</span> <span class="s2">&quot;GenDateVal2&quot;</span><span class="p">):</span>
+                <span class="n">lat</span> <span class="o">=</span> <span class="n">date_info</span><span class="o">.</span><span class="n">GenDateVal1</span>
+                <span class="n">lon</span> <span class="o">=</span> <span class="n">date_info</span><span class="o">.</span><span class="n">GenDateVal2</span>
+                <span class="c1"># Check if valid coordinates (both non-zero or explicitly set)</span>
+                <span class="k">if</span> <span class="n">lat</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">lon</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">lat</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">lon</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">latitude</span><span class="p">,</span> <span class="n">longitude</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the geographic coordinates of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+<span class="sd">            latitude (float): Latitude in decimal degrees (-90 to +90).</span>
+<span class="sd">            longitude (float): Longitude in decimal degrees (-180 to +180).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo, latitude, or longitude is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist or coordinates are invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Set coordinates (latitude, longitude in decimal degrees)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetCoordinates(location, -1.2345, -70.6789)</span>
+<span class="sd">            &gt;&gt;&gt; coords = project.Location.GetCoordinates(location)</span>
+<span class="sd">            &gt;&gt;&gt; print(coords)</span>
+<span class="sd">            (-1.2345, -70.6789)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Set coordinates for a city</span>
+<span class="sd">            &gt;&gt;&gt; bogota = project.Location.Create(&quot;Bogotá&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetCoordinates(bogota, 4.7110, -74.0721)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Latitude must be between -90 and +90</span>
+<span class="sd">            - Longitude must be between -180 and +180</span>
+<span class="sd">            - Use negative values for South latitude and West longitude</span>
+<span class="sd">            - Use decimal degrees, not degrees/minutes/seconds</span>
+<span class="sd">            - Coordinates are stored in GenDate fields</span>
+<span class="sd">            - Use (0, 0) to clear coordinates (though this is valid for Gulf of Guinea)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetCoordinates, SetElevation, FindByCoordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">latitude</span><span class="p">,</span> <span class="s2">&quot;latitude&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">longitude</span><span class="p">,</span> <span class="s2">&quot;longitude&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Validate coordinate ranges</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lat</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">latitude</span><span class="p">)</span>
+            <span class="n">lon</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">longitude</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Latitude and longitude must be numeric&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">lat</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">90</span> <span class="ow">or</span> <span class="n">lat</span> <span class="o">&gt;</span> <span class="mi">90</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Latitude must be between -90 and +90 (got </span><span class="si">{</span><span class="n">lat</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lon</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">180</span> <span class="ow">or</span> <span class="n">lon</span> <span class="o">&gt;</span> <span class="mi">180</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Longitude must be between -180 and +180 (got </span><span class="si">{</span><span class="n">lon</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Create or update GenDate for coordinates</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set location coordinates&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
+                <span class="c1"># Need to create GenDate - this may require factory</span>
+                <span class="c1"># For now, set directly if property exists</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">):</span>
+                    <span class="c1"># Try to initialize the GenDate object</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenDate</span>
+
+                    <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span> <span class="o">=</span> <span class="n">GenDate</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
+                <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="o">.</span><span class="n">GenDateVal1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lat</span> <span class="o">*</span> <span class="mi">10000</span><span class="p">)</span>  <span class="c1"># Store with precision</span>
+                <span class="n">location</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="o">.</span><span class="n">GenDateVal2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lon</span> <span class="o">*</span> <span class="mi">10000</span><span class="p">)</span>
+
+            <span class="c1"># Update modification date</span>
+            <span class="n">location</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetElevation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the elevation of a location in meters above sea level.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int or None: Elevation in meters, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; elevation = project.Location.GetElevation(location)</span>
+<span class="sd">            &gt;&gt;&gt; if elevation is not None:</span>
+<span class="sd">            ...     print(f&quot;Elevation: {elevation} meters above sea level&quot;)</span>
+<span class="sd">            Elevation: 150 meters above sea level</span>
+
+<span class="sd">            &gt;&gt;&gt; # Check if elevation is set</span>
+<span class="sd">            &gt;&gt;&gt; if project.Location.GetElevation(location) is None:</span>
+<span class="sd">            ...     print(&quot;Elevation not recorded&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if elevation is not set</span>
+<span class="sd">            - Elevation is in meters above sea level</span>
+<span class="sd">            - Negative values indicate below sea level</span>
+<span class="sd">            - Stored as an integer</span>
+<span class="sd">            - Typical range: -500 to +9000 meters for inhabited areas</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetElevation, GetCoordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Elevation might be stored in a numeric field</span>
+        <span class="c1"># Check if the field exists and has a value</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;Elevation&quot;</span><span class="p">):</span>
+            <span class="n">elev</span> <span class="o">=</span> <span class="n">location</span><span class="o">.</span><span class="n">Elevation</span>
+            <span class="k">if</span> <span class="n">elev</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Assume 0 means not set</span>
+                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">elev</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetElevation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">elevation</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the elevation of a location in meters above sea level.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+<span class="sd">            elevation (int): Elevation in meters above sea level.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo or elevation is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist or elevation is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Set elevation (150 meters above sea level)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetElevation(location, 150)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Location.GetElevation(location))</span>
+<span class="sd">            150</span>
+
+<span class="sd">            &gt;&gt;&gt; # Below sea level location</span>
+<span class="sd">            &gt;&gt;&gt; dead_sea = project.Location.Create(&quot;Dead Sea Shore&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetElevation(dead_sea, -430)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Mountain village</span>
+<span class="sd">            &gt;&gt;&gt; mountain = project.Location.Create(&quot;Cusco&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetElevation(mountain, 3400)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Elevation is in meters above sea level</span>
+<span class="sd">            - Negative values for locations below sea level</span>
+<span class="sd">            - Must be an integer (will be converted if float)</span>
+<span class="sd">            - Use 0 to clear elevation (though this is valid for sea level)</span>
+<span class="sd">            - Typical range: -500 to +9000 meters for inhabited areas</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetElevation, SetCoordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">elevation</span><span class="p">,</span> <span class="s2">&quot;elevation&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Validate elevation</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">elev</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">elevation</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Elevation must be numeric&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Reasonable range check (deepest inhabited to highest)</span>
+        <span class="k">if</span> <span class="n">elev</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">500</span> <span class="ow">or</span> <span class="n">elev</span> <span class="o">&gt;</span> <span class="mi">10000</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Elevation </span><span class="si">{</span><span class="n">elev</span><span class="si">}</span><span class="s2"> is outside typical range (-500 to 10000m)&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Set elevation if field exists</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set location elevation&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;Elevation&quot;</span><span class="p">):</span>
+                <span class="n">location</span><span class="o">.</span><span class="n">Elevation</span> <span class="o">=</span> <span class="n">elev</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Elevation field not available on ICmLocation&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Update modification date</span>
+            <span class="n">location</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+    <span class="c1"># --- Description ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the description of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The location description, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; desc = project.Location.GetDescription(location)</span>
+<span class="sd">            &gt;&gt;&gt; print(desc)</span>
+<span class="sd">            Small village on the Papurí River, accessible by boat.</span>
+<span class="sd">            Primary language: Barasana. Population approximately 200.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty string if description not set</span>
+<span class="sd">            - Description can be lengthy (multiple paragraphs)</span>
+<span class="sd">            - Useful for recording location details, access info, etc.</span>
+<span class="sd">            - Can be multilingual (different description per writing system)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDescription, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+            <span class="n">desc</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the description of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+<span class="sd">            description (str): The new description text.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo or description is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; desc = (&quot;Small village on the Papurí River.\\n&quot;</span>
+<span class="sd">            ...         &quot;Accessible by boat from Mitú.\\n&quot;</span>
+<span class="sd">            ...         &quot;Primary language: Barasana.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetDescription(location, desc)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Multilingual descriptions</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetDescription(location, desc_en, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetDescription(location, desc_es, &quot;es&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Empty string is allowed (clears the description)</span>
+<span class="sd">            - Description is stored in the specified writing system</span>
+<span class="sd">            - Use newlines for formatting if needed</span>
+<span class="sd">            - Good place for access info, language info, population, etc.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDescription, SetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set location description&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+                <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">location</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+                <span class="c1"># Update modification date</span>
+                <span class="n">location</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+    <span class="c1"># --- Hierarchical Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetRegion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the parent region of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmLocation or None: The parent location, or None if top-level.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get parent region</span>
+<span class="sd">            &gt;&gt;&gt; village = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; region = project.Location.GetRegion(village)</span>
+<span class="sd">            &gt;&gt;&gt; if region:</span>
+<span class="sd">            ...     region_name = project.Location.GetName(region)</span>
+<span class="sd">            ...     print(f&quot;Part of: {region_name}&quot;)</span>
+<span class="sd">            Part of: Papurí River Area</span>
+
+<span class="sd">            &gt;&gt;&gt; # Top-level locations have no parent</span>
+<span class="sd">            &gt;&gt;&gt; country = project.Location.Find(&quot;Colombia&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; parent = project.Location.GetRegion(country)</span>
+<span class="sd">            &gt;&gt;&gt; print(parent)</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None for top-level locations</span>
+<span class="sd">            - Parent is determined by ownership hierarchy</span>
+<span class="sd">            - Use for building breadcrumb navigation</span>
+<span class="sd">            - Locations form a tree structure (country → state → city, etc.)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetRegion, GetSublocations, CreateSublocation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+        <span class="n">owner</span> <span class="o">=</span> <span class="n">location</span><span class="o">.</span><span class="n">Owner</span>
+
+        <span class="c1"># Check if owner is a location (sublocation) or the list (top-level).</span>
+        <span class="c1"># Cast through ICmLocation when it is, so callers can reach</span>
+        <span class="c1"># SubPossibilitiesOS / Name / Abbreviation on the parent without</span>
+        <span class="c1"># the AttributeError that the base ICmObject return would cause.</span>
+        <span class="c1"># Same Owner-without-cast bug class as #97/#98/#129/#151. (issue #157)</span>
+        <span class="k">if</span> <span class="n">owner</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">owner</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;CmLocation&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ICmLocation</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetRegion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">parent_location_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the parent region of a location (move it in the hierarchy).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO to move.</span>
+<span class="sd">            parent_location_or_hvo: The new parent ICmLocation object or HVO,</span>
+<span class="sd">                or None to make it top-level.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If trying to make a location its own parent,</span>
+<span class="sd">                or creating circular hierarchy.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Move a location to a different region</span>
+<span class="sd">            &gt;&gt;&gt; village = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; new_region = project.Location.Find(&quot;Vaupés Department&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetRegion(village, new_region)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Make a location top-level</span>
+<span class="sd">            &gt;&gt;&gt; project.Location.SetRegion(village, None)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Cannot make a location its own parent</span>
+<span class="sd">            - Cannot create circular hierarchies (A → B → A)</span>
+<span class="sd">            - Check for circular references before moving</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Moves location from old parent to new parent</span>
+<span class="sd">            - Pass None to make location top-level</span>
+<span class="sd">            - Automatically updates old and new parent&#39;s sublocation lists</span>
+<span class="sd">            - Use for reorganizing location hierarchies</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetRegion, CreateSublocation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Resolve new parent</span>
+        <span class="n">new_parent</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">parent_location_or_hvo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">parent_location_or_hvo</span><span class="p">)</span>
+
+            <span class="c1"># Check for self-reference</span>
+            <span class="k">if</span> <span class="n">new_parent</span> <span class="o">==</span> <span class="n">location</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Cannot make a location its own parent&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Check for circular reference</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">new_parent</span>
+            <span class="k">while</span> <span class="n">current</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">current</span> <span class="o">==</span> <span class="n">location</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Cannot create circular hierarchy&quot;</span><span class="p">)</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetRegion</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+
+        <span class="c1"># Get current parent</span>
+        <span class="n">old_parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetRegion</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+
+        <span class="c1"># Remove from old parent</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set location region&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">old_parent</span><span class="p">:</span>
+                <span class="n">old_parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Remove from top-level list</span>
+                <span class="n">location_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span>
+                <span class="k">if</span> <span class="n">location_list</span> <span class="ow">and</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="p">:</span>
+                    <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+
+            <span class="c1"># Add to new parent</span>
+            <span class="k">if</span> <span class="n">new_parent</span><span class="p">:</span>
+                <span class="n">new_parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Add to top-level list</span>
+                <span class="n">location_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span>
+                <span class="k">if</span> <span class="n">location_list</span><span class="p">:</span>
+                    <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+
+            <span class="c1"># Update modification date</span>
+            <span class="n">location</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSublocations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the sublocations of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+<span class="sd">            recursive (bool): If True (default), returns every descendant</span>
+<span class="sd">                location (depth-first, parents before children). If False,</span>
+<span class="sd">                returns only direct children.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmLocation objects (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; region = project.Location.Find(&quot;Vaupés Department&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; for subloc in project.Location.GetSublocations(region):</span>
+<span class="sd">            ...     print(project.Location.GetName(subloc))   # All descendants</span>
+
+<span class="sd">            &gt;&gt;&gt; # Direct children only</span>
+<span class="sd">            &gt;&gt;&gt; for subloc in project.Location.GetSublocations(region, recursive=False):</span>
+<span class="sd">            ...     print(project.Location.GetName(subloc))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetRegion, CreateSublocation, SetRegion</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">ICmLocation</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">location</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">]</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+                <span class="n">child</span> <span class="o">=</span> <span class="n">ICmLocation</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">walk</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="n">walk</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CreateSublocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_location_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new sublocation under a parent location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent_location_or_hvo: The parent ICmLocation object or HVO.</span>
+<span class="sd">            name (str): The name of the new sublocation.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+<span class="sd">            alias (str): Optional alias/abbreviation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmLocation: The newly created sublocation object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If parent_location_or_hvo or name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty or parent doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create hierarchical locations</span>
+<span class="sd">            &gt;&gt;&gt; country = project.Location.Create(&quot;Colombia&quot;, &quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; department = project.Location.CreateSublocation(</span>
+<span class="sd">            ...     country, &quot;Vaupés Department&quot;, &quot;en&quot;, alias=&quot;VAU&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; municipality = project.Location.CreateSublocation(</span>
+<span class="sd">            ...     department, &quot;Mitú&quot;, &quot;en&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Verify hierarchy</span>
+<span class="sd">            &gt;&gt;&gt; parent = project.Location.GetRegion(municipality)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Location.GetName(parent))</span>
+<span class="sd">            Vaupés Department</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Creates location as child of parent</span>
+<span class="sd">            - Parent-child relationship is established automatically</span>
+<span class="sd">            - Sublocation inherits no properties from parent (coordinates, etc.)</span>
+<span class="sd">            - Set coordinates and other properties separately</span>
+<span class="sd">            - Can create multi-level hierarchies (country → state → city → village)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, SetRegion, GetSublocations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">parent_location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;parent_location_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">parent_location_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Create the new location using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmLocationFactory</span><span class="p">)</span>
+        <span class="n">new_location</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+        <span class="c1"># Add to parent&#39;s sublocations (must be done before setting properties)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_location</span><span class="p">)</span>
+
+        <span class="c1"># Set name</span>
+        <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">new_location</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+        <span class="c1"># Set alias if provided</span>
+        <span class="k">if</span> <span class="n">alias</span><span class="p">:</span>
+            <span class="n">mkstr_alias</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">alias</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_location</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_alias</span><span class="p">)</span>
+
+        <span class="c1"># Set creation date</span>
+        <span class="n">new_location</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+        <span class="k">return</span> <span class="n">new_location</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a location, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: The ICmLocation object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source location.</span>
+<span class="sd">                                If False, insert at end of parent&#39;s sublocations list.</span>
+<span class="sd">            deep (bool): If True (default), also duplicate owned objects (sublocations).</span>
+<span class="sd">                        If False, only copy simple properties and references.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmLocation: The newly created duplicate location with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Shallow duplicate (no sublocations)</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; dup = project.Location.Duplicate(location)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Original: {project.Location.GetGuid(location)}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Duplicate: {project.Location.GetGuid(dup)}&quot;)</span>
+<span class="sd">            Original: 12345678-1234-1234-1234-123456789abc</span>
+<span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
+
+<span class="sd">            &gt;&gt;&gt; # Deep duplicate (includes all sublocations)</span>
+<span class="sd">            &gt;&gt;&gt; region = project.Location.Find(&quot;Vaupés Department&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; deep_dup = project.Location.Duplicate(region, deep=True)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Sublocations: {len(project.Location.GetSublocations(deep_dup))}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original location&#39;s position</span>
+<span class="sd">            - Simple properties copied: Name, Abbreviation (alias), Description</span>
+<span class="sd">            - Geographic properties copied: coordinates (latitude/longitude), elevation</span>
+<span class="sd">            - Owned objects (deep=True): SubPossibilitiesOS (sublocations)</span>
+<span class="sd">            - DateCreated is set to current time (not copied from source)</span>
+<span class="sd">            - DateModified is set automatically</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetGuid, GetSublocations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source location</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Determine parent (owner)</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetRegion</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+
+        <span class="c1"># Create new location using factory (auto-generates new GUID)</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmLocationFactory</span><span class="p">)</span>
+        <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+        <span class="c1"># Determine insertion position and add to parent FIRST</span>
+        <span class="k">if</span> <span class="n">parent</span><span class="p">:</span>
+            <span class="c1"># Parent is another location (sublocation)</span>
+            <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Parent is the top-level list</span>
+            <span class="n">location_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">LocationsOA</span>
+            <span class="k">if</span> <span class="n">location_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                    <span class="n">source_index</span> <span class="o">=</span> <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">location_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+        <span class="c1"># Copy simple MultiString properties</span>
+        <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+        <span class="n">duplicate</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+        <span class="c1"># Copy coordinates and elevation</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCoordinates</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">coords</span><span class="p">:</span>
+            <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">coords</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SetCoordinates</span><span class="p">(</span><span class="n">duplicate</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">duplicate</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">DateOfEvent</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">DateOfEvent</span>
+
+        <span class="n">elevation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetElevation</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">elevation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">duplicate</span><span class="p">,</span> <span class="s2">&quot;Elevation&quot;</span><span class="p">):</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">Elevation</span> <span class="o">=</span> <span class="n">elevation</span>
+
+        <span class="c1"># Set creation date</span>
+        <span class="n">duplicate</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+        <span class="c1"># Handle owned objects if deep=True</span>
+        <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+            <span class="c1"># Duplicate sublocations into the NEW duplicate (not the original&#39;s parent)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">sublocation</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateSublocationInto</span><span class="p">(</span><span class="n">sublocation</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_DuplicateSublocationInto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_loc</span><span class="p">,</span> <span class="n">parent_dup</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate a sublocation into the specified parent&#39;s SubPossibilitiesOS.&quot;&quot;&quot;</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmLocationFactory</span><span class="p">)</span>
+        <span class="n">dup_loc</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+        <span class="n">parent_dup</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">dup_loc</span><span class="p">)</span>
+
+        <span class="c1"># Copy properties</span>
+        <span class="n">dup_loc</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_loc</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+        <span class="n">dup_loc</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_loc</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_loc</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+            <span class="n">dup_loc</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source_loc</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+        <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCoordinates</span><span class="p">(</span><span class="n">source_loc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">coords</span><span class="p">:</span>
+            <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">coords</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SetCoordinates</span><span class="p">(</span><span class="n">dup_loc</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_loc</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source_loc</span><span class="o">.</span><span class="n">DateOfEvent</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dup_loc</span><span class="p">,</span> <span class="s2">&quot;DateOfEvent&quot;</span><span class="p">):</span>
+                <span class="n">dup_loc</span><span class="o">.</span><span class="n">DateOfEvent</span> <span class="o">=</span> <span class="n">source_loc</span><span class="o">.</span><span class="n">DateOfEvent</span>
+
+        <span class="n">elevation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetElevation</span><span class="p">(</span><span class="n">source_loc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">elevation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dup_loc</span><span class="p">,</span> <span class="s2">&quot;Elevation&quot;</span><span class="p">):</span>
+                <span class="n">dup_loc</span><span class="o">.</span><span class="n">Elevation</span> <span class="o">=</span> <span class="n">elevation</span>
+
+        <span class="n">dup_loc</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">=</span> <span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span>
+
+        <span class="c1"># Recurse into nested sublocations</span>
+        <span class="k">if</span> <span class="n">deep</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_loc</span><span class="p">,</span> <span class="s2">&quot;SubPossibilitiesOS&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">nested_loc</span> <span class="ow">in</span> <span class="n">source_loc</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_DuplicateSublocationInto</span><span class="p">(</span><span class="n">nested_loc</span><span class="p">,</span> <span class="n">dup_loc</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get syncable properties for cross-project synchronization.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The ICmLocation object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary of syncable properties</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;item&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Abbreviation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCoordinates</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Coordinates&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coords</span> <span class="k">if</span> <span class="n">coords</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Elevation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetElevation</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two locations and return detailed differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First location</span>
+<span class="sd">            item2: Second location</span>
+<span class="sd">            ops1: Operations for item1&#39;s project (defaults to self)</span>
+<span class="sd">            ops2: Operations for item2&#39;s project (defaults to self)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">is_different</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">differences</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">val1</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">val2</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;modified&quot;</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span>
+
+    <span class="c1"># --- Metadata Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the GUID (Globally Unique Identifier) of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.Guid: The location&#39;s GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; guid = project.Location.GetGuid(location)</span>
+<span class="sd">            &gt;&gt;&gt; print(guid)</span>
+<span class="sd">            a1b2c3d4-e5f6-7890-abcd-ef1234567890</span>
+
+<span class="sd">            &gt;&gt;&gt; # Use GUID to retrieve location later</span>
+<span class="sd">            &gt;&gt;&gt; location2 = project.Object(guid)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Location.GetName(location2))</span>
+<span class="sd">            Barasana Village</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - GUIDs are unique across all FLEx projects</span>
+<span class="sd">            - GUIDs are persistent (don&#39;t change)</span>
+<span class="sd">            - Useful for linking locations across projects</span>
+<span class="sd">            - Can be used with FLExProject.Object() to retrieve location</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FLExProject.Object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">location</span><span class="o">.</span><span class="n">Guid</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the creation date of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.DateTime or None: The creation date/time, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; date = project.Location.GetDateCreated(location)</span>
+<span class="sd">            &gt;&gt;&gt; if date:</span>
+<span class="sd">            ...     print(f&quot;Created: {date}&quot;)</span>
+<span class="sd">            Created: 11/23/2025 10:30:45 AM</span>
+
+<span class="sd">            &gt;&gt;&gt; # Sort locations by creation date</span>
+<span class="sd">            &gt;&gt;&gt; locations = project.Location.GetAll()</span>
+<span class="sd">            &gt;&gt;&gt; sorted_locs = sorted(locations,</span>
+<span class="sd">            ...     key=lambda l: project.Location.GetDateCreated(l) or DateTime.MinValue)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - DateCreated is set automatically when location is created</span>
+<span class="sd">            - Returns System.DateTime object</span>
+<span class="sd">            - Can be None for locations without creation date</span>
+<span class="sd">            - Use for tracking when locations were added to project</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDateModified, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;DateCreated&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">location</span><span class="o">.</span><span class="n">DateCreated</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the last modification date of a location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            System.DateTime or None: The modification date/time, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; location = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; modified = project.Location.GetDateModified(location)</span>
+<span class="sd">            &gt;&gt;&gt; if modified:</span>
+<span class="sd">            ...     print(f&quot;Last modified: {modified}&quot;)</span>
+<span class="sd">            Last modified: 11/23/2025 2:15:30 PM</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find recently modified locations</span>
+<span class="sd">            &gt;&gt;&gt; from System import DateTime</span>
+<span class="sd">            &gt;&gt;&gt; one_week_ago = DateTime.Now.AddDays(-7)</span>
+<span class="sd">            &gt;&gt;&gt; locations = project.Location.GetAll()</span>
+<span class="sd">            &gt;&gt;&gt; recent = [l for l in locations</span>
+<span class="sd">            ...     if project.Location.GetDateModified(l) and</span>
+<span class="sd">            ...        project.Location.GetDateModified(l) &gt; one_week_ago]</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - DateModified is updated when properties change</span>
+<span class="sd">            - Returns System.DateTime object</span>
+<span class="sd">            - May be None if location has never been modified</span>
+<span class="sd">            - Useful for tracking location updates</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDateCreated, SetName, SetCoordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">location</span><span class="o">.</span><span class="n">DateModified</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Query Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindByCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latitude</span><span class="p">,</span> <span class="n">longitude</span><span class="p">,</span> <span class="n">radius_km</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find locations near the specified coordinates.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            latitude (float): Target latitude in decimal degrees.</span>
+<span class="sd">            longitude (float): Target longitude in decimal degrees.</span>
+<span class="sd">            radius_km (float): Search radius in kilometers. Defaults to 10 km.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of (ICmLocation, distance_km) tuples sorted by distance,</span>
+<span class="sd">                where distance_km is the distance in kilometers from the target.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If latitude or longitude is None.</span>
+<span class="sd">            FP_ParameterError: If coordinates or radius are invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find locations within 50 km of a point</span>
+<span class="sd">            &gt;&gt;&gt; nearby = project.Location.FindByCoordinates(-1.23, -70.67, radius_km=50)</span>
+<span class="sd">            &gt;&gt;&gt; for location, distance in nearby:</span>
+<span class="sd">            ...     name = project.Location.GetName(location)</span>
+<span class="sd">            ...     print(f&quot;{name}: {distance:.1f} km away&quot;)</span>
+<span class="sd">            Barasana Village: 2.3 km away</span>
+<span class="sd">            Neighboring Village: 15.7 km away</span>
+<span class="sd">            Mitú: 45.2 km away</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find exact location (very small radius)</span>
+<span class="sd">            &gt;&gt;&gt; exact = project.Location.FindByCoordinates(</span>
+<span class="sd">            ...     -1.2345, -70.6789, radius_km=0.1)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Uses Haversine formula for great-circle distance</span>
+<span class="sd">            - Only returns locations that have coordinates set</span>
+<span class="sd">            - Results are sorted by distance (nearest first)</span>
+<span class="sd">            - Distance is approximate (assumes spherical Earth)</span>
+<span class="sd">            - Radius of 0 will find only exact matches (unlikely)</span>
+<span class="sd">            - For large radii (&gt;1000 km), consider Earth&#39;s curvature limitations</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetCoordinates, GetNearby</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">latitude</span><span class="p">,</span> <span class="s2">&quot;latitude&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">longitude</span><span class="p">,</span> <span class="s2">&quot;longitude&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Validate inputs</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lat</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">latitude</span><span class="p">)</span>
+            <span class="n">lon</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">longitude</span><span class="p">)</span>
+            <span class="n">radius</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">radius_km</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Coordinates and radius must be numeric&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">lat</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">90</span> <span class="ow">or</span> <span class="n">lat</span> <span class="o">&gt;</span> <span class="mi">90</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Latitude must be between -90 and +90&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lon</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">180</span> <span class="ow">or</span> <span class="n">lon</span> <span class="o">&gt;</span> <span class="mi">180</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Longitude must be between -180 and +180&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">radius</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Radius must be non-negative&quot;</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Search through all locations</span>
+        <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCoordinates</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">coords</span><span class="p">:</span>
+                <span class="n">loc_lat</span><span class="p">,</span> <span class="n">loc_lon</span> <span class="o">=</span> <span class="n">coords</span>
+                <span class="n">distance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__HaversineDistance</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">loc_lat</span><span class="p">,</span> <span class="n">loc_lon</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">distance</span> <span class="o">&lt;=</span> <span class="n">radius</span><span class="p">:</span>
+                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">location</span><span class="p">,</span> <span class="n">distance</span><span class="p">))</span>
+
+        <span class="c1"># Sort by distance</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetNearby</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">,</span> <span class="n">radius_km</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all locations near a given location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or its HVO.</span>
+<span class="sd">            radius_km (float): Search radius in kilometers. Defaults to 50 km.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of (ICmLocation, distance_km) tuples sorted by distance,</span>
+<span class="sd">                excluding the reference location itself.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If location_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If location doesn&#39;t exist, has no coordinates,</span>
+<span class="sd">                or radius is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Find locations near a village</span>
+<span class="sd">            &gt;&gt;&gt; village = project.Location.Find(&quot;Barasana Village&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; nearby = project.Location.GetNearby(village, radius_km=30)</span>
+<span class="sd">            &gt;&gt;&gt; for location, distance in nearby:</span>
+<span class="sd">            ...     name = project.Location.GetName(location)</span>
+<span class="sd">            ...     print(f&quot;{name}: {distance:.1f} km away&quot;)</span>
+<span class="sd">            Neighboring Village: 15.7 km away</span>
+<span class="sd">            Another Village: 22.3 km away</span>
+
+<span class="sd">            &gt;&gt;&gt; # Find all locations in the same area (larger radius)</span>
+<span class="sd">            &gt;&gt;&gt; regional = project.Location.GetNearby(village, radius_km=200)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(regional)} locations in the region&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Requires reference location to have coordinates set</span>
+<span class="sd">            - Reference location is excluded from results</span>
+<span class="sd">            - Results are sorted by distance (nearest first)</span>
+<span class="sd">            - Uses Haversine formula for distance calculation</span>
+<span class="sd">            - Only includes locations that have coordinates</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            FindByCoordinates, GetCoordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="s2">&quot;location_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get coordinates of reference location</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCoordinates</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">coords</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Reference location must have coordinates set&quot;</span><span class="p">)</span>
+
+        <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">coords</span>
+
+        <span class="c1"># Find nearby locations</span>
+        <span class="n">nearby</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindByCoordinates</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">radius_km</span><span class="p">)</span>
+
+        <span class="c1"># Exclude the reference location itself</span>
+        <span class="n">nearby</span> <span class="o">=</span> <span class="p">[(</span><span class="n">loc</span><span class="p">,</span> <span class="n">dist</span><span class="p">)</span> <span class="k">for</span> <span class="n">loc</span><span class="p">,</span> <span class="n">dist</span> <span class="ow">in</span> <span class="n">nearby</span> <span class="k">if</span> <span class="n">loc</span> <span class="o">!=</span> <span class="n">location</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">nearby</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to ICmLocation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_or_hvo: Either an ICmLocation object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmLocation: The resolved location object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a location.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">location_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ICmLocation</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a location&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">location_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__HaversineDistance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the great-circle distance between two points on Earth.</span>
+
+<span class="sd">        Uses the Haversine formula to calculate distance in kilometers.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lat1, lon1: First point coordinates (decimal degrees)</span>
+<span class="sd">            lat2, lon2: Second point coordinates (decimal degrees)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: Distance in kilometers</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Earth&#39;s radius in kilometers</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="mf">6371.0</span>
+
+        <span class="c1"># Convert to radians</span>
+        <span class="n">lat1_rad</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lat1</span><span class="p">)</span>
+        <span class="n">lon1_rad</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lon1</span><span class="p">)</span>
+        <span class="n">lat2_rad</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lat2</span><span class="p">)</span>
+        <span class="n">lon2_rad</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lon2</span><span class="p">)</span>
+
+        <span class="c1"># Haversine formula</span>
+        <span class="n">dlat</span> <span class="o">=</span> <span class="n">lat2_rad</span> <span class="o">-</span> <span class="n">lat1_rad</span>
+        <span class="n">dlon</span> <span class="o">=</span> <span class="n">lon2_rad</span> <span class="o">-</span> <span class="n">lon1_rad</span>
+
+        <span class="n">a</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dlat</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">lat1_rad</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">lat2_rad</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dlon</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+        <span class="n">c</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">a</span><span class="p">))</span>
+
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">R</span> <span class="o">*</span> <span class="n">c</span>
+
+        <span class="k">return</span> <span class="n">distance</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Notebook.LocationOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

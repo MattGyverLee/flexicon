@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Discourse.ConstChartMovedTextOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Discourse.ConstChartMovedTextOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Discourse.ConstChartMovedTextOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   ConstChartMovedTextOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: ConstChartMovedTextOperations</span>
+<span class="c1">#          Moved text marker operations for constituent charts in FieldWorks</span>
+<span class="c1">#          Language Explorer projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IConstChartMovedTextMarker</span><span class="p">,</span>
+    <span class="n">IConstChartMovedTextMarkerFactory</span><span class="p">,</span>
+    <span class="n">IConstChartWordGroup</span><span class="p">,</span>
+    <span class="n">IDsConstChart</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ConstChartMovedTextOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Discourse.html#flexicon.code.Discourse.ConstChartMovedTextOperations.ConstChartMovedTextOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConstChartMovedTextOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing moved text markers in constituent</span>
+<span class="sd">    charts for discourse analysis in FieldWorks projects.</span>
+
+<span class="sd">    Moved text markers indicate that a word group represents text that has been</span>
+<span class="sd">    moved from its canonical position (preposed or postposed) in the discourse</span>
+<span class="sd">    structure.</span>
+
+<span class="sd">    This class should be accessed via FLExProject.ConstChartMovedText property.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Get a word group</span>
+<span class="sd">        chart = project.ConstCharts.Find(&quot;Genesis 1 Analysis&quot;)</span>
+<span class="sd">        row = project.ConstChartRows.Find(chart, 0)</span>
+<span class="sd">        wg = project.ConstChartWordGroups.Find(row, 0)</span>
+
+<span class="sd">        # Mark as preposed text</span>
+<span class="sd">        marker = project.ConstChartMovedText.Create(wg, preposed=True)</span>
+
+<span class="sd">        # Check if preposed</span>
+<span class="sd">        if project.ConstChartMovedText.IsPreposed(marker):</span>
+<span class="sd">            print(&quot;Text is preposed&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ConstChartMovedTextOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_group_or_hvo</span><span class="p">,</span> <span class="n">preposed</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a moved text marker for a word group.</span>
+
+<span class="sd">        Marks a word group as containing moved text (either preposed or postposed</span>
+<span class="sd">        from its canonical position in the discourse).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            word_group_or_hvo: Either an IConstChartWordGroup object or its HVO</span>
+<span class="sd">            preposed (bool): True if text is preposed (moved earlier), False if</span>
+<span class="sd">                postposed (moved later). Default is True.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartMovedTextMarker: The newly created marker object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If word_group_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Mark word group as preposed</span>
+<span class="sd">            &gt;&gt;&gt; wg = project.ConstChartWordGroups.Find(row, 0)</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartMovedText.Create(wg, preposed=True)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.ConstChartMovedText.IsPreposed(marker))</span>
+<span class="sd">            True</span>
+
+<span class="sd">            &gt;&gt;&gt; # Mark as postposed</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartMovedText.Create(wg, preposed=False)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.ConstChartMovedText.IsPreposed(marker))</span>
+<span class="sd">            False</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Preposed text appears earlier than its canonical position</span>
+<span class="sd">            - Postposed text appears later than its canonical position</span>
+<span class="sd">            - Factory.Create() automatically adds marker to repository</span>
+<span class="sd">            - Word group can have only one moved text marker</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Find, IsPreposed, SetPreposed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">word_group_or_hvo</span><span class="p">,</span> <span class="s2">&quot;word_group_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">word_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordGroup</span><span class="p">(</span><span class="n">word_group_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create moved text marker&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the new moved text marker using the factory</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IConstChartMovedTextMarkerFactory</span><span class="p">)</span>
+            <span class="n">new_marker</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Set as owned by the word group</span>
+            <span class="n">word_group</span><span class="o">.</span><span class="n">MovedTextMarkerOA</span> <span class="o">=</span> <span class="n">new_marker</span>
+
+            <span class="c1"># Set preposed flag</span>
+            <span class="n">new_marker</span><span class="o">.</span><span class="n">Preposed</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">preposed</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_marker</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a moved text marker.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_or_hvo: Either an IConstChartMovedTextMarker object or its HVO</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If marker_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartMovedText.Find(wg)</span>
+<span class="sd">            &gt;&gt;&gt; if marker:</span>
+<span class="sd">            ...     project.ConstChartMovedText.Delete(marker)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - This is a destructive operation</span>
+<span class="sd">            - Cannot be undone</span>
+<span class="sd">            - Word group will no longer be marked as moved</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to marker object</span>
+        <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Delete the marker (LCM handles removal from repository)</span>
+        <span class="n">marker</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_group_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find the moved text marker for a word group.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            word_group_or_hvo: Either an IConstChartWordGroup object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartMovedTextMarker or None: The marker if exists, None otherwise</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If word_group_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; wg = project.ConstChartWordGroups.Find(row, 0)</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartMovedText.Find(wg)</span>
+<span class="sd">            &gt;&gt;&gt; if marker:</span>
+<span class="sd">            ...     print(&quot;Word group has moved text marker&quot;)</span>
+<span class="sd">            ...     if project.ConstChartMovedText.IsPreposed(marker):</span>
+<span class="sd">            ...         print(&quot;Text is preposed&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if word group has no moved text marker</span>
+<span class="sd">            - Each word group can have at most one marker</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">word_group_or_hvo</span><span class="p">,</span> <span class="s2">&quot;word_group_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">word_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveWordGroup</span><span class="p">(</span><span class="n">word_group_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">word_group</span><span class="o">.</span><span class="n">MovedTextMarkerOA</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">word_group</span><span class="p">,</span> <span class="s2">&quot;MovedTextMarkerOA&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all moved text markers in a constituent chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chart_or_hvo: Either an IDsConstChart object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IConstChartMovedTextMarker objects (empty list if none)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If chart_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; chart = project.ConstCharts.Find(&quot;Genesis 1 Analysis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; markers = project.ConstChartMovedText.GetAll(chart)</span>
+<span class="sd">            &gt;&gt;&gt; preposed_count = sum(1 for m in markers</span>
+<span class="sd">            ...     if project.ConstChartMovedText.IsPreposed(m))</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {preposed_count} preposed markers&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns empty list if chart has no moved text markers</span>
+<span class="sd">            - Searches through all rows and word groups in chart</span>
+<span class="sd">            - Includes both preposed and postposed markers</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">,</span> <span class="s2">&quot;chart_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveChart</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">)</span>
+
+        <span class="n">markers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Iterate through all rows and word groups</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">chart</span><span class="o">.</span><span class="n">RowsOS</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">word_group</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">word_group</span><span class="p">,</span> <span class="n">IConstChartWordGroup</span><span class="p">):</span>
+                    <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">word_group</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">marker</span><span class="p">:</span>
+                        <span class="n">markers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">marker</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">markers</span>
+
+    <span class="c1"># --- Marker Properties ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsPreposed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a moved text marker indicates preposed text.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_or_hvo: Either an IConstChartMovedTextMarker object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if text is preposed, False if postposed</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If marker_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartMovedText.Find(wg)</span>
+<span class="sd">            &gt;&gt;&gt; if marker:</span>
+<span class="sd">            ...     if project.ConstChartMovedText.IsPreposed(marker):</span>
+<span class="sd">            ...         print(&quot;Text moved earlier&quot;)</span>
+<span class="sd">            ...     else:</span>
+<span class="sd">            ...         print(&quot;Text moved later&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Preposed = text appears earlier than canonical position</span>
+<span class="sd">            - Postposed = text appears later than canonical position</span>
+<span class="sd">            - Returns boolean value of Preposed property</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetPreposed, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">marker</span><span class="o">.</span><span class="n">Preposed</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetPreposed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set whether moved text is preposed or postposed.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_or_hvo: Either an IConstChartMovedTextMarker object or its HVO</span>
+<span class="sd">            value (bool): True for preposed, False for postposed</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
+<span class="sd">            FP_NullParameterError: If marker_or_hvo or value is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartMovedText.Find(wg)</span>
+<span class="sd">            &gt;&gt;&gt; if marker:</span>
+<span class="sd">            ...     # Change from preposed to postposed</span>
+<span class="sd">            ...     project.ConstChartMovedText.SetPreposed(marker, False)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - True = preposed (text moved earlier)</span>
+<span class="sd">            - False = postposed (text moved later)</span>
+<span class="sd">            - Changes are immediately persisted</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsPreposed, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>
+
+        <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
+
+        <span class="n">marker</span><span class="o">.</span><span class="n">Preposed</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetWordGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the word group associated with a moved text marker.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_or_hvo: Either an IConstChartMovedTextMarker object or its HVO</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartWordGroup or None: The word group, or None if not found</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If marker_or_hvo is None</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; marker = project.ConstChartMovedText.Find(wg)</span>
+<span class="sd">            &gt;&gt;&gt; if marker:</span>
+<span class="sd">            ...     word_group = project.ConstChartMovedText.GetWordGroup(marker)</span>
+<span class="sd">            ...     if word_group:</span>
+<span class="sd">            ...         print(f&quot;Marker belongs to word group {word_group.Hvo}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns None if marker has no owner</span>
+<span class="sd">            - Word group owns the moved text marker</span>
+<span class="sd">            - Each marker is associated with exactly one word group</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="s2">&quot;marker_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get owner (should be IConstChartWordGroup). .Owner is on every</span>
+        <span class="c1"># ICmObject; the truthiness check still discriminates orphans /</span>
+        <span class="c1"># detached markers. (issue #133 sweep)</span>
+        <span class="k">if</span> <span class="n">marker</span><span class="o">.</span><span class="n">Owner</span><span class="p">:</span>
+            <span class="n">owner</span> <span class="o">=</span> <span class="n">marker</span><span class="o">.</span><span class="n">Owner</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">IConstChartWordGroup</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">owner</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IConstChartMovedTextMarker.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_or_hvo: Either an IConstChartMovedTextMarker object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartMovedTextMarker: The resolved marker object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a moved text marker</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">marker_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IConstChartMovedTextMarker</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a moved text marker&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">marker_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveWordGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_group_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IConstChartWordGroup.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            word_group_or_hvo: Either an IConstChartWordGroup object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IConstChartWordGroup: The resolved word group object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a word group</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">word_group_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">word_group_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IConstChartWordGroup</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a word group&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">word_group_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveChart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chart_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IDsConstChart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chart_or_hvo: Either an IDsConstChart object or an HVO (int)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IDsConstChart: The resolved chart object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a constituent chart</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">chart_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IDsConstChart</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a constituent chart&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">chart_or_hvo</span>
+
+    <span class="c1"># --- Reordering Support ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Not applicable for moved text markers (owned objects, not sequences).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Moved text markers don&#39;t use sequences</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Moved text markers are owned objects (OA), not owning sequences (OS). &quot;</span>
+            <span class="s2">&quot;Reordering methods are not applicable.&quot;</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Discourse.ConstChartMovedTextOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

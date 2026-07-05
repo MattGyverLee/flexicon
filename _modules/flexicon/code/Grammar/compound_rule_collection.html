@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Grammar.compound_rule_collection &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.compound_rule_collection</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Grammar.compound_rule_collection</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   compound_rule_collection.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: CompoundRuleCollection</span>
+<span class="c1">#          Smart collection for compound rules with type-aware filtering</span>
+<span class="c1">#          and unified access across multiple concrete types.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Smart collection class for compound rules.</span>
+
+<span class="sd">This module provides CompoundRuleCollection, a smart collection that manages</span>
+<span class="sd">compound rules while showing type diversity and supporting unified operations</span>
+<span class="sd">across the two concrete types:</span>
+<span class="sd">- MoEndoCompound</span>
+<span class="sd">- MoExoCompound</span>
+
+<span class="sd">Problem:</span>
+<span class="sd">    GetAll() returns objects with multiple concrete implementations. Users</span>
+<span class="sd">    need to:</span>
+<span class="sd">    - See which types are in the collection</span>
+<span class="sd">    - Filter by type if they want to</span>
+<span class="sd">    - Work with all types together without manual casting</span>
+<span class="sd">    - Filter by common properties that work across all types</span>
+
+<span class="sd">Solution:</span>
+<span class="sd">    CompoundRuleCollection provides:</span>
+<span class="sd">    - __str__() showing type breakdown</span>
+<span class="sd">    - by_type() filtering to specific concrete types</span>
+<span class="sd">    - filter() for common criteria (name_contains, head_dependency)</span>
+<span class="sd">    - Convenience methods (endo_compounds(), exo_compounds())</span>
+<span class="sd">    - Chainable filtering: rules.endo_compounds().filter(name_contains=&#39;V&#39;)</span>
+<span class="sd">    - where() for custom predicates</span>
+
+<span class="sd">Example::</span>
+
+<span class="sd">    from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection</span>
+
+<span class="sd">    # GetAll() now returns CompoundRuleCollection</span>
+<span class="sd">    rules = morphRuleOps.GetAll()</span>
+<span class="sd">    print(rules)  # Shows type breakdown</span>
+<span class="sd">    # CompoundRuleCollection (8 total)</span>
+<span class="sd">    #   MoEndoCompound: 5 (62%)</span>
+<span class="sd">    #   MoExoCompound: 3 (38%)</span>
+
+<span class="sd">    # Filter by type</span>
+<span class="sd">    endo_only = rules.endo_compounds()</span>
+<span class="sd">    print(len(endo_only))  # 5</span>
+
+<span class="sd">    # Filter by name</span>
+<span class="sd">    verb_rules = rules.filter(name_contains=&#39;Verb&#39;)</span>
+
+<span class="sd">    # Chain filters</span>
+<span class="sd">    verb_endo = rules.endo_compounds().filter(name_contains=&#39;Verb&#39;)</span>
+
+<span class="sd">    # Iterate</span>
+<span class="sd">    for rule in rules:</span>
+<span class="sd">        print(rule.name)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.smart_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmartCollection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.compound_rule</span><span class="w"> </span><span class="kn">import</span> <span class="n">CompoundRule</span>
+
+
+<div class="viewcode-block" id="CompoundRuleCollection">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.compound_rule_collection.CompoundRuleCollection">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CompoundRuleCollection</span><span class="p">(</span><span class="n">SmartCollection</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Smart collection for compound rules with type-aware filtering.</span>
+
+<span class="sd">    Manages collections of compound rules (CompoundRule wrapper objects)</span>
+<span class="sd">    with type-aware display and filtering capabilities. Supports filtering by</span>
+<span class="sd">    common properties (name, head_dependency) and by concrete type.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        _items: List of CompoundRule wrapper objects</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        rules = morphRuleOps.GetAll()  # Returns CompoundRuleCollection</span>
+<span class="sd">        print(rules)  # Shows type breakdown</span>
+<span class="sd">        endo = rules.endo_compounds()  # Filter to MoEndoCompound</span>
+<span class="sd">        verb = rules.filter(name_contains=&#39;Verb&#39;)  # Name filter</span>
+<span class="sd">        both = rules.endo_compounds().filter(name_contains=&#39;Verb&#39;)  # Chain</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize a CompoundRuleCollection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            items: Iterable of CompoundRule objects, or None for empty.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            collection = CompoundRuleCollection()</span>
+<span class="sd">            collection = CompoundRuleCollection([rule1, rule2, rule3])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CompoundRuleCollection.filter">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.compound_rule_collection.CompoundRuleCollection.filter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name_contains</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">head_dependency</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter the collection by common rule properties.</span>
+
+<span class="sd">        Supports filtering by properties that work across all rule types</span>
+<span class="sd">        (name, head_dependency). For complex filtering, use where().</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name_contains (str, optional): Filter to rules whose name contains</span>
+<span class="sd">                this string (case-sensitive).</span>
+<span class="sd">            head_dependency (int, optional): Filter by head dependency value.</span>
+<span class="sd">            where (callable, optional): Custom predicate function. If provided,</span>
+<span class="sd">                other criteria are ignored.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            CompoundRuleCollection: New collection with filtered items.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            # Filter by name</span>
+<span class="sd">            verb_rules = rules.filter(name_contains=&#39;Verb&#39;)</span>
+
+<span class="sd">            # Filter by head dependency</span>
+<span class="sd">            lhs_head = rules.filter(head_dependency=0)</span>
+
+<span class="sd">            # Custom filtering</span>
+<span class="sd">            with_contexts = rules.where(lambda r: r.left_context or r.right_context)</span>
+
+<span class="sd">            # Chain filters</span>
+<span class="sd">            verb_lhs = rules.filter(name_contains=&#39;Verb&#39;).filter(head_dependency=0)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - name_contains is case-sensitive</span>
+<span class="sd">            - All criteria are AND-ed together unless only one is provided</span>
+<span class="sd">            - where() takes precedence over other criteria</span>
+<span class="sd">            - Returns new collection (doesn&#39;t modify original)</span>
+<span class="sd">            - Use where() for complex custom filtering</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If custom predicate provided, use it</span>
+        <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">where</span><span class="p">(</span><span class="n">item</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="n">CompoundRuleCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span>
+
+        <span class="c1"># Apply criteria filters</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span>
+
+        <span class="k">if</span> <span class="n">name_contains</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">rule</span> <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">filtered</span> <span class="k">if</span> <span class="n">name_contains</span> <span class="ow">in</span> <span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="n">head_dependency</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">rule</span> <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">filtered</span> <span class="k">if</span> <span class="n">rule</span><span class="o">.</span><span class="n">head_dependency</span> <span class="o">==</span> <span class="n">head_dependency</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">CompoundRuleCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CompoundRuleCollection.where">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.compound_rule_collection.CompoundRuleCollection.where">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predicate</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter using a custom predicate function.</span>
+
+<span class="sd">        For filtering by complex criteria or properties not supported by filter().</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            predicate (callable): Function that takes a CompoundRule and</span>
+<span class="sd">                returns True to include it in the result.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            CompoundRuleCollection: New collection with items matching the predicate.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            # Complex predicate: rules with both left and right contexts</span>
+<span class="sd">            full_context = rules.where(</span>
+<span class="sd">                lambda r: r.left_context is not None and r.right_context is not None</span>
+<span class="sd">            )</span>
+
+<span class="sd">            # Combining conditions</span>
+<span class="sd">            endo_with_context = rules.where(</span>
+<span class="sd">                lambda r: r.is_endo_compound and (r.left_context or r.right_context)</span>
+<span class="sd">            )</span>
+
+<span class="sd">            # Type checking combined with other criteria</span>
+<span class="sd">            exo_rules = rules.where(lambda r: r.is_exo_compound)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Predicate receives each CompoundRule object</span>
+<span class="sd">            - Return True to include in result, False to exclude</span>
+<span class="sd">            - For simple filters (name, head_dependency), use filter() instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">rule</span> <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">predicate</span><span class="p">(</span><span class="n">rule</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">CompoundRuleCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CompoundRuleCollection.endo_compounds">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.compound_rule_collection.CompoundRuleCollection.endo_compounds">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">endo_compounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the endocentric (MoEndoCompound) rules from the collection.</span>
+
+<span class="sd">        Convenience method for filtering to MoEndoCompound objects only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            CompoundRuleCollection: New collection with only MoEndoCompound objects.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            endo = rules.endo_compounds()</span>
+<span class="sd">            print(f&quot;Found {len(endo)} endocentric rules&quot;)</span>
+
+<span class="sd">            # Chain with other filters</span>
+<span class="sd">            verb_endo = rules.endo_compounds().filter(name_contains=&#39;Verb&#39;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to by_type(&#39;MoEndoCompound&#39;)</span>
+<span class="sd">            - Endo compounds have head internal to the compound</span>
+<span class="sd">            - Use is_endo_compound on individual rules to check type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;MoEndoCompound&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CompoundRuleCollection.exo_compounds">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.compound_rule_collection.CompoundRuleCollection.exo_compounds">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">exo_compounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the exocentric (MoExoCompound) rules from the collection.</span>
+
+<span class="sd">        Convenience method for filtering to MoExoCompound objects only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            CompoundRuleCollection: New collection with only MoExoCompound objects.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            exo = rules.exo_compounds()</span>
+<span class="sd">            print(f&quot;Found {len(exo)} exocentric rules&quot;)</span>
+
+<span class="sd">            # Chain with other filters</span>
+<span class="sd">            noun_exo = rules.exo_compounds().filter(name_contains=&#39;Noun&#39;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to by_type(&#39;MoExoCompound&#39;)</span>
+<span class="sd">            - Exo compounds have head external to the compound</span>
+<span class="sd">            - Use is_exo_compound on individual rules to check type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;MoExoCompound&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Technical representation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;CompoundRuleCollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> rules)&quot;</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.compound_rule_collection</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

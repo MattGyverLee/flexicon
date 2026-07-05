@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Shared.lcm_constants &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.lcm_constants</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Shared.lcm_constants</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   lcm_constants.py</span>
+<span class="c1">#</span>
+<span class="c1">#   LCM API constants and property type definitions.</span>
+<span class="c1">#   Centralizes constants used across the flexlibs2 codebase.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;LCM API constants and property type definitions.&quot;&quot;&quot;</span>
+
+<span class="c1"># LibLCM property suffixes</span>
+<span class="c1"># (from PythonicWrapper.py and BaseOperations.py)</span>
+<span class="c1"># These suffixes indicate relationship types in LibLCM:</span>
+<span class="c1">#   - OS: Owning Sequence (ordered collection of owned children)</span>
+<span class="c1">#   - OC: Owning Collection (unordered collection of owned children)</span>
+<span class="c1">#   - OA: Owning Atomic (single owned child)</span>
+<span class="c1">#   - RS: Reference Sequence (ordered collection of references)</span>
+<span class="c1">#   - RC: Reference Collection (unordered collection of references)</span>
+<span class="c1">#   - RA: Reference Atomic (single reference)</span>
+
+<span class="n">OWNING_SEQUENCE_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;OS&quot;</span>        <span class="c1"># e.g., SensesOS</span>
+<span class="n">OWNING_COLLECTION_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;OC&quot;</span>      <span class="c1"># e.g., AllomorphsOC</span>
+<span class="n">OWNING_ATOMIC_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;OA&quot;</span>          <span class="c1"># e.g., MorphoSyntaxAnalysisOA</span>
+<span class="n">REFERENCE_SEQUENCE_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;RS&quot;</span>     <span class="c1"># e.g., SlotsRS</span>
+<span class="n">REFERENCE_COLLECTION_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;RC&quot;</span>   <span class="c1"># e.g., ProdRestrictRC</span>
+<span class="n">REFERENCE_ATOMIC_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;RA&quot;</span>       <span class="c1"># e.g., PartOfSpeechRA</span>
+
+<span class="c1"># Suffixes in order of preference (most common first)</span>
+<span class="c1"># Used by PythonicWrapper to resolve unqualified property names</span>
+<span class="n">SUFFIXES</span> <span class="o">=</span> <span class="p">(</span><span class="n">OWNING_SEQUENCE_SUFFIX</span><span class="p">,</span> <span class="n">OWNING_COLLECTION_SUFFIX</span><span class="p">,</span> <span class="n">OWNING_ATOMIC_SUFFIX</span><span class="p">,</span>
+            <span class="n">REFERENCE_SEQUENCE_SUFFIX</span><span class="p">,</span> <span class="n">REFERENCE_COLLECTION_SUFFIX</span><span class="p">,</span> <span class="n">REFERENCE_ATOMIC_SUFFIX</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CellarPropertyType">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.lcm_constants.CellarPropertyType">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CellarPropertyType</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Type constants for LCM Cellar properties.</span>
+
+<span class="sd">    These constants identify the type of each property in the LibLCM data model.</span>
+<span class="sd">    Values match SIL.LCModel.Core.Cellar.CellarPropertyType in the C# API.</span>
+
+<span class="sd">    Reference:</span>
+<span class="sd">        SIL.LCModel.Core.Cellar.CellarPropertyType (from FLExLCM.py)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">PropType_String</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">PropType_Integer</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">PropType_Boolean</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">PropType_MultiString</span> <span class="o">=</span> <span class="mi">13</span>
+    <span class="n">PropType_MultiUnicode</span> <span class="o">=</span> <span class="mi">14</span>
+    <span class="n">PropType_Time</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">PropType_Guid</span> <span class="o">=</span> <span class="mi">15</span>
+    <span class="n">PropType_GenDate</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">PropType_Binary</span> <span class="o">=</span> <span class="mi">17</span>
+    <span class="n">PropType_Float</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">PropType_Object</span> <span class="o">=</span> <span class="mi">23</span>
+    <span class="n">PropType_Sequence</span> <span class="o">=</span> <span class="mi">26</span>
+    <span class="n">PropType_ReferenceSequence</span> <span class="o">=</span> <span class="mi">27</span>
+    <span class="n">PropType_ReferenceAtomic</span> <span class="o">=</span> <span class="mi">28</span>
+    <span class="n">PropType_ReferenceCollection</span> <span class="o">=</span> <span class="mi">29</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Shared.lcm_constants</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.sync.diff &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.sync.diff</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.sync.diff</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">DiffEngine - Object comparison and diff generation</span>
+
+<span class="sd">This module provides diff functionality for comparing FLEx objects between projects.</span>
+
+<span class="sd">Author: FlexTools Development Team</span>
+<span class="sd">Date: 2025-11-26</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Set</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ChangeType">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.diff.ChangeType">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ChangeType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Type of change detected&quot;&quot;&quot;</span>
+
+    <span class="n">NEW</span> <span class="o">=</span> <span class="s2">&quot;new&quot;</span>  <span class="c1"># Object exists in source, not in target</span>
+    <span class="n">MODIFIED</span> <span class="o">=</span> <span class="s2">&quot;modified&quot;</span>  <span class="c1"># Object exists in both but differs</span>
+    <span class="n">DELETED</span> <span class="o">=</span> <span class="s2">&quot;deleted&quot;</span>  <span class="c1"># Object exists in target, not in source</span>
+    <span class="n">CONFLICT</span> <span class="o">=</span> <span class="s2">&quot;conflict&quot;</span>  <span class="c1"># Object differs in incompatible ways</span>
+    <span class="n">UNCHANGED</span> <span class="o">=</span> <span class="s2">&quot;unchanged&quot;</span>  <span class="c1"># Object identical in both</span></div>
+
+
+
+<div class="viewcode-block" id="Change">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.diff.Change">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Change</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a single detected change.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        change_type: Type of change</span>
+<span class="sd">        source_guid: GUID of source object (None if deleted)</span>
+<span class="sd">        target_guid: GUID of target object (None if new)</span>
+<span class="sd">        object_type: Type of object</span>
+<span class="sd">        description: Human-readable description</span>
+<span class="sd">        details: Additional details about the change</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">change_type</span><span class="p">:</span> <span class="n">ChangeType</span>
+    <span class="n">source_guid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">target_guid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">details</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">guid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Primary GUID for this change.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_guid</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_guid</span> <span class="ow">or</span> <span class="s2">&quot;unknown&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="DiffResult">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.diff.DiffResult">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DiffResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Results from a diff operation.</span>
+
+<span class="sd">    Contains all changes detected, organized by type, with methods for</span>
+<span class="sd">    analysis and reporting.</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">        &gt;&gt;&gt; diff = sync.compare(object_type=&quot;Allomorph&quot;)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; print(f&quot;Total changes: {diff.total}&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; print(f&quot;New: {diff.num_new}&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; print(f&quot;Modified: {diff.num_modified}&quot;)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; for change in diff.new_changes:</span>
+<span class="sd">        ...     print(f&quot;  {change.description}&quot;)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; print(diff.summary())</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize DiffResult.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            object_type: Type of objects being compared</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">object_type</span> <span class="o">=</span> <span class="n">object_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">changes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Change</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="DiffResult.add_change">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.diff.DiffResult.add_change">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">change</span><span class="p">:</span> <span class="n">Change</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a change to the result.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">changes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">change</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Change</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;All NEW changes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">changes</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">change_type</span> <span class="o">==</span> <span class="n">ChangeType</span><span class="o">.</span><span class="n">NEW</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">modified_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Change</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;All MODIFIED changes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">changes</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">change_type</span> <span class="o">==</span> <span class="n">ChangeType</span><span class="o">.</span><span class="n">MODIFIED</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">deleted_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Change</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;All DELETED changes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">changes</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">change_type</span> <span class="o">==</span> <span class="n">ChangeType</span><span class="o">.</span><span class="n">DELETED</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">conflict_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Change</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;All CONFLICT changes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">changes</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">change_type</span> <span class="o">==</span> <span class="n">ChangeType</span><span class="o">.</span><span class="n">CONFLICT</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unchanged_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Change</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;All UNCHANGED changes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">changes</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">change_type</span> <span class="o">==</span> <span class="n">ChangeType</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_new</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count of NEW changes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_changes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_modified</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count of MODIFIED changes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modified_changes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_deleted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count of DELETED changes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deleted_changes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_conflicts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count of CONFLICT changes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conflict_changes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_unchanged</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count of UNCHANGED changes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unchanged_changes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">total</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total number of changes (excluding unchanged).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_new</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_modified</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_deleted</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_conflicts</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether any changes were detected.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_conflicts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether any conflicts were detected.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_conflicts</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="DiffResult.summary">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.diff.DiffResult.summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate a text summary of changes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Human-readable summary string</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; print(diff.summary())</span>
+<span class="sd">            DIFF SUMMARY: Allomorphs</span>
+<span class="sd">            ----------------------------------------</span>
+<span class="sd">            15 NEW (in source, not in target)</span>
+<span class="sd">            3 MODIFIED (different in source)</span>
+<span class="sd">            2 DELETED (in target, not in source)</span>
+<span class="sd">            0 CONFLICTS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;DIFF SUMMARY: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_new</span><span class="si">}</span><span class="s2"> NEW (in source, not in target)&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_modified</span><span class="si">}</span><span class="s2"> MODIFIED (different in source)&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_deleted</span><span class="si">}</span><span class="s2"> DELETED (in target, not in source)&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_conflicts</span><span class="si">}</span><span class="s2"> CONFLICTS&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_changes</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;No changes detected.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DiffResult.to_report">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.diff.DiffResult.to_report">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;console&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate a detailed report.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            format: Report format (&quot;console&quot;, &quot;markdown&quot;, &quot;html&quot;)</span>
+<span class="sd">            verbose: Include unchanged items</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Formatted report string</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; print(diff.to_report(format=&quot;console&quot;, verbose=False))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="s2">&quot;console&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_console_report</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">format</span> <span class="o">==</span> <span class="s2">&quot;markdown&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_markdown_report</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown format: </span><span class="si">{</span><span class="nb">format</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_to_console_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate console-formatted report.&quot;&quot;&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="p">(),</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_new</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;NEW </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">change</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_changes</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  + </span><span class="si">{</span><span class="n">change</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_modified</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MODIFIED </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">change</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modified_changes</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ~ </span><span class="si">{</span><span class="n">change</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">change</span><span class="o">.</span><span class="n">details</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">change</span><span class="o">.</span><span class="n">details</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;      </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_deleted</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DELETED </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">change</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">deleted_changes</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">change</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_conflicts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CONFLICTS (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_conflicts</span><span class="si">}</span><span class="s2">):&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">change</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conflict_changes</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ! </span><span class="si">{</span><span class="n">change</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_unchanged</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;UNCHANGED (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_unchanged</span><span class="si">}</span><span class="s2">):&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">change</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unchanged_changes</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  = </span><span class="si">{</span><span class="n">change</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_to_markdown_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate markdown-formatted report.&quot;&quot;&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;# Diff Report: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;## Summary&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;- **New:** </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_new</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;- **Modified:** </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_modified</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;- **Deleted:** </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_deleted</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;- **Conflicts:** </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_conflicts</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_new</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="sa">f</span><span class="s2">&quot;## New </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">change</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_changes</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">change</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_modified</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="sa">f</span><span class="s2">&quot;## Modified </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">change</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modified_changes</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">change</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_deleted</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="sa">f</span><span class="s2">&quot;## Deleted </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">change</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">deleted_changes</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">change</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_conflicts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="sa">f</span><span class="s2">&quot;## Conflicts&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">change</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conflict_changes</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">change</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DiffResult.export">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.diff.DiffResult.export">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export diff report to file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filename: Output filename (.txt, .md, .html, .csv)</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; diff.export(&quot;allomorph_diff.md&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; diff.export(&quot;allomorph_diff.html&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Phase 1: Basic export</span>
+        <span class="c1"># Full export with HTML/CSV in Phase 4</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s2">&quot;txt&quot;</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_report</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s2">&quot;console&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s2">&quot;md&quot;</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_report</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s2">&quot;markdown&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported export format: </span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s2"> (Phase 1 supports .txt, .md)&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Exported diff report to </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DiffEngine">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.diff.DiffEngine">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DiffEngine</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Engine for comparing FLEx objects between projects.</span>
+
+<span class="sd">    The DiffEngine compares objects using a match strategy and detects</span>
+<span class="sd">    all changes (new, modified, deleted, conflicts).</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">        &gt;&gt;&gt; from flexlibs2.sync import DiffEngine, GuidMatchStrategy</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; engine = DiffEngine()</span>
+<span class="sd">        &gt;&gt;&gt; result = engine.compare(</span>
+<span class="sd">        ...     source_objects=source_project.Allomorph,</span>
+<span class="sd">        ...     target_objects=target_project.Allomorph,</span>
+<span class="sd">        ...     source_project=source_project,</span>
+<span class="sd">        ...     target_project=target_project,</span>
+<span class="sd">        ...     match_strategy=GuidMatchStrategy()</span>
+<span class="sd">        ... )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DiffEngine.compare">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.diff.DiffEngine.compare">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compare</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_objects</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">target_objects</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">match_strategy</span><span class="p">:</span> <span class="s2">&quot;MatchStrategy&quot;</span><span class="p">,</span>
+        <span class="n">filter_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">progress_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiffResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare objects between source and target.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_objects: Source operations class instance</span>
+<span class="sd">            target_objects: Target operations class instance</span>
+<span class="sd">            source_project: Source FLExProject</span>
+<span class="sd">            target_project: Target FLExProject</span>
+<span class="sd">            match_strategy: Strategy for matching objects</span>
+<span class="sd">            filter_fn: Optional filter function</span>
+<span class="sd">            progress_callback: Optional progress callback</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DiffResult with all changes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get object type name</span>
+        <span class="n">object_type</span> <span class="o">=</span> <span class="n">source_objects</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;Operations&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">DiffResult</span><span class="p">(</span><span class="n">object_type</span><span class="p">)</span>
+
+        <span class="c1"># Get all objects from both sides</span>
+        <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+            <span class="n">progress_callback</span><span class="p">(</span><span class="s2">&quot;Loading source objects...&quot;</span><span class="p">)</span>
+
+        <span class="n">source_items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">source_objects</span><span class="o">.</span><span class="n">GetAll</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">filter_fn</span><span class="p">:</span>
+            <span class="n">source_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">obj</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">source_items</span> <span class="k">if</span> <span class="n">filter_fn</span><span class="p">(</span><span class="n">obj</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+            <span class="n">progress_callback</span><span class="p">(</span><span class="s2">&quot;Loading target objects...&quot;</span><span class="p">)</span>
+
+        <span class="n">target_items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">target_objects</span><span class="o">.</span><span class="n">GetAll</span><span class="p">())</span>
+
+        <span class="c1"># Build GUID lookup for target objects</span>
+        <span class="n">target_by_guid</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">target_obj</span> <span class="ow">in</span> <span class="n">target_items</span><span class="p">:</span>
+            <span class="n">target_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+            <span class="n">target_by_guid</span><span class="p">[</span><span class="n">target_guid</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_obj</span>
+
+        <span class="c1"># Track which target objects were matched</span>
+        <span class="n">matched_target_guids</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="c1"># Compare source objects</span>
+        <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+            <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">source_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> source objects...&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">source_obj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">source_items</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">progress_callback</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparing </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">source_items</span><span class="p">)</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Try to match with target</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">match_strategy</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">target_items</span><span class="p">,</span> <span class="n">source_project</span><span class="p">,</span> <span class="n">target_project</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># NEW: Source object doesn&#39;t exist in target</span>
+                <span class="n">change</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_new_change</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">source_objects</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">add_change</span><span class="p">(</span><span class="n">change</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Object exists in target</span>
+                <span class="n">match_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+                <span class="n">matched_target_guids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">match_guid</span><span class="p">)</span>
+
+                <span class="c1"># Check if modified</span>
+                <span class="n">is_modified</span><span class="p">,</span> <span class="n">details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compare_objects</span><span class="p">(</span>
+                    <span class="n">source_obj</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">source_objects</span><span class="p">,</span> <span class="n">target_objects</span><span class="p">,</span> <span class="n">source_project</span><span class="p">,</span> <span class="n">target_project</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">is_modified</span><span class="p">:</span>
+                    <span class="c1"># MODIFIED: Object differs</span>
+                    <span class="n">change</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_modified_change</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">source_objects</span><span class="p">,</span> <span class="n">object_type</span><span class="p">,</span> <span class="n">details</span><span class="p">)</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">add_change</span><span class="p">(</span><span class="n">change</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># UNCHANGED: Object identical</span>
+                    <span class="n">change</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_unchanged_change</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">source_objects</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">add_change</span><span class="p">(</span><span class="n">change</span><span class="p">)</span>
+
+        <span class="c1"># Find deleted objects (in target but not matched)</span>
+        <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+            <span class="n">progress_callback</span><span class="p">(</span><span class="s2">&quot;Finding deleted objects...&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">target_obj</span> <span class="ow">in</span> <span class="n">target_items</span><span class="p">:</span>
+            <span class="n">target_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">target_guid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">matched_target_guids</span><span class="p">:</span>
+                <span class="c1"># DELETED: Target object doesn&#39;t exist in source</span>
+                <span class="n">change</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_deleted_change</span><span class="p">(</span><span class="n">target_obj</span><span class="p">,</span> <span class="n">target_objects</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">add_change</span><span class="p">(</span><span class="n">change</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+            <span class="n">progress_callback</span><span class="p">(</span><span class="s2">&quot;Comparison complete&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_new_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Change</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a NEW change.&quot;&quot;&quot;</span>
+        <span class="n">source_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">source_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+        <span class="c1"># Get description (try common methods)</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_object_description</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Change</span><span class="p">(</span>
+            <span class="n">change_type</span><span class="o">=</span><span class="n">ChangeType</span><span class="o">.</span><span class="n">NEW</span><span class="p">,</span>
+            <span class="n">source_guid</span><span class="o">=</span><span class="n">source_guid</span><span class="p">,</span>
+            <span class="n">target_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;NEW: </span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_modified_change</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Change</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a MODIFIED change.&quot;&quot;&quot;</span>
+        <span class="n">source_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">source_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="n">target_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+        <span class="n">description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_object_description</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Change</span><span class="p">(</span>
+            <span class="n">change_type</span><span class="o">=</span><span class="n">ChangeType</span><span class="o">.</span><span class="n">MODIFIED</span><span class="p">,</span>
+            <span class="n">source_guid</span><span class="o">=</span><span class="n">source_guid</span><span class="p">,</span>
+            <span class="n">target_guid</span><span class="o">=</span><span class="n">target_guid</span><span class="p">,</span>
+            <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;MODIFIED: </span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">details</span><span class="o">=</span><span class="n">details</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_deleted_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Change</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a DELETED change.&quot;&quot;&quot;</span>
+        <span class="n">target_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+        <span class="n">description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_object_description</span><span class="p">(</span><span class="n">target_obj</span><span class="p">,</span> <span class="n">target_ops</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Change</span><span class="p">(</span>
+            <span class="n">change_type</span><span class="o">=</span><span class="n">ChangeType</span><span class="o">.</span><span class="n">DELETED</span><span class="p">,</span>
+            <span class="n">source_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">target_guid</span><span class="o">=</span><span class="n">target_guid</span><span class="p">,</span>
+            <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;DELETED: </span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_unchanged_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Change</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an UNCHANGED change.&quot;&quot;&quot;</span>
+        <span class="n">source_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">source_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="n">target_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+        <span class="n">description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_object_description</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Change</span><span class="p">(</span>
+            <span class="n">change_type</span><span class="o">=</span><span class="n">ChangeType</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
+            <span class="n">source_guid</span><span class="o">=</span><span class="n">source_guid</span><span class="p">,</span>
+            <span class="n">target_guid</span><span class="o">=</span><span class="n">target_guid</span><span class="p">,</span>
+            <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;UNCHANGED: </span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_object_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get human-readable description of object.&quot;&quot;&quot;</span>
+        <span class="c1"># Try common description methods</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="s2">&quot;GetForm&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ops</span><span class="o">.</span><span class="n">GetForm</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="s2">&quot;GetHeadword&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ops</span><span class="o">.</span><span class="n">GetHeadword</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="s2">&quot;GetName&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ops</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                <span class="k">pass</span>
+
+        <span class="c1"># Fallback to GUID</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Object </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compare_objects</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">source_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">target_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two objects to detect modifications.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (is_modified, details_dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">details</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">is_modified</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Try to use CompareTo() method if available (sync framework integration)</span>
+        <span class="c1"># CompareTo() provides detailed property-level comparison using GetSyncableProperties()</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">&quot;CompareTo&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Call CompareTo with both operation instances for cross-project comparison</span>
+                <span class="c1"># Returns: (is_different, differences_dict) where differences_dict maps</span>
+                <span class="c1"># property names to (value1, value2) tuples</span>
+                <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">CompareTo</span><span class="p">(</span>
+                    <span class="n">source_obj</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="n">source_ops</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="n">target_ops</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">is_different</span><span class="p">:</span>
+                    <span class="n">is_modified</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="c1"># Convert differences format from (val1, val2) to &quot;val1 → val2&quot; for display</span>
+                    <span class="k">for</span> <span class="n">prop</span><span class="p">,</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">differences</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="c1"># Format MultiString dicts and other values appropriately</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val2</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                            <span class="c1"># MultiString comparison - show which writing systems differ</span>
+                            <span class="n">all_ws</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">val1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">val2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                            <span class="n">diff_ws</span> <span class="o">=</span> <span class="p">[</span><span class="n">ws</span> <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="n">all_ws</span> <span class="k">if</span> <span class="n">val1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span> <span class="o">!=</span> <span class="n">val2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ws</span><span class="p">)]</span>
+                            <span class="k">if</span> <span class="n">diff_ws</span><span class="p">:</span>
+                                <span class="n">details</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Changed in </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">diff_ws</span><span class="p">)</span><span class="si">}</span><span class="s2"> writing system(s)&quot;</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">details</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val2</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">val1</span><span class="si">}</span><span class="s2">&quot;</span>
+
+                <span class="c1"># Return early if CompareTo() succeeded</span>
+                <span class="k">return</span> <span class="n">is_modified</span><span class="p">,</span> <span class="n">details</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># Log error but fall through to basic comparison</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CompareTo() failed, falling back to basic comparison: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Fallback: Basic comparison for classes without CompareTo()</span>
+        <span class="c1"># This preserves backwards compatibility with operation classes that</span>
+        <span class="c1"># haven&#39;t implemented the sync framework methods yet</span>
+
+        <span class="c1"># Try form comparison (for Allomorphs, etc.)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">&quot;GetForm&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">source_form</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetForm</span><span class="p">(</span><span class="n">source_obj</span><span class="p">)</span>
+                <span class="n">target_form</span> <span class="o">=</span> <span class="n">target_ops</span><span class="o">.</span><span class="n">GetForm</span><span class="p">(</span><span class="n">target_obj</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">source_form</span> <span class="o">!=</span> <span class="n">target_form</span><span class="p">:</span>
+                    <span class="n">is_modified</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">details</span><span class="p">[</span><span class="s2">&quot;Form&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_form</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">source_form</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                <span class="k">pass</span>
+
+        <span class="c1"># Try name comparison (for POS, etc.)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">&quot;GetName&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">source_name</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">source_obj</span><span class="p">)</span>
+                <span class="n">target_name</span> <span class="o">=</span> <span class="n">target_ops</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">target_obj</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">source_name</span> <span class="o">!=</span> <span class="n">target_name</span><span class="p">:</span>
+                    <span class="n">is_modified</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">details</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_name</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">source_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="n">is_modified</span><span class="p">,</span> <span class="n">details</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.sync.diff</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

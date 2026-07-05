@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.sync.hierarchical_importer &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.sync.hierarchical_importer</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.sync.hierarchical_importer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Hierarchical Importer - Phase 3.3</span>
+
+<span class="sd">Import FLEx objects with full dependency resolution and hierarchical cascade.</span>
+
+<span class="sd">Author: FlexTools Development Team</span>
+<span class="sd">Date: 2025-11-27</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.dependency_graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">DependencyGraph</span><span class="p">,</span> <span class="n">CircularDependencyError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.dependency_resolver</span><span class="w"> </span><span class="kn">import</span> <span class="n">DependencyResolver</span><span class="p">,</span> <span class="n">DependencyConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinguisticValidator</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">ValidationResult</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.merge_ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">MergeOperations</span><span class="p">,</span> <span class="n">SyncError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">SyncResult</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="HierarchicalImporter">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.hierarchical_importer.HierarchicalImporter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HierarchicalImporter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Import FLEx objects with dependency resolution.</span>
+
+<span class="sd">    Automatically discovers and imports all required dependencies,</span>
+<span class="sd">    including owned objects (senses, examples) and referenced objects</span>
+<span class="sd">    (POS, semantic domains).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize hierarchical importer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_project: Source FlexProject</span>
+<span class="sd">            target_project: Target FlexProject (must be writeEnabled)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_project</span> <span class="o">=</span> <span class="n">source_project</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_project</span> <span class="o">=</span> <span class="n">target_project</span>
+
+        <span class="c1"># Check write access</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_project</span><span class="p">,</span> <span class="s2">&quot;writeEnabled&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target_project</span><span class="o">.</span><span class="n">writeEnabled</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Target project must be opened with writeEnabled=True for import operations&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolver</span> <span class="o">=</span> <span class="n">DependencyResolver</span><span class="p">(</span><span class="n">source_project</span><span class="p">,</span> <span class="n">target_project</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validator</span> <span class="o">=</span> <span class="n">LinguisticValidator</span><span class="p">(</span><span class="n">target_project</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">merger</span> <span class="o">=</span> <span class="n">MergeOperations</span><span class="p">(</span><span class="n">source_project</span><span class="p">,</span> <span class="n">target_project</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HierarchicalImporter.import_with_dependencies">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.hierarchical_importer.HierarchicalImporter.import_with_dependencies">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">import_with_dependencies</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">guids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DependencyConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">validate_references</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">progress_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SyncResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Import objects with full dependency trees.</span>
+
+<span class="sd">        Discovers all dependencies (owned objects, referenced objects)</span>
+<span class="sd">        and imports them in correct order.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            object_type: Type of root objects to import</span>
+<span class="sd">            guids: List of GUIDs to import</span>
+<span class="sd">            config: Dependency resolution configuration</span>
+<span class="sd">            validate_references: Validate all objects before import</span>
+<span class="sd">            progress_callback: Optional callback for progress updates</span>
+<span class="sd">            dry_run: If True, preview without actually importing</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            SyncResult with import details</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            CircularDependencyError: If circular dependency detected</span>
+<span class="sd">            ValidationError: If validation fails with critical issues</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">SyncResult</span><span class="p">(</span><span class="n">object_type</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">DependencyConfig</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resolving dependencies for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">guids</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2"> object(s)...&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Build dependency graph</span>
+            <span class="n">graph</span> <span class="o">=</span> <span class="n">DependencyGraph</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">guid</span> <span class="ow">in</span> <span class="n">guids</span><span class="p">:</span>
+                <span class="c1"># Get object from source</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_operations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_project</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Object </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2"> not found in source project&quot;</span><span class="p">)</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span>
+                        <span class="n">SyncError</span><span class="p">(</span>
+                            <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;resolve&quot;</span><span class="p">,</span>
+                            <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                            <span class="n">error_message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2"> not found in source project&quot;</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Resolve dependencies</span>
+                <span class="n">obj_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolver</span><span class="o">.</span><span class="n">resolve_dependencies</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">object_type</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+                <span class="c1"># Merge into main graph</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_merge_graphs</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">obj_graph</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dependency graph: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+
+            <span class="c1"># Detect cycles</span>
+            <span class="n">cycles</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">detect_cycles</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">cycles</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">allow_cycles</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">CircularDependencyError</span><span class="p">(</span><span class="n">cycles</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="c1"># Get import order</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">import_order</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">get_import_order</span><span class="p">()</span>
+            <span class="k">except</span> <span class="n">CircularDependencyError</span><span class="p">:</span>
+                <span class="c1"># Try to break cycles at weak links (cross-references)</span>
+                <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">allow_cycles</span><span class="p">:</span>
+                    <span class="n">import_order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_break_cycles_and_sort</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span>
+
+            <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Import order determined: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">import_order</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Validate all objects</span>
+            <span class="k">if</span> <span class="n">validate_references</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">validate_all</span><span class="p">:</span>
+                <span class="n">validation_issues</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_all</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">import_order</span><span class="p">,</span> <span class="n">progress_callback</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">validation_issues</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+                    <span class="c1"># Consolidate validation results</span>
+                    <span class="n">consolidated</span> <span class="o">=</span> <span class="n">ValidationResult</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">validation</span> <span class="ow">in</span> <span class="n">validation_issues</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="n">validation</span><span class="o">.</span><span class="n">issues</span><span class="p">:</span>
+                            <span class="n">consolidated</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span><span class="n">issue</span><span class="p">)</span>
+
+                    <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">consolidated</span><span class="p">)</span>
+
+            <span class="c1"># Import objects in order</span>
+            <span class="n">imported_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_import_objects</span><span class="p">(</span>
+                <span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">,</span>
+                <span class="n">import_order</span><span class="o">=</span><span class="n">import_order</span><span class="p">,</span>
+                <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span>
+                <span class="n">progress_callback</span><span class="o">=</span><span class="n">progress_callback</span><span class="p">,</span>
+                <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
+                    <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dry run complete: Would import </span><span class="si">{</span><span class="n">imported_count</span><span class="si">}</span><span class="s2"> objects&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Import complete: </span><span class="si">{</span><span class="n">imported_count</span><span class="si">}</span><span class="s2"> objects created&quot;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
+            <span class="c1"># Re-raise validation errors</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="n">CircularDependencyError</span><span class="p">:</span>
+            <span class="c1"># Re-raise circular dependency errors</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Import failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;import&quot;</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="HierarchicalImporter.import_related">
+<a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.hierarchical_importer.HierarchicalImporter.import_related">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">import_related</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">include_referring_objects</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">validate_references</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">progress_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SyncResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Import object and all objects that refer to it.</span>
+
+<span class="sd">        Useful for importing a semantic domain with all entries that use it,</span>
+<span class="sd">        or a POS with all senses that reference it.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            object_type: Type of object to import</span>
+<span class="sd">            guid: GUID of object</span>
+<span class="sd">            include_referring_objects: List of object types to import if they refer to this</span>
+<span class="sd">            validate_references: Validate all objects</span>
+<span class="sd">            progress_callback: Optional callback for progress updates</span>
+<span class="sd">            dry_run: If True, preview without importing</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            SyncResult with import details</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">SyncResult</span><span class="p">(</span><span class="n">object_type</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finding objects that reference </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Get the main object</span>
+            <span class="n">ops</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_operations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_project</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span>
+                    <span class="n">SyncError</span><span class="p">(</span>
+                        <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;resolve&quot;</span><span class="p">,</span>
+                        <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
+                        <span class="n">error_message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2"> not found in source project&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">result</span>
+
+            <span class="c1"># Start with importing the main object</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">DependencyConfig</span><span class="p">(</span><span class="n">include_owned</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">resolve_references</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolver</span><span class="o">.</span><span class="n">resolve_dependencies</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">object_type</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+            <span class="c1"># Find objects that reference this one</span>
+            <span class="k">if</span> <span class="n">include_referring_objects</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">ref_type</span> <span class="ow">in</span> <span class="n">include_referring_objects</span><span class="p">:</span>
+                    <span class="n">referring_objs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_referring_objects</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">ref_type</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+                        <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">referring_objs</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">ref_type</span><span class="si">}</span><span class="s2"> objects&quot;</span><span class="p">)</span>
+
+                    <span class="k">for</span> <span class="n">ref_obj</span> <span class="ow">in</span> <span class="n">referring_objs</span><span class="p">:</span>
+                        <span class="n">ref_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ref_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+                        <span class="c1"># Resolve dependencies for referring object</span>
+                        <span class="n">ref_config</span> <span class="o">=</span> <span class="n">DependencyConfig</span><span class="p">(</span><span class="n">include_owned</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">resolve_references</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="n">ref_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolver</span><span class="o">.</span><span class="n">resolve_dependencies</span><span class="p">(</span><span class="n">ref_obj</span><span class="p">,</span> <span class="n">ref_type</span><span class="p">,</span> <span class="n">ref_config</span><span class="p">)</span>
+
+                        <span class="c1"># Merge graphs</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_merge_graphs</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">ref_graph</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dependency graph: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Get import order</span>
+            <span class="n">import_order</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">get_import_order</span><span class="p">()</span>
+
+            <span class="c1"># Import objects</span>
+            <span class="n">imported_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_import_objects</span><span class="p">(</span>
+                <span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">,</span>
+                <span class="n">import_order</span><span class="o">=</span><span class="n">import_order</span><span class="p">,</span>
+                <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span>
+                <span class="n">progress_callback</span><span class="o">=</span><span class="n">progress_callback</span><span class="p">,</span>
+                <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
+                    <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dry run: Would import </span><span class="si">{</span><span class="n">imported_count</span><span class="si">}</span><span class="s2"> objects&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Imported </span><span class="si">{</span><span class="n">imported_count</span><span class="si">}</span><span class="s2"> objects&quot;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Import failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;import&quot;</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_import_objects</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">graph</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">,</span>
+        <span class="n">import_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">],</span>
+        <span class="n">result</span><span class="p">:</span> <span class="n">SyncResult</span><span class="p">,</span>
+        <span class="n">progress_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]],</span>
+        <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Import objects in dependency order.&quot;&quot;&quot;</span>
+        <span class="n">imported_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">import_order</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">obj_type</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">import_order</span><span class="p">):</span>
+            <span class="c1"># Check if already exists</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists_in_target</span><span class="p">(</span><span class="n">guid</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Object </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2"> already exists, skipping&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Get object</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">node</span><span class="o">.</span><span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Object not available (might be a reference that exists in target)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Progress update</span>
+            <span class="k">if</span> <span class="n">progress_callback</span> <span class="ow">and</span> <span class="p">(</span><span class="n">idx</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">idx</span> <span class="o">==</span> <span class="n">total</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing </span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">obj_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
+                <span class="c1"># Just count</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">skip</span><span class="p">()</span>
+                <span class="n">imported_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Actually import</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">target_ops</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_operations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_project</span><span class="p">,</span> <span class="n">obj_type</span><span class="p">)</span>
+                    <span class="n">source_ops</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_operations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_project</span><span class="p">,</span> <span class="n">obj_type</span><span class="p">)</span>
+
+                    <span class="n">created_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merger</span><span class="o">.</span><span class="n">create_object</span><span class="p">(</span>
+                        <span class="n">target_ops</span><span class="o">=</span><span class="n">target_ops</span><span class="p">,</span> <span class="n">source_obj</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">obj</span><span class="p">,</span> <span class="n">source_ops</span><span class="o">=</span><span class="n">source_ops</span>
+                    <span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">created_obj</span><span class="p">:</span>
+                        <span class="kn">from</span><span class="w"> </span><span class="nn">.merge_ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">SyncChange</span>
+
+                        <span class="n">result</span><span class="o">.</span><span class="n">add_change</span><span class="p">(</span><span class="n">SyncChange</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="p">,</span> <span class="n">object_type</span><span class="o">=</span><span class="n">obj_type</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">))</span>
+                        <span class="n">imported_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span>
+                            <span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="s2">&quot;create_object returned None&quot;</span><span class="p">)</span>
+                        <span class="p">)</span>
+
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to import </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">imported_count</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_all</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">,</span> <span class="n">import_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">],</span> <span class="n">progress_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ValidationResult</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate all objects in import order.&quot;&quot;&quot;</span>
+        <span class="n">validation_issues</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">obj_type</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">import_order</span><span class="p">):</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">node</span><span class="o">.</span><span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Validate</span>
+            <span class="n">validation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validator</span><span class="o">.</span><span class="n">validate_before_create</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_project</span><span class="p">,</span> <span class="n">obj_type</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">validation</span><span class="o">.</span><span class="n">has_critical</span><span class="p">:</span>
+                <span class="n">validation_issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">validation</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation failed for </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">validation</span><span class="o">.</span><span class="n">detailed_report</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">validation_issues</span> <span class="ow">and</span> <span class="n">progress_callback</span><span class="p">:</span>
+            <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">validation_issues</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects with critical issues&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">validation_issues</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_merge_graphs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Merge source graph into target graph.&quot;&quot;&quot;</span>
+        <span class="c1"># Add all nodes</span>
+        <span class="k">for</span> <span class="n">guid</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">guid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="p">:</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">add_object</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">object_type</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="c1"># Add all dependencies</span>
+        <span class="k">for</span> <span class="n">guid</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">dep_guid</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
+                <span class="n">dep_type</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">dependency_types</span><span class="p">[</span><span class="n">dep_guid</span><span class="p">]</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">add_dependency</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">dep_guid</span><span class="p">,</span> <span class="n">dep_type</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_break_cycles_and_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Break cycles at weakest links and return topological sort.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.dependency_graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">DependencyType</span>
+
+        <span class="c1"># Find all cycles</span>
+        <span class="n">cycles</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">detect_cycles</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="n">cycles</span><span class="p">:</span>
+            <span class="c1"># Break the first cycle at a CROSS_REFERENCE link (weakest)</span>
+            <span class="n">cycle</span> <span class="o">=</span> <span class="n">cycles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># Find a cross-reference link to break</span>
+            <span class="n">broken</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cycle</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">from_guid</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">to_guid</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">from_guid</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                    <span class="n">node</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">from_guid</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">to_guid</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">dependency_types</span><span class="p">:</span>
+                        <span class="n">dep_type</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">dependency_types</span><span class="p">[</span><span class="n">to_guid</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">dep_type</span> <span class="o">==</span> <span class="n">DependencyType</span><span class="o">.</span><span class="n">CROSS_REFERENCE</span><span class="p">:</span>
+                            <span class="c1"># Break this link</span>
+                            <span class="n">graph</span><span class="o">.</span><span class="n">remove_dependency</span><span class="p">(</span><span class="n">from_guid</span><span class="p">,</span> <span class="n">to_guid</span><span class="p">)</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Broke cycle at </span><span class="si">{</span><span class="n">from_guid</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">to_guid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                            <span class="n">broken</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">broken</span><span class="p">:</span>
+                <span class="c1"># No cross-reference found, break at any REFERENCE</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cycle</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">from_guid</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">to_guid</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">from_guid</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                        <span class="n">node</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">from_guid</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">to_guid</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">dependency_types</span><span class="p">:</span>
+                            <span class="n">dep_type</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">dependency_types</span><span class="p">[</span><span class="n">to_guid</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="n">dep_type</span> <span class="o">==</span> <span class="n">DependencyType</span><span class="o">.</span><span class="n">REFERENCE</span><span class="p">:</span>
+                                <span class="n">graph</span><span class="o">.</span><span class="n">remove_dependency</span><span class="p">(</span><span class="n">from_guid</span><span class="p">,</span> <span class="n">to_guid</span><span class="p">)</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Broke cycle at </span><span class="si">{</span><span class="n">from_guid</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">to_guid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                                <span class="n">broken</span> <span class="o">=</span> <span class="kc">True</span>
+                                <span class="k">break</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">broken</span><span class="p">:</span>
+                <span class="c1"># Last resort: break first link</span>
+                <span class="n">graph</span><span class="o">.</span><span class="n">remove_dependency</span><span class="p">(</span><span class="n">cycle</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cycle</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Broke cycle at ownership link </span><span class="si">{</span><span class="n">cycle</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">cycle</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Re-detect cycles</span>
+            <span class="n">cycles</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">detect_cycles</span><span class="p">()</span>
+
+        <span class="c1"># Now get topological sort</span>
+        <span class="k">return</span> <span class="n">graph</span><span class="o">.</span><span class="n">get_import_order</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_find_referring_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find all objects of given type that reference the specified object.&quot;&quot;&quot;</span>
+        <span class="n">referring</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ops</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_operations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_project</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span>
+            <span class="n">all_objects</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">all_objects</span><span class="p">:</span>
+                <span class="c1"># Check if this object references the target GUID</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_object_references</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">object_type</span><span class="p">):</span>
+                    <span class="n">referring</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error finding referring objects: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">referring</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_object_references</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if object references target GUID.&quot;&quot;&quot;</span>
+        <span class="c1"># Get all referenced objects</span>
+        <span class="n">referenced</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolver</span><span class="o">.</span><span class="n">get_referenced_objects</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ref_obj</span><span class="p">,</span> <span class="n">ref_type</span> <span class="ow">in</span> <span class="n">referenced</span><span class="p">:</span>
+            <span class="n">ref_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ref_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ref_guid</span> <span class="o">==</span> <span class="n">target_guid</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_operations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get operations class for object type.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">object_type</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Project does not have operations for </span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_exists_in_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if object exists in target project.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.sync.hierarchical_importer</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

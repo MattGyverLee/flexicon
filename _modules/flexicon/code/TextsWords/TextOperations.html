@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.TextsWords.TextOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.TextsWords.TextOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.TextsWords.TextOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   TextOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: TextOperations</span>
+<span class="c1">#            Text operations for FieldWorks Language Explorer projects</span>
+<span class="c1">#            via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright Craig Farrow, 2008 - 2024</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IText</span><span class="p">,</span>
+    <span class="n">ITextFactory</span><span class="p">,</span>
+    <span class="n">IStTextFactory</span><span class="p">,</span>
+    <span class="n">IStTxtParaFactory</span><span class="p">,</span>
+    <span class="n">ITextRepository</span><span class="p">,</span>
+    <span class="n">IStTxtPara</span><span class="p">,</span>
+    <span class="n">ICmPossibility</span><span class="p">,</span>
+    <span class="n">ICmMedia</span><span class="p">,</span>
+    <span class="n">ICmMediaFactory</span><span class="p">,</span>
+    <span class="n">ICmFolderFactory</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+
+<div class="viewcode-block" id="TextOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.TextOperations.TextOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TextOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Text operations for managing FLEx Text objects.</span>
+
+<span class="sd">    This class provides methods for creating, reading, updating, and deleting</span>
+<span class="sd">    texts in a FieldWorks Language Explorer project.</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
+
+<span class="sd">        # Access through the Texts property</span>
+<span class="sd">        text_ops = TextOperations(project)</span>
+
+<span class="sd">        # Or if integrated into FLExProject:</span>
+<span class="sd">        # new_text = project.Texts.Create(&quot;Story 1&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize TextOperations with a FLEx project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Specify which sequence to reorder for text paragraphs.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">ContentsOS</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper for writing system handles.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Writing system handle or None for default analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetTextObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve text_or_hvo to IText object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IText: The text object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the HVO doesn&#39;t refer to a text object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">,</span> <span class="s2">&quot;text_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IText</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;HVO </span><span class="si">{</span><span class="n">text_or_hvo</span><span class="si">}</span><span class="s2"> does not refer to a text object&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">text_or_hvo</span>
+
+    <span class="c1"># --- Core CRUD Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">genre</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new text in the project.</span>
+
+<span class="sd">        Creates a new IText object with the specified name and optional genre.</span>
+<span class="sd">        The text will have an empty StText contents object created automatically.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the text. Must be unique and non-empty.</span>
+<span class="sd">            genre (ICmPossibility, optional): Genre classification for the text.</span>
+<span class="sd">                If provided, must be a valid ICmPossibility from the project&#39;s</span>
+<span class="sd">                genre list. Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IText: The newly created text object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If name is None or empty.</span>
+<span class="sd">            FP_ParameterError: If a text with this name already exists.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Create a simple text</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Texts.Create(&quot;Genesis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(text.Name.BestAnalysisAlternative.Text)</span>
+<span class="sd">            Genesis</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create a text with genre</span>
+<span class="sd">            &gt;&gt;&gt; narrative_genre = project.lp.GenreListOA.PossibilitiesOS[0]</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Texts.Create(&quot;Story 1&quot;, genre=narrative_genre)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Exists, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateStringNotEmpty</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;text name&quot;</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c1"># Check if text with this name already exists</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A text with the name &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; already exists.&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create text &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the text object</span>
+            <span class="n">text_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ITextFactory</span><span class="p">)</span>
+            <span class="n">new_text</span> <span class="o">=</span> <span class="n">text_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to the texts collection. In newer LCM builds ILangProject&#39;s</span>
+            <span class="c1"># texts accessor is `Texts` (not `TextsOC` -- the latter has been</span>
+            <span class="c1"># renamed/removed). See issue #22.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Texts</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_text</span><span class="p">)</span>
+
+            <span class="c1"># Set the name</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+            <span class="n">name_str</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_text</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">name_str</span><span class="p">)</span>
+
+            <span class="c1"># Create the contents (StText)</span>
+            <span class="n">sttext_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTextFactory</span><span class="p">)</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">sttext_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="n">new_text</span><span class="o">.</span><span class="n">ContentsOA</span> <span class="o">=</span> <span class="n">contents</span>
+
+            <span class="c1"># Set genre if provided</span>
+            <span class="k">if</span> <span class="n">genre</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">SetGenre</span><span class="p">(</span><span class="n">new_text</span><span class="p">,</span> <span class="n">genre</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_text</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a text from the project.</span>
+
+<span class="sd">        Removes the text and all its contents (paragraphs, segments, etc.) from</span>
+<span class="sd">        the project database.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Delete by object</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Texts.GetAll()[0]</span>
+<span class="sd">            &gt;&gt;&gt; project.Texts.Delete(text)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Delete by HVO</span>
+<span class="sd">            &gt;&gt;&gt; project.Texts.Delete(text_hvo)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Exists, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Remove from collection. See note in Create() about the LCM API</span>
+        <span class="c1"># rename from TextsOC to Texts (issue #22).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">Texts</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">text_obj</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a text, creating a new text with the same properties.</span>
+
+<span class="sd">        This method creates a copy of an existing text. With deep=True (default),</span>
+<span class="sd">        all paragraphs and their segments are recursively duplicated. With deep=False,</span>
+<span class="sd">        only the text shell (name, genre, abbreviation) is duplicated.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: Either an IText object or its HVO (integer identifier)</span>
+<span class="sd">            deep (bool): If True (default), recursively duplicate all paragraphs</span>
+<span class="sd">                and segments. If False, only duplicate the text shell (name, genre).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IText: The newly created duplicate text</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Deep duplicate (default: with all paragraphs)</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; duplicate = project.Texts.Duplicate(text)  # deep=True by default</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Texts.GetParagraphCount(duplicate))</span>
+<span class="sd">            10</span>
+
+<span class="sd">            &gt;&gt;&gt; # Shallow duplicate (text shell only, no paragraphs)</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; duplicate = project.Texts.Duplicate(text, deep=False)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Texts.GetName(duplicate))</span>
+<span class="sd">            Genesis (copy)</span>
+<span class="sd">            &gt;&gt;&gt; print(project.Texts.GetParagraphCount(duplicate))</span>
+<span class="sd">            0</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - deep=True for Text can be slow for long texts with many paragraphs</span>
+<span class="sd">            - The duplicate will have a &quot; (copy)&quot; suffix added to the name</span>
+<span class="sd">            - The duplicate will have identical content but a new GUID</span>
+<span class="sd">            - Media files are NOT duplicated (to avoid file duplication)</span>
+<span class="sd">            - Segments will need re-parsing if you want analyses</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Duplicated text is added to the project texts collection</span>
+<span class="sd">            - New GUID is auto-generated for the duplicate</span>
+<span class="sd">            - Name is copied with &quot; (copy)&quot; suffix to ensure uniqueness</span>
+<span class="sd">            - Genre is copied (if set)</span>
+<span class="sd">            - Abbreviation is copied (if set)</span>
+<span class="sd">            - With deep=True, all paragraphs are recursively duplicated</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, project.Paragraphs.Duplicate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get source properties</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">source_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">text_obj</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">source_genre</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetGenre</span><span class="p">(</span><span class="n">text_obj</span><span class="p">)</span>
+
+        <span class="c1"># Create unique name by appending &quot; (copy)&quot;</span>
+        <span class="n">new_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source_name</span><span class="si">}</span><span class="s2"> (copy)&quot;</span>
+
+        <span class="c1"># Ensure uniqueness</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">new_name</span><span class="p">):</span>
+            <span class="n">new_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source_name</span><span class="si">}</span><span class="s2"> (copy </span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate text&quot;</span><span class="p">):</span>
+            <span class="c1"># Create the new text (sets Name and Genre via Create helper)</span>
+            <span class="n">new_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">new_name</span><span class="p">,</span> <span class="n">genre</span><span class="o">=</span><span class="n">source_genre</span><span class="p">)</span>
+
+            <span class="c1"># Copy remaining MultiString properties (all writing systems)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">text_obj</span><span class="p">,</span> <span class="s2">&quot;Abbreviation&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">:</span>
+                <span class="n">new_text</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">text_obj</span><span class="p">,</span> <span class="s2">&quot;Title&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">Title</span><span class="p">:</span>
+                <span class="n">new_text</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">Title</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">text_obj</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
+                <span class="n">new_text</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">text_obj</span><span class="p">,</span> <span class="s2">&quot;Source&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">Source</span><span class="p">:</span>
+                <span class="n">new_text</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">Source</span><span class="p">)</span>
+
+            <span class="c1"># Deep duplication: copy paragraph contents</span>
+            <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+                <span class="n">paragraphs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetParagraphs</span><span class="p">(</span><span class="n">text_obj</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">para</span> <span class="ow">in</span> <span class="n">paragraphs</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span><span class="p">:</span>
+                        <span class="c1"># Copy the full TsString (preserves formatting and all WS runs)</span>
+                        <span class="n">para_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IStTxtParaFactory</span><span class="p">)</span>
+                        <span class="n">new_para</span> <span class="o">=</span> <span class="n">para_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                        <span class="n">new_text</span><span class="o">.</span><span class="n">ContentsOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_para</span><span class="p">)</span>
+                        <span class="n">new_para</span><span class="o">.</span><span class="n">Contents</span> <span class="o">=</span> <span class="n">para</span><span class="o">.</span><span class="n">Contents</span>
+
+            <span class="k">return</span> <span class="n">new_text</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all syncable properties of a text.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The IText object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary of syncable properties with their values.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; props = project.Texts.GetSyncableProperties(text)</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;Title&#39;])</span>
+<span class="sd">            {&#39;en&#39;: &#39;Genesis&#39;}</span>
+<span class="sd">            &gt;&gt;&gt; print(props[&#39;Description&#39;])</span>
+<span class="sd">            {&#39;en&#39;: &#39;First book of the Bible&#39;}</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - MultiString properties: Title, Description, Source</span>
+<span class="sd">            - DateTime properties: DateCreated, DateModified</span>
+<span class="sd">            - Reference Collection properties: GenresRC, MediaFilesRC (GUIDs)</span>
+<span class="sd">            - Does NOT include owned sequences (paragraphs) - those are children</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Title&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">Title</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Title</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">Description</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Source&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">Source</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Source</span><span class="p">)</span>
+
+        <span class="c1"># DateTime properties</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;DateCreated&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">DateCreated</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;DateCreated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">DateCreated</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">DateModified</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;DateModified&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">DateModified</span><span class="p">)</span>
+
+        <span class="c1"># Reference Collection properties (return list of GUIDs)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;GenresRC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">GenresRC</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;GenresRC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">GenresRC</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;MediaFilesRC&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">MediaFilesRC</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;MediaFilesRC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">MediaFilesRC</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two texts for differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First text object (from project 1)</span>
+<span class="sd">            item2: Second text object (from project 2)</span>
+<span class="sd">            ops1: Optional TextOperations instance for project 1 (defaults to self)</span>
+<span class="sd">            ops2: Optional TextOperations instance for project 2 (defaults to self)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences_dict)</span>
+<span class="sd">                - is_different (bool): True if texts differ, False if identical</span>
+<span class="sd">                - differences_dict (dict): Maps property names to (value1, value2) tuples</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = ops1.CompareTo(text1, text2, ops1, ops2)</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} != {val2}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Compares all syncable properties</span>
+<span class="sd">            - MultiStrings are compared across all writing systems</span>
+<span class="sd">            - Reference collections are compared by GUID</span>
+<span class="sd">            - Empty/null values are treated as equivalent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Get all property keys from both items</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="c1"># Compare values</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_CompareValues</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">):</span>
+                <span class="c1"># Values are different</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a text with the given name exists in the project.</span>
+
+<span class="sd">        Performs a case-sensitive comparison of text names in the default</span>
+<span class="sd">        analysis writing system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the text to check.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if a text with the given name exists, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None or empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; if project.Texts.Exists(&quot;Genesis&quot;):</span>
+<span class="sd">            ...     print(&quot;Text already exists&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     text = project.Texts.Create(&quot;Genesis&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateStringNotEmpty</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;text name&quot;</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c1"># Check all texts for matching name</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">ITextRepository</span><span class="p">):</span>
+            <span class="n">text_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">BestAnalysisAlternative</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">text_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all texts in the project.</span>
+
+<span class="sd">        Returns a generator that yields IText objects. This is a wrapper around</span>
+<span class="sd">        the existing TextsGetAll method but returns the raw IText objects instead</span>
+<span class="sd">        of (name, content) tuples.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            IText: Each text object in the project.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Iterate over all texts</span>
+<span class="sd">            &gt;&gt;&gt; for text in project.Texts.GetAll():</span>
+<span class="sd">            ...     name = text.Name.BestAnalysisAlternative.Text</span>
+<span class="sd">            ...     print(f&quot;Text: {name}&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get as list</span>
+<span class="sd">            &gt;&gt;&gt; all_texts = list(project.Texts.GetAll())</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Total texts: {len(all_texts)}&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, Exists, project.TextsGetAll()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">ITextRepository</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find a text by title, returning None when no match exists.</span>
+
+<span class="sd">        ``IText.Name`` is the user-facing title in FieldWorks, so Find</span>
+<span class="sd">        searches that field. Matches a single writing system at a time</span>
+<span class="sd">        (the default analysis WS when ``wsHandle`` is omitted). Returns</span>
+<span class="sd">        the first matching ``IText`` or None; for partial matching,</span>
+<span class="sd">        iterate ``GetAll()`` and filter manually.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">title</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">title</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">text</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># GetTitle / SetTitle are user-facing names for the same field that</span>
+    <span class="c1"># LCM exposes as IText.Name. Both spellings appear in the codebase&#39;s</span>
+    <span class="c1"># public conventions (and in FieldWorks&#39; UI), so expose them as</span>
+    <span class="c1"># first-class methods rather than as deprecated aliases.</span>
+<div class="viewcode-block" id="TextOperations.GetTitle">
+<a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.TextOperations.TextOperations.GetTitle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the text&#39;s title (same field as GetName).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">wsHandle</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TextOperations.SetTitle">
+<a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.TextOperations.TextOperations.SetTitle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the text&#39;s title (same field as SetName).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">SetName</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">wsHandle</span><span class="p">)</span></div>
+
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of a text.</span>
+
+<span class="sd">        Retrieves the text name in the specified writing system, or the default</span>
+<span class="sd">        analysis writing system if not specified.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+<span class="sd">            wsHandle (int, optional): Writing system handle. If None, uses the</span>
+<span class="sd">                default analysis writing system. Can also be a language tag string.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The name of the text in the specified writing system. Returns</span>
+<span class="sd">                empty string if no name is set for that writing system.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get name in default analysis WS</span>
+<span class="sd">            &gt;&gt;&gt; name = project.Texts.GetName(text)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get name in specific WS</span>
+<span class="sd">            &gt;&gt;&gt; ws_handle = project.WSHandle(&#39;en&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; name_en = project.Texts.GetName(text, ws_handle)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetName, Exists</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Get the name string</span>
+        <span class="n">name_str</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name_str</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of a text.</span>
+
+<span class="sd">        Sets the text name in the specified writing system, or the default</span>
+<span class="sd">        analysis writing system if not specified.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+<span class="sd">            name (str): The new name for the text. Must be non-empty.</span>
+<span class="sd">            wsHandle (int, optional): Writing system handle. If None, uses the</span>
+<span class="sd">                default analysis writing system. Can also be a language tag string.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo or name is None/empty.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Set name in default analysis WS</span>
+<span class="sd">            &gt;&gt;&gt; project.Texts.SetName(text, &quot;Updated Story&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Set name in specific WS</span>
+<span class="sd">            &gt;&gt;&gt; ws_handle = project.WSHandle(&#39;en&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Texts.SetName(text, &quot;English Title&quot;, ws_handle)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetName, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Set the name</span>
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">text_obj</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetGenre</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the genre of a text.</span>
+
+<span class="sd">        Retrieves the first genre assigned to the text. In FLEx, texts can</span>
+<span class="sd">        technically have multiple genres, but typically only one is assigned.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmPossibility or None: The genre object if one is assigned, or None</span>
+<span class="sd">                if no genre is set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; genre = project.Texts.GetGenre(text)</span>
+<span class="sd">            &gt;&gt;&gt; if genre:</span>
+<span class="sd">            ...     genre_name = genre.Name.BestAnalysisAlternative.Text</span>
+<span class="sd">            ...     print(f&quot;Genre: {genre_name}&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;No genre assigned&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetGenre, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get the first genre (if any)</span>
+        <span class="k">if</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">GenresRC</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">GenresRC</span><span class="o">.</span><span class="n">FirstOrDefault</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetGenre</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">genre</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the genre of a text.</span>
+
+<span class="sd">        Clears any existing genres and sets the specified genre. If genre is None,</span>
+<span class="sd">        all genres are cleared.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+<span class="sd">            genre (ICmPossibility or None): The genre to assign. Must be a valid</span>
+<span class="sd">                ICmPossibility from the project&#39;s genre list (typically found in</span>
+<span class="sd">                project.lp.GenreListOA.PossibilitiesOS). If None, clears all genres.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid, or if</span>
+<span class="sd">                genre is not a valid ICmPossibility.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Set genre to first available genre</span>
+<span class="sd">            &gt;&gt;&gt; if project.lp.GenreListOA.PossibilitiesOS.Count &gt; 0:</span>
+<span class="sd">            ...     narrative = project.lp.GenreListOA.PossibilitiesOS[0]</span>
+<span class="sd">            ...     project.Texts.SetGenre(text, narrative)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Clear genre</span>
+<span class="sd">            &gt;&gt;&gt; project.Texts.SetGenre(text, None)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetGenre, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Set text genre&quot;</span><span class="p">):</span>
+            <span class="c1"># Clear existing genres</span>
+            <span class="n">text_obj</span><span class="o">.</span><span class="n">GenresRC</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
+
+            <span class="c1"># Add new genre if provided</span>
+            <span class="k">if</span> <span class="n">genre</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Validate it&#39;s a possibility</span>
+                    <span class="n">genre_poss</span> <span class="o">=</span> <span class="n">ICmPossibility</span><span class="p">(</span><span class="n">genre</span><span class="p">)</span>
+                    <span class="n">text_obj</span><span class="o">.</span><span class="n">GenresRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">genre_poss</span><span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="n">System</span><span class="o">.</span><span class="n">InvalidCastException</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;genre must be a valid ICmPossibility object&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Advanced Text Content Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetContents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the StText contents object for a text.</span>
+
+<span class="sd">        Retrieves the IStText object that contains the actual content (paragraphs,</span>
+<span class="sd">        segments, etc.) of the text. Each IText has a ContentsOA (owned atomic)</span>
+<span class="sd">        property that points to its StText content object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IStText or None: The text contents object if set, or None if the text</span>
+<span class="sd">                has no contents.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Texts.Find(&quot;Genesis&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; contents = project.Texts.GetContents(text)</span>
+<span class="sd">            &gt;&gt;&gt; if contents:</span>
+<span class="sd">            ...     print(f&quot;Paragraphs: {contents.ParagraphsOS.Count}&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;Text has no contents&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetParagraphs, GetParagraphCount, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span> <span class="k">if</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParagraphs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all paragraphs in a text.</span>
+
+<span class="sd">        Retrieves a list of all paragraph objects (IStTxtPara) from the text&#39;s</span>
+<span class="sd">        contents. If the text has no contents, returns an empty list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IStTxtPara objects. Returns empty list if the text has</span>
+<span class="sd">                no contents or no paragraphs.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; paras = project.Texts.GetParagraphs(text)</span>
+<span class="sd">            &gt;&gt;&gt; for i, para in enumerate(paras, 1):</span>
+<span class="sd">            ...     content = para.Contents.Text</span>
+<span class="sd">            ...     print(f&quot;Paragraph {i}: {content}&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetContents, GetParagraphCount</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span><span class="p">:</span>
+            <span class="c1"># Cast each paragraph to IStTxtPara to ensure SegmentsOS is accessible</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">IStTxtPara</span><span class="p">(</span><span class="n">para</span><span class="p">)</span> <span class="k">for</span> <span class="n">para</span> <span class="ow">in</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetParagraphCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of paragraphs in a text.</span>
+
+<span class="sd">        Counts the paragraphs in the text&#39;s contents. This is more efficient</span>
+<span class="sd">        than getting all paragraphs and checking the length if you only need</span>
+<span class="sd">        the count.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The number of paragraphs. Returns 0 if the text has no contents.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; count = project.Texts.GetParagraphCount(text)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Text has {count} paragraphs&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetParagraphs, GetContents</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">ContentsOA</span><span class="o">.</span><span class="n">ParagraphsOS</span><span class="o">.</span><span class="n">Count</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetMediaFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get media files associated with a text.</span>
+
+<span class="sd">        Retrieves all media files (audio, video, etc.) that are linked to the</span>
+<span class="sd">        text. In FLEx, media files are stored in a CmMediaContainer object</span>
+<span class="sd">        referenced by the text&#39;s MediaFilesOA property.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of ICmMedia objects. Returns empty list if no media</span>
+<span class="sd">                container exists or no media files are attached.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Texts.GetMediaFiles(text)</span>
+<span class="sd">            &gt;&gt;&gt; for m in media:</span>
+<span class="sd">            ...     if m.MediaFileRA:</span>
+<span class="sd">            ...         path = m.MediaFileRA.AbsoluteInternalPath</span>
+<span class="sd">            ...         print(f&quot;Media file: {path}&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddMediaFile</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">MediaFilesOA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">MediaFilesOA</span><span class="o">.</span><span class="n">MediaFilesOC</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddMediaFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">filepath</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a media file to a text.</span>
+
+<span class="sd">        Copies the file to the project&#39;s LinkedFiles directory and creates</span>
+<span class="sd">        a media reference linked to the text. If the text doesn&#39;t have a</span>
+<span class="sd">        media container yet, one will be created automatically.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+<span class="sd">            filepath (str): Path to the external media file to import.</span>
+<span class="sd">            label (str, optional): Descriptive label for the media file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ICmMedia: The created media object with file properly linked.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo or filepath is None/empty.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist, is invalid, or file not found.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; media = project.Texts.AddMediaFile(</span>
+<span class="sd">            ...     text,</span>
+<span class="sd">            ...     &quot;/home/user/audio/genesis.mp3&quot;,</span>
+<span class="sd">            ...     label=&quot;Genesis Recording&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Media added: {media.Hvo}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - File is copied to project&#39;s LinkedFiles/AudioVisual directory</span>
+<span class="sd">            - Unique filename generated if collision occurs (file_1.mp3, etc.)</span>
+<span class="sd">            - Creates ICmMedia object with proper ICmFile reference</span>
+<span class="sd">            - Media is automatically added to text&#39;s MediaFilesOC collection</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetMediaFiles, project.Media.CopyToProject</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;filepath&quot;</span><span class="p">)</span>
+
+        <span class="n">filepath</span> <span class="o">=</span> <span class="n">filepath</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;filepath&quot;</span><span class="p">)</span>
+
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add media file&quot;</span><span class="p">):</span>
+            <span class="c1"># Create media container if needed</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">text_obj</span><span class="o">.</span><span class="n">MediaFilesOA</span><span class="p">:</span>
+                <span class="n">folder_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmFolderFactory</span><span class="p">)</span>
+                <span class="n">container</span> <span class="o">=</span> <span class="n">folder_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="n">text_obj</span><span class="o">.</span><span class="n">MediaFilesOA</span> <span class="o">=</span> <span class="n">container</span>
+
+            <span class="c1"># Use MediaOperations to properly copy file and create ICmFile</span>
+            <span class="c1"># Copy file to project and get ICmFile reference</span>
+            <span class="n">cm_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Media</span><span class="o">.</span><span class="n">CopyToProject</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">internal_subdir</span><span class="o">=</span><span class="s2">&quot;AudioVisual&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+
+            <span class="c1"># Create ICmMedia object</span>
+            <span class="n">media_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmMediaFactory</span><span class="p">)</span>
+            <span class="n">media</span> <span class="o">=</span> <span class="n">media_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to text&#39;s media collection (must be done before setting properties)</span>
+            <span class="n">text_obj</span><span class="o">.</span><span class="n">MediaFilesOA</span><span class="o">.</span><span class="n">MediaFilesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">media</span><span class="p">)</span>
+
+            <span class="c1"># Link the ICmFile to ICmMedia</span>
+            <span class="n">media</span><span class="o">.</span><span class="n">MediaFileRA</span> <span class="o">=</span> <span class="n">cm_file</span>
+
+            <span class="k">return</span> <span class="n">media</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the abbreviation for a text.</span>
+
+<span class="sd">        Retrieves the text&#39;s abbreviation in the specified writing system.</span>
+<span class="sd">        Abbreviations are used as short identifiers for texts in FLEx&#39;s UI</span>
+<span class="sd">        and exports.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+<span class="sd">            wsHandle (int, optional): Writing system handle. If None, uses the</span>
+<span class="sd">                default analysis writing system. Can also be a language tag string.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The abbreviation in the specified writing system. Returns empty</span>
+<span class="sd">                string if no abbreviation is set for that writing system.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get abbreviation in default analysis WS</span>
+<span class="sd">            &gt;&gt;&gt; abbr = project.Texts.GetAbbreviation(text)</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Abbreviation: {abbr}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Get abbreviation in specific WS</span>
+<span class="sd">            &gt;&gt;&gt; ws_handle = project.WSHandle(&#39;en&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; abbr_en = project.Texts.GetAbbreviation(text, ws_handle)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetName, SetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">abbr_str</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">abbr_str</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetIsTranslated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a text&#39;s translation is marked as complete.</span>
+
+<span class="sd">        Retrieves the IsTranslated boolean property indicating whether the</span>
+<span class="sd">        text has been fully translated or not.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the text is marked as translated, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; is_translated = project.Texts.GetIsTranslated(text)</span>
+<span class="sd">            &gt;&gt;&gt; if is_translated:</span>
+<span class="sd">            ...     print(&quot;Text translation is complete&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;Text translation is incomplete&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - This is a boolean property on the IText object</span>
+<span class="sd">            - Used to track translation workflow status</span>
+<span class="sd">            - Independent of the actual translation content</span>
+<span class="sd">            - Can be set manually or programmatically</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetIsTranslated</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">text_obj</span><span class="o">.</span><span class="n">IsTranslated</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetIsTranslated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_or_hvo</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Mark a text as translated or untranslated.</span>
+
+<span class="sd">        Sets the IsTranslated boolean property to indicate whether the text</span>
+<span class="sd">        has been fully translated.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_or_hvo: Either an IText object or its HVO (integer identifier).</span>
+<span class="sd">            value (bool): True to mark as translated, False to mark as untranslated.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project was not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If text_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the text does not exist or is invalid, or if</span>
+<span class="sd">                value is not a boolean.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; text = list(project.Texts.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Mark text as translated</span>
+<span class="sd">            &gt;&gt;&gt; project.Texts.SetIsTranslated(text, True)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Verify</span>
+<span class="sd">            &gt;&gt;&gt; if project.Texts.GetIsTranslated(text):</span>
+<span class="sd">            ...     print(&quot;Text is now marked as translated&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; # Mark text as untranslated</span>
+<span class="sd">            &gt;&gt;&gt; project.Texts.SetIsTranslated(text, False)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - value must be a boolean (True or False)</span>
+<span class="sd">            - Used to track translation workflow status</span>
+<span class="sd">            - Does not affect the actual content</span>
+<span class="sd">            - Useful for managing translation progress</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetIsTranslated</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">,</span> <span class="s2">&quot;text_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;value must be a boolean (True or False)&quot;</span><span class="p">)</span>
+
+        <span class="n">text_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetTextObject</span><span class="p">(</span><span class="n">text_or_hvo</span><span class="p">)</span>
+        <span class="n">text_obj</span><span class="o">.</span><span class="n">IsTranslated</span> <span class="o">=</span> <span class="n">value</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.TextsWords.TextOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Lexicon.allomorph_collection &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.allomorph_collection</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Lexicon.allomorph_collection</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   allomorph_collection.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: AllomorphCollection</span>
+<span class="c1">#          Smart collection for allomorphs with type-aware filtering</span>
+<span class="c1">#          and unified access across multiple concrete types.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Smart collection class for allomorphs.</span>
+
+<span class="sd">This module provides AllomorphCollection, a smart collection that manages</span>
+<span class="sd">allomorphs while showing type diversity and supporting unified operations</span>
+<span class="sd">across the two concrete types:</span>
+<span class="sd">- MoStemAllomorph</span>
+<span class="sd">- MoAffixAllomorph</span>
+
+<span class="sd">Problem:</span>
+<span class="sd">    GetAll() returns objects with multiple concrete implementations. Users</span>
+<span class="sd">    need to:</span>
+<span class="sd">    - See which types are in the collection</span>
+<span class="sd">    - Filter by type if they want to</span>
+<span class="sd">    - Work with all types together without manual casting</span>
+<span class="sd">    - Filter by common properties that work across all types</span>
+
+<span class="sd">Solution:</span>
+<span class="sd">    AllomorphCollection provides:</span>
+<span class="sd">    - __str__() showing type breakdown</span>
+<span class="sd">    - by_type() filtering to specific concrete types</span>
+<span class="sd">    - filter() for common criteria (form_contains, environment, type)</span>
+<span class="sd">    - Convenience methods (stem_allomorphs(), affix_allomorphs())</span>
+<span class="sd">    - Chainable filtering: allomorphs.stem_allomorphs().filter(form_contains=&#39;ing&#39;)</span>
+
+<span class="sd">Example::</span>
+
+<span class="sd">    from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection</span>
+
+<span class="sd">    # GetAll() now returns AllomorphCollection</span>
+<span class="sd">    allomorphs = allomorphOps.GetAll(entry)</span>
+<span class="sd">    print(allomorphs)  # Shows type breakdown</span>
+<span class="sd">    # AllomorphCollection (8 total)</span>
+<span class="sd">    #   MoStemAllomorph: 5 (62%)</span>
+<span class="sd">    #   MoAffixAllomorph: 3 (38%)</span>
+
+<span class="sd">    # Filter by type</span>
+<span class="sd">    stems = allomorphs.stem_allomorphs()</span>
+<span class="sd">    print(len(stems))  # 5</span>
+
+<span class="sd">    # Filter by form</span>
+<span class="sd">    ing_allomorphs = allomorphs.filter(form_contains=&#39;ing&#39;)</span>
+
+<span class="sd">    # Chain filters</span>
+<span class="sd">    ing_stems = allomorphs.stem_allomorphs().filter(form_contains=&#39;ing&#39;)</span>
+
+<span class="sd">    # Iterate</span>
+<span class="sd">    for allomorph in allomorphs:</span>
+<span class="sd">        print(allomorph.form)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.smart_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmartCollection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.allomorph</span><span class="w"> </span><span class="kn">import</span> <span class="n">Allomorph</span>
+
+
+<div class="viewcode-block" id="AllomorphCollection">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.allomorph_collection.AllomorphCollection">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AllomorphCollection</span><span class="p">(</span><span class="n">SmartCollection</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Smart collection for allomorphs with type-aware filtering.</span>
+
+<span class="sd">    Manages collections of allomorph (Allomorph wrapper objects) with</span>
+<span class="sd">    type-aware display and filtering capabilities. Supports filtering by</span>
+<span class="sd">    common properties (form, environment, type) and by concrete type.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        _items: List of Allomorph wrapper objects</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        allomorphs = allomorphOps.GetAll(entry)  # Returns AllomorphCollection</span>
+<span class="sd">        print(allomorphs)  # Shows type breakdown</span>
+<span class="sd">        stems = allomorphs.stem_allomorphs()  # Filter to MoStemAllomorph</span>
+<span class="sd">        ing = allomorphs.filter(form_contains=&#39;ing&#39;)  # Form filter</span>
+<span class="sd">        both = allomorphs.stem_allomorphs().filter(form_contains=&#39;ing&#39;)  # Chain</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize an AllomorphCollection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            items: Iterable of Allomorph objects, or None for empty.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            collection = AllomorphCollection()</span>
+<span class="sd">            collection = AllomorphCollection([allomorph1, allomorph2, allomorph3])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AllomorphCollection.filter">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.allomorph_collection.AllomorphCollection.filter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form_contains</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">environment</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter the collection by common allomorph properties.</span>
+
+<span class="sd">        Supports filtering by properties that work across all allomorph types</span>
+<span class="sd">        (form, environment). For complex filtering, use where().</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            form_contains (str, optional): Filter to allomorphs whose form contains</span>
+<span class="sd">                this string (case-sensitive).</span>
+<span class="sd">            environment: Filter by environment object or GUID. Can be an IPhEnvironment</span>
+<span class="sd">                object or the environment GUID as string.</span>
+<span class="sd">            where (callable, optional): Custom predicate function. If provided,</span>
+<span class="sd">                other criteria are ignored.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AllomorphCollection: New collection with filtered items.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            # Filter by form</span>
+<span class="sd">            ing_allomorphs = allomorphs.filter(form_contains=&#39;ing&#39;)</span>
+
+<span class="sd">            # Filter by environment</span>
+<span class="sd">            env = project.lp.PhonologicalDataOA.EnvironmentsOS[0]</span>
+<span class="sd">            env_allomorphs = allomorphs.filter(environment=env)</span>
+
+<span class="sd">            # Custom filtering</span>
+<span class="sd">            long_forms = allomorphs.where(lambda a: len(a.form) &gt; 3)</span>
+
+<span class="sd">            # Chain filters</span>
+<span class="sd">            ing_stems = allomorphs.filter(form_contains=&#39;ing&#39;).stem_allomorphs()</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - form_contains is case-sensitive</span>
+<span class="sd">            - All criteria are AND-ed together unless only one is provided</span>
+<span class="sd">            - where() takes precedence over other criteria</span>
+<span class="sd">            - Returns new collection (doesn&#39;t modify original)</span>
+<span class="sd">            - Use where() for complex custom filtering</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If custom predicate provided, use it</span>
+        <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">where</span><span class="p">(</span><span class="n">item</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="n">AllomorphCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span>
+
+        <span class="c1"># Apply criteria filters</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span>
+
+        <span class="k">if</span> <span class="n">form_contains</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">allomorph</span> <span class="k">for</span> <span class="n">allomorph</span> <span class="ow">in</span> <span class="n">filtered</span> <span class="k">if</span> <span class="n">form_contains</span> <span class="ow">in</span> <span class="p">(</span><span class="n">allomorph</span><span class="o">.</span><span class="n">form</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="n">environment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Handle both object and GUID comparisons</span>
+            <span class="n">environment_guid</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">environment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">environment</span><span class="p">,</span> <span class="s2">&quot;Guid&quot;</span><span class="p">):</span>
+                    <span class="n">environment_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">environment</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">environment_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">environment</span><span class="p">)</span>
+
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">allomorph</span>
+                <span class="k">for</span> <span class="n">allomorph</span> <span class="ow">in</span> <span class="n">filtered</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="o">==</span> <span class="n">environment_guid</span> <span class="k">for</span> <span class="n">env</span> <span class="ow">in</span> <span class="n">allomorph</span><span class="o">.</span><span class="n">environment</span><span class="p">)</span>
+            <span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">AllomorphCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AllomorphCollection.where">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.allomorph_collection.AllomorphCollection.where">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predicate</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter using a custom predicate function.</span>
+
+<span class="sd">        For filtering by complex criteria or properties not supported by filter().</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            predicate (callable): Function that takes an Allomorph and</span>
+<span class="sd">                returns True to include it in the result.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AllomorphCollection: New collection with items matching the predicate.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            # Complex predicate: allomorphs with form length &gt; 3</span>
+<span class="sd">            long_forms = allomorphs.where(lambda a: len(a.form) &gt; 3)</span>
+
+<span class="sd">            # Combining conditions</span>
+<span class="sd">            stem_with_env = allomorphs.where(</span>
+<span class="sd">                lambda a: a.is_stem_allomorph and len(a.environment) &gt; 0</span>
+<span class="sd">            )</span>
+
+<span class="sd">            # Type checking combined with other criteria</span>
+<span class="sd">            affix_only = allomorphs.where(lambda a: a.is_affix_allomorph)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Predicate receives each Allomorph object</span>
+<span class="sd">            - Return True to include in result, False to exclude</span>
+<span class="sd">            - For simple filters (form, environment), use filter() instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">allomorph</span> <span class="k">for</span> <span class="n">allomorph</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">predicate</span><span class="p">(</span><span class="n">allomorph</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">AllomorphCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AllomorphCollection.stem_allomorphs">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.allomorph_collection.AllomorphCollection.stem_allomorphs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stem_allomorphs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the stem allomorphs from the collection.</span>
+
+<span class="sd">        Convenience method for filtering to MoStemAllomorph objects only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AllomorphCollection: New collection with only MoStemAllomorph objects.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            stems = allomorphs.stem_allomorphs()</span>
+<span class="sd">            print(f&quot;Found {len(stems)} stem allomorphs&quot;)</span>
+
+<span class="sd">            # Chain with other filters</span>
+<span class="sd">            ing_stems = allomorphs.stem_allomorphs().filter(form_contains=&#39;ing&#39;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to by_type(&#39;MoStemAllomorph&#39;)</span>
+<span class="sd">            - Stem allomorphs are variants of stems/roots</span>
+<span class="sd">            - Use is_stem_allomorph on individual allomorphs to check type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;MoStemAllomorph&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AllomorphCollection.affix_allomorphs">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.allomorph_collection.AllomorphCollection.affix_allomorphs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">affix_allomorphs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get only the affix allomorphs from the collection.</span>
+
+<span class="sd">        Convenience method for filtering to MoAffixAllomorph objects only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AllomorphCollection: New collection with only MoAffixAllomorph objects.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            affixes = allomorphs.affix_allomorphs()</span>
+<span class="sd">            print(f&quot;Found {len(affixes)} affix allomorphs&quot;)</span>
+
+<span class="sd">            # Chain with other filters</span>
+<span class="sd">            ing_affixes = allomorphs.affix_allomorphs().filter(form_contains=&#39;ing&#39;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Equivalent to by_type(&#39;MoAffixAllomorph&#39;)</span>
+<span class="sd">            - Affix allomorphs are variants of prefixes, suffixes, infixes, etc.</span>
+<span class="sd">            - Use is_affix_allomorph on individual allomorphs to check type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;MoAffixAllomorph&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Technical representation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;AllomorphCollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> allomorphs)&quot;</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lexicon.allomorph_collection</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

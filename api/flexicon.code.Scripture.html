@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>flexicon.code.Scripture package &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/pyramid.css?v=cf1aad34" />
+    <script src="../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="flexicon.code.Shared package" href="flexicon.code.Shared.html" />
+    <link rel="prev" title="flexicon.code.Reversal package" href="flexicon.code.Reversal.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Shared.html" title="flexicon.code.Shared package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Reversal.html" title="flexicon.code.Reversal package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >flexicon</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="flexicon.html" >flexicon package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="flexicon.code.html" accesskey="U">flexicon.code package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Scripture package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="flexicon-code-scripture-package">
+<h1>flexicon.code.Scripture package<a class="headerlink" href="#flexicon-code-scripture-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-flexicon.code.Scripture.ScrAnnotationsOperations">
+<span id="flexicon-code-scripture-scrannotationsoperations-module"></span><h2>flexicon.code.Scripture.ScrAnnotationsOperations module<a class="headerlink" href="#module-flexicon.code.Scripture.ScrAnnotationsOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Scripture.ScrAnnotationsOperations.</span></span><span class="sig-name descname"><span class="pre">ScrAnnotationsOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Scripture/ScrAnnotationsOperations.html#ScrAnnotationsOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides operations for managing Scripture book annotations in a
+FieldWorks project.</p>
+<p>Scripture book annotations are containers for notes (translator notes,
+consultant notes, etc.) associated with a Scripture book.</p>
+<p>This class should be accessed via FLExProject.ScrAnnotations property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get a book</span>
+<span class="n">genesis</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrBooks</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Create annotations container</span>
+<span class="n">annotations</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrAnnotations</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">genesis</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get annotations for a book</span>
+<span class="n">annotations</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrAnnotations</span><span class="o">.</span><span class="n">GetForBook</span><span class="p">(</span><span class="n">genesis</span><span class="p">)</span>
+
+<span class="c1"># Get notes in annotations</span>
+<span class="n">notes</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrAnnotations</span><span class="o">.</span><span class="n">GetNotes</span><span class="p">(</span><span class="n">annotations</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.GetForBook">
+<span class="sig-name descname"><span class="pre">GetForBook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.GetForBook" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.GetNotes">
+<span class="sig-name descname"><span class="pre">GetNotes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.GetNotes" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Scripture.ScrBookOperations">
+<span id="flexicon-code-scripture-scrbookoperations-module"></span><h2>flexicon.code.Scripture.ScrBookOperations module<a class="headerlink" href="#module-flexicon.code.Scripture.ScrBookOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrBookOperations.ScrBookOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Scripture.ScrBookOperations.</span></span><span class="sig-name descname"><span class="pre">ScrBookOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Scripture/ScrBookOperations.html#ScrBookOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides operations for managing Scripture books in a
+FieldWorks project.</p>
+<p>Scripture books represent individual books of the Bible (Genesis, Matthew,
+etc.) identified by canonical numbers (1-66 for standard Protestant canon).
+Each book contains sections with headings and paragraph content.</p>
+<p>This class should be accessed via FLExProject.ScrBooks property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get all Scripture books</span>
+<span class="k">for</span> <span class="n">book</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrBooks</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrBooks</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">(</span><span class="n">book</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Book: </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create a new book (Genesis = 1)</span>
+<span class="n">genesis</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrBooks</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Genesis&quot;</span><span class="p">)</span>
+
+<span class="c1"># Find book by canonical number</span>
+<span class="n">matthew</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrBooks</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span>  <span class="c1"># Matthew = 40</span>
+
+<span class="c1"># Get sections in a book</span>
+<span class="n">sections</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrBooks</span><span class="o">.</span><span class="n">GetSections</span><span class="p">(</span><span class="n">genesis</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.FindByName">
+<span class="sig-name descname"><span class="pre">FindByName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.FindByName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetCanonicalNum">
+<span class="sig-name descname"><span class="pre">GetCanonicalNum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetCanonicalNum" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetTitle">
+<span class="sig-name descname"><span class="pre">GetTitle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetTitle" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.SetTitle">
+<span class="sig-name descname"><span class="pre">SetTitle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.SetTitle" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetSections">
+<span class="sig-name descname"><span class="pre">GetSections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetSections" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Scripture.ScrDraftOperations">
+<span id="flexicon-code-scripture-scrdraftoperations-module"></span><h2>flexicon.code.Scripture.ScrDraftOperations module<a class="headerlink" href="#module-flexicon.code.Scripture.ScrDraftOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Scripture.ScrDraftOperations.</span></span><span class="sig-name descname"><span class="pre">ScrDraftOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Scripture/ScrDraftOperations.html#ScrDraftOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides operations for managing Scripture drafts/versions in a
+FieldWorks project.</p>
+<p>Scripture drafts are saved versions of the Scripture text, allowing tracking
+of different translation drafts, consultant checks, or archived versions.</p>
+<p>This class should be accessed via FLExProject.ScrDrafts property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get all drafts</span>
+<span class="k">for</span> <span class="n">draft</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrDrafts</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+    <span class="n">desc</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrDrafts</span><span class="o">.</span><span class="n">GetDescription</span><span class="p">(</span><span class="n">draft</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Draft: </span><span class="si">{</span><span class="n">desc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create a new draft</span>
+<span class="n">draft</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrDrafts</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;First Draft - January 2025&quot;</span><span class="p">,</span> <span class="s2">&quot;saved_version&quot;</span><span class="p">)</span>
+
+<span class="c1"># Find draft by description</span>
+<span class="n">draft</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrDrafts</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="s2">&quot;First Draft&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get books in draft</span>
+<span class="n">books</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrDrafts</span><span class="o">.</span><span class="n">GetBooks</span><span class="p">(</span><span class="n">draft</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.GetDescription">
+<span class="sig-name descname"><span class="pre">GetDescription</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.GetDescription" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.SetDescription">
+<span class="sig-name descname"><span class="pre">SetDescription</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.SetDescription" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.GetBooks">
+<span class="sig-name descname"><span class="pre">GetBooks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.GetBooks" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Scripture.ScrNoteOperations">
+<span id="flexicon-code-scripture-scrnoteoperations-module"></span><h2>flexicon.code.Scripture.ScrNoteOperations module<a class="headerlink" href="#module-flexicon.code.Scripture.ScrNoteOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Scripture.ScrNoteOperations.</span></span><span class="sig-name descname"><span class="pre">ScrNoteOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Scripture/ScrNoteOperations.html#ScrNoteOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides operations for managing Scripture notes in a
+FieldWorks project.</p>
+<p>Scripture notes are annotations attached to specific paragraphs or
+locations in Scripture text. They can be translator notes, consultant
+notes, checking questions, etc.</p>
+<p>This class should be accessed via FLExProject.ScrNotes property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get a book</span>
+<span class="n">genesis</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrBooks</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Get a paragraph</span>
+<span class="n">section</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrSections</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">genesis</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">para</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrTxtParas</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Create a note</span>
+<span class="n">note</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrNotes</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span>
+    <span class="n">genesis</span><span class="p">,</span>
+    <span class="n">para</span><span class="p">,</span>
+    <span class="s2">&quot;Check: Is &#39;beginning&#39; the best translation?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;translator_note&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Get all notes for a book</span>
+<span class="n">notes</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrNotes</span><span class="o">.</span><span class="n">GetAll</span><span class="p">(</span><span class="n">genesis</span><span class="p">)</span>
+
+<span class="c1"># Get note text</span>
+<span class="n">text</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrNotes</span><span class="o">.</span><span class="n">GetText</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+
+<span class="c1"># Resolve a note</span>
+<span class="n">project</span><span class="o">.</span><span class="n">ScrNotes</span><span class="o">.</span><span class="n">Resolve</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.GetText">
+<span class="sig-name descname"><span class="pre">GetText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.GetText" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.SetText">
+<span class="sig-name descname"><span class="pre">SetText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.SetText" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.GetType">
+<span class="sig-name descname"><span class="pre">GetType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.GetType" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Resolve">
+<span class="sig-name descname"><span class="pre">Resolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Resolve" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.IsResolved">
+<span class="sig-name descname"><span class="pre">IsResolved</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.IsResolved" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Scripture.ScrSectionOperations">
+<span id="flexicon-code-scripture-scrsectionoperations-module"></span><h2>flexicon.code.Scripture.ScrSectionOperations module<a class="headerlink" href="#module-flexicon.code.Scripture.ScrSectionOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Scripture.ScrSectionOperations.</span></span><span class="sig-name descname"><span class="pre">ScrSectionOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Scripture/ScrSectionOperations.html#ScrSectionOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides operations for managing Scripture sections in a
+FieldWorks project.</p>
+<p>Scripture sections are subdivisions of books, each with a heading and
+content paragraphs. Sections organize Scripture text into logical units.</p>
+<p>This class should be accessed via FLExProject.ScrSections property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get a book</span>
+<span class="n">genesis</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrBooks</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Create a section</span>
+<span class="n">section</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrSections</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">genesis</span><span class="p">,</span> <span class="s2">&quot;Creation&quot;</span><span class="p">,</span> <span class="s2">&quot;In the beginning...&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get all sections in a book</span>
+<span class="n">sections</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrSections</span><span class="o">.</span><span class="n">GetAll</span><span class="p">(</span><span class="n">genesis</span><span class="p">)</span>
+
+<span class="c1"># Get section heading and content</span>
+<span class="n">heading</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrSections</span><span class="o">.</span><span class="n">GetHeading</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+<span class="n">paras</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrSections</span><span class="o">.</span><span class="n">GetContent</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.GetHeading">
+<span class="sig-name descname"><span class="pre">GetHeading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.GetHeading" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.SetHeading">
+<span class="sig-name descname"><span class="pre">SetHeading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.SetHeading" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.GetContent">
+<span class="sig-name descname"><span class="pre">GetContent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.GetContent" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.MoveTo">
+<span class="sig-name descname"><span class="pre">MoveTo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.MoveTo" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Scripture.ScrTxtParaOperations">
+<span id="flexicon-code-scripture-scrtxtparaoperations-module"></span><h2>flexicon.code.Scripture.ScrTxtParaOperations module<a class="headerlink" href="#module-flexicon.code.Scripture.ScrTxtParaOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Scripture.ScrTxtParaOperations.</span></span><span class="sig-name descname"><span class="pre">ScrTxtParaOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Scripture/ScrTxtParaOperations.html#ScrTxtParaOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides operations for managing Scripture text paragraphs in a
+FieldWorks project.</p>
+<p>Scripture paragraphs are the basic text units within sections, each with
+text content and a paragraph style (Normal, Poetry, Quote, etc.).</p>
+<p>This class should be accessed via FLExProject.ScrTxtParas property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get a section</span>
+<span class="n">genesis</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrBooks</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">section</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrSections</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">genesis</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Create a paragraph</span>
+<span class="n">para</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrTxtParas</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span>
+    <span class="n">section</span><span class="p">,</span>
+    <span class="s2">&quot;In the beginning God created the heavens and the earth.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Normal&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Get paragraph text</span>
+<span class="n">text</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">ScrTxtParas</span><span class="o">.</span><span class="n">GetText</span><span class="p">(</span><span class="n">para</span><span class="p">)</span>
+
+<span class="c1"># Set paragraph style</span>
+<span class="n">project</span><span class="o">.</span><span class="n">ScrTxtParas</span><span class="o">.</span><span class="n">SetStyleName</span><span class="p">(</span><span class="n">para</span><span class="p">,</span> <span class="s2">&quot;Poetry&quot;</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.GetText">
+<span class="sig-name descname"><span class="pre">GetText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.GetText" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.SetText">
+<span class="sig-name descname"><span class="pre">SetText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.SetText" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.GetStyleName">
+<span class="sig-name descname"><span class="pre">GetStyleName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.GetStyleName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.SetStyleName">
+<span class="sig-name descname"><span class="pre">SetStyleName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.SetStyleName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Scripture">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-flexicon.code.Scripture" title="Link to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">flexicon.code.Scripture package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-flexicon.code.Scripture.ScrAnnotationsOperations">flexicon.code.Scripture.ScrAnnotationsOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations"><code class="docutils literal notranslate"><span class="pre">ScrAnnotationsOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.GetForBook"><code class="docutils literal notranslate"><span class="pre">GetForBook()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrAnnotationsOperations.ScrAnnotationsOperations.GetNotes"><code class="docutils literal notranslate"><span class="pre">GetNotes()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Scripture.ScrBookOperations">flexicon.code.Scripture.ScrBookOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations"><code class="docutils literal notranslate"><span class="pre">ScrBookOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.FindByName"><code class="docutils literal notranslate"><span class="pre">FindByName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetCanonicalNum"><code class="docutils literal notranslate"><span class="pre">GetCanonicalNum()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetTitle"><code class="docutils literal notranslate"><span class="pre">GetTitle()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.SetTitle"><code class="docutils literal notranslate"><span class="pre">SetTitle()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrBookOperations.ScrBookOperations.GetSections"><code class="docutils literal notranslate"><span class="pre">GetSections()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Scripture.ScrDraftOperations">flexicon.code.Scripture.ScrDraftOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations"><code class="docutils literal notranslate"><span class="pre">ScrDraftOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.GetDescription"><code class="docutils literal notranslate"><span class="pre">GetDescription()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.SetDescription"><code class="docutils literal notranslate"><span class="pre">SetDescription()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations.GetBooks"><code class="docutils literal notranslate"><span class="pre">GetBooks()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Scripture.ScrNoteOperations">flexicon.code.Scripture.ScrNoteOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations"><code class="docutils literal notranslate"><span class="pre">ScrNoteOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.GetText"><code class="docutils literal notranslate"><span class="pre">GetText()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.SetText"><code class="docutils literal notranslate"><span class="pre">SetText()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.GetType"><code class="docutils literal notranslate"><span class="pre">GetType()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.Resolve"><code class="docutils literal notranslate"><span class="pre">Resolve()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrNoteOperations.ScrNoteOperations.IsResolved"><code class="docutils literal notranslate"><span class="pre">IsResolved()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Scripture.ScrSectionOperations">flexicon.code.Scripture.ScrSectionOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations"><code class="docutils literal notranslate"><span class="pre">ScrSectionOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.GetHeading"><code class="docutils literal notranslate"><span class="pre">GetHeading()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.SetHeading"><code class="docutils literal notranslate"><span class="pre">SetHeading()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.GetContent"><code class="docutils literal notranslate"><span class="pre">GetContent()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrSectionOperations.ScrSectionOperations.MoveTo"><code class="docutils literal notranslate"><span class="pre">MoveTo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Scripture.ScrTxtParaOperations">flexicon.code.Scripture.ScrTxtParaOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations"><code class="docutils literal notranslate"><span class="pre">ScrTxtParaOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.GetText"><code class="docutils literal notranslate"><span class="pre">GetText()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.SetText"><code class="docutils literal notranslate"><span class="pre">SetText()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.GetStyleName"><code class="docutils literal notranslate"><span class="pre">GetStyleName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Scripture.ScrTxtParaOperations.ScrTxtParaOperations.SetStyleName"><code class="docutils literal notranslate"><span class="pre">SetStyleName()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Scripture">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="flexicon.code.Reversal.html"
+                          title="previous chapter">flexicon.code.Reversal package</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="flexicon.code.Shared.html"
+                          title="next chapter">flexicon.code.Shared package</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Shared.html" title="flexicon.code.Shared package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Reversal.html" title="flexicon.code.Reversal package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >flexicon</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="flexicon.html" >flexicon package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="flexicon.code.html" >flexicon.code package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Scripture package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

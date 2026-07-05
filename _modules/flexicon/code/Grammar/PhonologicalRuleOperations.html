@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Grammar.PhonologicalRuleOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.PhonologicalRuleOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Grammar.PhonologicalRuleOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   PhonologicalRuleOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: PhonologicalRuleOperations</span>
+<span class="c1">#          Phonological rule operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_match_key</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IPhRegularRuleFactory</span><span class="p">,</span>  <span class="c1"># Fixed: was IPhPhonRuleFactory</span>
+    <span class="n">IPhSegRuleRHSFactory</span><span class="p">,</span>
+    <span class="n">IPhSegmentRuleFactory</span><span class="p">,</span>
+    <span class="n">IPhSimpleContextNC</span><span class="p">,</span>
+    <span class="n">IPhSimpleContextNCFactory</span><span class="p">,</span>
+    <span class="n">IPhSimpleContextSegFactory</span><span class="p">,</span>
+    <span class="n">IPhSimpleContextBdryFactory</span><span class="p">,</span>
+    <span class="n">IPhSequenceContext</span><span class="p">,</span>
+    <span class="n">IPhSequenceContextFactory</span><span class="p">,</span>
+    <span class="n">IPhFeatureConstraintFactory</span><span class="p">,</span>
+    <span class="n">IPhFeatureConstraint</span><span class="p">,</span>
+    <span class="n">IPhIterationContextFactory</span><span class="p">,</span>
+    <span class="n">ICmObjectRepository</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+<span class="c1"># Import pattern-element dataclasses for the WireRule composer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.rule_patterns</span><span class="w"> </span><span class="kn">import</span> <span class="n">Seg</span><span class="p">,</span> <span class="n">NC</span><span class="p">,</span> <span class="n">Boundary</span>
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="PhonologicalRuleOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.PhonologicalRuleOperations.PhonologicalRuleOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PhonologicalRuleOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing phonological rules in a</span>
+<span class="sd">    FieldWorks project.</span>
+
+<span class="sd">    Phonological rules define systematic sound changes that apply in specific</span>
+<span class="sd">    phonological environments. They consist of input specifications, output</span>
+<span class="sd">    specifications, and contextual conditions.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject, PhonologicalRuleOperations</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        phonRuleOps = PhonologicalRuleOperations(project)</span>
+
+<span class="sd">        # Get all phonological rules</span>
+<span class="sd">        for rule in phonRuleOps.GetAll():</span>
+<span class="sd">            name = phonRuleOps.GetName(rule)</span>
+<span class="sd">            desc = phonRuleOps.GetDescription(rule)</span>
+<span class="sd">            print(f&quot;{name}: {desc}&quot;)</span>
+
+<span class="sd">        # Create a new phonological rule</span>
+<span class="sd">        rule = phonRuleOps.Create(&quot;Voicing Assimilation&quot;)</span>
+<span class="sd">        phonRuleOps.SetDescription(rule, &quot;Obstruents become voiced before vowels&quot;)</span>
+
+<span class="sd">        # Wire the rule via WireRule (the supported composer).</span>
+<span class="sd">        # SetLeftContext / SetRightContext are refused with</span>
+<span class="sd">        # NotImplementedError (they wrote to the wrong owner -- see #142).</span>
+<span class="sd">        from flexlibs2 import Seg, NC</span>
+<span class="sd">        phonRuleOps.WireRule(rule,</span>
+<span class="sd">            input_pattern=[Seg(phoneme_t)],</span>
+<span class="sd">            output_change=[Seg(phoneme_d)],</span>
+<span class="sd">            right_context=[NC(vowel_class)],</span>
+<span class="sd">        )</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize PhonologicalRuleOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Specify which sequence to reorder for phonological rules.</span>
+<span class="sd">        For PhonologicalRule, we reorder parent.PhonRulesOS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">PhonRulesOS</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all phonological rules in the project.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            RuleCollection: Smart collection of PhonologicalRule wrapped objects.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; rules = phonRuleOps.GetAll()</span>
+<span class="sd">            &gt;&gt;&gt; print(rules)  # Shows type breakdown</span>
+<span class="sd">            RuleCollection (12 total)</span>
+<span class="sd">              PhRegularRule: 7 (58%)</span>
+<span class="sd">              PhMetathesisRule: 3 (25%)</span>
+<span class="sd">              PhReduplicationRule: 2 (17%)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Access individual rules</span>
+<span class="sd">            &gt;&gt;&gt; for rule in rules:</span>
+<span class="sd">            ...     print(rule.name)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Filter to specific type</span>
+<span class="sd">            &gt;&gt;&gt; regular_only = rules.regular_rules()</span>
+
+<span class="sd">            &gt;&gt;&gt; # Filter by name</span>
+<span class="sd">            &gt;&gt;&gt; voicing_rules = rules.filter(name_contains=&#39;voicing&#39;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns RuleCollection (smart collection) instead of generator</span>
+<span class="sd">            - Wrapped rules hide ClassName/casting complexity</span>
+<span class="sd">            - Use rule.name instead of GetName(rule)</span>
+<span class="sd">            - Use rule.input_contexts instead of accessing StrucDescOS</span>
+<span class="sd">            - Returns empty collection if no phonological data defined</span>
+<span class="sd">            - Type breakdown is visible when printed</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Find, RuleCollection, PhonologicalRule</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.phonological_rule</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhonologicalRule</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.rule_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">RuleCollection</span>
+
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">phon_data</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">RuleCollection</span><span class="p">()</span>
+
+        <span class="n">rules</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">phon_data</span><span class="p">,</span> <span class="s2">&quot;PhonRulesOS&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="p">:</span>
+                <span class="n">wrapped</span> <span class="o">=</span> <span class="n">PhonologicalRule</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+                <span class="n">rules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wrapped</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">RuleCollection</span><span class="p">(</span><span class="n">rules</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new phonological rule.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the rule (e.g., &quot;Voicing Assimilation&quot;).</span>
+<span class="sd">            description (str, optional): Optional description of the rule.</span>
+<span class="sd">                Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhPhonRule: The newly created phonological rule object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; rule = phonRuleOps.Create(&quot;Voicing Assimilation&quot;,</span>
+<span class="sd">            ...     &quot;Voiceless stops become voiced between vowels&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(phonRuleOps.GetName(rule))</span>
+<span class="sd">            Voicing Assimilation</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create and configure</span>
+<span class="sd">            &gt;&gt;&gt; rule = phonRuleOps.Create(&quot;Final Devoicing&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps.SetDescription(rule, &quot;Obstruents devoice word-finally&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Name should describe the phonological process</span>
+<span class="sd">            - Description is optional but recommended</span>
+<span class="sd">            - Rule is created in the default analysis writing system</span>
+<span class="sd">            - New rules start as inactive by default</span>
+<span class="sd">            - Must add input/output specifications separately</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, SetDescription, WireRule</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get the writing system handle</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+
+        <span class="c1"># Create the new phonological rule using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPhRegularRuleFactory</span><span class="p">)</span>
+
+        <span class="c1"># Pre-flight: ensure the phonological data container exists before creating any object.</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">phon_data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Project has no phonological data defined&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create phonological rule </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="n">new_rule</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to the phonological rules collection (must be done before setting properties)</span>
+            <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_rule</span><span class="p">)</span>
+
+            <span class="c1"># Set name</span>
+            <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_rule</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+            <span class="c1"># Set description if provided</span>
+            <span class="k">if</span> <span class="n">description</span><span class="p">:</span>
+                <span class="n">mkstr_desc</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">new_rule</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_desc</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_rule</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a phonological rule.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_or_hvo: The IPhPhonRule object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If rule_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; obsolete = phonRuleOps.Create(&quot;Obsolete Rule&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # ... realize it&#39;s not needed</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps.Delete(obsolete)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - Any references to this rule will be broken</span>
+<span class="sd">            - Consider deactivating instead of deleting</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, GetAll</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;rule_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to rule object</span>
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Remove from phonological rules collection</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="n">phon_data</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">phon_data</span><span class="p">,</span> <span class="s2">&quot;PhonRulesOS&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="p">:</span>
+                <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a phonological rule with the given name exists.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name to search for.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if a rule with this name exists, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; if phonRuleOps.Exists(&quot;Voicing Assimilation&quot;):</span>
+<span class="sd">            ...     print(&quot;Rule already exists&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; else:</span>
+<span class="sd">            ...     rule = phonRuleOps.Create(&quot;Voicing Assimilation&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, GetAll, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a phonological rule by name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name to search for (case-insensitive).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            PhonologicalRule or None: The wrapped rule object if found, None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If name is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; rule = phonRuleOps.Find(&quot;Voicing Assimilation&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if rule:</span>
+<span class="sd">            ...     print(f&quot;Found: {rule.name}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Direction: {rule.direction}&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Case-insensitive search</span>
+<span class="sd">            &gt;&gt;&gt; rule = phonRuleOps.Find(&quot;voicing assimilation&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Search is case-insensitive</span>
+<span class="sd">            - Returns first matching rule if multiple exist</span>
+<span class="sd">            - Searches in default analysis writing system</span>
+<span class="sd">            - Returns wrapped PhonologicalRule, not raw LCM object</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Exists, GetAll, PhonologicalRule</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">wrapped_rule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">wrapped_rule</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">wrapped_rule</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of a phonological rule.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_or_hvo: The IPhPhonRule object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The rule name, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If rule_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; for rule in phonRuleOps.GetAll():</span>
+<span class="sd">            ...     name = phonRuleOps.GetName(rule)</span>
+<span class="sd">            ...     print(name)</span>
+<span class="sd">            Voicing Assimilation</span>
+<span class="sd">            Final Devoicing</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetName, GetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;rule_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of a phonological rule.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_or_hvo: The IPhPhonRule object or HVO.</span>
+<span class="sd">            name (str): The new name.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If rule_or_hvo or name is None.</span>
+<span class="sd">            FP_ParameterError: If name is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; rule = list(phonRuleOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps.SetName(rule, &quot;Intervocalic Voicing&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetName, SetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;rule_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">rule</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the description of a phonological rule.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_or_hvo: The IPhPhonRule object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The rule description, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If rule_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; for rule in phonRuleOps.GetAll():</span>
+<span class="sd">            ...     name = phonRuleOps.GetName(rule)</span>
+<span class="sd">            ...     desc = phonRuleOps.GetDescription(rule)</span>
+<span class="sd">            ...     print(f&quot;{name}: {desc}&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDescription, GetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;rule_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">desc</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the description of a phonological rule.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_or_hvo: The IPhPhonRule object or HVO.</span>
+<span class="sd">            description (str): The new description.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If rule_or_hvo or description is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; rule = list(phonRuleOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps.SetDescription(rule,</span>
+<span class="sd">            ...     &quot;Voiceless stops become voiced between vowels&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDescription, SetName</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;rule_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">rule</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetStratum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the stratum of a phonological rule.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_or_hvo: The IPhPhonRule object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoStratum or None: The stratum object if set, None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If rule_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; rule = list(phonRuleOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; stratum = phonRuleOps.GetStratum(rule)</span>
+<span class="sd">            &gt;&gt;&gt; if stratum:</span>
+<span class="sd">            ...     print(f&quot;Rule applies in stratum: {stratum.Name.BestAnalysisAlternative.Text}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Strata define ordering levels for phonological rules</span>
+<span class="sd">            - Rules in lower strata apply before rules in higher strata</span>
+<span class="sd">            - Returns None if no stratum is assigned</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetStratum</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;rule_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="s2">&quot;StratumRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">rule</span><span class="o">.</span><span class="n">StratumRA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">rule</span><span class="o">.</span><span class="n">StratumRA</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetStratum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">stratum</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the stratum of a phonological rule.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_or_hvo: The IPhPhonRule object or HVO.</span>
+<span class="sd">            stratum: The IMoStratum object, HVO, or None to clear.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If rule_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; rule = list(phonRuleOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Get first stratum</span>
+<span class="sd">            &gt;&gt;&gt; morph_data = project.lp.MorphologicalDataOA</span>
+<span class="sd">            &gt;&gt;&gt; if morph_data and morph_data.StrataOS.Count &gt; 0:</span>
+<span class="sd">            ...     stratum = morph_data.StrataOS[0]</span>
+<span class="sd">            ...     phonRuleOps.SetStratum(rule, stratum)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetStratum</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;rule_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="s2">&quot;StratumRA&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">stratum</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">rule</span><span class="o">.</span><span class="n">StratumRA</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stratum</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                    <span class="n">stratum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">stratum</span><span class="p">)</span>
+                <span class="n">rule</span><span class="o">.</span><span class="n">StratumRA</span> <span class="o">=</span> <span class="n">stratum</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDirection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the direction of rule application.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_or_hvo: The IPhPhonRule object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The direction value (0=left-to-right, 1=right-to-left,</span>
+<span class="sd">                2=simultaneous).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If rule_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; rule = list(phonRuleOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; direction = phonRuleOps.GetDirection(rule)</span>
+<span class="sd">            &gt;&gt;&gt; if direction == 0:</span>
+<span class="sd">            ...     print(&quot;Left-to-right application&quot;)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDirection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;rule_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="s2">&quot;Direction&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">rule</span><span class="o">.</span><span class="n">Direction</span>
+
+        <span class="k">return</span> <span class="mi">0</span>  <span class="c1"># Default: left-to-right</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDirection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the direction of rule application.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_or_hvo: The IPhPhonRule object or HVO.</span>
+<span class="sd">            direction (int): 0=left-to-right, 1=right-to-left, 2=simultaneous.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If rule_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If direction is not 0, 1, or 2.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; rule = list(phonRuleOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; # Set to right-to-left</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps.SetDirection(rule, 1)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDirection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;rule_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">direction</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Direction must be 0 (L-R), 1 (R-L), or 2 (simultaneous)&quot;</span><span class="p">)</span>
+
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="s2">&quot;Direction&quot;</span><span class="p">):</span>
+            <span class="n">rule</span><span class="o">.</span><span class="n">Direction</span> <span class="o">=</span> <span class="n">direction</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetLeftContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">context_item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Refuses with NotImplementedError.</span>
+
+<span class="sd">        This method&#39;s previous implementation wrote to</span>
+<span class="sd">        ``StrucDescOS[0].LeftContextOA``, but ``LeftContextOA`` /</span>
+<span class="sd">        ``RightContextOA`` actually live on ``IPhSegRuleRHS`` (the</span>
+<span class="sd">        structural-change/environment owner), not on</span>
+<span class="sd">        ``IPhSimpleContext``. The method therefore never produced</span>
+<span class="sd">        runnable rules -- the call appeared to succeed but the rule</span>
+<span class="sd">        could not be applied. Refusing loudly is strictly better than</span>
+<span class="sd">        silently emitting a non-runnable rule. (issue #142)</span>
+
+<span class="sd">        Use :meth:`WireRule` instead, which writes to the correct</span>
+<span class="sd">        ownership path (``rhs.LeftContextOA``) and supports</span>
+<span class="sd">        Seg/NC/Boundary elements::</span>
+
+<span class="sd">            project.PhonRules.WireRule(rule, left_context=[Seg(&#39;a&#39;)])</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Always.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            WireRule, SetRightContext</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;SetLeftContext never produced runnable rules (it wrote to &quot;</span>
+            <span class="s2">&quot;LeftContextOA on a simple context, but that property lives &quot;</span>
+            <span class="s2">&quot;on IPhSegRuleRHS). Use WireRule(rule, left_context=...) &quot;</span>
+            <span class="s2">&quot;instead. (issue #142)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetRightContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">context_item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Refuses with NotImplementedError.</span>
+
+<span class="sd">        This method&#39;s previous implementation wrote to</span>
+<span class="sd">        ``StrucDescOS[0].RightContextOA``, but ``RightContextOA`` /</span>
+<span class="sd">        ``LeftContextOA`` actually live on ``IPhSegRuleRHS``, not on</span>
+<span class="sd">        ``IPhSimpleContext``. The method therefore never produced</span>
+<span class="sd">        runnable rules. Refusing loudly is strictly better than</span>
+<span class="sd">        silently emitting a non-runnable rule. (issue #142)</span>
+
+<span class="sd">        Use :meth:`WireRule` instead, which writes to the correct</span>
+<span class="sd">        ownership path (``rhs.RightContextOA``) and supports</span>
+<span class="sd">        Seg/NC/Boundary elements::</span>
+
+<span class="sd">            project.PhonRules.WireRule(rule, right_context=[NC(vowels)])</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Always.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            WireRule, SetLeftContext</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;SetRightContext never produced runnable rules (it wrote to &quot;</span>
+            <span class="s2">&quot;RightContextOA on a simple context, but that property lives &quot;</span>
+            <span class="s2">&quot;on IPhSegRuleRHS). Use WireRule(rule, right_context=...) &quot;</span>
+            <span class="s2">&quot;instead. (issue #142)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># ========================================================================</span>
+    <span class="c1"># ALPHA-FEATURE CONSTRAINTS (Greek-variable agreement)</span>
+    <span class="c1"># ========================================================================</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MakeConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create an alpha-feature constraint variable bound to a feature.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            feature_or_hvo: An IFsFeatDefn object, HVO (int), or wrapper.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhFeatureConstraint: The newly created feature constraint.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If feature_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Turkish vowel harmony: same backness as preceding vowel</span>
+<span class="sd">            &gt;&gt;&gt; feat_back = project.PhonFeatures.Find(&quot;back&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; alpha_back = project.PhonRules.MakeConstraint(feat_back)</span>
+<span class="sd">            &gt;&gt;&gt; # Re-use alpha_back across positions for alpha-variable</span>
+<span class="sd">            &gt;&gt;&gt; # identity (the SAME object means the SAME alpha value)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Identity matters: pass the SAME returned object to multiple</span>
+<span class="sd">              NC positions to express alpha-sharing (e.g. [aBack]...[aBack]).</span>
+<span class="sd">            - Constraints are owned by</span>
+<span class="sd">              ``project.lp.PhonologicalDataOA.FeatConstraintsOS``.</span>
+<span class="sd">            - The Phase 2 ownership rule is applied: the constraint is</span>
+<span class="sd">              attached to its owner BEFORE ``FeatureRA`` is set.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            DeleteConstraint, GetConstraints, WireRule</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;feature_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveFeature</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Hardened path: raise on factory failure, no silent fallback.</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+            <span class="n">IPhFeatureConstraintFactory</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;IPhFeatureConstraintFactory service is unavailable; &quot;</span>
+                <span class="s2">&quot;cannot create feature constraint.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">phon_data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Project has no phonological data defined&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Make feature constraint&quot;</span><span class="p">):</span>
+            <span class="n">constraint</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="c1"># Phase 2 ownership rule: attach BEFORE setting FeatureRA so the</span>
+            <span class="c1"># LCM property setter doesn&#39;t NPE on an unowned constraint.</span>
+            <span class="n">phon_data</span><span class="o">.</span><span class="n">FeatConstraintsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span>
+            <span class="n">constraint</span><span class="o">.</span><span class="n">FeatureRA</span> <span class="o">=</span> <span class="n">feature</span>
+
+            <span class="k">return</span> <span class="n">constraint</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">DeleteConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraint_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a feature constraint from the project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            constraint_or_hvo: An IPhFeatureConstraint object or HVO.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If constraint_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the constraint is not present in</span>
+<span class="sd">                ``PhonologicalDataOA.FeatConstraintsOS``.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; alpha = project.PhonRules.MakeConstraint(feat_back)</span>
+<span class="sd">            &gt;&gt;&gt; # ... later ...</span>
+<span class="sd">            &gt;&gt;&gt; project.PhonRules.DeleteConstraint(alpha)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            Deletion is permanent. Any positions referencing this</span>
+<span class="sd">            constraint (via ``PlusConstrRS`` / ``MinusConstrRS``) will</span>
+<span class="sd">            lose the alpha-binding.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            MakeConstraint, GetConstraints</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">constraint_or_hvo</span><span class="p">,</span> <span class="s2">&quot;constraint_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">constraint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">constraint_or_hvo</span><span class="p">)</span>
+
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="n">phon_data</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">phon_data</span><span class="p">,</span> <span class="s2">&quot;FeatConstraintsOS&quot;</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="n">constraint</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">FeatConstraintsOS</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;constraint is not present in &quot;</span>
+                <span class="s2">&quot;PhonologicalDataOA.FeatConstraintsOS&quot;</span>
+            <span class="p">)</span>
+        <span class="n">phon_data</span><span class="o">.</span><span class="n">FeatConstraintsOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all feature constraints in the project.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[IPhFeatureConstraint]: All constraints in</span>
+<span class="sd">            ``PhonologicalDataOA.FeatConstraintsOS``. Returns an empty</span>
+<span class="sd">            list if no phonological data is defined.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; for c in project.PhonRules.GetConstraints():</span>
+<span class="sd">            ...     feat = c.FeatureRA</span>
+<span class="sd">            ...     print(feat.Name.BestAnalysisAlternative.Text)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            MakeConstraint, DeleteConstraint</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">phon_data</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">phon_data</span><span class="p">,</span> <span class="s2">&quot;FeatConstraintsOS&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">phon_data</span><span class="o">.</span><span class="n">FeatConstraintsOS</span><span class="p">)</span>
+
+    <span class="c1"># ========================================================================</span>
+    <span class="c1"># HIGH-LEVEL RULE COMPOSER (WireRule)</span>
+    <span class="c1"># ========================================================================</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">WireRule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_change</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">left_context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right_context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;replace&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        High-level composer for phonological rules using SPE notation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_or_hvo: The IPhSegmentRule (or HVO) to wire.</span>
+<span class="sd">            input_pattern: List of one or more pattern elements (Seg/NC/Boundary)</span>
+<span class="sd">                representing the rule&#39;s structural description (LHS).</span>
+<span class="sd">            output_change: List of pattern elements (Seg/NC/Boundary) representing</span>
+<span class="sd">                the structural change (RHS).</span>
+<span class="sd">            left_context: List of pattern elements for the left-side context</span>
+<span class="sd">                (right-justified to the focus position).</span>
+<span class="sd">            right_context: List of pattern elements for the right-side context.</span>
+<span class="sd">            mode: ``&quot;replace&quot;`` (default) clears existing slots before wiring;</span>
+<span class="sd">                ``&quot;append&quot;`` adds to existing.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If rule_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If a pattern element is malformed (e.g. a</span>
+<span class="sd">                Seg with alpha-feature constraints, or a Boundary appearing</span>
+<span class="sd">                in the structural change).</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            The composer translates pattern elements into LCM simple-context</span>
+<span class="sd">            objects and attaches feature constraints to NC positions. The</span>
+<span class="sd">            same IPhFeatureConstraint object can appear in multiple</span>
+<span class="sd">            positions to express Greek-variable agreement (alpha-back,</span>
+<span class="sd">            beta-round, etc.).</span>
+
+<span class="sd">            **Ownership-ordering (Phase 2):** every context object is</span>
+<span class="sd">            attached to its parent BEFORE its</span>
+<span class="sd">            ``FeatureStructureRA`` / ``PlusConstrRS`` / ``MinusConstrRS``</span>
+<span class="sd">            properties are populated.</span>
+
+<span class="sd">            **LCM property locations:**</span>
+<span class="sd">              - ``rule.StrucDescOS``: input pattern (structural description, LHS).</span>
+<span class="sd">              - ``rhs.StrucChangeOS``: output change (RHS).</span>
+<span class="sd">              - ``rhs.LeftContextOA``: left environment (NOT</span>
+<span class="sd">                ``ctx.LeftContextOA`` -- the deprecated SetLeftContext</span>
+<span class="sd">                method writes to the wrong owner).</span>
+<span class="sd">              - ``rhs.RightContextOA``: right environment.</span>
+
+<span class="sd">            **Multi-element contexts:**</span>
+<span class="sd">              Left/right contexts of arbitrary length are supported. When</span>
+<span class="sd">              ``len(left_context) &gt; 1`` or ``len(right_context) &gt; 1``, the</span>
+<span class="sd">              wrapper creates each member as an IPhSimpleContext* attached</span>
+<span class="sd">              to ``PhonologicalDataOA.ContextsOS`` (the project-level owner</span>
+<span class="sd">              pool), then assembles an IPhSequenceContext whose MembersRS</span>
+<span class="sd">              references them. This supports rules like Bantu glide</span>
+<span class="sd">              formation ``i -&gt; y / _ + V`` and place-assimilation</span>
+<span class="sd">              ``N -&gt; [alpha_place] / _ + C[alpha_place]``.</span>
+
+<span class="sd">              **mode=&#39;replace&#39; cleanup:** when an existing multi-element</span>
+<span class="sd">              context is replaced, the previous members are removed from</span>
+<span class="sd">              ``PhonologicalDataOA.ContextsOS`` first -- otherwise repeated</span>
+<span class="sd">              re-wires (typical in MCP / batch rule-tuning workflows) leak</span>
+<span class="sd">              N members per call into the project-wide pool. (issue #134)</span>
+
+<span class="sd">            **Boundary markers:**</span>
+<span class="sd">              Word/morpheme boundaries (Boundary(&#39;#&#39;), Boundary(&#39;+&#39;),</span>
+<span class="sd">              Boundary(&#39;.&#39;)) are looked up from</span>
+<span class="sd">              ``PhonemeSetsOS[0].BoundaryMarkersOC``; new markers are NOT</span>
+<span class="sd">              created.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Turkish vowel harmony fragment: I -&gt; [+back] / V[+back] _</span>
+<span class="sd">            &gt;&gt;&gt; from flexlibs2 import Seg, NC, Boundary</span>
+<span class="sd">            &gt;&gt;&gt; feat_back = project.PhonFeatures.Find(&quot;back&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; alpha_back = project.PhonRules.MakeConstraint(feat_back)</span>
+<span class="sd">            &gt;&gt;&gt; rule = project.PhonRules.Create(&quot;Back harmony&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.PhonRules.WireRule(rule,</span>
+<span class="sd">            ...     input_pattern=[NC(archi_I)],</span>
+<span class="sd">            ...     output_change=[NC(archi_I, plus=[alpha_back])],</span>
+<span class="sd">            ...     left_context=[NC(vowels, plus=[alpha_back])],</span>
+<span class="sd">            ...     right_context=None,</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            MakeConstraint, Create, Seg, NC, Boundary</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;rule_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;replace&quot;</span><span class="p">,</span> <span class="s2">&quot;append&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;mode must be &#39;replace&#39; or &#39;append&#39;, got </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Ensure the rule has an RHS to write into.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="s2">&quot;RightHandSidesOS&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;Rule has no RightHandSidesOS; not a structural rule type.&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># Pre-flight: if the rule has no RHS yet, verify the factory is available</span>
+        <span class="c1"># before opening the transaction (avoids an orphaned mid-clear state on</span>
+        <span class="c1"># mode=&quot;replace&quot; when the factory is missing).</span>
+        <span class="k">if</span> <span class="n">rule</span><span class="o">.</span><span class="n">RightHandSidesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">rhs_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                <span class="n">IPhSegRuleRHSFactory</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">rhs_factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;IPhSegRuleRHSFactory service is unavailable; &quot;</span>
+                    <span class="s2">&quot;cannot create RHS for rule.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rhs_factory</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># existing RHS will be reused; factory not needed</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Wire phonological rule&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">rule</span><span class="o">.</span><span class="n">RightHandSidesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">rhs</span> <span class="o">=</span> <span class="n">rhs_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="c1"># Attach BEFORE further property writes (Phase 2 ownership rule).</span>
+                <span class="n">rule</span><span class="o">.</span><span class="n">RightHandSidesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">rhs</span><span class="p">)</span>
+            <span class="n">rhs</span> <span class="o">=</span> <span class="n">rule</span><span class="o">.</span><span class="n">RightHandSidesOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># --- Clear existing slots if mode == &#39;replace&#39; ---</span>
+            <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;replace&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__ClearSequence</span><span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">StrucDescOS</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__ClearSequence</span><span class="p">(</span><span class="n">rhs</span><span class="o">.</span><span class="n">StrucChangeOS</span><span class="p">)</span>
+                <span class="c1"># For multi-element contexts the members live in</span>
+                <span class="c1"># PhPhonData.ContextsOS (the project-wide owner pool) and</span>
+                <span class="c1"># are merely *referenced* by the sequence&#39;s MembersRS.</span>
+                <span class="c1"># Nulling rhs.LeftContextOA / rhs.RightContextOA detaches</span>
+                <span class="c1"># only the sequence container; the members would otherwise</span>
+                <span class="c1"># leak into ContextsOS, accumulating across every re-wire</span>
+                <span class="c1"># of the same rule. Clean those up first. (issue #134)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__CleanupSequenceContextMembers</span><span class="p">(</span><span class="n">rhs</span><span class="o">.</span><span class="n">LeftContextOA</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__CleanupSequenceContextMembers</span><span class="p">(</span><span class="n">rhs</span><span class="o">.</span><span class="n">RightContextOA</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">rhs</span><span class="o">.</span><span class="n">LeftContextOA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">rhs</span><span class="o">.</span><span class="n">LeftContextOA</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">rhs</span><span class="o">.</span><span class="n">RightContextOA</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">rhs</span><span class="o">.</span><span class="n">RightContextOA</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="c1"># --- Wire input pattern -&gt; rule.StrucDescOS ---</span>
+            <span class="k">if</span> <span class="n">input_pattern</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">input_pattern</span><span class="p">:</span>
+                    <span class="n">ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__BuildSimpleContext</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">slot_name</span><span class="o">=</span><span class="s2">&quot;input_pattern&quot;</span><span class="p">)</span>
+                    <span class="n">rule</span><span class="o">.</span><span class="n">StrucDescOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__PopulateSimpleContext</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">elem</span><span class="p">)</span>
+
+            <span class="c1"># --- Wire output change -&gt; rhs.StrucChangeOS ---</span>
+            <span class="k">if</span> <span class="n">output_change</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">output_change</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">Boundary</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                            <span class="s2">&quot;Boundary elements cannot appear in the structural &quot;</span>
+                            <span class="s2">&quot;change -- only in left/right contexts.&quot;</span>
+                        <span class="p">)</span>
+                    <span class="n">ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__BuildSimpleContext</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">slot_name</span><span class="o">=</span><span class="s2">&quot;output_change&quot;</span><span class="p">)</span>
+                    <span class="n">rhs</span><span class="o">.</span><span class="n">StrucChangeOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__PopulateSimpleContext</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">elem</span><span class="p">)</span>
+
+            <span class="c1"># --- Wire left context -&gt; rhs.LeftContextOA ---</span>
+            <span class="k">if</span> <span class="n">left_context</span><span class="p">:</span>
+                <span class="n">ctx</span><span class="p">,</span> <span class="n">deferred_elem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WireContext</span><span class="p">(</span>
+                    <span class="n">left_context</span><span class="p">,</span> <span class="n">slot_name</span><span class="o">=</span><span class="s2">&quot;left_context&quot;</span>
+                <span class="p">)</span>
+                <span class="c1"># OwningAtomic: assignment IS the attach. Do NOT re-fetch via</span>
+                <span class="c1"># rhs.LeftContextOA -- pythonnet narrows the proxy to the</span>
+                <span class="c1"># IPhPhonContext base interface, losing access to concrete-type</span>
+                <span class="c1"># properties like PlusConstrRS / MinusConstrRS. The local `ctx`</span>
+                <span class="c1"># already points at the same LCM object with the concrete type.</span>
+                <span class="n">rhs</span><span class="o">.</span><span class="n">LeftContextOA</span> <span class="o">=</span> <span class="n">ctx</span>
+                <span class="k">if</span> <span class="n">deferred_elem</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Single-element path: ctx is now owned by rhs; populate</span>
+                    <span class="c1"># FeatureStructureRA / alpha constraints after the attach</span>
+                    <span class="c1"># so LCM&#39;s validity check via Owner passes.</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__PopulateSimpleContext</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">deferred_elem</span><span class="p">)</span>
+
+            <span class="c1"># --- Wire right context -&gt; rhs.RightContextOA ---</span>
+            <span class="k">if</span> <span class="n">right_context</span><span class="p">:</span>
+                <span class="n">ctx</span><span class="p">,</span> <span class="n">deferred_elem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WireContext</span><span class="p">(</span>
+                    <span class="n">right_context</span><span class="p">,</span> <span class="n">slot_name</span><span class="o">=</span><span class="s2">&quot;right_context&quot;</span>
+                <span class="p">)</span>
+                <span class="c1"># See note on LeftContextOA above -- skip the defensive re-fetch.</span>
+                <span class="n">rhs</span><span class="o">.</span><span class="n">RightContextOA</span> <span class="o">=</span> <span class="n">ctx</span>
+                <span class="k">if</span> <span class="n">deferred_elem</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__PopulateSimpleContext</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">deferred_elem</span><span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># WireRule internals</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ClearSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove all elements from an owning sequence.&quot;&quot;&quot;</span>
+        <span class="c1"># Walk by index from the end to avoid index drift during removal.</span>
+        <span class="k">while</span> <span class="n">seq</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">seq</span><span class="o">.</span><span class="n">RemoveAt</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">Count</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__CleanupSequenceContextMembers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If ``ctx`` is an IPhSequenceContext, remove its MembersRS items</span>
+<span class="sd">        from PhPhonData.ContextsOS. No-op for None or for single-context</span>
+<span class="sd">        cases (where ``ctx`` is an IPhSimpleContext* owned directly by</span>
+<span class="sd">        the rhs.LeftContextOA / RightContextOA OwningAtomic, so nulling</span>
+<span class="sd">        the slot already detaches it). (issue #134)</span>
+
+<span class="sd">        Multi-element contexts park their members in the project-wide</span>
+<span class="sd">        ContextsOS owner pool while the sequence container references</span>
+<span class="sd">        them via MembersRS. Setting rhs.LeftContextOA = None detaches</span>
+<span class="sd">        only the sequence; the members would otherwise leak.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ctx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c1"># ClassName check: IPhSequenceContext sequences vs IPhSimpleContext*</span>
+        <span class="c1"># simple contexts. The simple-context concrete classes</span>
+        <span class="c1"># (PhSimpleContextNC / PhSimpleContextSeg / PhSimpleContextBdry)</span>
+        <span class="c1"># have no MembersRS and own their own state via rhs&#39;s</span>
+        <span class="c1"># OwningAtomic slot, so they don&#39;t need this cleanup.</span>
+        <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">!=</span> <span class="s2">&quot;PhSequenceContext&quot;</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="n">phon_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">seq_typed</span> <span class="o">=</span> <span class="n">IPhSequenceContext</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+        <span class="c1"># Snapshot the members because RemoveAt would shift indices,</span>
+        <span class="c1"># and MembersRS may stop being readable once the sequence is</span>
+        <span class="c1"># detached. Copy refs out, then remove from ContextsOS.</span>
+        <span class="n">members_to_remove</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">seq_typed</span><span class="o">.</span><span class="n">MembersRS</span><span class="p">)</span>
+        <span class="n">contexts_pool</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">ContextsOS</span>
+        <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">members_to_remove</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">member</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">contexts_pool</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">member</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WireContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">slot_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build the appropriate context object for a left/right context list.</span>
+
+<span class="sd">        Returns ``(ctx, deferred_elem)``:</span>
+
+<span class="sd">        * Single-element fast path: ``ctx`` is an unattached</span>
+<span class="sd">          IPhSimpleContext*; ``deferred_elem`` is the source pattern</span>
+<span class="sd">          element. The caller MUST assign ``ctx`` to</span>
+<span class="sd">          rhs.LeftContextOA / RightContextOA first (the attach), then call</span>
+<span class="sd">          ``__PopulateSimpleContext(ctx, deferred_elem)`` to set</span>
+<span class="sd">          FeatureStructureRA + alpha constraints. Populating before the</span>
+<span class="sd">          attach raises System.NullReferenceException from LCM&#39;s setter</span>
+<span class="sd">          because the context&#39;s Owner is unset.</span>
+
+<span class="sd">        * Multi-element path: each member is attached to</span>
+<span class="sd">          PhonologicalDataOA.ContextsOS (the project-level owner pool)</span>
+<span class="sd">          and fully populated inline, then an IPhSequenceContext is</span>
+<span class="sd">          created and the members are added via MembersRS (reference-</span>
+<span class="sd">          only list). ``ctx`` is the sequence (still unowned -- caller</span>
+<span class="sd">          assigns to rhs.LeftContextOA / RightContextOA); ``deferred_elem``</span>
+<span class="sd">          is None because no further population is required.</span>
+
+<span class="sd">        Ownership-ordering trap (single AND multi paths): each</span>
+<span class="sd">        IPhSimpleContext* must be owned BEFORE its FeatureStructureRA /</span>
+<span class="sd">        constraint properties are populated. LCM&#39;s validity check runs</span>
+<span class="sd">        through the context&#39;s Owner. See the diagnosis in issue #23.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">elements</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">elem</span> <span class="o">=</span> <span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__BuildSimpleContext</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">slot_name</span><span class="o">=</span><span class="n">slot_name</span><span class="p">)</span>
+            <span class="c1"># Defer population until the caller&#39;s OwningAtomic assignment</span>
+            <span class="c1"># has happened (ownership-ordering trap).</span>
+            <span class="k">return</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">elem</span>
+
+        <span class="c1"># Multi-element path. Members live in PhPhonData.ContextsOS; the</span>
+        <span class="c1"># sequence references them via MembersRS (reference-only).</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="n">phon_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">slot_name</span><span class="si">}</span><span class="s2">: project has no PhonologicalDataOA; cannot &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;create a multi-element context.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">contexts_pool</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">ContextsOS</span>
+
+        <span class="c1"># Build and own each member context first.</span>
+        <span class="n">members</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">elements</span><span class="p">):</span>
+            <span class="n">member_slot</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">slot_name</span><span class="si">}</span><span class="s2">[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]&quot;</span>
+            <span class="n">member</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__BuildSimpleContext</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">slot_name</span><span class="o">=</span><span class="n">member_slot</span><span class="p">)</span>
+            <span class="c1"># Phase 2 ownership-ordering: Add to the owner pool BEFORE</span>
+            <span class="c1"># populating so the validity-check via Owner passes.</span>
+            <span class="n">contexts_pool</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">member</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__PopulateSimpleContext</span><span class="p">(</span><span class="n">member</span><span class="p">,</span> <span class="n">elem</span><span class="p">)</span>
+            <span class="n">members</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">member</span><span class="p">)</span>
+
+        <span class="c1"># Create the sequence container. The sequence itself is unowned</span>
+        <span class="c1"># until the caller assigns it to rhs.LeftContextOA / RightContextOA;</span>
+        <span class="c1"># MembersRS is a reference list, so no ownership concerns for the</span>
+        <span class="c1"># member references.</span>
+        <span class="n">seq_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+            <span class="n">IPhSequenceContextFactory</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">seq_factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;IPhSequenceContextFactory service is unavailable.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">seq_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+        <span class="n">seq_typed</span> <span class="o">=</span> <span class="n">IPhSequenceContext</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
+            <span class="n">seq_typed</span><span class="o">.</span><span class="n">MembersRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">member</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">seq</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__BuildSimpleContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elem</span><span class="p">,</span> <span class="n">slot_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the appropriate IPhSimpleContext* for a pattern element.</span>
+
+<span class="sd">        Returns an unattached context; caller is responsible for attaching</span>
+<span class="sd">        it to a parent BEFORE further property writes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">Seg</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">phoneme</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">slot_name</span><span class="si">}</span><span class="s2">: Seg.phoneme must be a single phoneme.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                <span class="n">IPhSimpleContextSegFactory</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;IPhSimpleContextSegFactory service is unavailable.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">NC</span><span class="p">):</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                <span class="n">IPhSimpleContextNCFactory</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;IPhSimpleContextNCFactory service is unavailable.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">Boundary</span><span class="p">):</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+                <span class="n">IPhSimpleContextBdryFactory</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="s2">&quot;IPhSimpleContextBdryFactory service is unavailable.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">slot_name</span><span class="si">}</span><span class="s2">: pattern element must be Seg, NC, or Boundary, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__PopulateSimpleContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">elem</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Populate FeatureStructureRA + alpha constraints (Phase 2 order).&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">Seg</span><span class="p">):</span>
+            <span class="c1"># Seg has no plus/minus fields by construction (TypeError at</span>
+            <span class="c1"># call site if a caller tries to pass them). Alpha-feature</span>
+            <span class="c1"># constraints on a single phoneme require a singleton NC --</span>
+            <span class="c1"># see Seg&#39;s docstring.</span>
+            <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveLcmObject</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">phoneme</span><span class="p">)</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">FeatureStructureRA</span> <span class="o">=</span> <span class="n">phoneme</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">NC</span><span class="p">):</span>
+            <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveLcmObject</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">natural_class</span><span class="p">)</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">FeatureStructureRA</span> <span class="o">=</span> <span class="n">nc</span>
+            <span class="c1"># Attach alpha-variable constraints (identity = sharing).</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">elem</span><span class="o">.</span><span class="n">plus</span><span class="p">:</span>
+                <span class="n">resolved</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveLcmObject</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="n">PlusConstrRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">resolved</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">elem</span><span class="o">.</span><span class="n">minus</span><span class="p">:</span>
+                <span class="n">resolved</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveLcmObject</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="n">MinusConstrRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">resolved</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">Boundary</span><span class="p">):</span>
+            <span class="n">marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveBoundary</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">marker</span><span class="p">)</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">FeatureStructureRA</span> <span class="o">=</span> <span class="n">marker</span>
+            <span class="k">return</span>
+
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Cannot populate context from element of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveBoundary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Look up an IPhBdryMarker by name from PhonemeSetsOS[0].&quot;&quot;&quot;</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">phon_data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;Project has no phonological data; can&#39;t resolve boundary markers&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;Project has no phoneme sets; can&#39;t resolve boundary markers&quot;</span>
+            <span class="p">)</span>
+        <span class="n">bdry_markers</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">BoundaryMarkersOC</span>
+        <span class="k">for</span> <span class="n">bm</span> <span class="ow">in</span> <span class="n">bdry_markers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">bm</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">BestAnalysisAlternative</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">marker_name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">bm</span>
+        <span class="n">available</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">ITsString</span><span class="p">(</span><span class="n">bm</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">BestAnalysisAlternative</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">bm</span> <span class="ow">in</span> <span class="n">bdry_markers</span>
+        <span class="p">]</span>
+        <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Boundary marker </span><span class="si">{</span><span class="n">marker_name</span><span class="si">!r}</span><span class="s2"> not found in &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;PhonemeSetsOS[0].BoundaryMarkersOC. Available: </span><span class="si">{</span><span class="n">available</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveFeature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve a feature argument (object/HVO/wrapper) to its LCM object.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_concrete&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">feature_or_hvo</span><span class="o">.</span><span class="n">_obj</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">feature_or_hvo</span><span class="o">.</span><span class="n">_obj</span>
+        <span class="k">return</span> <span class="n">feature_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveLcmObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve an HVO or wrapper to its underlying LCM object.</span>
+
+<span class="sd">        Identity-preserving for plain LCM objects (important for</span>
+<span class="sd">        IPhFeatureConstraint sharing: the same constraint object must</span>
+<span class="sd">        round-trip unchanged so alpha-variable identity holds).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_concrete&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj_or_hvo</span><span class="o">.</span><span class="n">_obj</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj_or_hvo</span><span class="o">.</span><span class="n">_obj</span>
+        <span class="k">return</span> <span class="n">obj_or_hvo</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a phonological rule, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The IPhPhonRule object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source rule.</span>
+<span class="sd">                                If False, insert at end of rules list.</span>
+<span class="sd">            deep (bool): If True (default), deep copy owned objects (StrucDescOS, RightHandSidesOS).</span>
+<span class="sd">                        If False, owned objects are not copied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhPhonRule: The newly created duplicate rule with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; voicing = phonRuleOps.Create(&quot;Voicing Assimilation&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Deep copy (default - includes StrucDescOS and RightHandSidesOS)</span>
+<span class="sd">            &gt;&gt;&gt; copy = phonRuleOps.Duplicate(voicing)</span>
+<span class="sd">            &gt;&gt;&gt; print(phonRuleOps.GetName(copy))</span>
+<span class="sd">            Voicing Assimilation</span>
+
+<span class="sd">            &gt;&gt;&gt; # Shallow copy (no owned objects)</span>
+<span class="sd">            &gt;&gt;&gt; rule = phonRuleOps.Create(&quot;Complex Rule&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; copy = phonRuleOps.Duplicate(rule, deep=False)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Preserves the source&#39;s concrete subtype: a PhMetathesisRule</span>
+<span class="sd">              source produces a PhMetathesisRule duplicate, etc. Dispatches</span>
+<span class="sd">              on source.ClassName to pick the matching factory. (issue #126)</span>
+<span class="sd">            - insert_after=True preserves the original rule&#39;s position</span>
+<span class="sd">            - Copies all simple properties: Name, Description, Direction, StratumRA</span>
+<span class="sd">            - Copies all owned objects when deep=True:</span>
+<span class="sd">              - StrucDescOS (structural description / input)</span>
+<span class="sd">              - RightHandSidesOS (output specifications)</span>
+<span class="sd">            - Emulates FieldWorks&#39; &quot;Duplicate selected Phonological Rule&quot; pattern</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, SetDirection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source rule</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+
+        <span class="c1"># Dispatch on the source&#39;s concrete subtype so a metathesis or</span>
+        <span class="c1"># reduplication rule duplicate doesn&#39;t silently become a regular</span>
+        <span class="c1"># rule. PhonRulesOS is polymorphic (PhRegularRule, PhMetathesisRule,</span>
+        <span class="c1"># PhReduplicationRule); CreateAndAppendElement and the previous</span>
+        <span class="c1"># IPhRegularRuleFactory-only fallback both produced PhRegularRule</span>
+        <span class="c1"># regardless of source. Same fix shape as 76204e0 (#27) for</span>
+        <span class="c1"># NaturalClassOperations.Duplicate. (issue #126)</span>
+        <span class="c1">#</span>
+        <span class="c1"># Resolve the factory through lcm_casting&#39;s _get_factory_for_class</span>
+        <span class="c1"># rather than importing IPh{Metathesis,Reduplication}RuleFactory at</span>
+        <span class="c1"># module load. Some pythonnet/LCM builds don&#39;t expose all three</span>
+        <span class="c1"># factory interfaces at import time; lcm_casting wraps the lookup</span>
+        <span class="c1"># in a try/except and returns None if the factory isn&#39;t bindable</span>
+        <span class="c1"># on the current build. That lets PhonologicalRuleOperations</span>
+        <span class="c1"># itself remain importable everywhere, and surfaces a clear</span>
+        <span class="c1"># FP_ParameterError only when a caller actually asks to duplicate</span>
+        <span class="c1"># a rule of an unsupported concrete type.</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">_get_factory_for_class</span>
+
+        <span class="n">source_class</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">ClassName</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="n">_get_factory_for_class</span><span class="p">(</span><span class="n">source_class</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot duplicate rule of class </span><span class="si">{</span><span class="n">source_class</span><span class="si">!r}</span><span class="s2">: no &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;factory available on this LCM build. Known concrete &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;phonological rule types are PhRegularRule, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;PhMetathesisRule, PhReduplicationRule.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate phonological rule&quot;</span><span class="p">):</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
+                <span class="n">source_index</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonRulesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Clone all properties (simple, reference, and owned objects)</span>
+            <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+                <span class="c1"># Deep clone using the LCM cloning utilities</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">clone_properties</span>
+
+                <span class="n">clone_properties</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Shallow copy - only simple properties</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+
+                <span class="c1"># Copy Reference Atomic (RA) properties</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;StratumRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">StratumRA</span><span class="p">:</span>
+                    <span class="n">duplicate</span><span class="o">.</span><span class="n">StratumRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">StratumRA</span>
+
+                <span class="c1"># Copy integer properties</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;Direction&quot;</span><span class="p">):</span>
+                    <span class="n">duplicate</span><span class="o">.</span><span class="n">Direction</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">Direction</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IPhPhonRule.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_or_hvo: Either an IPhPhonRule object, a PhonologicalRule</span>
+<span class="sd">                         wrapper, or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhPhonRule: The resolved rule object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">)</span>
+        <span class="c1"># Unwrap PhonologicalRule wrappers (from GetAll()) so collection</span>
+        <span class="c1"># operations see the raw IPhSegmentRule. Duck-typed for any</span>
+        <span class="c1"># LCMObjectWrapper subclass without importing the class.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule_or_hvo</span><span class="p">,</span> <span class="s2">&quot;_concrete&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">rule_or_hvo</span><span class="o">.</span><span class="n">_obj</span>
+        <span class="k">return</span> <span class="n">rule_or_hvo</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The IPhPhonRule object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary mapping property names to their values.</span>
+<span class="sd">                Keys are property names, values are the property values.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonRuleOps = PhonologicalRuleOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; rule = list(phonRuleOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; props = phonRuleOps.GetSyncableProperties(rule)</span>
+<span class="sd">            &gt;&gt;&gt; print(props.keys())</span>
+<span class="sd">            dict_keys([&#39;Name&#39;, &#39;Description&#39;, &#39;Direction&#39;, &#39;StratumGuid&#39;])</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns all MultiString properties (all writing systems)</span>
+<span class="sd">            - Returns Direction integer property (0=L-R, 1=R-L, 2=simultaneous)</span>
+<span class="sd">            - Returns StratumGuid as string (GUID of referenced stratum)</span>
+<span class="sd">            - Does not include owned objects (StrucDescOS, RightHandSidesOS)</span>
+<span class="sd">            - Does not include GUID or HVO of the rule itself</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="c1"># Get all writing systems for MultiString properties</span>
+        <span class="c1"># Fix: ILgWritingSystemFactory does not expose a .WritingSystems</span>
+        <span class="c1"># property; enumerate via the wrapper&#39;s WritingSystemOperations.GetAll(),</span>
+        <span class="c1"># which returns CoreWritingSystemDefinition objects with .Id / .Handle.</span>
+        <span class="n">all_ws</span> <span class="o">=</span> <span class="p">{</span><span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()}</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties</span>
+        <span class="k">for</span> <span class="n">prop_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">):</span>
+                <span class="n">prop_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
+                <span class="n">ws_values</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">ws_id</span><span class="p">,</span> <span class="n">ws_handle</span> <span class="ow">in</span> <span class="n">all_ws</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">prop_obj</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                    <span class="k">if</span> <span class="n">text</span><span class="p">:</span>  <span class="c1"># Only include non-empty values</span>
+                        <span class="n">ws_values</span><span class="p">[</span><span class="n">ws_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+                <span class="k">if</span> <span class="n">ws_values</span><span class="p">:</span>  <span class="c1"># Only include property if it has values</span>
+                    <span class="n">props</span><span class="p">[</span><span class="n">prop_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ws_values</span>
+
+        <span class="c1"># Integer properties</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="s2">&quot;Direction&quot;</span><span class="p">):</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Direction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rule</span><span class="o">.</span><span class="n">Direction</span>
+
+        <span class="c1"># Reference Atomic (RA) properties - return GUID as string</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="s2">&quot;StratumRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">rule</span><span class="o">.</span><span class="n">StratumRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;StratumGuid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">StratumRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply syncable properties (from GetSyncableProperties) onto an item.</span>
+
+<span class="sd">        Inherited from BaseOperations; declared on the concrete class so static</span>
+<span class="sd">        API indexers see it. The base implementation handles every property</span>
+<span class="sd">        shape this class&#39;s GetSyncableProperties emits.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two phonological rules and return detailed differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First rule to compare (from source project).</span>
+<span class="sd">            item2: Second rule to compare (from target project).</span>
+<span class="sd">            ops1: Optional PhonologicalRuleOperations instance for item1&#39;s project.</span>
+<span class="sd">                 Defaults to self.</span>
+<span class="sd">            ops2: Optional PhonologicalRuleOperations instance for item2&#39;s project.</span>
+<span class="sd">                 Defaults to self.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences) where:</span>
+<span class="sd">                - is_different (bool): True if items differ</span>
+<span class="sd">                - differences (dict): Maps property names to (value1, value2) tuples</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; rule1 = project1_phonRuleOps.Find(&quot;Voicing Assimilation&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; rule2 = project2_phonRuleOps.Find(&quot;Voicing Assimilation&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = project1_phonRuleOps.CompareTo(</span>
+<span class="sd">            ...     rule1, rule2,</span>
+<span class="sd">            ...     ops1=project1_phonRuleOps,</span>
+<span class="sd">            ...     ops2=project2_phonRuleOps</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} -&gt; {val2}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Compares all MultiString properties across all writing systems</span>
+<span class="sd">            - Compares integer and reference properties</span>
+<span class="sd">            - Returns empty dict if items are identical</span>
+<span class="sd">            - Handles cross-project comparison via ops1/ops2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="c1"># Get syncable properties from both items</span>
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Compare each property</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">is_different</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.PhonologicalRuleOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

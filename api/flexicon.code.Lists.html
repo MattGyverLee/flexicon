@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>flexicon.code.Lists package &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/pyramid.css?v=cf1aad34" />
+    <script src="../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="flexicon.code.Notebook package" href="flexicon.code.Notebook.html" />
+    <link rel="prev" title="flexicon.code.Lexicon package" href="flexicon.code.Lexicon.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Notebook.html" title="flexicon.code.Notebook package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Lexicon.html" title="flexicon.code.Lexicon package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >flexicon</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="flexicon.html" >flexicon package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="flexicon.code.html" accesskey="U">flexicon.code package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="flexicon-code-lists-package">
+<h1>flexicon.code.Lists package<a class="headerlink" href="#flexicon-code-lists-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-flexicon.code.Lists.AgentOperations">
+<span id="flexicon-code-lists-agentoperations-module"></span><h2>flexicon.code.Lists.AgentOperations module<a class="headerlink" href="#module-flexicon.code.Lists.AgentOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Lists.AgentOperations.</span></span><span class="sig-name descname"><span class="pre">AgentOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lists/AgentOperations.html#AgentOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations" title="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">PossibilityItemOperations</span></code></a></p>
+<p>Agent operations for managing human analysts and automated parsers.</p>
+<p>Agents represent either human analysts or automated parsers that perform
+linguistic analysis. They track who (or what) created analyses, glosses,
+and evaluations in the project.</p>
+<p>Overridden CRUD Operations (AnalyzingAgentsOC has no PossibilitiesOS):
+- GetAll() - Get all agents (iterates OC directly)
+- Create() - Create new agent (uses ICmAgentFactory + OC.Add)
+- Delete() - Delete agent (uses OC.Remove)
+- Duplicate() - Clone agent (uses OC.Add)
+- Find() - Find by name (searches OC directly)</p>
+<p>Inherited Operations (from PossibilityItemOperations):
+- Exists() - Check existence
+- GetName() / SetName() - Get/set name
+- GetDescription() / SetDescription() - Get/set description
+- GetGuid() - Get GUID
+- CompareTo() - Compare by name</p>
+<p>Domain-Specific Methods (AgentOperations):
+- CreateHumanAgent() - Create human agent linked to person
+- CreateParserAgent() - Create parser agent with version
+- GetVersion() / SetVersion() - Get/set parser version
+- IsHuman() / IsParser() - Check agent type
+- GetHuman() / SetHuman() - Link to ICmPerson
+- GetEvaluations() / GetEvaluationCount() - Get evaluations
+- FindByType() - Find by agent type
+- GetHumanAgents() / GetParserAgents() - Get all of type
+- GetDateCreated() / GetDateModified() - Get timestamps</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lists/AgentOperations.html#AgentOperations.GetAll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd><p>Iterate over all agents in the project’s AnalyzingAgentsOC.</p>
+<p>Overrides the PossibilityItemOperations.GetAll inherited
+default, which assumes the list-object has PossibilitiesOS.
+LangProject.AnalyzingAgentsOC is a plain LcmOwningCollection
+of ICmAgent, not a CmPossibilityList, so PossibilitiesOS
+doesn’t exist on it – AttributeError every call. Iterate the
+collection directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of ICmAgent objects.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul>
+<li><p>Returns ALL agents, including stale parser-version agents
+left behind when the parser is upgraded. Callers that want
+only human analysts should filter with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()</span>
+ <span class="k">if</span> <span class="n">project</span><span class="o">.</span><span class="n">Agents</span><span class="o">.</span><span class="n">IsHuman</span><span class="p">(</span><span class="n">a</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p>or call GetHumanAgents() directly.</p>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.Duplicate">
+<span class="sig-name descname"><span class="pre">Duplicate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.Duplicate" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.GetVersion">
+<span class="sig-name descname"><span class="pre">GetVersion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetVersion" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.SetVersion">
+<span class="sig-name descname"><span class="pre">SetVersion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.SetVersion" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.IsHuman">
+<span class="sig-name descname"><span class="pre">IsHuman</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.IsHuman" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.IsParser">
+<span class="sig-name descname"><span class="pre">IsParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.IsParser" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.GetHuman">
+<span class="sig-name descname"><span class="pre">GetHuman</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetHuman" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.SetHuman">
+<span class="sig-name descname"><span class="pre">SetHuman</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.SetHuman" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.GetEvaluations">
+<span class="sig-name descname"><span class="pre">GetEvaluations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetEvaluations" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.GetEvaluationCount">
+<span class="sig-name descname"><span class="pre">GetEvaluationCount</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetEvaluationCount" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.FindByType">
+<span class="sig-name descname"><span class="pre">FindByType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.FindByType" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.GetHumanAgents">
+<span class="sig-name descname"><span class="pre">GetHumanAgents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetHumanAgents" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.GetParserAgents">
+<span class="sig-name descname"><span class="pre">GetParserAgents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetParserAgents" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.GetDateCreated">
+<span class="sig-name descname"><span class="pre">GetDateCreated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetDateCreated" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.AgentOperations.AgentOperations.GetDateModified">
+<span class="sig-name descname"><span class="pre">GetDateModified</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetDateModified" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Lists.ConfidenceOperations">
+<span id="flexicon-code-lists-confidenceoperations-module"></span><h2>flexicon.code.Lists.ConfidenceOperations module<a class="headerlink" href="#module-flexicon.code.Lists.ConfidenceOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Lists.ConfidenceOperations.</span></span><span class="sig-name descname"><span class="pre">ConfidenceOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lists/ConfidenceOperations.html#ConfidenceOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations" title="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">PossibilityItemOperations</span></code></a></p>
+<p>This class provides operations for managing confidence levels (quality
+ratings) in a FieldWorks project.</p>
+<p>Confidence levels are used to rate the quality or certainty of linguistic
+analyses and glosses. They provide a standardized way to indicate how
+confident a linguist or parser is about a particular analysis or gloss.
+Confidence levels are implemented as a possibility list using ICmPossibility.</p>
+<p>Common confidence levels might include:
+- High Confidence (for well-established analyses)
+- Medium Confidence (for probable but uncertain analyses)
+- Low Confidence (for tentative analyses)
+- Unconfirmed (for machine-generated or unverified analyses)</p>
+<p>Inherited CRUD Operations (from PossibilityItemOperations):
+- GetAll() - Get all confidence levels
+- Create() - Create a new confidence level
+- Delete() - Delete a confidence level
+- Duplicate() - Clone a confidence level
+- Find() - Find by name
+- Exists() - Check existence
+- GetName() / SetName() - Get/set name
+- GetDescription() / SetDescription() - Get/set description
+- GetGuid() - Get GUID
+- CompareTo() - Compare by name</p>
+<p>Domain-Specific Methods (ConfidenceOperations):
+- GetAnalysesWithConfidence() - Find analyses using a level
+- GetGlossesWithConfidence() - Find glosses using a level
+- GetDefault() - Get default confidence level</p>
+<p>This class should be accessed via FLExProject.Confidence property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get all confidence levels</span>
+<span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">Confidence</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Confidence</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+    <span class="n">desc</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Confidence</span><span class="o">.</span><span class="n">GetDescription</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">desc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Find a specific confidence level</span>
+<span class="n">high</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Confidence</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="s2">&quot;High Confidence&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">high</span><span class="p">:</span>
+    <span class="c1"># Get analyses using this confidence level</span>
+    <span class="n">analyses</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Confidence</span><span class="o">.</span><span class="n">GetAnalysesWithConfidence</span><span class="p">(</span><span class="n">high</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">analyses</span><span class="p">)</span><span class="si">}</span><span class="s2"> analyses have high confidence&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create a custom confidence level</span>
+<span class="n">custom</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Confidence</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;Verified&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
+<span class="n">project</span><span class="o">.</span><span class="n">Confidence</span><span class="o">.</span><span class="n">SetDescription</span><span class="p">(</span><span class="n">custom</span><span class="p">,</span>
+    <span class="s2">&quot;Analysis verified by native speaker&quot;</span><span class="p">)</span>
+
+<span class="c1"># Find the default confidence level</span>
+<span class="n">default</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Confidence</span><span class="o">.</span><span class="n">GetDefault</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">default</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Default: </span><span class="si">{</span><span class="n">project</span><span class="o">.</span><span class="n">Confidence</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">default</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations.GetAnalysesWithConfidence">
+<span class="sig-name descname"><span class="pre">GetAnalysesWithConfidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations.GetAnalysesWithConfidence" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations.GetGlossesWithConfidence">
+<span class="sig-name descname"><span class="pre">GetGlossesWithConfidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations.GetGlossesWithConfidence" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations.GetDefault">
+<span class="sig-name descname"><span class="pre">GetDefault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations.GetDefault" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Lists.LocalizedListsOperations">
+<span id="flexicon-code-lists-localizedlistsoperations-module"></span><h2>flexicon.code.Lists.LocalizedListsOperations module<a class="headerlink" href="#module-flexicon.code.Lists.LocalizedListsOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Lists.LocalizedListsOperations.SkippedWS">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Lists.LocalizedListsOperations.</span></span><span class="sig-name descname"><span class="pre">SkippedWS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.LocalizedListsOperations.SkippedWS" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>One entry in <code class="docutils literal notranslate"><span class="pre">ImportLocalizedListsResult.skipped</span></code>.</p>
+<dl class="simple">
+<dt>Fields:</dt><dd><dl class="simple">
+<dt>code (str): IcuLocale of the writing system that was skipped, or</dt><dd><p><code class="docutils literal notranslate"><span class="pre">&quot;&lt;empty&gt;&quot;</span></code> if the WS had no IcuLocale set.</p>
+</dd>
+<dt>reason (str): Short diagnostic explaining why the pack was not</dt><dd><p>applied. One of the <code class="docutils literal notranslate"><span class="pre">SKIP_*</span></code> module constants, or a more
+specific message for the file-not-found path.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flexicon.code.Lists.LocalizedListsOperations.SkippedWS.code">
+<span class="sig-name descname"><span class="pre">code</span></span><a class="headerlink" href="#flexicon.code.Lists.LocalizedListsOperations.SkippedWS.code" title="Link to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flexicon.code.Lists.LocalizedListsOperations.SkippedWS.reason">
+<span class="sig-name descname"><span class="pre">reason</span></span><a class="headerlink" href="#flexicon.code.Lists.LocalizedListsOperations.SkippedWS.reason" title="Link to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Lists.LocalizedListsOperations.ImportLocalizedListsResult">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Lists.LocalizedListsOperations.</span></span><span class="sig-name descname"><span class="pre">ImportLocalizedListsResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imported</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skipped</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.LocalizedListsOperations.ImportLocalizedListsResult" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>Structured result for <code class="docutils literal notranslate"><span class="pre">ImportForAllAnalysisWritingSystems</span></code>.</p>
+<dl class="simple">
+<dt>Fields:</dt><dd><dl class="simple">
+<dt>imported (list[str]): IcuLocale codes whose translation pack was</dt><dd><p>successfully merged into the project’s possibility lists.</p>
+</dd>
+<dt>skipped (list[SkippedWS]): One <code class="docutils literal notranslate"><span class="pre">SkippedWS(code,</span> <span class="pre">reason)</span></code> entry</dt><dd><p>per writing system whose pack was not applied. <code class="docutils literal notranslate"><span class="pre">code</span></code> is the
+IcuLocale (or <code class="docutils literal notranslate"><span class="pre">&quot;&lt;empty&gt;&quot;</span></code> if the WS had no IcuLocale set);
+<code class="docutils literal notranslate"><span class="pre">reason</span></code> is a short human-readable diagnostic, generally one
+of the <code class="docutils literal notranslate"><span class="pre">SKIP_*</span></code> module constants.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flexicon.code.Lists.LocalizedListsOperations.ImportLocalizedListsResult.imported">
+<span class="sig-name descname"><span class="pre">imported</span></span><a class="headerlink" href="#flexicon.code.Lists.LocalizedListsOperations.ImportLocalizedListsResult.imported" title="Link to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flexicon.code.Lists.LocalizedListsOperations.ImportLocalizedListsResult.skipped">
+<span class="sig-name descname"><span class="pre">skipped</span></span><a class="headerlink" href="#flexicon.code.Lists.LocalizedListsOperations.ImportLocalizedListsResult.skipped" title="Link to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Lists.LocalizedListsOperations.</span></span><span class="sig-name descname"><span class="pre">LocalizedListsOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lists/LocalizedListsOperations.html#LocalizedListsOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>Localized possibility-list translation-pack imports.</p>
+<p>Translation packs ship at
+<code class="docutils literal notranslate"><span class="pre">&lt;FWCodeDir&gt;/Templates/LocalizedLists-&lt;lang&gt;.zip</span></code> and carry Name
+and Abbreviation alternatives for the canonical possibility lists
+shared across LangProject and LexDb (SemanticDomains, AnthroList,
+DomainTypes, UsageTypes, RestrictionsList, …). Items are matched
+by canonical GUID, so the corresponding <code class="docutils literal notranslate"><span class="pre">ImportCatalog</span></code> call
+must have already seeded those items in English before
+translations can land.</p>
+<p>Access via <code class="docutils literal notranslate"><span class="pre">FLExProject.LocalizedLists</span></code> – a lazy property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;MyProject&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Seed canonical SemDom items in English first.</span>
+<span class="n">project</span><span class="o">.</span><span class="n">SemanticDomains</span><span class="o">.</span><span class="n">ImportCatalog</span><span class="p">()</span>
+
+<span class="c1"># Layer translations for one specific WS.</span>
+<span class="n">project</span><span class="o">.</span><span class="n">LocalizedLists</span><span class="o">.</span><span class="n">Import</span><span class="p">(</span><span class="s2">&quot;fr&quot;</span><span class="p">)</span>
+
+<span class="c1"># Or fan out across every enabled analysis WS that has a</span>
+<span class="c1"># shipping pack:</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">LocalizedLists</span><span class="o">.</span><span class="n">ImportForAllAnalysisWritingSystems</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">imported</span><span class="p">)</span>  <span class="c1"># e.g. [&quot;en&quot;, &quot;fr&quot;]</span>
+<span class="k">for</span> <span class="n">code</span><span class="p">,</span> <span class="n">reason</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">skipped</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  skipped </span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations.Import">
+<span class="sig-name descname"><span class="pre">Import</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">language_code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lists/LocalizedListsOperations.html#LocalizedListsOperations.Import"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations.Import" title="Link to this definition">¶</a></dt>
+<dd><p>Import the localized-lists ZIP for a target writing system.</p>
+<p>Wraps <code class="docutils literal notranslate"><span class="pre">XmlTranslatedLists.ImportTranslatedListsForWs</span></code> –
+LCM’s purpose-built importer for translated lists. Unlike
+<code class="docutils literal notranslate"><span class="pre">XmlList.ImportList</span></code> (which appends new items), this method
+merges Name / Abbreviation alternatives onto existing items
+by canonical GUID; no duplicates are created.</p>
+<p>Order matters: call after <code class="docutils literal notranslate"><span class="pre">*Operations.ImportCatalog</span></code> has
+seeded canonical items, never before. Translation packs match
+by canonical GUID and silently ignore GUIDs they don’t carry,
+so calling Import before the catalog leaves nothing to merge
+onto.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>language_code</strong> (<em>str</em>) – ISO writing-system code identifying
+which LocalizedLists-XX.zip to import. Examples:
+<code class="docutils literal notranslate"><span class="pre">&quot;fr&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;es&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;ar&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;zh-CN&quot;</span></code>.</p></li>
+<li><p><strong>progress</strong> – Optional <code class="docutils literal notranslate"><span class="pre">SIL.LCModel.Utils.IProgress</span></code> instance
+for progress reporting. <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) skips
+reporting.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="flexicon.code.html#flexicon.code.exceptions.FP_ReadOnlyError" title="flexicon.code.exceptions.FP_ReadOnlyError"><strong>FP_ReadOnlyError</strong></a> – If the project is not opened with
+    writeEnabled=True.</p></li>
+<li><p><a class="reference internal" href="flexicon.code.html#flexicon.code.exceptions.FP_NullParameterError" title="flexicon.code.exceptions.FP_NullParameterError"><strong>FP_NullParameterError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">language_code</span></code> is None.</p></li>
+<li><p><a class="reference internal" href="flexicon.code.html#flexicon.code.exceptions.FP_ParameterError" title="flexicon.code.exceptions.FP_ParameterError"><strong>FP_ParameterError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">language_code</span></code> is empty.</p></li>
+<li><p><a class="reference internal" href="flexicon.code.html#flexicon.code.exceptions.FP_FileNotFoundError" title="flexicon.code.exceptions.FP_FileNotFoundError"><strong>FP_FileNotFoundError</strong></a> – If the corresponding ZIP is not
+    found in the FieldWorks Templates directory.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;MyProject&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">SemanticDomains</span><span class="o">.</span><span class="n">ImportCatalog</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">LocalizedLists</span><span class="o">.</span><span class="n">Import</span><span class="p">(</span><span class="s2">&quot;fr&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">LocalizedLists</span><span class="o">.</span><span class="n">Import</span><span class="p">(</span><span class="s2">&quot;es&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>Translation packs match by canonical GUID and silently
+ignore GUIDs they don’t recognise (and silently leave
+GUIDs they don’t carry untranslated). Catalog skew is
+therefore invisible at the call site. The biggest known
+case: <code class="docutils literal notranslate"><span class="pre">OCM-Frame.xml</span></code> (loaded via
+<code class="docutils literal notranslate"><span class="pre">AnthropologyOperations.ImportFrameCatalog</span></code>) carries
+116 GUIDs that <code class="docutils literal notranslate"><span class="pre">OCM.xml</span></code> does not. Pairing the wrong
+catalog with the wrong pack leaves part of AnthroListOA
+untranslated without any warning. (issue #82)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations.ImportForAllAnalysisWritingSystems">
+<span class="sig-name descname"><span class="pre">ImportForAllAnalysisWritingSystems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lists/LocalizedListsOperations.html#LocalizedListsOperations.ImportForAllAnalysisWritingSystems"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations.ImportForAllAnalysisWritingSystems" title="Link to this definition">¶</a></dt>
+<dd><p>Import LocalizedLists translation packs for every enabled
+analysis writing system whose <code class="docutils literal notranslate"><span class="pre">IcuLocale</span></code> matches a shipping
+<code class="docutils literal notranslate"><span class="pre">LocalizedLists-&lt;IcuLocale&gt;.zip</span></code>.</p>
+<p>Iterates <code class="docutils literal notranslate"><span class="pre">project.ServiceLocator.WritingSystems</span>
+<span class="pre">.CurrentAnalysisWritingSystems</span></code> and dispatches
+<code class="docutils literal notranslate"><span class="pre">Import(ws.IcuLocale)</span></code> for each entry. WSes whose
+<code class="docutils literal notranslate"><span class="pre">IcuLocale</span></code> does not map to a shipping ZIP are reported in
+the <code class="docutils literal notranslate"><span class="pre">skipped</span></code> field of the returned result rather than
+silently ignored.</p>
+<p>Convenience wrapper over <code class="docutils literal notranslate"><span class="pre">Import</span></code> that closes the typical
+post-ImportCatalog gap: a user enables an analysis WS
+(Portuguese, French, …), runs <code class="docutils literal notranslate"><span class="pre">SemanticDomains</span>
+<span class="pre">.ImportCatalog</span></code> and then expects the catalog items to carry
+translations for every WS they’ve enabled.</p>
+<p>Important: this does NOT back-fill translations for analysis
+WSes that get enabled AFTER catalog content is added. Re-run
+this method (or call <code class="docutils literal notranslate"><span class="pre">Import(code)</span></code> directly) after enabling
+additional analysis WSes.</p>
+<p>Precondition: at least one <code class="docutils literal notranslate"><span class="pre">ImportCatalog</span></code> call should have
+run first – the merger has nothing to land on otherwise. A
+<code class="docutils literal notranslate"><span class="pre">logger.warning</span></code> is emitted if <code class="docutils literal notranslate"><span class="pre">SemanticDomainsOA</span></code> is
+empty when this method is invoked.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>progress</strong> – Optional <code class="docutils literal notranslate"><span class="pre">SIL.LCModel.Utils.IProgress</span></code> instance
+passed through to each <code class="docutils literal notranslate"><span class="pre">Import</span></code> call.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Named tuple with
+<code class="docutils literal notranslate"><span class="pre">imported</span></code> (list[str] of IcuLocale codes that merged
+successfully) and <code class="docutils literal notranslate"><span class="pre">skipped</span></code> (list[SkippedWS] of
+<code class="docutils literal notranslate"><span class="pre">SkippedWS(code,</span> <span class="pre">reason)</span></code> entries for WSes that did not
+apply).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#flexicon.code.Lists.LocalizedListsOperations.ImportLocalizedListsResult" title="flexicon.code.Lists.LocalizedListsOperations.ImportLocalizedListsResult">ImportLocalizedListsResult</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="flexicon.code.html#flexicon.code.exceptions.FP_ReadOnlyError" title="flexicon.code.exceptions.FP_ReadOnlyError"><strong>FP_ReadOnlyError</strong></a> – If the project is not write-enabled.</p>
+</dd>
+<dt class="field-odd">Warns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>UserWarning</strong> – If the SemanticDomains list is empty when this
+method is invoked – translation packs will silently
+no-op because there are no canonical items to merge
+onto. Raised via <code class="docutils literal notranslate"><span class="pre">warnings.warn</span></code> so it surfaces in
+interactive REPL use.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;MyProject&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">SemanticDomains</span><span class="o">.</span><span class="n">ImportCatalog</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">LocalizedLists</span><span class="o">.</span><span class="n">ImportForAllAnalysisWritingSystems</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># result.imported == [&quot;en&quot;, &quot;fr&quot;] if those packs ship</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># result.skipped == [SkippedWS(&quot;pt&quot;, &quot;no shipping translation pack&quot;)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Lists.OverlayOperations">
+<span id="flexicon-code-lists-overlayoperations-module"></span><h2>flexicon.code.Lists.OverlayOperations module<a class="headerlink" href="#module-flexicon.code.Lists.OverlayOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Lists.OverlayOperations.</span></span><span class="sig-name descname"><span class="pre">OverlayOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lists/OverlayOperations.html#OverlayOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations" title="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">PossibilityItemOperations</span></code></a></p>
+<p>Discourse chart overlay and layer management operations for FLEx projects.</p>
+<p>This class provides methods for creating and managing overlays (layers) in
+discourse constituent charts. Overlays allow multiple levels of analysis to
+be displayed in the same chart, with each overlay representing a different
+analytical perspective or feature set.</p>
+<p>Overlays can be toggled on/off for visibility and have customizable display
+order. They are used to organize complex chart analyses by separating different
+aspects of discourse structure into manageable layers.</p>
+<p>Inherited CRUD Operations (from PossibilityItemOperations):
+- GetAll() - Get all overlays (NOTE: requires chart context, see special handling)
+- Create() - Create a new overlay
+- Delete() - Delete an overlay
+- Duplicate() - Clone an overlay
+- Find() - Find by name
+- Exists() - Check existence
+- GetName() / SetName() - Get/set name
+- GetDescription() / SetDescription() - Get/set description
+- GetGuid() - Get GUID
+- CompareTo() - Compare by name</p>
+<p>Domain-Specific Methods (OverlayOperations):
+- IsVisible() - Check visibility
+- SetVisible() - Set visibility
+- GetDisplayOrder() - Get display order
+- SetDisplayOrder() - Set display order
+- GetElements() - Get overlay elements
+- AddElement() - Add element to overlay
+- RemoveElement() - Remove element from overlay
+- GetChart() - Get parent chart
+- GetPossItems() - Get possibility items
+- FindByChart() - Find overlays for a chart
+- GetVisibleOverlays() - Get visible overlays for a chart</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Overlays are specific to constituent charts (IConstChart). They provide
+a way to layer multiple analytical perspectives in a single chart view.
+GetAll() requires chart context - use FindByChart() instead for chart-specific queries.</p>
+</div>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span><span class="p">,</span> <span class="n">DiscourseOperations</span><span class="p">,</span> <span class="n">OverlayOperations</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">discourse_ops</span> <span class="o">=</span> <span class="n">DiscourseOperations</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+<span class="n">overlay_ops</span> <span class="o">=</span> <span class="n">OverlayOperations</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+<span class="c1"># Get a chart</span>
+<span class="n">text</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">Texts</span><span class="o">.</span><span class="n">GetAll</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">charts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">discourse_ops</span><span class="o">.</span><span class="n">GetAllCharts</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+<span class="n">chart</span> <span class="o">=</span> <span class="n">charts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Get overlays for the chart</span>
+<span class="n">overlays</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">overlay_ops</span><span class="o">.</span><span class="n">FindByChart</span><span class="p">(</span><span class="n">chart</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chart has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">overlays</span><span class="p">)</span><span class="si">}</span><span class="s2"> overlays&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create a new overlay</span>
+<span class="n">overlay</span> <span class="o">=</span> <span class="n">overlay_ops</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;Participants&quot;</span><span class="p">)</span>
+<span class="n">overlay_ops</span><span class="o">.</span><span class="n">SetDescription</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;Track participant chains&quot;</span><span class="p">)</span>
+
+<span class="c1"># Configure visibility and display order</span>
+<span class="n">overlay_ops</span><span class="o">.</span><span class="n">SetVisible</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">overlay_ops</span><span class="o">.</span><span class="n">SetDisplayOrder</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Get visible overlays</span>
+<span class="n">visible</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">overlay_ops</span><span class="o">.</span><span class="n">GetVisibleOverlays</span><span class="p">(</span><span class="n">chart</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chart has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">visible</span><span class="p">)</span><span class="si">}</span><span class="s2"> visible overlays&quot;</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations.IsVisible">
+<span class="sig-name descname"><span class="pre">IsVisible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.IsVisible" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations.SetVisible">
+<span class="sig-name descname"><span class="pre">SetVisible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.SetVisible" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations.GetDisplayOrder">
+<span class="sig-name descname"><span class="pre">GetDisplayOrder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.GetDisplayOrder" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations.SetDisplayOrder">
+<span class="sig-name descname"><span class="pre">SetDisplayOrder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.SetDisplayOrder" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations.GetElements">
+<span class="sig-name descname"><span class="pre">GetElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.GetElements" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations.AddElement">
+<span class="sig-name descname"><span class="pre">AddElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.AddElement" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations.RemoveElement">
+<span class="sig-name descname"><span class="pre">RemoveElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.RemoveElement" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations.GetChart">
+<span class="sig-name descname"><span class="pre">GetChart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.GetChart" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations.GetPossItems">
+<span class="sig-name descname"><span class="pre">GetPossItems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.GetPossItems" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations.FindByChart">
+<span class="sig-name descname"><span class="pre">FindByChart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.FindByChart" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.OverlayOperations.OverlayOperations.GetVisibleOverlays">
+<span class="sig-name descname"><span class="pre">GetVisibleOverlays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.GetVisibleOverlays" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Lists.PossibilityListOperations">
+<span id="flexicon-code-lists-possibilitylistoperations-module"></span><h2>flexicon.code.Lists.PossibilityListOperations module<a class="headerlink" href="#module-flexicon.code.Lists.PossibilityListOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Lists.PossibilityListOperations.</span></span><span class="sig-name descname"><span class="pre">PossibilityListOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lists/PossibilityListOperations.html#PossibilityListOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>This class provides generic operations for managing possibility lists
+in a FieldWorks project.</p>
+<p>Possibility lists are hierarchical categorization systems used throughout
+FLEx for various purposes (e.g., semantic domains, parts of speech,
+grammatical categories, locations, people, text genres, etc.).</p>
+<p>This class provides generic operations that work with any possibility list,
+regardless of its specific purpose.</p>
+<p>This class should be accessed via FLExProject.PossibilityLists property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get all possibility lists in the project</span>
+<span class="k">for</span> <span class="n">poss_list</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">PossibilityLists</span><span class="o">.</span><span class="n">GetAllLists</span><span class="p">():</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">PossibilityLists</span><span class="o">.</span><span class="n">GetListName</span><span class="p">(</span><span class="n">poss_list</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;List: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Get items in each list</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">PossibilityLists</span><span class="o">.</span><span class="n">GetItems</span><span class="p">(</span><span class="n">poss_list</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Contains </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items&quot;</span><span class="p">)</span>
+
+<span class="c1"># Work with a specific list</span>
+<span class="n">genre_list</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">PossibilityLists</span><span class="o">.</span><span class="n">FindList</span><span class="p">(</span><span class="s2">&quot;Text Genres&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">genre_list</span><span class="p">:</span>
+    <span class="c1"># Create a new genre</span>
+    <span class="n">narrative</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">PossibilityLists</span><span class="o">.</span><span class="n">CreateItem</span><span class="p">(</span>
+        <span class="n">genre_list</span><span class="p">,</span> <span class="s2">&quot;Narrative&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create a sub-genre</span>
+    <span class="n">folktale</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">PossibilityLists</span><span class="o">.</span><span class="n">CreateItem</span><span class="p">(</span>
+        <span class="n">genre_list</span><span class="p">,</span> <span class="s2">&quot;Folktale&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">narrative</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetAllLists">
+<span class="sig-name descname"><span class="pre">GetAllLists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetAllLists" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.CreateList">
+<span class="sig-name descname"><span class="pre">CreateList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.CreateList" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.DeleteList">
+<span class="sig-name descname"><span class="pre">DeleteList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.DeleteList" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.FindList">
+<span class="sig-name descname"><span class="pre">FindList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.FindList" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetListName">
+<span class="sig-name descname"><span class="pre">GetListName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetListName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetListName">
+<span class="sig-name descname"><span class="pre">SetListName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetListName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItems">
+<span class="sig-name descname"><span class="pre">GetItems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItems" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.CreateItem">
+<span class="sig-name descname"><span class="pre">CreateItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.CreateItem" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.DeleteItem">
+<span class="sig-name descname"><span class="pre">DeleteItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.DeleteItem" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.Duplicate">
+<span class="sig-name descname"><span class="pre">Duplicate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.Duplicate" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetSyncableProperties">
+<span class="sig-name descname"><span class="pre">GetSyncableProperties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetSyncableProperties" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.CompareTo">
+<span class="sig-name descname"><span class="pre">CompareTo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.CompareTo" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.FindItem">
+<span class="sig-name descname"><span class="pre">FindItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.FindItem" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemName">
+<span class="sig-name descname"><span class="pre">GetItemName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetItemName">
+<span class="sig-name descname"><span class="pre">SetItemName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetItemName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemAbbreviation">
+<span class="sig-name descname"><span class="pre">GetItemAbbreviation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemAbbreviation" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetItemAbbreviation">
+<span class="sig-name descname"><span class="pre">SetItemAbbreviation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetItemAbbreviation" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemDescription">
+<span class="sig-name descname"><span class="pre">GetItemDescription</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemDescription" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetItemDescription">
+<span class="sig-name descname"><span class="pre">SetItemDescription</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetItemDescription" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetSubitems">
+<span class="sig-name descname"><span class="pre">GetSubitems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetSubitems" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetParentItem">
+<span class="sig-name descname"><span class="pre">GetParentItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetParentItem" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.MoveItem">
+<span class="sig-name descname"><span class="pre">MoveItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.MoveItem" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetDepth">
+<span class="sig-name descname"><span class="pre">GetDepth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetDepth" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetListGuid">
+<span class="sig-name descname"><span class="pre">GetListGuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetListGuid" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemGuid">
+<span class="sig-name descname"><span class="pre">GetItemGuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemGuid" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemHvo">
+<span class="sig-name descname"><span class="pre">GetItemHvo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemHvo" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetListHvo">
+<span class="sig-name descname"><span class="pre">GetListHvo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetListHvo" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Lists.PublicationOperations">
+<span id="flexicon-code-lists-publicationoperations-module"></span><h2>flexicon.code.Lists.PublicationOperations module<a class="headerlink" href="#module-flexicon.code.Lists.PublicationOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Lists.PublicationOperations.</span></span><span class="sig-name descname"><span class="pre">PublicationOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lists/PublicationOperations.html#PublicationOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations" title="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">PossibilityItemOperations</span></code></a></p>
+<p>This class provides operations for managing publications and publishing
+workflows in a FieldWorks project.</p>
+<p>Publications in FLEx define output formats for dictionary and text publishing.
+They specify page layouts, formatting options, divisions (e.g., main entries,
+minor entries), header/footer settings, and default publication types. These
+are used when exporting dictionaries or texts to various formats.</p>
+<p>Inherited CRUD Operations (from PossibilityItemOperations):
+- GetAll() - Get all publications (NOTE: override handles flat parameter)
+- Create() - Create a new publication
+- Delete() - Delete a publication
+- Duplicate() - Clone a publication
+- Find() - Find by name
+- Exists() - Check existence
+- GetName() / SetName() - Get/set name
+- GetDescription() / SetDescription() - Get/set description
+- GetGuid() - Get GUID
+- CompareTo() - Compare by name</p>
+<p>Domain-Specific Methods (PublicationOperations):
+- GetPageLayout() - Get page layout description
+- SetPageLayout() - Set page layout description
+- GetIsDefault() - Check if default publication
+- SetIsDefault() - Set default publication
+- GetPageHeight() - Get page height
+- SetPageHeight() - Set page height
+- GetPageWidth() - Get page width
+- SetPageWidth() - Set page width
+- GetDivisions() - Get publication divisions
+- AddDivision() - Add a division
+- GetHeaderFooter() - Get header/footer configuration
+- GetIsLandscape() - Check landscape orientation
+- GetSubPublications() - Get sub-publications
+- GetParent() - Get parent publication
+- GetDateCreated() - Get creation date
+- GetDateModified() - Get modification date</p>
+<p>This class should be accessed via FLExProject.Publications property.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flexlibs2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExProject</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="n">FLExProject</span><span class="p">()</span>
+<span class="n">project</span><span class="o">.</span><span class="n">OpenProject</span><span class="p">(</span><span class="s2">&quot;my project&quot;</span><span class="p">,</span> <span class="n">writeEnabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Get all publications</span>
+<span class="k">for</span> <span class="n">pub</span> <span class="ow">in</span> <span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">pub</span><span class="p">)</span>
+    <span class="n">is_default</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">GetIsDefault</span><span class="p">(</span><span class="n">pub</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> (Default: </span><span class="si">{</span><span class="n">is_default</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create a new publication</span>
+<span class="n">pub</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;Web Dictionary&quot;</span><span class="p">)</span>
+
+<span class="c1"># Set page layout and formatting</span>
+<span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">SetPageWidth</span><span class="p">(</span><span class="n">pub</span><span class="p">,</span> <span class="mf">8.5</span><span class="p">)</span>
+<span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">SetPageHeight</span><span class="p">(</span><span class="n">pub</span><span class="p">,</span> <span class="mf">11.0</span><span class="p">)</span>
+<span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">SetDescription</span><span class="p">(</span><span class="n">pub</span><span class="p">,</span>
+    <span class="s2">&quot;Dictionary layout for web publication&quot;</span><span class="p">)</span>
+
+<span class="c1"># Set as default publication</span>
+<span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">SetIsDefault</span><span class="p">(</span><span class="n">pub</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Find a publication by name</span>
+<span class="n">main_pub</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="s2">&quot;Main Dictionary&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">main_pub</span><span class="p">:</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">GetPageWidth</span><span class="p">(</span><span class="n">main_pub</span><span class="p">)</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">Publications</span><span class="o">.</span><span class="n">GetPageHeight</span><span class="p">(</span><span class="n">main_pub</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Page size: </span><span class="si">{</span><span class="n">width</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">height</span><span class="si">}</span><span class="s2"> inches&quot;</span><span class="p">)</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">CloseProject</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetPageLayout">
+<span class="sig-name descname"><span class="pre">GetPageLayout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetPageLayout" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.SetPageLayout">
+<span class="sig-name descname"><span class="pre">SetPageLayout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.SetPageLayout" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetIsDefault">
+<span class="sig-name descname"><span class="pre">GetIsDefault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetIsDefault" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.SetIsDefault">
+<span class="sig-name descname"><span class="pre">SetIsDefault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.SetIsDefault" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetPageHeight">
+<span class="sig-name descname"><span class="pre">GetPageHeight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetPageHeight" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.SetPageHeight">
+<span class="sig-name descname"><span class="pre">SetPageHeight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.SetPageHeight" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetPageWidth">
+<span class="sig-name descname"><span class="pre">GetPageWidth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetPageWidth" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.SetPageWidth">
+<span class="sig-name descname"><span class="pre">SetPageWidth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.SetPageWidth" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetDivisions">
+<span class="sig-name descname"><span class="pre">GetDivisions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetDivisions" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.AddDivision">
+<span class="sig-name descname"><span class="pre">AddDivision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.AddDivision" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetHeaderFooter">
+<span class="sig-name descname"><span class="pre">GetHeaderFooter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetHeaderFooter" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetIsLandscape">
+<span class="sig-name descname"><span class="pre">GetIsLandscape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetIsLandscape" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetSubPublications">
+<span class="sig-name descname"><span class="pre">GetSubPublications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetSubPublications" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetParent">
+<span class="sig-name descname"><span class="pre">GetParent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetParent" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetDateCreated">
+<span class="sig-name descname"><span class="pre">GetDateCreated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetDateCreated" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.PublicationOperations.PublicationOperations.GetDateModified">
+<span class="sig-name descname"><span class="pre">GetDateModified</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetDateModified" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Lists.TranslationTypeOperations">
+<span id="flexicon-code-lists-translationtypeoperations-module"></span><h2>flexicon.code.Lists.TranslationTypeOperations module<a class="headerlink" href="#module-flexicon.code.Lists.TranslationTypeOperations" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Lists.TranslationTypeOperations.</span></span><span class="sig-name descname"><span class="pre">TranslationTypeOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lists/TranslationTypeOperations.html#TranslationTypeOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations" title="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">PossibilityItemOperations</span></code></a></p>
+<p>Translation type operations for managing translation categories.</p>
+<p>Translation types categorize different kinds of translations such as
+free translation (idiomatic), literal translation (word-for-word),
+and back translation (reverse translation for verification).</p>
+<p>Inherited CRUD Operations (from PossibilityItemOperations):
+- GetAll() - Get all translation types
+- Create() - Create new type
+- Delete() - Delete type
+- Duplicate() - Clone type
+- Find() - Find by name
+- Exists() - Check existence
+- GetName() / SetName() - Get/set name
+- GetDescription() / SetDescription() - Get/set description
+- GetGuid() - Get GUID
+- CompareTo() - Compare by name</p>
+<p>Domain-Specific Methods (TranslationTypeOperations):
+- GetAbbreviation() / SetAbbreviation() - Get/set abbreviation
+- GetAnalysisWS() / SetAnalysisWS() - Get/set analysis writing systems
+- GetTextsWithType() - Find texts using type
+- GetSegmentsWithType() - Find segments using type
+- GetFreeTranslationType() - Get predefined free type
+- GetLiteralTranslationType() - Get predefined literal type
+- GetBackTranslationType() - Get predefined back type
+- FindByWS() - Find by writing system
+- IsDefault() / SetDefault() - Check/set default status</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetAbbreviation">
+<span class="sig-name descname"><span class="pre">GetAbbreviation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetAbbreviation" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.SetAbbreviation">
+<span class="sig-name descname"><span class="pre">SetAbbreviation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.SetAbbreviation" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetAnalysisWS">
+<span class="sig-name descname"><span class="pre">GetAnalysisWS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetAnalysisWS" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.SetAnalysisWS">
+<span class="sig-name descname"><span class="pre">SetAnalysisWS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.SetAnalysisWS" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetTextsWithType">
+<span class="sig-name descname"><span class="pre">GetTextsWithType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetTextsWithType" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetSegmentsWithType">
+<span class="sig-name descname"><span class="pre">GetSegmentsWithType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetSegmentsWithType" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetFreeTranslationType">
+<span class="sig-name descname"><span class="pre">GetFreeTranslationType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetFreeTranslationType" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetLiteralTranslationType">
+<span class="sig-name descname"><span class="pre">GetLiteralTranslationType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetLiteralTranslationType" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetBackTranslationType">
+<span class="sig-name descname"><span class="pre">GetBackTranslationType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetBackTranslationType" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.FindByWS">
+<span class="sig-name descname"><span class="pre">FindByWS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.FindByWS" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.IsDefault">
+<span class="sig-name descname"><span class="pre">IsDefault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.IsDefault" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.SetDefault">
+<span class="sig-name descname"><span class="pre">SetDefault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.SetDefault" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Lists.possibility_item_base">
+<span id="flexicon-code-lists-possibility-item-base-module"></span><h2>flexicon.code.Lists.possibility_item_base module<a class="headerlink" href="#module-flexicon.code.Lists.possibility_item_base" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flexicon.code.Lists.possibility_item_base.</span></span><span class="sig-name descname"><span class="pre">PossibilityItemOperations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/flexicon/code/Lists/possibility_item_base.html#PossibilityItemOperations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="flexicon.code.html#flexicon.code.BaseOperations.BaseOperations" title="flexicon.code.BaseOperations.BaseOperations"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOperations</span></code></a></p>
+<p>Base class for operations on specialized possibility list items.</p>
+<p>Provides unified CRUD operations for possibility-based items like Publications,
+Confidence Levels, Translation Types, Agents, and Overlays. Each subclass
+specializes the base class by:</p>
+<ol class="arabic simple">
+<li><p>Accessing the appropriate list object (e.g., ConfidenceLevelsOA)</p></li>
+<li><p>Specifying the item class name (e.g., ‘Confidence’, ‘Publication’)</p></li>
+<li><p>Providing domain-specific methods (e.g., GetPageWidth, IsVisible)</p></li>
+</ol>
+<p>Shared Operations (inherited by all subclasses):
+- GetAll() - Get all items (basic implementation, may be overridden)
+- Create() - Create new item with validation
+- Delete() - Delete item from list
+- Duplicate() - Clone item with new GUID
+- Find() - Find item by name
+- Exists() - Check if item exists by name
+- GetName() / SetName() - Get/set item name
+- GetDescription() / SetDescription() - Get/set item description
+- GetSyncableProperties() - Return dict of syncable properties
+- CompareTo() - Compare two items
+- GetGuid() - Get GUID</p>
+<p>Subclasses must implement:
+- __init__() - Call super().__init__(project)
+- _GetSequence() - Return parent.SubPossibilitiesOS (for reordering)
+- _get_item_class_name() - Return item class name string
+- _get_list_object() - Return the list container object</p>
+<p>Example subclass structure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ConfidenceOperations</span><span class="p">(</span><span class="n">PossibilityItemOperations</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_item_class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Confidence&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_list_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">ConfidenceLevelsOA</span>
+
+    <span class="c1"># Domain-specific methods</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAnalysesWithConfidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetAll">
+<span class="sig-name descname"><span class="pre">GetAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetAll" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Create">
+<span class="sig-name descname"><span class="pre">Create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Create" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Delete">
+<span class="sig-name descname"><span class="pre">Delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Delete" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Duplicate">
+<span class="sig-name descname"><span class="pre">Duplicate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Duplicate" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Find">
+<span class="sig-name descname"><span class="pre">Find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Find" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Exists">
+<span class="sig-name descname"><span class="pre">Exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Exists" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetName">
+<span class="sig-name descname"><span class="pre">GetName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.SetName">
+<span class="sig-name descname"><span class="pre">SetName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.SetName" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetDescription">
+<span class="sig-name descname"><span class="pre">GetDescription</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetDescription" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.SetDescription">
+<span class="sig-name descname"><span class="pre">SetDescription</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.SetDescription" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetGuid">
+<span class="sig-name descname"><span class="pre">GetGuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetGuid" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.CompareTo">
+<span class="sig-name descname"><span class="pre">CompareTo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.CompareTo" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetSyncableProperties">
+<span class="sig-name descname"><span class="pre">GetSyncableProperties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetSyncableProperties" title="Link to this definition">¶</a></dt>
+<dd><p>Automatically instantiate and call the method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-flexicon.code.Lists">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-flexicon.code.Lists" title="Link to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">flexicon.code.Lists package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-flexicon.code.Lists.AgentOperations">flexicon.code.Lists.AgentOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations"><code class="docutils literal notranslate"><span class="pre">AgentOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.Duplicate"><code class="docutils literal notranslate"><span class="pre">Duplicate()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetVersion"><code class="docutils literal notranslate"><span class="pre">GetVersion()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.SetVersion"><code class="docutils literal notranslate"><span class="pre">SetVersion()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.IsHuman"><code class="docutils literal notranslate"><span class="pre">IsHuman()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.IsParser"><code class="docutils literal notranslate"><span class="pre">IsParser()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetHuman"><code class="docutils literal notranslate"><span class="pre">GetHuman()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.SetHuman"><code class="docutils literal notranslate"><span class="pre">SetHuman()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetEvaluations"><code class="docutils literal notranslate"><span class="pre">GetEvaluations()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetEvaluationCount"><code class="docutils literal notranslate"><span class="pre">GetEvaluationCount()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.FindByType"><code class="docutils literal notranslate"><span class="pre">FindByType()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetHumanAgents"><code class="docutils literal notranslate"><span class="pre">GetHumanAgents()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetParserAgents"><code class="docutils literal notranslate"><span class="pre">GetParserAgents()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetDateCreated"><code class="docutils literal notranslate"><span class="pre">GetDateCreated()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.AgentOperations.AgentOperations.GetDateModified"><code class="docutils literal notranslate"><span class="pre">GetDateModified()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Lists.ConfidenceOperations">flexicon.code.Lists.ConfidenceOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations"><code class="docutils literal notranslate"><span class="pre">ConfidenceOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations.GetAnalysesWithConfidence"><code class="docutils literal notranslate"><span class="pre">GetAnalysesWithConfidence()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations.GetGlossesWithConfidence"><code class="docutils literal notranslate"><span class="pre">GetGlossesWithConfidence()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.ConfidenceOperations.ConfidenceOperations.GetDefault"><code class="docutils literal notranslate"><span class="pre">GetDefault()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Lists.LocalizedListsOperations">flexicon.code.Lists.LocalizedListsOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.LocalizedListsOperations.SkippedWS"><code class="docutils literal notranslate"><span class="pre">SkippedWS</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.LocalizedListsOperations.SkippedWS.code"><code class="docutils literal notranslate"><span class="pre">code</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.LocalizedListsOperations.SkippedWS.reason"><code class="docutils literal notranslate"><span class="pre">reason</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#flexicon.code.Lists.LocalizedListsOperations.ImportLocalizedListsResult"><code class="docutils literal notranslate"><span class="pre">ImportLocalizedListsResult</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.LocalizedListsOperations.ImportLocalizedListsResult.imported"><code class="docutils literal notranslate"><span class="pre">imported</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.LocalizedListsOperations.ImportLocalizedListsResult.skipped"><code class="docutils literal notranslate"><span class="pre">skipped</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations"><code class="docutils literal notranslate"><span class="pre">LocalizedListsOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations.Import"><code class="docutils literal notranslate"><span class="pre">Import()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.LocalizedListsOperations.LocalizedListsOperations.ImportForAllAnalysisWritingSystems"><code class="docutils literal notranslate"><span class="pre">ImportForAllAnalysisWritingSystems()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Lists.OverlayOperations">flexicon.code.Lists.OverlayOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations"><code class="docutils literal notranslate"><span class="pre">OverlayOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.IsVisible"><code class="docutils literal notranslate"><span class="pre">IsVisible()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.SetVisible"><code class="docutils literal notranslate"><span class="pre">SetVisible()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.GetDisplayOrder"><code class="docutils literal notranslate"><span class="pre">GetDisplayOrder()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.SetDisplayOrder"><code class="docutils literal notranslate"><span class="pre">SetDisplayOrder()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.GetElements"><code class="docutils literal notranslate"><span class="pre">GetElements()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.AddElement"><code class="docutils literal notranslate"><span class="pre">AddElement()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.RemoveElement"><code class="docutils literal notranslate"><span class="pre">RemoveElement()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.GetChart"><code class="docutils literal notranslate"><span class="pre">GetChart()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.GetPossItems"><code class="docutils literal notranslate"><span class="pre">GetPossItems()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.FindByChart"><code class="docutils literal notranslate"><span class="pre">FindByChart()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.OverlayOperations.OverlayOperations.GetVisibleOverlays"><code class="docutils literal notranslate"><span class="pre">GetVisibleOverlays()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Lists.PossibilityListOperations">flexicon.code.Lists.PossibilityListOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations"><code class="docutils literal notranslate"><span class="pre">PossibilityListOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetAllLists"><code class="docutils literal notranslate"><span class="pre">GetAllLists()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.CreateList"><code class="docutils literal notranslate"><span class="pre">CreateList()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.DeleteList"><code class="docutils literal notranslate"><span class="pre">DeleteList()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.FindList"><code class="docutils literal notranslate"><span class="pre">FindList()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetListName"><code class="docutils literal notranslate"><span class="pre">GetListName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetListName"><code class="docutils literal notranslate"><span class="pre">SetListName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItems"><code class="docutils literal notranslate"><span class="pre">GetItems()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.CreateItem"><code class="docutils literal notranslate"><span class="pre">CreateItem()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.DeleteItem"><code class="docutils literal notranslate"><span class="pre">DeleteItem()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.Duplicate"><code class="docutils literal notranslate"><span class="pre">Duplicate()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetSyncableProperties"><code class="docutils literal notranslate"><span class="pre">GetSyncableProperties()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.CompareTo"><code class="docutils literal notranslate"><span class="pre">CompareTo()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.FindItem"><code class="docutils literal notranslate"><span class="pre">FindItem()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemName"><code class="docutils literal notranslate"><span class="pre">GetItemName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetItemName"><code class="docutils literal notranslate"><span class="pre">SetItemName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemAbbreviation"><code class="docutils literal notranslate"><span class="pre">GetItemAbbreviation()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetItemAbbreviation"><code class="docutils literal notranslate"><span class="pre">SetItemAbbreviation()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemDescription"><code class="docutils literal notranslate"><span class="pre">GetItemDescription()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.SetItemDescription"><code class="docutils literal notranslate"><span class="pre">SetItemDescription()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetSubitems"><code class="docutils literal notranslate"><span class="pre">GetSubitems()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetParentItem"><code class="docutils literal notranslate"><span class="pre">GetParentItem()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.MoveItem"><code class="docutils literal notranslate"><span class="pre">MoveItem()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetDepth"><code class="docutils literal notranslate"><span class="pre">GetDepth()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetListGuid"><code class="docutils literal notranslate"><span class="pre">GetListGuid()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemGuid"><code class="docutils literal notranslate"><span class="pre">GetItemGuid()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetItemHvo"><code class="docutils literal notranslate"><span class="pre">GetItemHvo()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PossibilityListOperations.PossibilityListOperations.GetListHvo"><code class="docutils literal notranslate"><span class="pre">GetListHvo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Lists.PublicationOperations">flexicon.code.Lists.PublicationOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations"><code class="docutils literal notranslate"><span class="pre">PublicationOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetPageLayout"><code class="docutils literal notranslate"><span class="pre">GetPageLayout()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.SetPageLayout"><code class="docutils literal notranslate"><span class="pre">SetPageLayout()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetIsDefault"><code class="docutils literal notranslate"><span class="pre">GetIsDefault()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.SetIsDefault"><code class="docutils literal notranslate"><span class="pre">SetIsDefault()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetPageHeight"><code class="docutils literal notranslate"><span class="pre">GetPageHeight()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.SetPageHeight"><code class="docutils literal notranslate"><span class="pre">SetPageHeight()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetPageWidth"><code class="docutils literal notranslate"><span class="pre">GetPageWidth()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.SetPageWidth"><code class="docutils literal notranslate"><span class="pre">SetPageWidth()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetDivisions"><code class="docutils literal notranslate"><span class="pre">GetDivisions()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.AddDivision"><code class="docutils literal notranslate"><span class="pre">AddDivision()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetHeaderFooter"><code class="docutils literal notranslate"><span class="pre">GetHeaderFooter()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetIsLandscape"><code class="docutils literal notranslate"><span class="pre">GetIsLandscape()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetSubPublications"><code class="docutils literal notranslate"><span class="pre">GetSubPublications()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetParent"><code class="docutils literal notranslate"><span class="pre">GetParent()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetDateCreated"><code class="docutils literal notranslate"><span class="pre">GetDateCreated()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.PublicationOperations.PublicationOperations.GetDateModified"><code class="docutils literal notranslate"><span class="pre">GetDateModified()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Lists.TranslationTypeOperations">flexicon.code.Lists.TranslationTypeOperations module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations"><code class="docutils literal notranslate"><span class="pre">TranslationTypeOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetAbbreviation"><code class="docutils literal notranslate"><span class="pre">GetAbbreviation()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.SetAbbreviation"><code class="docutils literal notranslate"><span class="pre">SetAbbreviation()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetAnalysisWS"><code class="docutils literal notranslate"><span class="pre">GetAnalysisWS()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.SetAnalysisWS"><code class="docutils literal notranslate"><span class="pre">SetAnalysisWS()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetTextsWithType"><code class="docutils literal notranslate"><span class="pre">GetTextsWithType()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetSegmentsWithType"><code class="docutils literal notranslate"><span class="pre">GetSegmentsWithType()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetFreeTranslationType"><code class="docutils literal notranslate"><span class="pre">GetFreeTranslationType()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetLiteralTranslationType"><code class="docutils literal notranslate"><span class="pre">GetLiteralTranslationType()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.GetBackTranslationType"><code class="docutils literal notranslate"><span class="pre">GetBackTranslationType()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.FindByWS"><code class="docutils literal notranslate"><span class="pre">FindByWS()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.IsDefault"><code class="docutils literal notranslate"><span class="pre">IsDefault()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.TranslationTypeOperations.TranslationTypeOperations.SetDefault"><code class="docutils literal notranslate"><span class="pre">SetDefault()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Lists.possibility_item_base">flexicon.code.Lists.possibility_item_base module</a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations"><code class="docutils literal notranslate"><span class="pre">PossibilityItemOperations</span></code></a><ul>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetAll"><code class="docutils literal notranslate"><span class="pre">GetAll()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Create"><code class="docutils literal notranslate"><span class="pre">Create()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Delete"><code class="docutils literal notranslate"><span class="pre">Delete()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Duplicate"><code class="docutils literal notranslate"><span class="pre">Duplicate()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Find"><code class="docutils literal notranslate"><span class="pre">Find()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.Exists"><code class="docutils literal notranslate"><span class="pre">Exists()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetName"><code class="docutils literal notranslate"><span class="pre">GetName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.SetName"><code class="docutils literal notranslate"><span class="pre">SetName()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetDescription"><code class="docutils literal notranslate"><span class="pre">GetDescription()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.SetDescription"><code class="docutils literal notranslate"><span class="pre">SetDescription()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetGuid"><code class="docutils literal notranslate"><span class="pre">GetGuid()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.CompareTo"><code class="docutils literal notranslate"><span class="pre">CompareTo()</span></code></a></li>
+<li><a class="reference internal" href="#flexicon.code.Lists.possibility_item_base.PossibilityItemOperations.GetSyncableProperties"><code class="docutils literal notranslate"><span class="pre">GetSyncableProperties()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-flexicon.code.Lists">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="flexicon.code.Lexicon.html"
+                          title="previous chapter">flexicon.code.Lexicon package</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="flexicon.code.Notebook.html"
+                          title="next chapter">flexicon.code.Notebook package</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Notebook.html" title="flexicon.code.Notebook package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="flexicon.code.Lexicon.html" title="flexicon.code.Lexicon package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >flexicon</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="flexicon.html" >flexicon package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="flexicon.code.html" >flexicon.code package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Lists package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

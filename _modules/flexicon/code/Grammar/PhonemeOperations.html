@@ -1,0 +1,1795 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Grammar.PhonemeOperations &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.PhonemeOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Grammar.PhonemeOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   PhonemeOperations.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: PhonemeOperations</span>
+<span class="c1">#          Phoneme operations for FieldWorks Language Explorer</span>
+<span class="c1">#          projects via SIL Language and Culture Model (LCM) API.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="c1"># Import BaseOperations parent class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..BaseOperations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOperations</span><span class="p">,</span> <span class="n">OperationsMethod</span><span class="p">,</span> <span class="n">wrap_enumerable</span>
+
+<span class="c1"># Import FLEx LCM types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IPhPhoneme</span><span class="p">,</span>
+    <span class="n">IPhPhonemeFactory</span><span class="p">,</span>
+    <span class="n">IPhCode</span><span class="p">,</span>
+    <span class="n">IPhCodeFactory</span><span class="p">,</span>
+    <span class="n">IFsFeatStruc</span><span class="p">,</span>
+    <span class="n">IFsClosedFeature</span><span class="p">,</span>
+    <span class="n">ICmObjectRepository</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
+
+
+<span class="c1"># Import flexlibs exceptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..FLExProject</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FP_ParameterError</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Import string utilities</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.string_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_text</span><span class="p">,</span> <span class="n">normalize_match_key</span>
+
+<span class="c1"># Catalog parsing helpers (Phase 6d)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.catalog</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CatalogImportResult</span><span class="p">,</span>
+    <span class="n">find_catalog_file</span><span class="p">,</span>
+    <span class="n">parse_basic_ipa_info</span><span class="p">,</span>
+    <span class="n">parse_etic_gloss_list</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="c1"># Canonical relative subdir for the BasicIPAInfo catalog under FWCodeDir.</span>
+<span class="n">BASIC_IPA_CATALOG_FILENAME</span> <span class="o">=</span> <span class="s2">&quot;BasicIPAInfo.xml&quot;</span>
+<span class="n">BASIC_IPA_CATALOG_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;Templates&quot;</span>
+
+<span class="c1"># PhonFeats catalog (BasicIPAInfo cross-references its feature/value ids).</span>
+<span class="n">PHON_FEATS_CATALOG_FILENAME</span> <span class="o">=</span> <span class="s2">&quot;PhonFeatsEticGlossList.xml&quot;</span>
+<span class="n">PHON_FEATS_CATALOG_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;Language Explorer/MGA/GlossLists&quot;</span>
+
+
+<div class="viewcode-block" id="PhonemeOperations">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.PhonemeOperations.PhonemeOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PhonemeOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides operations for managing Phonemes in a FieldWorks project.</span>
+
+<span class="sd">    Phonemes are the minimal distinctive units of sound in a language. For example,</span>
+<span class="sd">    in English, /p/ and /b/ are distinct phonemes because they distinguish words</span>
+<span class="sd">    like &quot;pat&quot; and &quot;bat&quot;.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        from flexlibs2 import FLExProject, PhonemeOperations</span>
+
+<span class="sd">        project = FLExProject()</span>
+<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+
+<span class="sd">        phonemeOps = PhonemeOperations(project)</span>
+
+<span class="sd">        # Get all phonemes</span>
+<span class="sd">        for phoneme in phonemeOps.GetAll():</span>
+<span class="sd">            print(phonemeOps.GetRepresentation(phoneme))</span>
+
+<span class="sd">        # Create a new phoneme</span>
+<span class="sd">        p_phoneme = phonemeOps.Create(&quot;/p/&quot;)</span>
+<span class="sd">        phonemeOps.SetDescription(p_phoneme, &quot;voiceless bilabial stop&quot;)</span>
+
+<span class="sd">        # Find and update</span>
+<span class="sd">        b_phoneme = phonemeOps.Find(&quot;/b/&quot;)</span>
+<span class="sd">        if b_phoneme:</span>
+<span class="sd">            phonemeOps.SetDescription(b_phoneme, &quot;voiced bilabial stop&quot;)</span>
+
+<span class="sd">        project.CloseProject()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize PhonemeOperations with a FLExProject instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            project: The FLExProject instance to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Specify which sequence to reorder for phonemes.</span>
+<span class="sd">        For Phoneme, we reorder parent.PhonemesOS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">PhonemesOS</span>
+
+    <span class="nd">@wrap_enumerable</span>
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all phonemes in the project.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            IPhPhoneme: Each phoneme object in the project&#39;s phoneme inventory.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; for phoneme in phonemeOps.GetAll():</span>
+<span class="sd">            ...     representation = phonemeOps.GetRepresentation(phoneme)</span>
+<span class="sd">            ...     description = phonemeOps.GetDescription(phoneme)</span>
+<span class="sd">            ...     print(f&quot;{representation}: {description}&quot;)</span>
+<span class="sd">            /p/: voiceless bilabial stop</span>
+<span class="sd">            /b/: voiced bilabial stop</span>
+<span class="sd">            /t/: voiceless alveolar stop</span>
+<span class="sd">            /d/: voiced alveolar stop</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns phonemes from the first phoneme set</span>
+<span class="sd">            - Returns empty if no phoneme sets exist</span>
+<span class="sd">            - Most projects have only one phoneme set</span>
+<span class="sd">            - Phonemes include both consonants and vowels</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, GetRepresentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="n">phon_data</span> <span class="ow">and</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">phoneme_set</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">phoneme</span> <span class="ow">in</span> <span class="n">phoneme_set</span><span class="o">.</span><span class="n">PhonemesOC</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">phoneme</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            representation (str): The phonemic representation (e.g., &quot;/p/&quot;, &quot;/a/&quot;).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhPhoneme: The newly created phoneme object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If representation is None.</span>
+<span class="sd">            FP_ParameterError: If representation is empty, or if a phoneme</span>
+<span class="sd">                with this representation already exists, or if no phoneme set exists.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; p_phoneme = phonemeOps.Create(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(phonemeOps.GetRepresentation(p_phoneme))</span>
+<span class="sd">            /p/</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create with description</span>
+<span class="sd">            &gt;&gt;&gt; ch_phoneme = phonemeOps.Create(&quot;/tʃ/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps.SetDescription(ch_phoneme, &quot;voiceless postalveolar affricate&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Representation should use IPA symbols</span>
+<span class="sd">            - Standard convention is to enclose in slashes: /p/</span>
+<span class="sd">            - Phoneme must be unique within the phoneme set</span>
+<span class="sd">            - Requires at least one phoneme set to exist in the project</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Delete, Exists, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="s2">&quot;representation&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">representation</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">representation</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Representation cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if phoneme already exists</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Phoneme &#39;</span><span class="si">{</span><span class="n">representation</span><span class="si">}</span><span class="s2">&#39; already exists&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get or create phoneme set</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">phon_data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;No phonological data in project&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;No phoneme set exists in project&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme_set</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Get the writing system handle</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Create the new phoneme using the factory</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPhPhonemeFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create phoneme </span><span class="si">{</span><span class="n">representation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="n">new_phoneme</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to the phoneme set (must be done before setting properties)</span>
+            <span class="n">phoneme_set</span><span class="o">.</span><span class="n">PhonemesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_phoneme</span><span class="p">)</span>
+
+            <span class="c1"># Set representation</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">new_phoneme</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="c1"># The IPhPhoneme factory autocreates one IPhCode whose Representation</span>
+            <span class="c1"># is the FLEx null marker (&#39;***&#39;). Clean it up here so that Create()</span>
+            <span class="c1"># always returns a phoneme with no junk placeholder allophone.</span>
+            <span class="c1"># AddCode reuses the placeholder slot on the first call, but if the</span>
+            <span class="c1"># caller never calls AddCode the phoneme would otherwise carry a</span>
+            <span class="c1"># spurious &#39;***&#39; code that breaks HermitCrab parser loading.</span>
+            <span class="c1"># (issue #113 -- cleanup moved here from AddCode)</span>
+            <span class="n">existing_codes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_phoneme</span><span class="o">.</span><span class="n">CodesOS</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">existing_codes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">__is_placeholder_code</span><span class="p">(</span><span class="n">existing_codes</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">new_phoneme</span><span class="o">.</span><span class="n">CodesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">existing_codes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="k">return</span> <span class="n">new_phoneme</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the phoneme is in use and cannot be deleted.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; obsolete = phonemeOps.Find(&quot;/x/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if obsolete:</span>
+<span class="sd">            ...     phonemeOps.Delete(obsolete)</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            - Deleting a phoneme that is in use may raise an error from FLEx</span>
+<span class="sd">            - This includes phonemes used in:</span>
+<span class="sd">              - Natural classes</span>
+<span class="sd">              - Phonological rules</span>
+<span class="sd">              - Allomorph environments</span>
+<span class="sd">            - Deletion is permanent and cannot be undone</span>
+<span class="sd">            - Consider updating references before deletion</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Exists, Find</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve to phoneme object</span>
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get phoneme set and remove</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="n">phon_data</span> <span class="ow">and</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">phoneme_set</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">phoneme_set</span><span class="o">.</span><span class="n">PhonemesOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">phoneme</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Duplicate a phoneme, creating a new copy with a new GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_or_hvo: The IPhPhoneme object or HVO to duplicate.</span>
+<span class="sd">            insert_after (bool): If True (default), insert after the source phoneme.</span>
+<span class="sd">                                If False, insert at end of phoneme set.</span>
+<span class="sd">            deep (bool): If True (default), also duplicate owned objects (codes/allophones).</span>
+<span class="sd">                        If False, only copy simple properties and references.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhPhoneme: The newly created duplicate phoneme with a new GUID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If no phoneme set exists.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; p_phoneme = phonemeOps.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if p_phoneme:</span>
+<span class="sd">            ...     # Duplicate phoneme (deep - includes allophonic codes)</span>
+<span class="sd">            ...     dup = phonemeOps.Duplicate(p_phoneme)</span>
+<span class="sd">            ...     print(f&quot;Original: {phonemeOps.GetGuid(dup)}&quot;)</span>
+<span class="sd">            ...     print(f&quot;Representation: {phonemeOps.GetRepresentation(dup)}&quot;)</span>
+<span class="sd">            ...</span>
+<span class="sd">            ...     # Shallow duplicate (no codes)</span>
+<span class="sd">            ...     shallow_dup = phonemeOps.Duplicate(p_phoneme, deep=False)</span>
+<span class="sd">            ...     codes = phonemeOps.GetCodes(deep_dup)</span>
+<span class="sd">            ...     print(f&quot;Codes: {len(codes)}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Factory.Create() automatically generates a new GUID</span>
+<span class="sd">            - insert_after=True preserves the original phoneme&#39;s position</span>
+<span class="sd">            - Simple properties copied: Name (representation), Description, BasicIPASymbol</span>
+<span class="sd">            - Reference properties copied: FeaturesOA (feature structure reference)</span>
+<span class="sd">            - Owned objects (deep=True): CodesOS (allophonic representations)</span>
+<span class="sd">            - Useful for creating similar phonemes or phoneme variants</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Create, Delete, GetGuid, GetCodes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get source phoneme</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Get phoneme set</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">phon_data</span> <span class="ow">or</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;No phoneme set exists in project&quot;</span><span class="p">)</span>
+        <span class="n">phoneme_set</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Create new phoneme using factory (auto-generates new GUID)</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPhPhonemeFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate phoneme&quot;</span><span class="p">):</span>
+            <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to phoneme set (OC types use Add only, no Insert)</span>
+            <span class="n">phoneme_set</span><span class="o">.</span><span class="n">PhonemesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+
+            <span class="c1"># Copy simple MultiString properties</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;BasicIPASymbol&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">BasicIPASymbol</span><span class="p">:</span>
+                <span class="n">duplicate</span><span class="o">.</span><span class="n">BasicIPASymbol</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">BasicIPASymbol</span><span class="p">)</span>
+
+            <span class="c1"># Note: FeaturesOA is an owned atomic object (OA), NOT a reference.</span>
+            <span class="c1"># Assigning it directly would TRANSFER ownership from source, corrupting it.</span>
+            <span class="c1"># Feature structures are complex (recursive), so we skip them in shallow</span>
+            <span class="c1"># copy and handle via deep copy below using LCM&#39;s SetCloneProperties.</span>
+
+            <span class="c1"># Handle owned objects if deep=True</span>
+            <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">clone_properties</span>
+
+                <span class="c1"># Deep copy FeaturesOA (feature structure)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;FeaturesOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">FeaturesOA</span><span class="p">:</span>
+                    <span class="c1"># Create new feature structure and copy all properties</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">source_features</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">FeaturesOA</span>
+                        <span class="c1"># Create new object of same type</span>
+                        <span class="n">new_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">ObjectRepository</span><span class="o">.</span><span class="n">NewObject</span><span class="p">(</span>
+                            <span class="n">source_features</span><span class="o">.</span><span class="n">ClassID</span>
+                        <span class="p">)</span>
+
+                        <span class="c1"># Set as the feature structure for this phoneme</span>
+                        <span class="n">duplicate</span><span class="o">.</span><span class="n">FeaturesOA</span> <span class="o">=</span> <span class="n">new_features</span>
+
+                        <span class="c1"># Deep clone all properties using clone_properties</span>
+                        <span class="n">clone_properties</span><span class="p">(</span><span class="n">source_features</span><span class="p">,</span> <span class="n">new_features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="c1"># Cannot copy complex feature structure - skip</span>
+                        <span class="k">pass</span>
+
+                <span class="c1"># Duplicate codes (allophonic representations)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;CodesOS&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">CodesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">CodesOS</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">code_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPhCodeFactory</span><span class="p">)</span>
+                            <span class="n">new_code</span> <span class="o">=</span> <span class="n">code_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                            <span class="n">duplicate</span><span class="o">.</span><span class="n">CodesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_code</span><span class="p">)</span>
+                            <span class="c1"># Deep clone code properties using clone_properties</span>
+                            <span class="n">clone_properties</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">new_code</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                            <span class="c1"># Skip any code that fails to copy</span>
+                            <span class="k">pass</span>
+
+            <span class="k">return</span> <span class="n">duplicate</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a phoneme with the given representation exists.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            representation (str): The representation to search for (case-sensitive).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if phoneme exists, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If representation is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; if not phonemeOps.Exists(&quot;/ŋ/&quot;):</span>
+<span class="sd">            ...     phonemeOps.Create(&quot;/ŋ/&quot;)</span>
+<span class="sd">            ...     phonemeOps.SetDescription(phonemeOps.Find(&quot;/ŋ/&quot;), &quot;velar nasal&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Comparison is case-sensitive (IPA is case-sensitive)</span>
+<span class="sd">            - Use Find() to get the actual object</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Find, Create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="s2">&quot;representation&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a phoneme by representation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            representation (str): The representation to search for (case-sensitive).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhPhoneme or None: The phoneme object if found, None otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If representation is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; p_phoneme = phonemeOps.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if p_phoneme:</span>
+<span class="sd">            ...     desc = phonemeOps.GetDescription(p_phoneme)</span>
+<span class="sd">            ...     print(f&quot;/p/: {desc}&quot;)</span>
+<span class="sd">            /p/: voiceless bilabial stop</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns first match only</span>
+<span class="sd">            - Search is case-sensitive (IPA is case-sensitive)</span>
+<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            Exists, GetRepresentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="s2">&quot;representation&quot;</span><span class="p">)</span>
+
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">phon_data</span> <span class="ow">or</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">phoneme_set</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">phoneme</span> <span class="ow">in</span> <span class="n">phoneme_set</span><span class="o">.</span><span class="n">PhonemesOC</span><span class="p">:</span>
+            <span class="n">phoneme_repr</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">phoneme</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">phoneme_repr</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">phoneme</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetRepresentation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the representation of a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The phoneme representation, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; p_phoneme = phonemeOps.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; representation = phonemeOps.GetRepresentation(p_phoneme)</span>
+<span class="sd">            &gt;&gt;&gt; print(representation)</span>
+<span class="sd">            /p/</span>
+
+<span class="sd">            &gt;&gt;&gt; # Iterate and print all phonemes</span>
+<span class="sd">            &gt;&gt;&gt; for phoneme in phonemeOps.GetAll():</span>
+<span class="sd">            ...     print(phonemeOps.GetRepresentation(phoneme))</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetRepresentation, GetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">representation</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">phoneme</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">representation</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetRepresentation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the representation of a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+<span class="sd">            representation (str): The new representation.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo or representation is None.</span>
+<span class="sd">            FP_ParameterError: If representation is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = phonemeOps.Find(&quot;/ph/&quot;)  # non-standard notation</span>
+<span class="sd">            &gt;&gt;&gt; if phoneme:</span>
+<span class="sd">            ...     phonemeOps.SetRepresentation(phoneme, &quot;/pʰ/&quot;)  # fix to proper IPA</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Use standard IPA symbols for cross-linguistic compatibility</span>
+<span class="sd">            - Consider updating descriptions when changing representation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetRepresentation, SetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="s2">&quot;representation&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">representation</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">representation</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Representation cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">phoneme</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the description of a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The phoneme description, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; p_phoneme = phonemeOps.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; desc = phonemeOps.GetDescription(p_phoneme)</span>
+<span class="sd">            &gt;&gt;&gt; print(desc)</span>
+<span class="sd">            voiceless bilabial stop</span>
+
+<span class="sd">            &gt;&gt;&gt; # Print phoneme inventory with descriptions</span>
+<span class="sd">            &gt;&gt;&gt; for phoneme in phonemeOps.GetAll():</span>
+<span class="sd">            ...     repr = phonemeOps.GetRepresentation(phoneme)</span>
+<span class="sd">            ...     desc = phonemeOps.GetDescription(phoneme)</span>
+<span class="sd">            ...     print(f&quot;{repr}: {desc}&quot;)</span>
+<span class="sd">            /p/: voiceless bilabial stop</span>
+<span class="sd">            /b/: voiced bilabial stop</span>
+<span class="sd">            /t/: voiceless alveolar stop</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Description typically includes articulatory features</span>
+<span class="sd">            - Returns empty string if no description set</span>
+<span class="sd">            - Uses analysis writing system by default (not vernacular)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            SetDescription, GetRepresentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Use analysis WS for description (not vernacular)</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+        <span class="n">desc_str</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">phoneme</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">desc_str</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the description of a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+<span class="sd">            description (str): The new description.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo or description is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; p_phoneme = phonemeOps.Create(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps.SetDescription(p_phoneme, &quot;voiceless bilabial stop&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Add detailed articulatory description</span>
+<span class="sd">            &gt;&gt;&gt; tap = phonemeOps.Find(&quot;/ɾ/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps.SetDescription(</span>
+<span class="sd">            ...     tap,</span>
+<span class="sd">            ...     &quot;voiced alveolar tap/flap - allophone of /r/ in intervocalic position&quot;</span>
+<span class="sd">            ... )</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Description is optional but recommended for documentation</span>
+<span class="sd">            - Use standard phonetic terminology</span>
+<span class="sd">            - Can include information about allophones and distribution</span>
+<span class="sd">            - Uses analysis writing system by default (not vernacular)</span>
+<span class="sd">            - Description can be empty string to clear</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetDescription, SetRepresentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Use analysis WS for description (not vernacular)</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">phoneme</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the feature structure of a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IFsFeatStruc or None: The phoneme&#39;s feature structure, or None if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; p_phoneme = phonemeOps.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; features = phonemeOps.GetFeatures(p_phoneme)</span>
+<span class="sd">            &gt;&gt;&gt; if features:</span>
+<span class="sd">            ...     print(f&quot;Feature structure: {features.Hvo}&quot;)</span>
+<span class="sd">            ... else:</span>
+<span class="sd">            ...     print(&quot;No features defined&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Feature structures define distinctive phonological properties</span>
+<span class="sd">            - Used in phonological rules and natural class definitions</span>
+<span class="sd">            - Feature system must be defined in project settings</span>
+<span class="sd">            - Returns None if no features are set</span>
+<span class="sd">            - Returns the IFsFeatStruc object for further manipulation</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetRepresentation, GetDescription</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">FeaturesOA</span> <span class="k">if</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">FeaturesOA</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Advanced Operations ---</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetCodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all codes (allophonic representations) for a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of IPhCode objects (empty list if none).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Get allophones of /t/</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/t/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if phoneme:</span>
+<span class="sd">            ...     codes = project.Phonemes.GetCodes(phoneme)</span>
+<span class="sd">            ...     for code in codes:</span>
+<span class="sd">            ...         ws = project.project.DefaultVernWs</span>
+<span class="sd">            ...         repr = ITsString(code.Representation.get_String(ws)).Text</span>
+<span class="sd">            ...         print(repr)</span>
+<span class="sd">            [t]   # plain voiceless alveolar stop</span>
+<span class="sd">            [tʰ]  # aspirated (word-initial)</span>
+<span class="sd">            [ɾ]   # flap (intervocalic)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Get vowel allophones</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/i/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if phoneme:</span>
+<span class="sd">            ...     codes = project.Phonemes.GetCodes(phoneme)</span>
+<span class="sd">            ...     print(f&quot;Phoneme /i/ has {len(codes)} allophonic codes&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Codes represent allophones or context-specific realizations</span>
+<span class="sd">            - Convention is to use square brackets [p] for phones</span>
+<span class="sd">            - Slashes /p/ for phonemes</span>
+<span class="sd">            - Empty list if no codes defined</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddCode, RemoveCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">phoneme</span><span class="o">.</span><span class="n">CodesOS</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">AddCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a code (allophonic representation) to a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+<span class="sd">            representation: The code representation (e.g., &quot;[tʰ]&quot;, &quot;[ɾ]&quot;).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhCode: The newly created code object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo or representation is None.</span>
+<span class="sd">            FP_ParameterError: If representation is empty.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Add aspiration allophone</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if phoneme:</span>
+<span class="sd">            ...     code = project.Phonemes.AddCode(phoneme, &quot;[pʰ]&quot;)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Add multiple allophones for /t/</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/t/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if phoneme:</span>
+<span class="sd">            ...     project.Phonemes.AddCode(phoneme, &quot;[t]&quot;)   # plain</span>
+<span class="sd">            ...     project.Phonemes.AddCode(phoneme, &quot;[tʰ]&quot;)  # aspirated</span>
+<span class="sd">            ...     project.Phonemes.AddCode(phoneme, &quot;[ɾ]&quot;)   # flap</span>
+
+<span class="sd">            &gt;&gt;&gt; # Add vowel allophones</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/a/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if phoneme:</span>
+<span class="sd">            ...     project.Phonemes.AddCode(phoneme, &quot;[a]&quot;)   # open front</span>
+<span class="sd">            ...     project.Phonemes.AddCode(phoneme, &quot;[ɑ]&quot;)   # open back</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Use square brackets [p] for phones (allophones)</span>
+<span class="sd">            - Each code can have its own feature specifications</span>
+<span class="sd">            - Codes are used in phonological rule environments</span>
+<span class="sd">            - Duplicates are allowed (same code can be added multiple times)</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetCodes, RemoveCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="s2">&quot;representation&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">representation</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">representation</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Representation cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+        <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="c1"># Create + append a new IPhCode. The factory-autocreated placeholder</span>
+        <span class="c1"># code (&#39;***&#39;) is now removed by Create() before it returns, so</span>
+        <span class="c1"># AddCode always operates on a clean CodesOS and can unconditionally</span>
+        <span class="c1"># append. (issue #113 -- placeholder cleanup moved to Create)</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPhCodeFactory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Add phoneme code&quot;</span><span class="p">):</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+
+            <span class="c1"># Add to phoneme&#39;s codes (must be done before setting properties)</span>
+            <span class="n">phoneme</span><span class="o">.</span><span class="n">CodesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+
+            <span class="c1"># Set representation</span>
+            <span class="n">code</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">code</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">RemoveCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">code_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a code from a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+<span class="sd">            code_or_hvo: The IPhCode object or HVO to remove.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo or code_or_hvo is None.</span>
+<span class="sd">            FP_ParameterError: If the code is not in the phoneme&#39;s code list.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/t/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if phoneme:</span>
+<span class="sd">            ...     codes = project.Phonemes.GetCodes(phoneme)</span>
+<span class="sd">            ...     # Remove the flap allophone</span>
+<span class="sd">            ...     for code in codes:</span>
+<span class="sd">            ...         ws = project.project.DefaultVernWs</span>
+<span class="sd">            ...         repr = ITsString(code.Representation.get_String(ws)).Text</span>
+<span class="sd">            ...         if repr == &quot;[ɾ]&quot;:</span>
+<span class="sd">            ...             project.Phonemes.RemoveCode(phoneme, code)</span>
+<span class="sd">            ...             break</span>
+
+<span class="sd">            &gt;&gt;&gt; # Remove by HVO</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if phoneme:</span>
+<span class="sd">            ...     codes = project.Phonemes.GetCodes(phoneme)</span>
+<span class="sd">            ...     if codes:</span>
+<span class="sd">            ...         project.Phonemes.RemoveCode(phoneme, codes[0].Hvo)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Code object must be from the phoneme&#39;s CodesOS collection</span>
+<span class="sd">            - Use GetCodes() to find codes to remove</span>
+<span class="sd">            - Accepts either IPhCode object or HVO</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetCodes, AddCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">code_or_hvo</span><span class="p">,</span> <span class="s2">&quot;code_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetCodeObject</span><span class="p">(</span><span class="n">code_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Check if code is in the phoneme&#39;s codes</span>
+        <span class="k">if</span> <span class="n">code</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">CodesOS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Code not found in phoneme&#39;s code list&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span><span class="o">.</span><span class="n">CodesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FindCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a code (allophonic representation) on a phoneme by its</span>
+<span class="sd">        rendered representation string.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+<span class="sd">            representation (str): The code representation to look up,</span>
+<span class="sd">                e.g. ``&quot;[tʰ]&quot;``. Compared via NFD-normalised match</span>
+<span class="sd">                (no casefold; IPA distinctions are case-sensitive).</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to</span>
+<span class="sd">                vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhCode or None: The matching code object, or None if no</span>
+<span class="sd">            code on this phoneme renders to ``representation``.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo or representation</span>
+<span class="sd">                is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/t/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; aspirated = project.Phonemes.FindCode(phoneme, &quot;[tʰ]&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if aspirated is not None:</span>
+<span class="sd">            ...     # safe to ReplaceCode or RemoveCode it</span>
+<span class="sd">            ...     pass</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Match is case-sensitive (IPA is case-sensitive) but</span>
+<span class="sd">              NFD-normalised so combining-diacritic encoding doesn&#39;t</span>
+<span class="sd">              cause false negatives.</span>
+<span class="sd">            - Returns the first match; codes don&#39;t have to be unique by</span>
+<span class="sd">              representation but typically are.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddCode, RemoveCode, ReplaceCode, GetCodes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="s2">&quot;representation&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">CodesOS</span><span class="p">:</span>
+            <span class="n">code_repr</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">code</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">code_repr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">code_repr</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">code</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ReplaceCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">old_code_or_repr</span><span class="p">,</span> <span class="n">new_representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Replace one code&#39;s representation on a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+<span class="sd">            old_code_or_repr: Either an IPhCode object on this phoneme,</span>
+<span class="sd">                an HVO, or a string representation to look up via</span>
+<span class="sd">                FindCode().</span>
+<span class="sd">            new_representation (str): The replacement representation,</span>
+<span class="sd">                e.g. ``&quot;[dʰ]&quot;``.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to</span>
+<span class="sd">                vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhCode: The newly created code carrying ``new_representation``.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If any required parameter is None.</span>
+<span class="sd">            FP_ParameterError: If ``old_code_or_repr`` is a string and</span>
+<span class="sd">                no matching code is found on the phoneme.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/t/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Fix an encoding typo: replace &quot;[ts]&quot; with the proper</span>
+<span class="sd">            &gt;&gt;&gt; # affricate &quot;[t͡s]&quot;.</span>
+<span class="sd">            &gt;&gt;&gt; project.Phonemes.ReplaceCode(phoneme, &quot;[ts]&quot;, &quot;[t͡s]&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Implementation is RemoveCode + AddCode: any references to</span>
+<span class="sd">              the original IPhCode object are dropped. If you need to</span>
+<span class="sd">              preserve references, mutate the Representation multistring</span>
+<span class="sd">              directly instead.</span>
+<span class="sd">            - Returns the new IPhCode (not the old one).</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            AddCode, RemoveCode, FindCode, GetCodes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">old_code_or_repr</span><span class="p">,</span> <span class="s2">&quot;old_code_or_repr&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">new_representation</span><span class="p">,</span> <span class="s2">&quot;new_representation&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">old_code_or_repr</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindCode</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">old_code_or_repr</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;No code matching &#39;</span><span class="si">{</span><span class="n">old_code_or_repr</span><span class="si">}</span><span class="s2">&#39; found on phoneme&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">old_code_or_repr</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Replace phoneme code&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">RemoveCode</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">AddCode</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">new_representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetBasicIPASymbol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the basic IPA symbol for a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to vernacular WS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The basic IPA symbol, or empty string if not set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if phoneme:</span>
+<span class="sd">            ...     symbol = project.Phonemes.GetBasicIPASymbol(phoneme)</span>
+<span class="sd">            ...     print(symbol)</span>
+<span class="sd">            p</span>
+
+<span class="sd">            &gt;&gt;&gt; # Compare representation with basic IPA</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/tʃ/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if phoneme:</span>
+<span class="sd">            ...     repr = project.Phonemes.GetRepresentation(phoneme)</span>
+<span class="sd">            ...     ipa = project.Phonemes.GetBasicIPASymbol(phoneme)</span>
+<span class="sd">            ...     print(f&quot;Representation: {repr}, IPA: {ipa}&quot;)</span>
+<span class="sd">            Representation: /tʃ/, IPA: tʃ</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns the IPA symbol without slashes or diacritics</span>
+<span class="sd">            - May differ from representation which can include slashes</span>
+<span class="sd">            - Used for cross-linguistic phoneme identification</span>
+<span class="sd">            - May be empty if not set</span>
+<span class="sd">            - ``BasicIPASymbol``&#39;s LCM type varies: in some builds it is</span>
+<span class="sd">              IMultiString (per-WS), in others a scalar ITsString. This</span>
+<span class="sd">              getter tries the multistring ``get_String`` accessor first</span>
+<span class="sd">              and falls back to reading the property directly as an</span>
+<span class="sd">              ITsString (matching the defensive write pattern in</span>
+<span class="sd">              SetBasicIPASymbol).</span>
+<span class="sd">            - BasicIPASymbol property may not be available in all FLEx versions</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetRepresentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="s2">&quot;BasicIPASymbol&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">BasicIPASymbol</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">BasicIPASymbol</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s2">&quot;get_String&quot;</span><span class="p">):</span>
+            <span class="c1"># MultiString shape: per-WS read. Matches the write pattern</span>
+            <span class="c1"># in SetBasicIPASymbol (which calls .set_String(ws, tss)).</span>
+            <span class="n">tss</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Scalar ITsString shape: the property value IS the ITsString.</span>
+            <span class="n">tss</span> <span class="o">=</span> <span class="n">target</span>
+        <span class="n">ipa_str</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">tss</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">ipa_str</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">SetBasicIPASymbol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="n">ipa</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the basic IPA symbol for a phoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+<span class="sd">            ipa (str): The IPA symbol to set, e.g. ``&quot;p&quot;``, ``&quot;tʃ&quot;``.</span>
+<span class="sd">            wsHandle: Optional writing system handle. Defaults to</span>
+<span class="sd">                vernacular WS.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If project is not opened with writeEnabled=True.</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo or ipa is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = project.Phonemes.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.Phonemes.SetBasicIPASymbol(phoneme, &quot;p&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; assert project.Phonemes.GetBasicIPASymbol(phoneme) == &quot;p&quot;</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - ``BasicIPASymbol`` is typed as IMultiUnicode / IMultiString</span>
+<span class="sd">              in the LCM builds we ship against (matches the multistring</span>
+<span class="sd">              read pattern in GetBasicIPASymbol). Older issue tracking</span>
+<span class="sd">              describes it as ITsString-only, so this setter tries the</span>
+<span class="sd">              standard multistring write first and falls back to a</span>
+<span class="sd">              scalar set_BasicIPASymbol if the multistring API is not</span>
+<span class="sd">              present.</span>
+<span class="sd">            - Empty / whitespace-only strings are permitted: FW itself</span>
+<span class="sd">              treats unset IPA as &quot;&quot; and round-trips correctly.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            GetBasicIPASymbol</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ipa</span><span class="p">,</span> <span class="s2">&quot;ipa&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
+
+        <span class="n">tss</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">ipa</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">BasicIPASymbol</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s2">&quot;set_String&quot;</span><span class="p">):</span>
+            <span class="c1"># MultiString shape: per-WS write. This matches the read</span>
+            <span class="c1"># pattern in GetBasicIPASymbol (which calls .get_String(ws)).</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">tss</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Scalar ITsString shape: assign via the property setter on</span>
+            <span class="c1"># the interface view. Cast to IPhPhoneme to surface the</span>
+            <span class="c1"># explicit-interface setter if pythonnet hid it on the base.</span>
+            <span class="n">IPhPhoneme</span><span class="p">(</span><span class="n">phoneme</span><span class="p">)</span><span class="o">.</span><span class="n">set_BasicIPASymbol</span><span class="p">(</span><span class="n">tss</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsVowel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a phoneme is classified as a vowel.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the phoneme is a vowel, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Filter vowels from phoneme inventory</span>
+<span class="sd">            &gt;&gt;&gt; vowels = []</span>
+<span class="sd">            &gt;&gt;&gt; for phoneme in project.Phonemes.GetAll():</span>
+<span class="sd">            ...     if project.Phonemes.IsVowel(phoneme):</span>
+<span class="sd">            ...         vowels.append(project.Phonemes.GetRepresentation(phoneme))</span>
+<span class="sd">            &gt;&gt;&gt; print(&quot;Vowels:&quot;, &quot;, &quot;.join(vowels))</span>
+<span class="sd">            Vowels: /a/, /e/, /i/, /o/, /u/</span>
+
+<span class="sd">            &gt;&gt;&gt; # Count vowels vs consonants</span>
+<span class="sd">            &gt;&gt;&gt; vowel_count = 0</span>
+<span class="sd">            &gt;&gt;&gt; for phoneme in project.Phonemes.GetAll():</span>
+<span class="sd">            ...     if project.Phonemes.IsVowel(phoneme):</span>
+<span class="sd">            ...         vowel_count += 1</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Total vowels: {vowel_count}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Classification based on feature structure</span>
+<span class="sd">            - Typically checks for [-consonantal, +sonorant] or [+syllabic] features</span>
+<span class="sd">            - May return False if features not properly set</span>
+<span class="sd">            - Feature analysis depends on project&#39;s feature system</span>
+<span class="sd">            - Checks for common vowel feature indicators like &#39;syllabic&#39;, &#39;vocalic&#39;, &#39;vowel&#39;</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsConsonant, GetFeatures</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Check feature structure for vowel features</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="s2">&quot;FeaturesOA&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">FeaturesOA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">features</span> <span class="o">=</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">FeaturesOA</span>
+
+        <span class="c1"># Check for typical vowel features</span>
+        <span class="c1"># Feature system varies by project, but common vowel features include:</span>
+        <span class="c1"># [-consonantal], [+sonorant], [+syllabic]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="s2">&quot;FeatureSpecsOC&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">features</span><span class="o">.</span><span class="n">FeatureSpecsOC</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s2">&quot;FeatureRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">spec</span><span class="o">.</span><span class="n">FeatureRA</span><span class="p">:</span>
+                    <span class="n">feature_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">FeatureRA</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">):</span>
+                        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+                        <span class="n">feature_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">FeatureRA</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+                    <span class="c1"># Check for common vowel feature indicators</span>
+                    <span class="k">if</span> <span class="n">feature_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;syllabic&quot;</span><span class="p">,</span> <span class="s2">&quot;vocalic&quot;</span><span class="p">,</span> <span class="s2">&quot;vowel&quot;</span><span class="p">]:</span>
+                        <span class="c1"># Check if feature value is positive</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s2">&quot;ValueRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">spec</span><span class="o">.</span><span class="n">ValueRA</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">IsConsonant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a phoneme is classified as a consonant.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: The IPhPhoneme object or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the phoneme is a consonant, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_NullParameterError: If phoneme_or_hvo is None.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Filter consonants from phoneme inventory</span>
+<span class="sd">            &gt;&gt;&gt; consonants = []</span>
+<span class="sd">            &gt;&gt;&gt; for phoneme in project.Phonemes.GetAll():</span>
+<span class="sd">            ...     if project.Phonemes.IsConsonant(phoneme):</span>
+<span class="sd">            ...         consonants.append(project.Phonemes.GetRepresentation(phoneme))</span>
+<span class="sd">            &gt;&gt;&gt; print(&quot;Consonants:&quot;, &quot;, &quot;.join(consonants))</span>
+<span class="sd">            Consonants: /p/, /t/, /k/, /b/, /d/, /g/, /m/, /n/</span>
+
+<span class="sd">            &gt;&gt;&gt; # Create consonant natural classes</span>
+<span class="sd">            &gt;&gt;&gt; for phoneme in project.Phonemes.GetAll():</span>
+<span class="sd">            ...     if project.Phonemes.IsConsonant(phoneme):</span>
+<span class="sd">            ...         desc = project.Phonemes.GetDescription(phoneme)</span>
+<span class="sd">            ...         repr = project.Phonemes.GetRepresentation(phoneme)</span>
+<span class="sd">            ...         print(f&quot;{repr}: {desc}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Classification based on feature structure</span>
+<span class="sd">            - Typically checks for [+consonantal] or [-syllabic] features</span>
+<span class="sd">            - May return False if features not properly set</span>
+<span class="sd">            - Complementary to IsVowel() but not necessarily opposite</span>
+<span class="sd">              (some sounds like glides may be neither or both)</span>
+<span class="sd">            - Checks for common consonant feature indicators like &#39;consonantal&#39;, &#39;consonant&#39;</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            IsVowel, GetFeatures</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+
+        <span class="c1"># Check feature structure for consonant features</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="s2">&quot;FeaturesOA&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">FeaturesOA</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">features</span> <span class="o">=</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">FeaturesOA</span>
+
+        <span class="c1"># Check for typical consonant features</span>
+        <span class="c1"># Feature system varies by project, but common consonant features include:</span>
+        <span class="c1"># [+consonantal], [-syllabic]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="s2">&quot;FeatureSpecsOC&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">features</span><span class="o">.</span><span class="n">FeatureSpecsOC</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s2">&quot;FeatureRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">spec</span><span class="o">.</span><span class="n">FeatureRA</span><span class="p">:</span>
+                    <span class="n">feature_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">FeatureRA</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">):</span>
+                        <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+                        <span class="n">feature_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">FeatureRA</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+                    <span class="c1"># Check for common consonant feature indicators</span>
+                    <span class="k">if</span> <span class="n">feature_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;consonantal&quot;</span><span class="p">,</span> <span class="s2">&quot;consonant&quot;</span><span class="p">]:</span>
+                        <span class="c1"># Check if feature value is positive</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s2">&quot;ValueRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">spec</span><span class="o">.</span><span class="n">ValueRA</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetPhonemeObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IPhPhoneme.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phoneme_or_hvo: Either an IPhPhoneme object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhPhoneme: The resolved phoneme object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phoneme_or_hvo</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__GetCodeObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve HVO or object to IPhCode.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            code_or_hvo: Either an IPhCode object or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPhCode: The resolved code object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">code_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">code_or_hvo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">code_or_hvo</span>
+
+    <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The IPhPhoneme object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary mapping property names to their values.</span>
+<span class="sd">                Keys are property names, values are the property values.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phonemeOps = PhonemeOperations(project)</span>
+<span class="sd">            &gt;&gt;&gt; phoneme = list(phonemeOps.GetAll())[0]</span>
+<span class="sd">            &gt;&gt;&gt; props = phonemeOps.GetSyncableProperties(phoneme)</span>
+<span class="sd">            &gt;&gt;&gt; print(props.keys())</span>
+<span class="sd">            dict_keys([&#39;Name&#39;, &#39;Description&#39;, &#39;BasicIPASymbol&#39;, &#39;FeaturesGuid&#39;])</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Returns all MultiString properties (all writing systems)</span>
+<span class="sd">            - Returns FeaturesGuid as string (GUID of referenced feature structure)</span>
+<span class="sd">            - Does not include CodesOS (owned allophonic codes)</span>
+<span class="sd">            - Does not include GUID or HVO of the phoneme itself</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="c1"># Get all writing systems for MultiString properties</span>
+        <span class="c1"># Fix: ILgWritingSystemFactory does not expose a .WritingSystems</span>
+        <span class="c1"># property; enumerate via the wrapper&#39;s WritingSystemOperations.GetAll(),</span>
+        <span class="c1"># which returns CoreWritingSystemDefinition objects with .Id / .Handle.</span>
+        <span class="n">all_ws</span> <span class="o">=</span> <span class="p">{</span><span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()}</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># MultiString properties (Name = representation)</span>
+        <span class="k">for</span> <span class="n">prop_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">,</span> <span class="s2">&quot;BasicIPASymbol&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">):</span>
+                <span class="n">prop_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">prop_obj</span><span class="p">:</span>  <span class="c1"># Check if property exists</span>
+                    <span class="n">ws_values</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">for</span> <span class="n">ws_id</span><span class="p">,</span> <span class="n">ws_handle</span> <span class="ow">in</span> <span class="n">all_ws</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">prop_obj</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                        <span class="k">if</span> <span class="n">text</span><span class="p">:</span>  <span class="c1"># Only include non-empty values</span>
+                            <span class="n">ws_values</span><span class="p">[</span><span class="n">ws_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+                    <span class="k">if</span> <span class="n">ws_values</span><span class="p">:</span>  <span class="c1"># Only include property if it has values</span>
+                        <span class="n">props</span><span class="p">[</span><span class="n">prop_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ws_values</span>
+
+        <span class="c1"># Reference Atomic (RA) properties - return GUID as string</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="s2">&quot;FeaturesOA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">phoneme</span><span class="o">.</span><span class="n">FeaturesOA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;FeaturesGuid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">phoneme</span><span class="o">.</span><span class="n">FeaturesOA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply syncable properties (from GetSyncableProperties) onto an item.</span>
+
+<span class="sd">        Inherited from BaseOperations; declared on the concrete class so static</span>
+<span class="sd">        API indexers see it. The base implementation handles every property</span>
+<span class="sd">        shape this class&#39;s GetSyncableProperties emits.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare two phonemes and return detailed differences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item1: First phoneme to compare (from source project).</span>
+<span class="sd">            item2: Second phoneme to compare (from target project).</span>
+<span class="sd">            ops1: Optional PhonemeOperations instance for item1&#39;s project.</span>
+<span class="sd">                 Defaults to self.</span>
+<span class="sd">            ops2: Optional PhonemeOperations instance for item2&#39;s project.</span>
+<span class="sd">                 Defaults to self.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (is_different, differences) where:</span>
+<span class="sd">                - is_different (bool): True if items differ</span>
+<span class="sd">                - differences (dict): Maps property names to (value1, value2) tuples</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; phoneme1 = project1_phonemeOps.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; phoneme2 = project2_phonemeOps.Find(&quot;/p/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; is_diff, diffs = project1_phonemeOps.CompareTo(</span>
+<span class="sd">            ...     phoneme1, phoneme2,</span>
+<span class="sd">            ...     ops1=project1_phonemeOps,</span>
+<span class="sd">            ...     ops2=project2_phonemeOps</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; if is_diff:</span>
+<span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
+<span class="sd">            ...         print(f&quot;{prop}: {val1} -&gt; {val2}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Compares all MultiString properties across all writing systems</span>
+<span class="sd">            - Compares feature structure reference by GUID</span>
+<span class="sd">            - Returns empty dict if items are identical</span>
+<span class="sd">            - Handles cross-project comparison via ops1/ops2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ops2</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="c1"># Get syncable properties from both items</span>
+        <span class="n">props1</span> <span class="o">=</span> <span class="n">ops1</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item1</span><span class="p">)</span>
+        <span class="n">props2</span> <span class="o">=</span> <span class="n">ops2</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+
+        <span class="n">is_different</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Compare each property</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">props1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">props2</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
+                <span class="n">is_different</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span><span class="p">)</span>
+
+    <span class="c1"># --- Private Helper Methods ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__is_placeholder_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        True iff `code` is the factory-autocreated placeholder IPhCode --</span>
+<span class="sd">        i.e. its Representation is empty (or the FLEX &#39;***&#39; null marker)</span>
+<span class="sd">        across EVERY populated writing system. (issue #112)</span>
+
+<span class="sd">        The naive &quot;empty in this one WS&quot; check would falsely classify a</span>
+<span class="sd">        real UI-created code as a placeholder whenever the caller&#39;s</span>
+<span class="sd">        target WS happened to be unpopulated -- and AddCode would then</span>
+<span class="sd">        silently overwrite real vernacular data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">ws_id</span> <span class="ow">in</span> <span class="n">code</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">AvailableWritingSystemIds</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">code</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_id</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+            <span class="k">if</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get writing system handle, defaulting to vernacular WS for phoneme representations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wsHandle: Optional writing system handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The writing system handle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultVernWs</span><span class="p">)</span>
+
+    <span class="c1"># ========== CATALOG IMPORT METHODS ==========</span>
+    <span class="c1">#</span>
+    <span class="c1"># BasicIPAInfo.xml ships ~245 IPA segments with Name, BasicIPASymbol,</span>
+    <span class="c1"># English description, and a feature-value bundle keyed against</span>
+    <span class="c1"># PhonFeatsEticGlossList.xml. Unlike GOLDEtic / eticGlossList catalogs,</span>
+    <span class="c1"># segments have NO per-entry GUIDs and IPhPhoneme has no</span>
+    <span class="c1"># CatalogSourceId field -- so CatalogBackedMixin&#39;s GUID-based</span>
+    <span class="c1"># idempotency strategy doesn&#39;t fit. We use the Phase 6b/6c</span>
+    <span class="c1"># refuse-on-non-empty pattern instead.</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ImportCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Import the BasicIPAInfo segment catalog into this project&#39;s</span>
+<span class="sd">        phoneme set.</span>
+
+<span class="sd">        Populates ~245 IPhPhonemes with representation (Name +</span>
+<span class="sd">        BasicIPASymbol), description, and a FeaturesOA feature structure</span>
+<span class="sd">        composed of (IFsClosedFeature, IFsSymFeatVal) pairs resolved</span>
+<span class="sd">        against PhFeatureSystemOA via the PhonFeats catalog.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            progress: Optional callable accepting ``(count, total, name)``</span>
+<span class="sd">                for progress reporting. May be None.</span>
+<span class="sd">            force (bool): If True, skip the non-empty-phoneme-set guard.</span>
+<span class="sd">                BasicIPAInfo has no per-segment GUIDs and IPhPhoneme has</span>
+<span class="sd">                no CatalogSourceId, so re-importing would duplicate</span>
+<span class="sd">                existing phonemes; the default (force=False) refuses to</span>
+<span class="sd">                run on a non-empty set. Pass True to layer additional</span>
+<span class="sd">                segments onto an existing inventory.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            CatalogImportResult: Created/skipped counts and any warnings.</span>
+<span class="sd">            ``created_guids`` contains synthetic ``&quot;BasicIPA:{code_point_id}&quot;``</span>
+<span class="sd">            tags (one per created phoneme) -- BasicIPAInfo has no real</span>
+<span class="sd">            GUIDs, so the field is repurposed for verification only.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
+<span class="sd">            FP_ParameterError: If the project has no PhonologicalDataOA,</span>
+<span class="sd">                no phoneme set, the phoneme set is non-empty and force is</span>
+<span class="sd">                False, or PhFeatureSystemOA has not been populated yet</span>
+<span class="sd">                (the BasicIPA catalog cross-references PhonFeats feature</span>
+<span class="sd">                ids and cannot be resolved against an empty feature</span>
+<span class="sd">                system).</span>
+<span class="sd">            FileNotFoundError: If BasicIPAInfo.xml or</span>
+<span class="sd">                PhonFeatsEticGlossList.xml is not found under FWCodeDir.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Refuse-on-non-empty idempotency (SemDom / Anthropology</span>
+<span class="sd">              pattern). If the phoneme set already contains phonemes and</span>
+<span class="sd">              ``force=False``, raises FP_ParameterError.</span>
+<span class="sd">            - Refuse-with-remediation on missing PhonFeats. If the</span>
+<span class="sd">              project&#39;s PhFeatureSystemOA is empty, ImportCatalog refuses</span>
+<span class="sd">              and tells the caller to run</span>
+<span class="sd">              ``project.PhonFeatures.ImportCatalog()`` first. We do NOT</span>
+<span class="sd">              auto-import: a silent dependency import would surprise the</span>
+<span class="sd">              caller and mask real configuration issues.</span>
+<span class="sd">            - Representation goes into both ``IPhPhoneme.Name`` (vernacular</span>
+<span class="sd">              WS, defaulting to en-fonipa when the project has it, else</span>
+<span class="sd">              the default vernacular WS) and ``BasicIPASymbol`` (same WS,</span>
+<span class="sd">              dual-shape MultiString/ITsString aware via SetBasicIPASymbol).</span>
+<span class="sd">              Description goes into the default analysis WS.</span>
+<span class="sd">            - PhonFeats value resolution is best-effort: missing feature</span>
+<span class="sd">              or value ids are recorded as warnings and the offending</span>
+<span class="sd">              FeatureValuePair is skipped. The phoneme is still created</span>
+<span class="sd">              with whatever pairs DID resolve.</span>
+<span class="sd">            - Segments with empty ``&lt;Features/&gt;`` (the seven tone entries</span>
+<span class="sd">              at the head of BasicIPAInfo.xml) are created without a</span>
+<span class="sd">              FeaturesOA struct -- MakeFeatStruc is only invoked when</span>
+<span class="sd">              there is at least one resolved spec.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; project.PhonFeatures.ImportCatalog()    # prerequisite</span>
+<span class="sd">            &gt;&gt;&gt; result = project.Phonemes.ImportCatalog()</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;Created {result.created_count} phonemes; &quot;</span>
+<span class="sd">            ...       f&quot;{len(result.warnings)} warnings&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
+
+        <span class="c1"># --- Resolve phoneme set + non-empty guard --------------------</span>
+        <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">phon_data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;Project has no PhonologicalDataOA; cannot import phonemes.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;Project has no phoneme set; cannot import phonemes.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">phoneme_set</span> <span class="o">=</span> <span class="n">phon_data</span><span class="o">.</span><span class="n">PhonemeSetsOS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">existing_count</span> <span class="o">=</span> <span class="n">phoneme_set</span><span class="o">.</span><span class="n">PhonemesOC</span><span class="o">.</span><span class="n">Count</span>
+        <span class="k">if</span> <span class="n">existing_count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">force</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;PhonemeSet already has </span><span class="si">{</span><span class="n">existing_count</span><span class="si">}</span><span class="s2"> phoneme(s). &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;BasicIPAInfo.xml has no per-segment GUIDs, so re-importing &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;would duplicate. Pass force=True to layer additional segments.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># --- PhonFeats dependency check (refuse-with-remediation) -----</span>
+        <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhFeatureSystemOA</span>
+        <span class="k">if</span> <span class="n">feature_system</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">feature_system</span><span class="o">.</span><span class="n">FeaturesOC</span><span class="o">.</span><span class="n">Count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">&quot;BasicIPAInfo references PhonFeats features by id (e.g. &quot;</span>
+                <span class="s2">&quot;&#39;fPAConsonantal&#39;). Import PhonFeats first: &quot;</span>
+                <span class="s2">&quot;project.PhonFeatures.ImportCatalog()&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># --- Locate + parse both catalogs ------------------------------</span>
+        <span class="n">basic_path</span> <span class="o">=</span> <span class="n">find_catalog_file</span><span class="p">(</span>
+            <span class="n">BASIC_IPA_CATALOG_FILENAME</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="n">BASIC_IPA_CATALOG_SUBDIR</span>
+        <span class="p">)</span>
+        <span class="n">segments</span> <span class="o">=</span> <span class="n">parse_basic_ipa_info</span><span class="p">(</span><span class="n">basic_path</span><span class="p">)</span>
+
+        <span class="n">phonfeats_path</span> <span class="o">=</span> <span class="n">find_catalog_file</span><span class="p">(</span>
+            <span class="n">PHON_FEATS_CATALOG_FILENAME</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="n">PHON_FEATS_CATALOG_SUBDIR</span>
+        <span class="p">)</span>
+        <span class="n">phonfeats_entries</span> <span class="o">=</span> <span class="n">parse_etic_gloss_list</span><span class="p">(</span><span class="n">phonfeats_path</span><span class="p">)</span>
+
+        <span class="c1"># --- Build PhonFeats lookups (catalog side + project side) -----</span>
+        <span class="c1"># value_id -&gt; (feature_id, value_term_en) from the catalog XML.</span>
+        <span class="c1"># Used to map a BasicIPAInfo value id (&quot;vPAConsonantalNegative&quot;)</span>
+        <span class="c1"># to its parent feature id (&quot;fPAConsonantal&quot;) and its analysis-WS</span>
+        <span class="c1"># term (&quot;negative&quot;), which is what we have to match against in</span>
+        <span class="c1"># the project&#39;s IFsClosedFeature.ValuesOC (we can&#39;t match by id</span>
+        <span class="c1"># because IFsSymFeatVal has no CatalogSourceId field).</span>
+        <span class="n">value_id_to_info</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">feat_entry</span> <span class="ow">in</span> <span class="n">phonfeats_entries</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">val_entry</span> <span class="ow">in</span> <span class="n">feat_entry</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="n">term_en</span> <span class="o">=</span> <span class="n">val_entry</span><span class="o">.</span><span class="n">term</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;en&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">value_id_to_info</span><span class="p">[</span><span class="n">val_entry</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">feat_entry</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">term_en</span><span class="p">)</span>
+
+        <span class="c1"># feature_source_id -&gt; IFsClosedFeature already in the project.</span>
+        <span class="c1"># PhonFeats writes BARE ids to CatalogSourceId (no &quot;PHON:&quot; prefix).</span>
+        <span class="n">features_by_source_id</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">raw_feat</span> <span class="ow">in</span> <span class="n">feature_system</span><span class="o">.</span><span class="n">FeaturesOC</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cf</span> <span class="o">=</span> <span class="n">IFsClosedFeature</span><span class="p">(</span><span class="n">raw_feat</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">src_id</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">CatalogSourceId</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">src_id</span><span class="p">:</span>
+                <span class="n">features_by_source_id</span><span class="p">[</span><span class="n">src_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">cf</span>
+
+        <span class="c1"># --- Writing systems -------------------------------------------</span>
+        <span class="c1"># Name + BasicIPASymbol use a vernacular WS; prefer en-fonipa</span>
+        <span class="c1"># when the project has it (matches FW convention for IPA), fall</span>
+        <span class="c1"># back to the default vernacular WS otherwise. Description uses</span>
+        <span class="c1"># the default analysis WS.</span>
+        <span class="n">fonipa_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WSHandle</span><span class="p">(</span><span class="s2">&quot;en-fonipa&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fonipa_handle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vern_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetDefaultVernacularWSHandle</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vern_ws</span> <span class="o">=</span> <span class="n">fonipa_handle</span>
+        <span class="n">analysis_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetDefaultAnalysisWSHandle</span><span class="p">()</span>
+
+        <span class="c1"># Precompute (feature_source_id, NFD-normalized term) -&gt; IFsSymFeatVal.</span>
+        <span class="c1"># Walking feature_obj.ValuesOC inside the per-segment loop is O(values</span>
+        <span class="c1"># × pairs × segments) and does one LCM string fetch per visit; doing</span>
+        <span class="c1"># it here is O(total values) once. The NFD normalize via</span>
+        <span class="c1"># normalize_match_key makes the lookup safe against any future</span>
+        <span class="c1"># catalog change to a non-ASCII term (&quot;négatif&quot; etc.) — Python source</span>
+        <span class="c1"># is NFC, LCM stores NFD.</span>
+        <span class="n">values_by_feat_and_term</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">src_id</span><span class="p">,</span> <span class="n">cf</span> <span class="ow">in</span> <span class="n">features_by_source_id</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cf</span><span class="o">.</span><span class="n">ValuesOC</span><span class="p">:</span>
+                <span class="n">v_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">analysis_ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">src_id</span><span class="p">,</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">v_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+                <span class="n">values_by_feat_and_term</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+        <span class="c1"># --- Import loop -----------------------------------------------</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Import phoneme catalog&quot;</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">CatalogImportResult</span><span class="p">()</span>
+            <span class="n">seen_code_points</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># in-pass dedup against malformed catalogs</span>
+
+            <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">seg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">segments</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">seg</span><span class="o">.</span><span class="n">representation</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Segment &#39;</span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">code_point_id</span><span class="si">}</span><span class="s2">&#39; has empty representation; skipping.&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># In-pass dedup: same unicodeCodePoints appearing twice in</span>
+                <span class="c1"># the catalog (shouldn&#39;t happen but defensive).</span>
+                <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">code_point_id</span> <span class="ow">and</span> <span class="n">seg</span><span class="o">.</span><span class="n">code_point_id</span> <span class="ow">in</span> <span class="n">seen_code_points</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">skipped_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">continue</span>
+                <span class="n">seen_code_points</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">code_point_id</span><span class="p">)</span>
+
+                <span class="c1"># Resolve (feature, value) specs against the project&#39;s</span>
+                <span class="c1"># PhFeatureSystemOA. Missing references are warned and</span>
+                <span class="c1"># skipped; the phoneme is still created.</span>
+                <span class="n">specs</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">feat_id</span><span class="p">,</span> <span class="n">val_id</span> <span class="ow">in</span> <span class="n">seg</span><span class="o">.</span><span class="n">feature_pairs</span><span class="p">:</span>
+                    <span class="n">cat_feat_id</span><span class="p">,</span> <span class="n">val_term</span> <span class="o">=</span> <span class="n">value_id_to_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">val_id</span><span class="p">,</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="n">cat_feat_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Segment &#39;</span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">representation</span><span class="si">}</span><span class="s2">&#39;: PhonFeats value &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">val_id</span><span class="si">}</span><span class="s2">&#39; not found in catalog; skipping pair.&quot;</span>
+                        <span class="p">)</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># The pair&#39;s feature attribute and the value&#39;s catalog</span>
+                    <span class="c1"># parent should agree; honour whichever is non-empty.</span>
+                    <span class="n">lookup_feat_id</span> <span class="o">=</span> <span class="n">feat_id</span> <span class="ow">or</span> <span class="n">cat_feat_id</span>
+                    <span class="n">feature_obj</span> <span class="o">=</span> <span class="n">features_by_source_id</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lookup_feat_id</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">feature_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Segment &#39;</span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">representation</span><span class="si">}</span><span class="s2">&#39;: PhonFeats feature &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">lookup_feat_id</span><span class="si">}</span><span class="s2">&#39; not imported into project; &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;skipping value &#39;</span><span class="si">{</span><span class="n">val_id</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+                        <span class="p">)</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># Match value by NFD-normalized analysis-WS Name. Lookup</span>
+                    <span class="c1"># is O(1) per pair via the precomputed map; bare equality</span>
+                    <span class="c1"># is unsafe across NFC/NFD encodings.</span>
+                    <span class="n">value_obj</span> <span class="o">=</span> <span class="n">values_by_feat_and_term</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">lookup_feat_id</span><span class="p">,</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">val_term</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">value_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Segment &#39;</span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">representation</span><span class="si">}</span><span class="s2">&#39;: value &#39;</span><span class="si">{</span><span class="n">val_term</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;not found on feature &#39;</span><span class="si">{</span><span class="n">lookup_feat_id</span><span class="si">}</span><span class="s2">&#39;.ValuesOC; &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;skipping pair.&quot;</span>
+                        <span class="p">)</span>
+                        <span class="k">continue</span>
+                    <span class="n">specs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">feature_obj</span><span class="p">,</span> <span class="n">value_obj</span><span class="p">))</span>
+
+                <span class="c1"># Create the phoneme. Create() handles ownership-ordering</span>
+                <span class="c1"># (Phase 2): attach to PhonemesOC, then set Name.</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">vern_ws</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">FP_ParameterError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="c1"># Duplicate representation (only possible under force=True</span>
+                    <span class="c1"># with an overlapping pre-existing inventory) -- skip and</span>
+                    <span class="c1"># warn.</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Segment &#39;</span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">representation</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">; skipping.&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># BasicIPASymbol (dual-shape MultiString/ITsString aware).</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">SetBasicIPASymbol</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">seg</span><span class="o">.</span><span class="n">representation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">vern_ws</span><span class="p">)</span>
+
+                <span class="c1"># Description (English; other langs in the catalog may be sparse).</span>
+                <span class="n">desc_en</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">descriptions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;en&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">desc_en</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">SetDescription</span><span class="p">(</span><span class="n">phoneme</span><span class="p">,</span> <span class="n">desc_en</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">analysis_ws</span><span class="p">)</span>
+
+                <span class="c1"># FeaturesOA atomic-owning attach. MakeFeatStruc attaches FIRST</span>
+                <span class="c1"># (Phase 2) then populates FeatureSpecsOC -- pass owner=phoneme.</span>
+                <span class="k">if</span> <span class="n">specs</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">PhonFeatures</span><span class="o">.</span><span class="n">MakeFeatStruc</span><span class="p">(</span><span class="n">specs</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="n">phoneme</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Segment &#39;</span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">representation</span><span class="si">}</span><span class="s2">&#39;: failed to build &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;FeaturesOA (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">); phoneme created without features.&quot;</span>
+                        <span class="p">)</span>
+
+                <span class="c1"># Synthetic catalog tag (BasicIPAInfo has no real GUIDs).</span>
+                <span class="n">synthetic_tag</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;BasicIPA:</span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">code_point_id</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">code_point_id</span> <span class="k">else</span>
+                    <span class="sa">f</span><span class="s2">&quot;BasicIPA:</span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">representation</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">created_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">created_guids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">synthetic_tag</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">progress</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">total</span><span class="p">,</span> <span class="n">seg</span><span class="o">.</span><span class="n">representation</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="c1"># Progress callbacks must never break the import.</span>
+                        <span class="k">pass</span>
+
+            <span class="k">return</span> <span class="n">result</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.PhonemeOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

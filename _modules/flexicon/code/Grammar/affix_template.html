@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flexicon.code.Grammar.affix_template &#8212; flexicon  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pyramid.css?v=cf1aad34" />
+    <script src="../../../../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.affix_template</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for flexicon.code.Grammar.affix_template</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#   affix_template.py</span>
+<span class="c1">#</span>
+<span class="c1">#   Class: AffixTemplate</span>
+<span class="c1">#          Wrapper for affix template objects providing unified interface</span>
+<span class="c1">#          access to template properties and slots.</span>
+<span class="c1">#</span>
+<span class="c1">#   Platform: Python.NET</span>
+<span class="c1">#             FieldWorks Version 9+</span>
+<span class="c1">#</span>
+<span class="c1">#   Copyright 2025</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Wrapper class for affix template objects with unified interface.</span>
+
+<span class="sd">This module provides AffixTemplate, a wrapper class that transparently</span>
+<span class="sd">handles affix template objects (MoInflAffixTemplate) providing convenient</span>
+<span class="sd">access to template properties and slots.</span>
+
+<span class="sd">Problem:</span>
+<span class="sd">    Affix templates contain multiple slot collections and properties that</span>
+<span class="sd">    require navigation through the LCM object hierarchy. Users working with</span>
+<span class="sd">    templates need convenient access to:</span>
+<span class="sd">    - Basic properties (name, description, stratum, disabled)</span>
+<span class="sd">    - Slot collections (prefix, suffix, proclitic, enclitic)</span>
+<span class="sd">    - Convenience properties (slot counts, capabilities)</span>
+
+<span class="sd">Solution:</span>
+<span class="sd">    AffixTemplate wrapper provides:</span>
+<span class="sd">    - Simple properties for common features (name, description, stratum)</span>
+<span class="sd">    - Direct access to slot collections</span>
+<span class="sd">    - Convenience properties for slot counts and checks</span>
+<span class="sd">    - Capability check properties (has_prefix_slots, etc.)</span>
+<span class="sd">    - Property access that works transparently</span>
+
+<span class="sd">Example::</span>
+
+<span class="sd">    from flexlibs2.code.Grammar.affix_template import AffixTemplate</span>
+
+<span class="sd">    # Wrap a template from GetAll()</span>
+<span class="sd">    template = morphRuleOps.GetAllAffixTemplates()[0]</span>
+<span class="sd">    wrapped = AffixTemplate(template)</span>
+
+<span class="sd">    # Access common properties</span>
+<span class="sd">    print(wrapped.name)  # Template name</span>
+<span class="sd">    print(wrapped.description)  # Template description</span>
+<span class="sd">    print(wrapped.stratum)  # Stratum reference</span>
+
+<span class="sd">    # Check capabilities</span>
+<span class="sd">    if wrapped.has_prefix_slots:</span>
+<span class="sd">        print(f&quot;Template has {wrapped.prefix_slot_count} prefix slots&quot;)</span>
+
+<span class="sd">    # Access slots directly</span>
+<span class="sd">    for slot in wrapped.prefix_slots:</span>
+<span class="sd">        print(f&quot;Slot: {slot.Name}&quot;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.wrapper_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LCMObjectWrapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IPartOfSpeech</span><span class="p">,</span> <span class="n">PartOfSpeechTags</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="c1"># Mock for testing without FieldWorks installed</span>
+    <span class="n">IPartOfSpeech</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">PartOfSpeechTags</span><span class="p">:</span>
+        <span class="n">kClassId</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<div class="viewcode-block" id="AffixTemplate">
+<a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template.AffixTemplate">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AffixTemplate</span><span class="p">(</span><span class="n">LCMObjectWrapper</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper for affix template objects providing unified interface access.</span>
+
+<span class="sd">    Handles MoInflAffixTemplate objects transparently, providing common</span>
+<span class="sd">    properties and convenience methods without exposing ClassName or casting.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        _obj: The base interface object (IMoInflAffixTemplate)</span>
+<span class="sd">        _concrete: The concrete type object (IMoInflAffixTemplate)</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        template = morphRuleOps.GetAllAffixTemplates()[0]</span>
+<span class="sd">        wrapped = AffixTemplate(template)</span>
+<span class="sd">        print(wrapped.name)</span>
+<span class="sd">        print(wrapped.prefix_slot_count)</span>
+<span class="sd">        if wrapped.has_suffix_slots:</span>
+<span class="sd">            print(f&quot;Has {wrapped.suffix_slot_count} suffix slots&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lcm_template</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize AffixTemplate wrapper with a template object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lcm_template: An IMoInflAffixTemplate object.</span>
+<span class="sd">                         Typically from MorphRuleOperations.GetAllAffixTemplates().</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            template = morphRuleOps.GetAllAffixTemplates()[0]</span>
+<span class="sd">            wrapped = AffixTemplate(template)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lcm_template</span><span class="p">)</span>
+
+    <span class="c1"># ========== Common Properties (basic template information) ==========</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the template&#39;s name.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The template name, or empty string if not set.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            print(f&quot;Template: {wrapped.name}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+
+        <span class="n">name_multistring</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Name</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name_multistring</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">default_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Cache</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="n">name_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">name_multistring</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">default_ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">name_text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the template&#39;s description.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The template description, or empty string if not set.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            print(f&quot;Description: {wrapped.description}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
+
+        <span class="n">desc_multistring</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Description</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">desc_multistring</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">default_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Cache</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
+        <span class="n">desc_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">desc_multistring</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">default_ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="k">return</span> <span class="n">desc_text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stratum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the template&#39;s stratum reference.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IMoStratum or None: The phonological stratum that owns this template, or None if not set.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.stratum:</span>
+<span class="sd">                print(f&quot;Stratum: {wrapped.stratum.Name}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;StratumRA&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">StratumRA</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">disabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if the template is disabled.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the template is disabled, False otherwise.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.disabled:</span>
+<span class="sd">                print(&quot;Template is disabled&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;Disabled&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Disabled</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># ========== Slot Properties (access to slot collections) ==========</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prefix_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;list[object]&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the prefix slots collection.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List or collection of prefix slot objects, or empty list if none.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            for slot in wrapped.prefix_slots:</span>
+<span class="sd">                print(f&quot;Prefix slot: {slot.Name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Access via PrefixSlotsRS from the concrete interface</span>
+<span class="sd">            - Returns empty list if slots not available</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;PrefixSlotsRS&quot;</span><span class="p">):</span>
+                <span class="n">slots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">PrefixSlotsRS</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">slots</span><span class="p">)</span> <span class="k">if</span> <span class="n">slots</span> <span class="k">else</span> <span class="p">[]</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">suffix_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the suffix slots collection.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List or collection of suffix slot objects, or empty list if none.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            for slot in wrapped.suffix_slots:</span>
+<span class="sd">                print(f&quot;Suffix slot: {slot.Name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Access via SuffixSlotsRS from the concrete interface</span>
+<span class="sd">            - Returns empty list if slots not available</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;SuffixSlotsRS&quot;</span><span class="p">):</span>
+                <span class="n">slots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">SuffixSlotsRS</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">slots</span><span class="p">)</span> <span class="k">if</span> <span class="n">slots</span> <span class="k">else</span> <span class="p">[]</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">proclitic_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the proclitic slots collection.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List or collection of proclitic slot objects, or empty list if none.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            for slot in wrapped.proclitic_slots:</span>
+<span class="sd">                print(f&quot;Proclitic slot: {slot.Name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Access via ProcliticSlotsRS from the concrete interface</span>
+<span class="sd">            - Returns empty list if slots not available</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;ProcliticSlotsRS&quot;</span><span class="p">):</span>
+                <span class="n">slots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">ProcliticSlotsRS</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">slots</span><span class="p">)</span> <span class="k">if</span> <span class="n">slots</span> <span class="k">else</span> <span class="p">[]</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enclitic_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the enclitic slots collection.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List or collection of enclitic slot objects, or empty list if none.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            for slot in wrapped.enclitic_slots:</span>
+<span class="sd">                print(f&quot;Enclitic slot: {slot.Name}&quot;)</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Access via EncliticSlotsRS from the concrete interface</span>
+<span class="sd">            - Returns empty list if slots not available</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;EncliticSlotsRS&quot;</span><span class="p">):</span>
+                <span class="n">slots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">EncliticSlotsRS</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">slots</span><span class="p">)</span> <span class="k">if</span> <span class="n">slots</span> <span class="k">else</span> <span class="p">[]</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># ========== Convenience Properties (counts and totals) ==========</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prefix_slot_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of prefix slots.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of prefix slots (0 if none).</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            print(f&quot;Prefix slots: {wrapped.prefix_slot_count}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix_slots</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">suffix_slot_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of suffix slots.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of suffix slots (0 if none).</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            print(f&quot;Suffix slots: {wrapped.suffix_slot_count}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">suffix_slots</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">proclitic_slot_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of proclitic slots.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of proclitic slots (0 if none).</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            print(f&quot;Proclitic slots: {wrapped.proclitic_slot_count}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proclitic_slots</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enclitic_slot_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of enclitic slots.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of enclitic slots (0 if none).</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            print(f&quot;Enclitic slots: {wrapped.enclitic_slot_count}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enclitic_slots</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">total_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the total number of slots across all types.</span>
+
+<span class="sd">        Returns the sum of prefix, suffix, proclitic, and enclitic slots.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Total slot count (0 if no slots).</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            print(f&quot;Total slots: {wrapped.total_slots}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prefix_slot_count</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">suffix_slot_count</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">proclitic_slot_count</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">enclitic_slot_count</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">owner_pos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the owner Part of Speech for this template.</span>
+
+<span class="sd">        Convenience property to access the POS that owns this template.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IPartOfSpeech or None: The owner POS, or None if not available.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.owner_pos:</span>
+<span class="sd">                print(f&quot;Template for POS: {wrapped.owner_pos.Name}&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># OwnerOfClass is an LCM method requiring an Int32 class ID argument.</span>
+        <span class="c1"># The previous code read it as a bare attribute (returning the bound</span>
+        <span class="c1"># method object) and the hasattr guard was always True (every ICmObject</span>
+        <span class="c1"># has OwnerOfClass), so the caller always received a method object</span>
+        <span class="c1"># instead of an IPartOfSpeech.  (Pattern G, issue #152)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;OwnerOfClass&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">pos_lcm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">OwnerOfClass</span><span class="p">(</span><span class="n">PartOfSpeechTags</span><span class="o">.</span><span class="n">kClassId</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pos_lcm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">IPartOfSpeech</span><span class="p">(</span><span class="n">pos_lcm</span><span class="p">)</span> <span class="k">if</span> <span class="n">IPartOfSpeech</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">pos_lcm</span>
+
+    <span class="c1"># ========== Capability Checks (for slot-specific operations) ==========</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_prefix_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this template has prefix slots.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if template has at least one prefix slot.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.has_prefix_slots:</span>
+<span class="sd">                print(f&quot;Template has {wrapped.prefix_slot_count} prefix slots&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix_slot_count</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_suffix_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this template has suffix slots.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if template has at least one suffix slot.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.has_suffix_slots:</span>
+<span class="sd">                print(f&quot;Template has {wrapped.suffix_slot_count} suffix slots&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">suffix_slot_count</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_proclitic_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this template has proclitic slots.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if template has at least one proclitic slot.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.has_proclitic_slots:</span>
+<span class="sd">                print(f&quot;Template has {wrapped.proclitic_slot_count} proclitic slots&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">proclitic_slot_count</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_enclitic_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this template has enclitic slots.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if template has at least one enclitic slot.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.has_enclitic_slots:</span>
+<span class="sd">                print(f&quot;Template has {wrapped.enclitic_slot_count} enclitic slots&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">enclitic_slot_count</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_any_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this template has any slots at all.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if template has at least one slot of any type.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            if wrapped.has_any_slots:</span>
+<span class="sd">                print(f&quot;Template has {wrapped.total_slots} total slots&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_slots</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="c1"># ========== Advanced: Direct C# class access (optional for power users) ==========</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">concrete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the raw concrete interface object.</span>
+
+<span class="sd">        For advanced users who need to access the underlying C# interface</span>
+<span class="sd">        directly without going through wrapper properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The concrete interface object (IMoInflAffixTemplate).</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            # Direct access to concrete interface</span>
+<span class="sd">            concrete = template_obj.concrete</span>
+<span class="sd">            prefix_slots = concrete.PrefixSlotsRS</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - For power users only</span>
+<span class="sd">            - Bypasses the wrapper&#39;s abstraction</span>
+<span class="sd">            - Normal users should prefer wrapper properties like</span>
+<span class="sd">              has_prefix_slots, prefix_slot_count, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation showing template name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;AffixTemplate(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;Unnamed&#39;</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Human-readable description.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Template &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">total_slots</span><span class="si">}</span><span class="s2"> slots)&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Unnamed template (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">total_slots</span><span class="si">}</span><span class="s2"> slots)&quot;</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">flexicon  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">flexicon.code.Grammar.affix_template</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Craig Farrow.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>
