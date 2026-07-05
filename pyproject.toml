@@ -39,8 +39,9 @@ dependencies = [
 # Minimal CI test path -- no docs/build tooling pulled in.
 test = ["pytest"]
 # Docs build. sphinx imports FLExProject.py, which needs pythonnet -- but that
-# already comes from the base install, so it is not repeated here.
-docs = ["sphinx"]
+# already comes from the base install, so it is not repeated here. ghp-import
+# deploys the built HTML to the gh-pages branch (see `make publishdocs`).
+docs = ["sphinx", "ghp-import"]
 # Wheel/sdist build + PyPI upload. setuptools is NOT listed: `python -m build`
 # provisions it from [build-system].requires in an isolated env.
 build = ["build", "twine"]

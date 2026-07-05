@@ -9,6 +9,8 @@ FOR %%C IN ("Init"
             "Test"
             "Clean"
             "Build"
+            "Docs"
+            "PublishDocs"
             "Publish") DO (
             IF /I "%1"=="%%~C" GOTO :Do%1
 )
@@ -19,6 +21,8 @@ FOR %%C IN ("Init"
     echo      make test         - Run the unit tests
     echo      make clean        - Clean out build files
     echo      make build        - Build the project
+    echo      make docs         - Build the Sphinx HTML docs only
+    echo      make publishdocs  - Build the docs and deploy to GitHub Pages
     echo      make publish      - Publish the project to PyPI
     goto :End
 
@@ -56,6 +60,23 @@ FOR %%C IN ("Init"
     %PYTHON% -m twine check .\dist\*
     goto :End
     
+:DoDocs
+    @REM Build only the Sphinx HTML site (no wheel). Must run on a machine with
+    @REM FieldWorks installed: `import flexicon` probes the FW registry at import
+    @REM time and autodoc cannot mock that away (see docs/sphinx/conf.py).
+    sphinx-apidoc -f -o docs/sphinx/api flexicon flexicon/tests flexicon/examples flexicon/sync/tests
+    sphinx-build docs/sphinx flexicon/docs/flexiconAPI
+    goto :End
+
+:DoPublishDocs
+    @REM Build the docs, then deploy the HTML to the gh-pages branch. -n adds
+    @REM .nojekyll so Sphinx's _static/ dirs survive; -c writes the CNAME file
+    @REM for the custom domain (else -f would wipe it each deploy); -p pushes;
+    @REM -f overwrites. GitHub Pages serves gh-pages root at flexicon.langtech.cloud.
+    call "%~f0" docs
+    %PYTHON% -m ghp_import -n -c flexicon.langtech.cloud -p -f -m "docs: publish flexicon Sphinx API to GitHub Pages" flexicon/docs/flexiconAPI
+    goto :End
+
 :DoPublish
     echo Publishing wheel to PyPI
     %PYTHON% -m twine upload .\dist\pyflexicon*

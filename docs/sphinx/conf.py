@@ -17,7 +17,10 @@ sys.path.insert(0, os.path.abspath("..\\..\\"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "flexicon"
-copyright = "%Y, Craig Farrow"
+author = "Matthew Lee"
+# flexicon builds on Craig Farrow's flexlibs (https://github.com/cdfarrow/flexlibs),
+# acknowledged here as the predecessor project.
+copyright = "%Y, Matthew Lee. Based on flexlibs by Craig Farrow."
 
 
 # -- General configuration ---------------------------------------------------
