@@ -21,11 +21,17 @@ from SIL.LCModel import (
     IPhCode,
     IPhCodeFactory,
     IFsFeatStruc,
+    IFsFeatStrucFactory,
     IFsClosedFeature,
+    IFsClosedValue,
+    IFsClosedValueFactory,
     ICmObjectRepository,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
+
+# .NET Guid for GUID-aligned FeaturesOA rewiring during sync.
+import System
 
 
 # Import flexlibs exceptions
@@ -1276,63 +1282,271 @@ class PhonemeOperations(BaseOperations):
         Get dictionary of syncable properties for cross-project synchronization.
 
         Args:
-            item: The IPhPhoneme object.
+            item: The IPhPhoneme object or HVO.
 
         Returns:
-            dict: Dictionary mapping property names to their values.
-                Keys are property names, values are the property values.
+            dict: Dictionary mapping property names to their values. Shapes:
+
+            - ``Name`` / ``Description`` / ``BasicIPASymbol``:
+              ``{ws_id: text}`` multistring dicts (non-empty alts only).
+            - ``FeaturesGuid``: ``str`` GUID of the owned IFsFeatStruc
+              (retained for backward compatibility).
+            - ``Features``: a list of ``{"FeatureGuid": str, "ValueGuid":
+              str}`` specs — one per IFsClosedValue in the phoneme's
+              ``FeaturesOA.FeatureSpecsOC`` — so a synced phoneme carries
+              its phonological-feature values. The feature/value GUIDs let
+              ApplySyncableProperties rewire the specs against the target
+              project's (already-synced) feature system.
 
         Example:
             >>> phonemeOps = PhonemeOperations(project)
             >>> phoneme = list(phonemeOps.GetAll())[0]
             >>> props = phonemeOps.GetSyncableProperties(phoneme)
-            >>> print(props.keys())
-            dict_keys(['Name', 'Description', 'BasicIPASymbol', 'FeaturesGuid'])
+            >>> sorted(props.keys())
+            ['BasicIPASymbol', 'Description', 'Features', 'FeaturesGuid', 'Name']
 
         Notes:
-            - Returns all MultiString properties (all writing systems)
-            - Returns FeaturesGuid as string (GUID of referenced feature structure)
-            - Does not include CodesOS (owned allophonic codes)
-            - Does not include GUID or HVO of the phoneme itself
+            - Returns all MultiString properties (all writing systems).
+            - ``BasicIPASymbol``'s LCM type varies across builds (per-WS
+              IMultiString in some, scalar ITsString in others); the read
+              is guarded and handles both shapes, fixing the
+              ``ITsString.get_String`` crash on the scalar build (issue
+              #222).
+            - Does not include CodesOS (owned allophonic codes).
+            - Does not include the phoneme's own GUID or HVO.
         """
         phoneme = self.__GetPhonemeObject(item)
 
-        # Get all writing systems for MultiString properties
-        # Fix: ILgWritingSystemFactory does not expose a .WritingSystems
-        # property; enumerate via the wrapper's WritingSystemOperations.GetAll(),
-        # which returns CoreWritingSystemDefinition objects with .Id / .Handle.
+        # Enumerate writing systems via WritingSystemOperations.GetAll()
+        # (ILgWritingSystemFactory has no .WritingSystems property).
         all_ws = {ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()}
 
         props = {}
 
-        # MultiString properties (Name = representation)
-        for prop_name in ["Name", "Description", "BasicIPASymbol"]:
-            if hasattr(phoneme, prop_name):
-                prop_obj = getattr(phoneme, prop_name)
-                if prop_obj:  # Check if property exists
-                    ws_values = {}
-                    for ws_id, ws_handle in all_ws.items():
-                        text = ITsString(prop_obj.get_String(ws_handle)).Text
-                        if text:  # Only include non-empty values
-                            ws_values[ws_id] = text
-                    if ws_values:  # Only include property if it has values
-                        props[prop_name] = ws_values
+        # MultiString properties (Name = representation). Each read is
+        # guarded so a single malformed alt or a variant BasicIPASymbol
+        # shape cannot abort the whole extraction (issue #222).
+        for prop_name in ("Name", "Description", "BasicIPASymbol"):
+            ws_values = self.__ReadMultiString(phoneme, prop_name, all_ws)
+            if ws_values:
+                props[prop_name] = ws_values
 
-        # Reference Atomic (RA) properties - return GUID as string
+        # Feature structure: retain FeaturesGuid for back-compat and surface
+        # the (feature, value) specs so the phoneme carries its feature
+        # values across the transfer (issue #222).
         if hasattr(phoneme, "FeaturesOA") and phoneme.FeaturesOA:
-            props["FeaturesGuid"] = str(phoneme.FeaturesOA.Guid)
+            features = phoneme.FeaturesOA
+            props["FeaturesGuid"] = str(features.Guid)
+            specs = []
+            if hasattr(features, "FeatureSpecsOC"):
+                for spec in features.FeatureSpecsOC:
+                    try:
+                        cv = IFsClosedValue(spec)
+                        feat_ra = cv.FeatureRA
+                        val_ra = cv.ValueRA
+                    except Exception:
+                        # Non-closed spec shape (e.g. complex value) — the
+                        # phoneme feature model only uses closed values, so
+                        # skip anything that isn't one.
+                        continue
+                    if feat_ra is None or val_ra is None:
+                        continue
+                    specs.append({
+                        "FeatureGuid": str(feat_ra.Guid),
+                        "ValueGuid": str(val_ra.Guid),
+                    })
+            if specs:
+                props["Features"] = specs
 
         return props
 
     @OperationsMethod
     def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
-        """Apply syncable properties (from GetSyncableProperties) onto an item.
+        """Apply syncable properties (from GetSyncableProperties) onto a phoneme.
 
-        Inherited from BaseOperations; declared on the concrete class so static
-        API indexers see it. The base implementation handles every property
-        shape this class's GetSyncableProperties emits.
+        Handles the multistring fields via the BaseOperations loop, applies
+        ``BasicIPASymbol`` through the shape-tolerant setter, and rewires the
+        ``Features`` specs against the target project's feature system by GUID
+        (issue #222).
+
+        Args:
+            item: Target IPhPhoneme (already created + owned + GUID-assigned
+                by the caller).
+            props: dict produced by GetSyncableProperties.
+            ws_map: Optional source->target writing-system Id mapping.
+            fill_gaps: If True, only fill empty target alts / add missing
+                feature specs; never overwrite existing target data.
+
+        Notes:
+            - ``BasicIPASymbol`` is applied via SetBasicIPASymbol so both the
+              multistring and scalar LCM shapes are handled; the base loop's
+              dict branch would raise on the scalar shape.
+            - A feature spec is skipped when its feature or value GUID does
+              not resolve in the target project (the feature system must be
+              synced first). Must run inside the caller's unit of work.
         """
-        return super().ApplySyncableProperties(item, props, ws_map, fill_gaps=fill_gaps)
+        if item is None:
+            raise FP_ParameterError("ApplySyncableProperties: item is None")
+        if not isinstance(props, dict):
+            raise FP_ParameterError(
+                f"ApplySyncableProperties: props must be a dict, got "
+                f"{type(props).__name__}"
+            )
+
+        # BasicIPASymbol and Features need dedicated handling; everything
+        # else (Name, Description, and any future plain scalars) goes through
+        # the base loop. FeaturesGuid is identity-only and not re-applied.
+        basic_ipa = props.get("BasicIPASymbol")
+        features = props.get("Features")
+        base_props = {
+            k: v
+            for k, v in props.items()
+            if k not in ("BasicIPASymbol", "Features", "FeaturesGuid")
+        }
+        super().ApplySyncableProperties(
+            item, base_props, ws_map, fill_gaps=fill_gaps
+        )
+
+        if isinstance(basic_ipa, dict) and basic_ipa:
+            self.__ApplyBasicIPASymbol(item, basic_ipa, ws_map, fill_gaps)
+
+        if features:
+            self.__ApplyFeatures(item, features, fill_gaps)
+
+    def __ApplyBasicIPASymbol(self, item, ws_values, ws_map, fill_gaps):
+        """
+        Apply a ``{ws_id: text}`` BasicIPASymbol dict via SetBasicIPASymbol,
+        which tolerates both the multistring and scalar LCM shapes.
+        """
+        phoneme = self.__GetPhonemeObject(item)
+        target_ws_by_id = {
+            ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()
+        }
+        for src_ws_id, text in ws_values.items():
+            if not text:
+                continue
+            tgt_ws_id = ws_map.get(src_ws_id, src_ws_id) if ws_map else src_ws_id
+            tgt_handle = target_ws_by_id.get(tgt_ws_id)
+            if tgt_handle is None:
+                continue
+            if fill_gaps and self.GetBasicIPASymbol(phoneme, tgt_handle).strip():
+                continue
+            self.SetBasicIPASymbol(phoneme, text, tgt_handle)
+
+    def __ApplyFeatures(self, item, specs, fill_gaps):
+        """
+        Rewire a phoneme's FeaturesOA feature-value specs from a list of
+        ``{"FeatureGuid", "ValueGuid"}`` dicts, resolving each feature/value
+        against the target project by GUID.
+
+        A missing FeaturesOA is created (ownership-first). Specs are matched
+        by (FeatureGuid, ValueGuid) so re-application is idempotent; specs
+        whose feature/value GUID does not resolve in the target are skipped.
+        """
+        phoneme = self.__GetPhonemeObject(item)
+
+        struct = phoneme.FeaturesOA
+        if struct is None:
+            factory = self.project.project.ServiceLocator.GetService(
+                IFsFeatStrucFactory
+            )
+            # Ownership-first: attach to FeaturesOA before populating specs
+            # (LCM accessors NPE on free-floating IFsFeatStruc objects).
+            new_struct = factory.Create()
+            phoneme.FeaturesOA = new_struct
+            struct = phoneme.FeaturesOA
+        struct = IFsFeatStruc(struct)
+
+        # Existing (feature, value) GUID pairs for idempotency.
+        existing_pairs = set()
+        for raw in struct.FeatureSpecsOC:
+            try:
+                cv = IFsClosedValue(raw)
+                if cv.FeatureRA is not None and cv.ValueRA is not None:
+                    existing_pairs.add(
+                        (str(cv.FeatureRA.Guid).lower(),
+                         str(cv.ValueRA.Guid).lower())
+                    )
+            except Exception:
+                continue
+
+        cv_factory = self.project.project.ServiceLocator.GetService(
+            IFsClosedValueFactory
+        )
+        for spec in specs:
+            if not isinstance(spec, dict):
+                continue
+            feat_guid = spec.get("FeatureGuid")
+            val_guid = spec.get("ValueGuid")
+            if not feat_guid or not val_guid:
+                continue
+            if (feat_guid.lower(), val_guid.lower()) in existing_pairs:
+                continue  # already present (fill_gaps and normal both keep it)
+
+            feat_obj = self.__ResolveByGuid(feat_guid)
+            val_obj = self.__ResolveByGuid(val_guid)
+            if feat_obj is None or val_obj is None:
+                # Target feature system lacks this feature/value; skip. The
+                # feature system must be synced before phonemes are rewired.
+                continue
+
+            closed_value = cv_factory.Create()
+            struct.FeatureSpecsOC.Add(closed_value)
+            cv = IFsClosedValue(closed_value)
+            cv.FeatureRA = feat_obj
+            cv.ValueRA = val_obj
+            existing_pairs.add((feat_guid.lower(), val_guid.lower()))
+
+    def __ResolveByGuid(self, guid_str):
+        """
+        Resolve a GUID string to an LCM object in this (target) project,
+        returning None if it does not exist rather than raising.
+        """
+        try:
+            return self.project.Object(guid_str)
+        except Exception:
+            return None
+
+    def __ReadMultiString(self, obj, prop_name, all_ws):
+        """
+        Read a multistring property into a ``{ws_id: text}`` dict, guarding
+        each per-WS read. Handles both the IMultiString (per-WS) and scalar
+        ITsString shapes; the scalar value is keyed under the default
+        vernacular writing system so ApplySyncableProperties can re-place it.
+
+        Returns None when the property is absent or has no non-empty text.
+        This guarding fixes the ``ITsString.get_String`` crash the previous
+        implementation hit on BasicIPASymbol's scalar shape (issue #222).
+        """
+        if not hasattr(obj, prop_name):
+            return None
+        prop_obj = getattr(obj, prop_name)
+        if prop_obj is None:
+            return None
+
+        ws_values = {}
+        if hasattr(prop_obj, "get_String"):
+            # IMultiUnicode / IMultiString: per-WS read.
+            for ws_id, ws_handle in all_ws.items():
+                try:
+                    text = ITsString(prop_obj.get_String(ws_handle)).Text
+                except Exception:
+                    continue
+                if text:
+                    ws_values[ws_id] = text
+        else:
+            # Scalar ITsString shape: read once, key under default vern WS.
+            try:
+                text = ITsString(prop_obj).Text
+            except Exception:
+                text = None
+            if text:
+                default_vern = self.project.project.DefaultVernWs
+                for ws_id, ws_handle in all_ws.items():
+                    if ws_handle == default_vern:
+                        ws_values[ws_id] = text
+                        break
+        return ws_values or None
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):

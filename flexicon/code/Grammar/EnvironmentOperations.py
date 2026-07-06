@@ -693,13 +693,20 @@ class EnvironmentOperations(BaseOperations):
         # MultiString properties
         for prop_name in ["Name", "Description", "StringRepresentation"]:
             prop_obj = getattr(env, prop_name)
-            ws_values = {}
-            for ws_id, ws_handle in all_ws.items():
-                text = ITsString(prop_obj.get_String(ws_handle)).Text
-                if text:  # Only include non-empty values
-                    ws_values[ws_id] = text
-            if ws_values:  # Only include property if it has values
-                props[prop_name] = ws_values
+            if hasattr(prop_obj, "get_String"):
+                # IMultiUnicode / IMultiString - iterate per writing system
+                ws_values = {}
+                for ws_id, ws_handle in all_ws.items():
+                    text = ITsString(prop_obj.get_String(ws_handle)).Text
+                    if text:  # Only include non-empty values
+                        ws_values[ws_id] = text
+                if ws_values:  # Only include property if it has values
+                    props[prop_name] = ws_values
+            else:
+                # ITsString (mono) - read once, no ws loop
+                text = ITsString(prop_obj).Text
+                if text:
+                    props[prop_name] = text
 
         return props
 
