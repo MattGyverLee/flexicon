@@ -15,6 +15,24 @@ _Nothing yet. Non-breaking fixes and breaking changes accumulate here until the 
 
 ---
 
+## [4.1.2]
+
+### Fixed
+- **Grammar sync:** hardened `Phoneme` synchronization and corrected
+  `GetSyncableProperties` in `Phoneme`/`Environment` to distinguish mono
+  `ITsString` fields from multi-string fields, preventing type-mismatch errors
+  during sync (#222).
+
+### Added
+- Syncable-properties support for `PhonFeatures`.
+
+### Changed
+- Documentation build pipeline updates: Sphinx configuration, `make.bat`, a
+  gh-pages publish workflow on the self-hosted FieldWorks runner, and
+  Context7-scoped docs.
+
+---
+
 ## [4.1.0]
 
 ### Changed

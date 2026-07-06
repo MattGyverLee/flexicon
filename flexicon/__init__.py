@@ -12,7 +12,7 @@
 #   License:    LGPL-2.1-or-later  (see LICENSE.txt)
 # ----------------------------------------------------------------------------
 
-version = "4.1.1"
+version = "4.1.2"
 
 # Define exported classes, etc. at the top level of the package
 
