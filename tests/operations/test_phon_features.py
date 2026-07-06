@@ -617,5 +617,120 @@ class TestPhonFeatureOperations:
         ) is None, "Delete() did not actually remove the feature"
 
 
+class TestPhonFeatureSync:
+    """
+    Live-LCM coverage for PhonFeatureOperations.GetSyncableProperties /
+    ApplySyncableProperties (issue #222).
+
+    A closed feature owns its symbolic values; the syncable-properties
+    round-trip must carry those values (with GUIDs) so a feature applied
+    onto a fresh target is not left an empty shell.
+    """
+
+    def test_getsyncable_includes_values_with_guids(self, writable_project):
+        """
+        GetSyncableProperties on a catalog feature must surface Name /
+        Abbreviation and a Values list, each value carrying its own GUID.
+        """
+        ops = writable_project.PhonFeatures
+        feat = ops.CreateFromCatalog("PHON:fPAConsonantal")
+        try:
+            props = ops.GetSyncableProperties(feat)
+
+            assert isinstance(props, dict)
+            assert "Name" in props and isinstance(props["Name"], dict)
+            assert "Values" in props, "Values list missing from syncable props"
+
+            value_guids = {
+                v["Guid"].lower() for v in props["Values"] if v.get("Guid")
+            }
+            assert CONSONANTAL_POSITIVE_VALUE_GUID in value_guids
+            assert CONSONANTAL_NEGATIVE_VALUE_GUID in value_guids
+            # Each value carries at least an abbreviation (the +/- marker).
+            for v in props["Values"]:
+                assert "Abbreviation" in v or "Name" in v
+        finally:
+            _delete_feature_by_guid(writable_project, CONSONANTAL_FEATURE_GUID)
+
+    def test_apply_cocreates_values_guid_aligned(self, writable_project):
+        """
+        ApplySyncableProperties onto a fresh feature must co-create the
+        owned values GUID-aligned, so the target feature mirrors the source
+        (not an empty shell).
+        """
+        ops = writable_project.PhonFeatures
+
+        # Build a source props dict by hand so the test does not depend on a
+        # second project. Uses the canonical value GUIDs.
+        anal_ws = next(iter(
+            ws.Id for ws in writable_project.WritingSystems.GetAll()
+        ))
+        src_props = {
+            "Name": {anal_ws: "synctest-feature"},
+            "Abbreviation": {anal_ws: "stf"},
+            "Values": [
+                {
+                    "Guid": CONSONANTAL_POSITIVE_VALUE_GUID,
+                    "Name": {anal_ws: "positive"},
+                    "Abbreviation": {anal_ws: "+"},
+                },
+                {
+                    "Guid": CONSONANTAL_NEGATIVE_VALUE_GUID,
+                    "Name": {anal_ws: "negative"},
+                    "Abbreviation": {anal_ws: "-"},
+                },
+            ],
+        }
+
+        feat = ops.Create(name="synctest-shell", abbreviation="sts")
+        created_guid = str(feat.Guid)
+        try:
+            ops.ApplySyncableProperties(feat, src_props)
+
+            # Re-read: the two values must exist under the feature with the
+            # requested GUIDs.
+            props_back = ops.GetSyncableProperties(feat)
+            back_guids = {
+                v["Guid"].lower() for v in props_back.get("Values", [])
+            }
+            assert CONSONANTAL_POSITIVE_VALUE_GUID in back_guids
+            assert CONSONANTAL_NEGATIVE_VALUE_GUID in back_guids
+            assert props_back["Name"][anal_ws] == "synctest-feature"
+        finally:
+            _delete_feature_by_guid(writable_project, created_guid)
+
+    def test_apply_is_idempotent(self, writable_project):
+        """
+        Applying the same value set twice must not duplicate values (GUID
+        match reuses the existing value).
+        """
+        ops = writable_project.PhonFeatures
+        anal_ws = next(iter(
+            ws.Id for ws in writable_project.WritingSystems.GetAll()
+        ))
+        src_props = {
+            "Name": {anal_ws: "idem-feature"},
+            "Values": [
+                {"Guid": CONSONANTAL_POSITIVE_VALUE_GUID,
+                 "Abbreviation": {anal_ws: "+"}},
+            ],
+        }
+
+        feat = ops.Create(name="idem-shell", abbreviation="idm")
+        created_guid = str(feat.Guid)
+        try:
+            ops.ApplySyncableProperties(feat, src_props)
+            ops.ApplySyncableProperties(feat, src_props)
+
+            values = list(ops.GetValues(feat))
+            matching = [
+                v for v in values
+                if str(v.Guid).lower() == CONSONANTAL_POSITIVE_VALUE_GUID
+            ]
+            assert len(matching) == 1, "Value duplicated across two applies"
+        finally:
+            _delete_feature_by_guid(writable_project, created_guid)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

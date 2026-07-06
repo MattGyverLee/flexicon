@@ -630,6 +630,227 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
             return struct
 
     # ========================================================================
+    # SYNC INTEGRATION METHODS
+    # ========================================================================
+    #
+    # Symmetric with the 8 Grammar Operations subclasses that support
+    # property-level cross-project transfer (GramTrans). Unlike the flat
+    # POS / InflectionClass cases, an IFsClosedFeature OWNS its symbolic
+    # values (ValuesOC -> IFsSymFeatVal). GetSyncableProperties therefore
+    # surfaces each value with its own GUID + Name/Abbreviation/Description
+    # so ApplySyncableProperties can co-create them GUID-aligned; a synced
+    # feature would otherwise be an empty shell and per-phoneme FeaturesOA
+    # specs could not be rewired against it (issue #222).
+
+    @OperationsMethod
+    def GetSyncableProperties(self, item):
+        """
+        Get dictionary of syncable properties for cross-project sync.
+
+        Args:
+            item: The IFsClosedFeature object, wrapper, or HVO.
+
+        Returns:
+            dict: Property names mapped to values. Shapes emitted:
+
+            - ``Name`` / ``Abbreviation`` / ``Description``:
+              ``{ws_id: text}`` multistring dicts (non-empty alts only).
+            - ``CatalogSourceId``: plain ``str`` provenance tag, when set.
+            - ``Values``: a list of dicts, one per owned ``IFsSymFeatVal``,
+              each ``{"Guid": str, "Name": {...}, "Abbreviation": {...},
+              "Description": {...}}``. The per-value ``Guid`` is preserved
+              so a downstream GUID-aligned create rebuilds the value on the
+              target side.
+
+        Notes:
+            - Does not include the feature's own GUID/HVO (identity is
+              managed by the caller / match strategy).
+            - Value string reads are guarded so a single malformed alt
+              never aborts the whole extraction (issue #222).
+        """
+        feat = IFsClosedFeature(self.__Unwrap(self.__ResolveObject(item)))
+        all_ws = {ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()}
+
+        props = {}
+        for prop_name in ("Name", "Abbreviation", "Description"):
+            ws_values = self.__ReadMultiString(feat, prop_name, all_ws)
+            if ws_values:
+                props[prop_name] = ws_values
+
+        # CatalogSourceId is a plain-string provenance tag; carry it so the
+        # target feature keeps its catalog linkage. The base apply loop
+        # handles the str shape via setattr.
+        csid = getattr(feat, "CatalogSourceId", None)
+        if csid:
+            props["CatalogSourceId"] = str(csid)
+
+        # Owned symbolic values. Each carries its own GUID for GUID-aligned
+        # co-create on the target side.
+        values = []
+        for raw in feat.ValuesOC:
+            val = IFsSymFeatVal(raw)
+            value_dict = {"Guid": str(val.Guid)}
+            for prop_name in ("Name", "Abbreviation", "Description"):
+                ws_values = self.__ReadMultiString(val, prop_name, all_ws)
+                if ws_values:
+                    value_dict[prop_name] = ws_values
+            values.append(value_dict)
+        if values:
+            props["Values"] = values
+
+        return props
+
+    @OperationsMethod
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
+        """
+        Apply syncable properties (from GetSyncableProperties) onto a feature.
+
+        Handles the feature's own multistring / CatalogSourceId fields via
+        the BaseOperations loop, then co-creates the owned ``Values``
+        (IFsSymFeatVal) GUID-aligned so the synced feature is not left an
+        empty shell (issue #222).
+
+        Args:
+            item: Target IFsClosedFeature (already created + owned +
+                GUID-assigned by the caller).
+            props: dict produced by GetSyncableProperties.
+            ws_map: Optional source->target writing-system Id mapping.
+            fill_gaps: If True, only fill empty target alts / add missing
+                values; never overwrite existing target data.
+
+        Notes:
+            - Value identity is by GUID: an existing value with the same
+              GUID is updated in place; a missing one is created with that
+              GUID via the IFsSymFeatVal factory (Create(guid, feature),
+              falling back to Create(guid)+Add).
+            - Must run inside the caller's unit of work (same contract as
+              the base implementation, which sets strings without opening
+              its own transaction).
+        """
+        if item is None:
+            raise FP_ParameterError("ApplySyncableProperties: item is None")
+        if not isinstance(props, dict):
+            raise FP_ParameterError(
+                f"ApplySyncableProperties: props must be a dict, got "
+                f"{type(props).__name__}"
+            )
+
+        # Resolve once so an HVO or wrapper input is handled uniformly by the
+        # base loop and the value co-create below.
+        feature = IFsClosedFeature(self.__Unwrap(self.__ResolveObject(item)))
+
+        # Feature-level scalar/multistring fields via the base loop.
+        values = props.get("Values")
+        scalar_props = {k: v for k, v in props.items() if k != "Values"}
+        super().ApplySyncableProperties(
+            feature, scalar_props, ws_map, fill_gaps=fill_gaps
+        )
+
+        if values:
+            self.__ApplyValues(feature, values, ws_map, fill_gaps)
+
+    def __ApplyValues(self, item, values, ws_map, fill_gaps):
+        """
+        Co-create / update the IFsSymFeatVal children of a feature from a
+        list of value dicts emitted by GetSyncableProperties.
+        """
+        feature = IFsClosedFeature(self.__Unwrap(self.__ResolveObject(item)))
+        existing_by_guid = {
+            str(v.Guid).lower(): IFsSymFeatVal(v) for v in feature.ValuesOC
+        }
+
+        for value_dict in values:
+            if not isinstance(value_dict, dict):
+                continue
+            guid_str = value_dict.get("Guid")
+            val = None
+            if guid_str:
+                val = existing_by_guid.get(guid_str.lower())
+            if val is None:
+                val = self.__CreateValueWithGuid(feature, guid_str)
+                if guid_str:
+                    existing_by_guid[guid_str.lower()] = val
+
+            # Apply the value's own multistrings through the base loop.
+            sub_props = {
+                k: value_dict[k]
+                for k in ("Name", "Abbreviation", "Description")
+                if k in value_dict
+            }
+            if sub_props:
+                super().ApplySyncableProperties(
+                    val, sub_props, ws_map, fill_gaps=fill_gaps
+                )
+
+    def __CreateValueWithGuid(self, feature, guid_str):
+        """
+        Create an IFsSymFeatVal under ``feature`` preserving ``guid_str``.
+
+        Mirrors the catalog-import value creation (Path A 2-arg factory
+        overload, Path B Create(Guid)+Add). Falls back to a random-GUID
+        create only if no GUID was supplied or both GUID paths fail, so a
+        value is never silently dropped.
+        """
+        factory = self.project.project.ServiceLocator.GetService(
+            IFsSymFeatValFactory
+        )
+
+        new_val = None
+        if guid_str:
+            guid = System.Guid(guid_str)
+            # Path A: 2-arg factory overload if pythonnet exposes it.
+            try:
+                new_val = factory.Create(guid, feature)
+            except Exception:
+                new_val = None
+            if new_val is None:
+                # Path B: implementation-side Create(Guid) then Add().
+                concrete_factory = (
+                    cast_to_concrete(factory)
+                    if hasattr(factory, "ClassName")
+                    else factory
+                )
+                try:
+                    new_val = concrete_factory.Create(guid)
+                    feature.ValuesOC.Add(new_val)
+                except Exception:
+                    new_val = None
+
+        if new_val is None:
+            # Last resort: random GUID (no canonical GUID available or both
+            # aligned-create paths failed). Ownership-first as elsewhere.
+            new_val = factory.Create()
+            feature.ValuesOC.Add(new_val)
+
+        return IFsSymFeatVal(new_val)
+
+    def __ReadMultiString(self, obj, prop_name, all_ws):
+        """
+        Read a multistring property into a ``{ws_id: text}`` dict, guarding
+        each per-WS read so one malformed alt cannot abort extraction.
+
+        Returns None when the property is absent, empty, or not a
+        multistring. Feature / value Name/Abbreviation/Description are all
+        IMultiUnicode, so the scalar branch is defensive only.
+        """
+        if not hasattr(obj, prop_name):
+            return None
+        prop_obj = getattr(obj, prop_name)
+        if prop_obj is None:
+            return None
+
+        ws_values = {}
+        if hasattr(prop_obj, "get_String"):
+            for ws_id, ws_handle in all_ws.items():
+                try:
+                    text = ITsString(prop_obj.get_String(ws_handle)).Text
+                except Exception:
+                    continue
+                if text:
+                    ws_values[ws_id] = text
+        return ws_values or None
+
+    # ========================================================================
     # CATALOG (eticGlossList) IMPORT METHODS
     # ========================================================================
     #

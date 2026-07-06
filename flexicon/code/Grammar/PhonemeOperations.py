@@ -1393,6 +1393,10 @@ class PhonemeOperations(BaseOperations):
                 f"{type(props).__name__}"
             )
 
+        # Resolve once so an HVO or wrapper input is handled uniformly by the
+        # base loop and the dedicated handlers below.
+        phoneme = self.__GetPhonemeObject(item)
+
         # BasicIPASymbol and Features need dedicated handling; everything
         # else (Name, Description, and any future plain scalars) goes through
         # the base loop. FeaturesGuid is identity-only and not re-applied.
@@ -1404,14 +1408,14 @@ class PhonemeOperations(BaseOperations):
             if k not in ("BasicIPASymbol", "Features", "FeaturesGuid")
         }
         super().ApplySyncableProperties(
-            item, base_props, ws_map, fill_gaps=fill_gaps
+            phoneme, base_props, ws_map, fill_gaps=fill_gaps
         )
 
         if isinstance(basic_ipa, dict) and basic_ipa:
-            self.__ApplyBasicIPASymbol(item, basic_ipa, ws_map, fill_gaps)
+            self.__ApplyBasicIPASymbol(phoneme, basic_ipa, ws_map, fill_gaps)
 
         if features:
-            self.__ApplyFeatures(item, features, fill_gaps)
+            self.__ApplyFeatures(phoneme, features, fill_gaps)
 
     def __ApplyBasicIPASymbol(self, item, ws_values, ws_map, fill_gaps):
         """

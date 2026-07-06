@@ -607,5 +607,125 @@ class TestPhonemeAddCodePlaceholderRegression:
                 pass
 
 
+class TestPhonemeSync:
+    """
+    Live-LCM coverage for PhonemeOperations.GetSyncableProperties /
+    ApplySyncableProperties (issue #222).
+
+    Covers the ITsString.get_String crash fix (guarded multistring read,
+    including BasicIPASymbol's variant shape) and the FeaturesOA
+    feature-value specs that let a synced phoneme carry its phonological
+    features.
+    """
+
+    def test_getsyncable_does_not_crash(self, writable_project):
+        """
+        GetSyncableProperties must return a dict without raising, even when
+        BasicIPASymbol is present (the scalar-shape read previously crashed
+        inside ITsString.get_String).
+        """
+        ops = writable_project.Phonemes
+        phoneme = ops.Create("/zzsync/")
+        try:
+            ops.SetBasicIPASymbol(phoneme, "z")
+            props = ops.GetSyncableProperties(phoneme)
+            assert isinstance(props, dict)
+            assert "Name" in props
+            # BasicIPASymbol round-trips into the props as a ws->text dict.
+            assert props.get("BasicIPASymbol")
+        finally:
+            try:
+                ops.Delete(phoneme)
+            except Exception:
+                pass
+
+    def test_getsyncable_surfaces_feature_specs(self, writable_project):
+        """
+        A phoneme with a FeaturesOA feature structure must surface its
+        (feature, value) specs as GUID pairs under 'Features'.
+        """
+        feat_ops = writable_project.PhonFeatures
+        ph_ops = writable_project.Phonemes
+
+        feat = feat_ops.CreateFromCatalog("PHON:fPAConsonantal")
+        feat_guid = str(feat.Guid)
+        plus = next(
+            v for v in feat_ops.GetValues(feat)
+            if feat_ops.GetAbbreviation(v) == "+"
+        )
+        value_guid = str(plus.Guid)
+
+        phoneme = ph_ops.Create("/zzfeat/")
+        try:
+            feat_ops.MakeFeatStruc([(feat, plus)], owner=phoneme)
+
+            props = ph_ops.GetSyncableProperties(phoneme)
+            assert "FeaturesGuid" in props
+            assert "Features" in props, "Feature specs missing"
+            pairs = {
+                (s["FeatureGuid"].lower(), s["ValueGuid"].lower())
+                for s in props["Features"]
+            }
+            assert (feat_guid.lower(), value_guid.lower()) in pairs
+        finally:
+            try:
+                ph_ops.Delete(phoneme)
+            except Exception:
+                pass
+            try:
+                writable_project.PhonFeatures.Delete(feat)
+            except Exception:
+                pass
+
+    def test_apply_rewires_feature_specs(self, writable_project):
+        """
+        ApplySyncableProperties must rewire Features specs against the
+        target project's feature system by GUID, so the applied phoneme
+        carries the feature value.
+        """
+        feat_ops = writable_project.PhonFeatures
+        ph_ops = writable_project.Phonemes
+
+        feat = feat_ops.CreateFromCatalog("PHON:fPAConsonantal")
+        feat_guid = str(feat.Guid)
+        plus = next(
+            v for v in feat_ops.GetValues(feat)
+            if feat_ops.GetAbbreviation(v) == "+"
+        )
+        value_guid = str(plus.Guid)
+
+        anal_ws = next(iter(
+            ws.Id for ws in writable_project.WritingSystems.GetAll()
+        ))
+        src_props = {
+            "Name": {anal_ws: "/zzapply/"},
+            "Features": [
+                {"FeatureGuid": feat_guid, "ValueGuid": value_guid},
+            ],
+        }
+
+        phoneme = ph_ops.Create("/zzapply-shell/")
+        try:
+            ph_ops.ApplySyncableProperties(phoneme, src_props)
+
+            props_back = ph_ops.GetSyncableProperties(phoneme)
+            pairs = {
+                (s["FeatureGuid"].lower(), s["ValueGuid"].lower())
+                for s in props_back.get("Features", [])
+            }
+            assert (feat_guid.lower(), value_guid.lower()) in pairs, (
+                "Feature spec was not rewired onto the target phoneme"
+            )
+        finally:
+            try:
+                ph_ops.Delete(phoneme)
+            except Exception:
+                pass
+            try:
+                writable_project.PhonFeatures.Delete(feat)
+            except Exception:
+                pass
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

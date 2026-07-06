@@ -1309,8 +1309,8 @@ Phase 5d/6d added catalog-driven code management and IPA symbol handling.
 #### `project.Phonemes.ImportCatalog(progress=None, force=False)`
 **Replaces:** XML parse of `<FWCodeDir>/Templates/BasicIPAInfo.xml` (via `Shared.catalog.parse_basic_ipa_info`), creation of IPhPhonemes through IPhPhonemeFactory, attachment to `IPhPhonemeSet.PhonemesOC`, cross-reference of BasicIPAInfo feature ids to existing IFsClosedFeature/IFsSymFeatVal objects loaded from PhonFeats. Non-empty-set guard requires `force=True` to re-import (no canonical GUIDs to dedupe against).
 
-#### `project.Phonemes.GetSyncableProperties(item)` / `CompareTo(item1, item2, ops1=None, ops2=None)`
-**Replaces:** Sync-engine integration.
+#### `project.Phonemes.GetSyncableProperties(item)` / `ApplySyncableProperties(item, props, ws_map=None, fill_gaps=False)` / `CompareTo(item1, item2, ops1=None, ops2=None)`
+**Replaces:** Sync-engine integration. `GetSyncableProperties` returns guarded `{ws_id: text}` dicts for `Name` / `Description` / `BasicIPASymbol` (tolerating BasicIPASymbol's per-build IMultiString-vs-scalar shape — fixes the `ITsString.get_String` crash), plus `FeaturesGuid` and a `Features` list of `{FeatureGuid, ValueGuid}` specs from `FeaturesOA.FeatureSpecsOC`. `ApplySyncableProperties` re-applies the multistrings, sets BasicIPASymbol through the shape-tolerant setter, and rewires the `Features` specs against the target project's feature system by GUID (issue #222).
 
 ### PhonFeatureOperations (`project.PhonFeatures`)
 
@@ -1366,6 +1366,9 @@ New module in Phase 5b. Manages `ILangProject.PhFeatureSystemOA` (IFsFeatureSyst
 
 #### `project.PhonFeatures.CreateFromCatalog(source_id, parent=None)` (inherited from `CatalogBackedMixin`)
 **Replaces:** Catalog lookup by `PHON:`-prefixed id, idempotent create-or-return-existing of the corresponding IFsClosedFeature + its IFsSymFeatVal children.
+
+#### `project.PhonFeatures.GetSyncableProperties(item)` / `ApplySyncableProperties(item, props, ws_map=None, fill_gaps=False)`
+**Replaces:** Sync-engine integration (issue #222). `GetSyncableProperties` returns `{ws_id: text}` dicts for `Name` / `Abbreviation` / `Description`, the plain `CatalogSourceId` provenance tag, and a `Values` list — one entry per owned `IFsSymFeatVal`, each carrying its own `Guid` plus name/abbreviation/description — so a closed feature is not synced as an empty shell. `ApplySyncableProperties` applies the feature's own fields via the base loop, then co-creates the owned values GUID-aligned (`IFsSymFeatValFactory.Create(guid, feature)`, falling back to `Create(guid)` + `ValuesOC.Add()`), reusing any existing value with a matching GUID so re-application is idempotent.
 
 ### InflectionFeatureOperations (`project.InflectionFeatures`, alias `project.Features`)
 
