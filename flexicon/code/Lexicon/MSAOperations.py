@@ -108,7 +108,15 @@ class MSAOperations(BaseOperations):
 
         Args:
             sense: An ILexSense (or HVO) to attach the MSA to.
-            pos: An IPartOfSpeech (or HVO) -- the grammatical category.
+            pos: An IPartOfSpeech (or HVO) -- the grammatical category, or
+                None to leave PartOfSpeechRA unset. Passing None is valid and
+                means "grammatical category not specified" -- a very common
+                state for stem entries in FLEx (the category cell is blank).
+
+                BEHAVIOR CHANGE (issue: null-category stems): previously a None
+                pos raised FP_NullParameterError, which made it impossible to
+                round-trip a legitimately category-less stem MSA. This mirrors
+                CreateDerivAff's to_pos=None "unset" precedent.
 
         Returns:
             IMoStemMsa: The newly created and attached MSA.
@@ -118,10 +126,10 @@ class MSAOperations(BaseOperations):
         """
         self._EnsureWriteEnabled()
         self._ValidateParam(sense, "sense")
-        self._ValidateParam(pos, "pos")
+        # pos intentionally not validated -- None is a legal "unset" value.
 
         sense_obj = self.__ResolveSense(sense)
-        pos_obj = self.__Resolve(pos)
+        pos_obj = self.__Resolve(pos) if pos is not None else None
 
         sandbox = SandboxGenericMSA()
         sandbox.MsaType = MsaType.kStem
@@ -237,17 +245,21 @@ class MSAOperations(BaseOperations):
 
         Args:
             sense: An ILexSense (or HVO) to attach the MSA to.
-            pos: An IPartOfSpeech (or HVO) -- the grammatical category.
+            pos: An IPartOfSpeech (or HVO) -- the grammatical category, or None
+                to leave PartOfSpeechRA unset. Passing None is valid and means
+                "category not specified" -- an unclassified affix legitimately
+                may carry no grammatical category (that is what "unclassified"
+                means). Mirrors CreateStem's / CreateDerivAff's pos=None support.
 
         Returns:
             IMoUnclassifiedAffixMsa: The newly created and attached MSA.
         """
         self._EnsureWriteEnabled()
         self._ValidateParam(sense, "sense")
-        self._ValidateParam(pos, "pos")
+        # pos intentionally not validated -- None is a legal "unset" value.
 
         sense_obj = self.__ResolveSense(sense)
-        pos_obj = self.__Resolve(pos)
+        pos_obj = self.__Resolve(pos) if pos is not None else None
 
         sandbox = SandboxGenericMSA()
         sandbox.MsaType = MsaType.kUnclassified
