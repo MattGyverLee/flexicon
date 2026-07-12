@@ -736,7 +736,7 @@ class MorphRuleOperations(BaseOperations):
     # ========== DUPLICATION ==========
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
         """
         Duplicate a morphological rule or template, creating a copy with a new GUID.
 
@@ -748,9 +748,14 @@ class MorphRuleOperations(BaseOperations):
             item_or_hvo: The rule object or HVO to duplicate.
             insert_after (bool): If True (default), insert after the source.
                 If False, insert at end of collection.
-            deep (bool): If True, copy reference sequences (slot assignments
-                for affix templates). If False (default), only copy simple
+            deep (bool): If True (default), copy reference sequences (slot
+                assignments for affix templates). If False, only copy simple
                 properties.
+
+                Note: this default (True) matches LexEntry/Text (deep by
+                default); it differs from Media/Wordform (deep=False by
+                default). See issue #203 -- the split is deliberate per
+                object family, not an inconsistency to "fix" elsewhere.
 
         Returns:
             The newly created duplicate with a new GUID.

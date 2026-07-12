@@ -32,7 +32,6 @@ from SIL.LCModel import (
     ICmTranslationFactory,
     IReversalIndexEntry,
     LexEntryTags,
-    MoMorphTypeTags,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
@@ -46,25 +45,11 @@ from ..FLExProject import (
 # Import LCM casting utilities for pythonnet interface casting
 from ..lcm_casting import cast_to_concrete
 
-
-# Affix morph-type GUIDs (per LCM MoMorphTypeTags). Constructed once at
-# module load -- the set is data, not control flow. Used by
-# __EntryHasAffixMorphType to dispatch MSA factories on the entry's
-# morph type. (issue #92)
-_AFFIX_MORPH_TYPE_GUIDS = frozenset({
-    MoMorphTypeTags.kguidMorphPrefix,
-    MoMorphTypeTags.kguidMorphSuffix,
-    MoMorphTypeTags.kguidMorphInfix,
-    MoMorphTypeTags.kguidMorphCircumfix,
-    MoMorphTypeTags.kguidMorphPrefixingInterfix,
-    MoMorphTypeTags.kguidMorphSuffixingInterfix,
-    MoMorphTypeTags.kguidMorphInfixingInterfix,
-    MoMorphTypeTags.kguidMorphSimulfix,
-    MoMorphTypeTags.kguidMorphSuprafix,
-})
-
 # Import string utilities
 from ..Shared.string_utils import best_analysis_text, normalize_match_key, normalize_text
+
+# Import shared morph-type classification (issue #92, unified per #213/#214)
+from ..Shared.morph_type_utils import is_stem_morph_type
 
 
 class LexSenseOperations(BaseOperations):
@@ -1474,13 +1459,15 @@ class LexSenseOperations(BaseOperations):
         An entry with no LexemeFormOA or no MorphTypeRA is treated as
         non-affix (the safe default; matches LexEntry.Create's behavior
         of treating absent morph_type_name as 'stem').
+
+        Classification is delegated to the shared
+        ``morph_type_utils.is_stem_morph_type`` so entry- and
+        allomorph-based morph-type dispatch stay in sync (issue #213/#214).
         """
-        if entry is None or entry.LexemeFormOA is None:
-            return False
-        morph_type = entry.LexemeFormOA.MorphTypeRA
-        if morph_type is None:
-            return False
-        return morph_type.Guid in _AFFIX_MORPH_TYPE_GUIDS
+        morph_type = None
+        if entry is not None and entry.LexemeFormOA is not None:
+            morph_type = entry.LexemeFormOA.MorphTypeRA
+        return not is_stem_morph_type(morph_type)
 
     @OperationsMethod
     def GetGrammaticalInfo(self, sense_or_hvo):

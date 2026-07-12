@@ -25,7 +25,6 @@ from SIL.LCModel import (
     IMoAffixAllomorphFactory,
     ILexEntry,
     IPhEnvironment,
-    MoMorphTypeTags,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
@@ -37,6 +36,10 @@ from ..FLExProject import (
 
 # Import string utilities
 from ..Shared.string_utils import normalize_text
+
+# Import shared morph-type resolution utilities (single source of truth
+# shared with LexEntryOperations.Create -- see issue #213/#214)
+from ..Shared.morph_type_utils import find_morph_type, is_stem_morph_type, morph_type_not_found_error
 
 # Import wrapper classes
 from .allomorph import Allomorph
@@ -258,27 +261,13 @@ class AllomorphOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         # Accept morph type as a string name (with or without display markers).
+        # Uses the SAME resolver as LexEntryOperations.Create (see issue #213)
+        # so '=enclitic', 'proclitic=', '-suffix', etc. all resolve identically
+        # regardless of which operations class is used.
         if isinstance(morphType, str):
-            bare = morphType.strip('-=~<>')
-            morph_types = self.project.lp.LexDbOA.MorphTypesOA
-            from ..Shared.string_utils import normalize_match_key, best_analysis_text
-            target = normalize_match_key(bare, casefold=True)
-            def _find(possibilities):
-                for mt in possibilities:
-                    mt_name = best_analysis_text(mt.Name)
-                    if mt_name and normalize_match_key(mt_name, casefold=True) == target:
-                        return mt
-                    if mt.SubPossibilitiesOS.Count > 0:
-                        found = _find(mt.SubPossibilitiesOS)
-                        if found:
-                            return found
-                return None
-            resolved = _find(morph_types.PossibilitiesOS) if morph_types else None
+            resolved = find_morph_type(self.project, morphType)
             if resolved is None:
-                raise FP_ParameterError(
-                    f"Morph type '{morphType}' not found. "
-                    "Use project.LexEntry.GetAvailableMorphTypes() to see valid names."
-                )
+                raise FP_ParameterError(morph_type_not_found_error(morphType))
             morphType = resolved
 
         # If no morphType provided, inherit from entry's LexemeFormOA (FLEx behavior)
@@ -1127,32 +1116,29 @@ class AllomorphOperations(BaseOperations):
         Determine if a morph type should use MoStemAllomorph or MoAffixAllomorph.
 
         Args:
-            morph_type: IMoMorphType object
+            morph_type: IMoMorphType object, or a string morph-type name.
 
         Returns:
             bool: True if stem type (uses MoStemAllomorph), False if affix type
 
+        Raises:
+            FP_ParameterError: If morph_type is a string that does not
+                resolve to a known morph type.
+
         Notes:
-            Based on FLEx logic - matches LexEntryOperations.__IsStemType
+            Delegates to Shared.morph_type_utils.is_stem_morph_type -- the
+            same classification used by LexEntryOperations.__IsStemType.
+            Accepts a string here (in addition to an IMoMorphType object)
+            so that callers passing a raw name never hit an AttributeError
+            deep in this helper (see issue #213).
         """
-        if morph_type is None:
-            return True  # Default to stem
+        if isinstance(morph_type, str):
+            resolved = find_morph_type(self.project, morph_type)
+            if resolved is None:
+                raise FP_ParameterError(morph_type_not_found_error(morph_type))
+            morph_type = resolved
 
-        # Check GUID against known stem types
-        stem_guids = {
-            MoMorphTypeTags.kguidMorphStem,
-            MoMorphTypeTags.kguidMorphRoot,
-            MoMorphTypeTags.kguidMorphBoundRoot,
-            MoMorphTypeTags.kguidMorphBoundStem,
-            MoMorphTypeTags.kguidMorphClitic,
-            MoMorphTypeTags.kguidMorphEnclitic,
-            MoMorphTypeTags.kguidMorphProclitic,
-            MoMorphTypeTags.kguidMorphParticle,
-            MoMorphTypeTags.kguidMorphPhrase,
-            MoMorphTypeTags.kguidMorphDiscontiguousPhrase,
-        }
-
-        return morph_type.Guid in stem_guids
+        return is_stem_morph_type(morph_type)
 
     def __WSHandle(self, wsHandle):
         """

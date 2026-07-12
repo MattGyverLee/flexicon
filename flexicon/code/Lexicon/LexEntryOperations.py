@@ -29,7 +29,6 @@ from SIL.LCModel import (
     IMoStemAllomorphFactory,
     IMoAffixAllomorphFactory,
     IMoForm,
-    MoMorphTypeTags,
     ILexEntryRef,
     ILexEntryRefFactory,
     LexEntryRefTags,
@@ -47,6 +46,15 @@ from ..FLExProject import (
 
 # Import string utilities
 from ..Shared.string_utils import normalize_text, normalize_match_key, best_analysis_text, best_vernacular_text
+
+# Import shared morph-type resolution utilities (single source of truth
+# for name lookup, display-marker normalization, and stem/affix
+# classification -- also used by AllomorphOperations)
+from ..Shared.morph_type_utils import (
+    find_morph_type,
+    is_stem_morph_type,
+    morph_type_not_found_error,
+)
 
 
 class LexEntryOperations(BaseOperations):
@@ -101,7 +109,7 @@ class LexEntryOperations(BaseOperations):
         """
         Get all lexical entries in the project.
 
-        This method returns an iterator over all ILexEntry objects in the
+        This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all ILexEntry objects in the
         project database, allowing iteration over the complete lexicon.
 
         Yields:
@@ -117,7 +125,7 @@ class LexEntryOperations(BaseOperations):
             house (4 senses)
 
         Notes:
-            - Returns an iterator for memory efficiency with large lexicons
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency with large lexicons; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Entries are returned in database order (not alphabetical)
             - Use GetHeadword() to access the display form
             - For sorted entries, use FLExProject.LexiconAllEntriesSorted()
@@ -201,9 +209,7 @@ class LexEntryOperations(BaseOperations):
         # Find the morph type
         morph_type = self.__FindMorphType(morph_type_name)
         if morph_type is None:
-            raise FP_ParameterError(
-                f"Morph type '{morph_type_name}' not found. " f"Use one of: stem, root, prefix, suffix, infix, etc."
-            )
+            raise FP_ParameterError(morph_type_not_found_error(morph_type_name))
 
         with self._TransactionCM(f"Create entry '{lexeme_form}'"):
             # Create the new entry using the factory
@@ -1520,7 +1526,7 @@ class LexEntryOperations(BaseOperations):
         if isinstance(morph_type_or_name, str):
             morph_type = self.__FindMorphType(morph_type_or_name)
             if morph_type is None:
-                raise FP_ParameterError(f"Morph type '{morph_type_or_name}' not found")
+                raise FP_ParameterError(morph_type_not_found_error(morph_type_or_name))
         else:
             morph_type = morph_type_or_name
 
@@ -3129,25 +3135,11 @@ class LexEntryOperations(BaseOperations):
             Based on FLEx logic in MorphTypeAtomicLauncher.cs
             Stem types include: stem, root, bound root/stem, clitics, particles, phrases
             Affix types include: prefix, suffix, infix, circumfix, etc.
+            Delegates to Shared.morph_type_utils.is_stem_morph_type so this
+            classification lives in exactly one place (also used by
+            AllomorphOperations).
         """
-        if morph_type is None:
-            return True  # Default to stem
-
-        # Check GUID against known stem types (from MoMorphTypeTags)
-        stem_guids = {
-            MoMorphTypeTags.kguidMorphStem,
-            MoMorphTypeTags.kguidMorphRoot,
-            MoMorphTypeTags.kguidMorphBoundRoot,
-            MoMorphTypeTags.kguidMorphBoundStem,
-            MoMorphTypeTags.kguidMorphClitic,
-            MoMorphTypeTags.kguidMorphEnclitic,
-            MoMorphTypeTags.kguidMorphProclitic,
-            MoMorphTypeTags.kguidMorphParticle,
-            MoMorphTypeTags.kguidMorphPhrase,
-            MoMorphTypeTags.kguidMorphDiscontiguousPhrase,
-        }
-
-        return morph_type.Guid in stem_guids
+        return is_stem_morph_type(morph_type)
 
     def __WSHandleAnalysis(self, wsHandle):
         """
@@ -3176,28 +3168,10 @@ class LexEntryOperations(BaseOperations):
 
         Returns:
             IMoMorphType or None: The morph type object if found, None otherwise
+
+        Notes:
+            Delegates to Shared.morph_type_utils.find_morph_type so this is
+            the single lookup used by both LexEntryOperations and
+            AllomorphOperations (see issue #213/#214).
         """
-        # Strip display markers (prefix '-', '=', '~'; postfix '-', '=', '~', '<', '>')
-        # that FLEx shows in the UI but that are NOT part of the canonical IMoMorphType.Name.
-        bare = name.strip('-=~<>')
-        target = normalize_match_key(bare, casefold=True)
-        wsHandle = self.project.project.DefaultAnalWs
-
-        morph_types = self.project.lp.LexDbOA.MorphTypesOA
-        if morph_types is None:
-            return None
-
-        # Search through all morph types (including subcategories)
-        def search_morph_types(possibilities):
-            for mt in possibilities:
-                mt_name = best_analysis_text(mt.Name)
-                if mt_name and normalize_match_key(mt_name, casefold=True) == target:
-                    return mt
-                # Search subcategories
-                if mt.SubPossibilitiesOS.Count > 0:
-                    found = search_morph_types(mt.SubPossibilitiesOS)
-                    if found:
-                        return found
-            return None
-
-        return search_morph_types(morph_types.PossibilitiesOS)
+        return find_morph_type(self.project, name)
