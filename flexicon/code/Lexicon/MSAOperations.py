@@ -193,7 +193,11 @@ class MSAOperations(BaseOperations):
 
         Args:
             sense: An ILexSense (or HVO) to attach the MSA to.
-            pos: An IPartOfSpeech -- the category this affix inflects.
+            pos: An IPartOfSpeech -- the category this affix inflects, or None
+                to leave PartOfSpeechRA unset. Passing None is valid and means
+                "category not yet specified": an inflectional affix MSA may
+                legitimately carry a blank category cell in FLEx. Mirrors
+                CreateStem's / CreateUnclassifiedAffix's pos=None support.
             slots: Optional sequence of IMoInflAffixSlot objects. Slots
                 are added to the MSA's SlotsRC reference collection
                 after creation (Phase 2 ownership-ordering doesn't apply
@@ -216,10 +220,11 @@ class MSAOperations(BaseOperations):
         """
         self._EnsureWriteEnabled()
         self._ValidateParam(sense, "sense")
-        self._ValidateParam(pos, "pos")
+        # pos intentionally not validated -- None is a legal "unset" value
+        # (a category-less inflectional affix). Mirrors CreateUnclassifiedAffix.
 
         sense_obj = self.__ResolveSense(sense)
-        pos_obj = self.__Resolve(pos)
+        pos_obj = self.__Resolve(pos) if pos is not None else None
 
         sandbox = SandboxGenericMSA()
         sandbox.MsaType = MsaType.kInfl
