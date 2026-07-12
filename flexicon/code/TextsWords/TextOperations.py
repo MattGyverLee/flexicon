@@ -461,7 +461,7 @@ class TextOperations(BaseOperations):
         """
         Get all texts in the project.
 
-        Returns a generator that yields IText objects. This is a wrapper around
+        Returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) that yields IText objects. This is a wrapper around
         the existing TextsGetAll method but returns the raw IText objects instead
         of (name, content) tuples.
 

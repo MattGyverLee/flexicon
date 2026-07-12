@@ -107,7 +107,7 @@ class MediaOperations(BaseOperations):
         """
         Retrieve all media files in the FLEx project.
 
-        This method returns an iterator over all ICmFile objects in the
+        This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all ICmFile objects in the
         project database, allowing iteration over the complete media inventory.
 
         Yields:
@@ -123,7 +123,7 @@ class MediaOperations(BaseOperations):
             Photo1: images/photo1.jpg
 
         Notes:
-            - Returns an iterator for memory efficiency with large projects
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency with large projects; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Media files are returned in database order
             - Use GetInternalPath() to access the file path
             - Includes all media types (audio, video, image)
@@ -1504,6 +1504,7 @@ class MediaOperations(BaseOperations):
             logger.warning(f"Unexpected error getting media file size: {e}")
             return -1
 
+    @wrap_enumerable
     @OperationsMethod
     def GetAllByType(self, media_type):
         """
@@ -1531,7 +1532,7 @@ class MediaOperations(BaseOperations):
             >>> print(f"Total videos: {video_count}")
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Valid types: MediaType.AUDIO, VIDEO, IMAGE, UNKNOWN
             - Uses GetMediaType() for detection
             - Detection is based on file extension
@@ -1548,6 +1549,7 @@ class MediaOperations(BaseOperations):
             if self.GetMediaType(media) == media_type:
                 yield media
 
+    @wrap_enumerable
     @OperationsMethod
     def GetOrphanedMedia(self):
         """
@@ -1569,7 +1571,7 @@ class MediaOperations(BaseOperations):
             ...     project.Media.Delete(media)
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Orphaned media has no owners (GetOwnerCount() == 0)
             - Useful for cleaning up unused media
             - Consider backing up before deleting orphaned media

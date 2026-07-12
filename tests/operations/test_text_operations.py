@@ -180,6 +180,25 @@ class TestTextOperationsMockBehavior:
 
             assert len(result) == 2
 
+    def test_getall_result_is_subscriptable_and_lenable(self, mock_flex_project):
+        """
+        Regression test for issue #201.
+
+        `project.Texts.GetAll()` must support `len()` and indexing
+        directly, not just `for text in project.Texts.GetAll(): ...`.
+        """
+        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+
+        mock_texts = [MockLCMObject(hvo=4000 + i) for i in range(2)]
+
+        with patch.object(mock_flex_project, "ObjectsIn", return_value=iter(mock_texts)):
+            ops = TextOperations(mock_flex_project)
+            texts = ops.GetAll()
+
+            assert len(texts) == 2
+            assert texts[0].Hvo == mock_texts[0].Hvo
+            assert texts[1].Hvo == mock_texts[1].Hvo
+
 
 class TestTextOperationsValidation:
     """Test validation and error handling."""

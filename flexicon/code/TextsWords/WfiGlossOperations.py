@@ -93,8 +93,9 @@ class WfiGlossOperations(BaseOperations):
         """
         Retrieve all glosses for a wordform analysis.
 
-        This method returns an iterator over all IWfiGloss objects associated with
-        the specified analysis, allowing iteration over all meaning glosses.
+        This method returns an EnumerableWrapper (subscriptable, len()-able,
+        lazily materialized) over all IWfiGloss objects associated with the
+        specified analysis, allowing iteration over all meaning glosses.
 
         Args:
             analysis_or_hvo: Either an IWfiAnalysis object or its HVO
@@ -115,7 +116,7 @@ class WfiGlossOperations(BaseOperations):
             ...         print(form)
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Glosses are returned in the order they were added
             - Returns empty iterator if analysis has no glosses
             - Each gloss can have forms in multiple writing systems

@@ -215,7 +215,7 @@ class DataNotebookOperations(BaseOperations):
             Elicitation Session 3 - 2024-02-01 - Approved
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Returns only top-level records (not sub-records)
             - Records are returned in database order
             - Use GetSubRecords() to access hierarchical sub-records

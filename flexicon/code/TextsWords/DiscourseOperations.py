@@ -219,6 +219,7 @@ class DiscourseOperations(BaseOperations):
 
     # --- Chart Management Operations ---
 
+    @wrap_enumerable
     @OperationsMethod
     def GetAllCharts(self, text_or_hvo):
         """

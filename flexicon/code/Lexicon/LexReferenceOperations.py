@@ -131,14 +131,16 @@ class LexReferenceOperations(BaseOperations):
 
     # --- Reference Type Management ---
 
+    @wrap_enumerable
     @OperationsMethod
     def GetAllTypes(self):
         """
         Get all lexical relation types in the project.
 
-        This method returns an iterator over all ILexRefType objects that
-        define the types of lexical relations available in the project, such
-        as Synonym, Antonym, Part-Whole, etc.
+        This method returns an EnumerableWrapper (subscriptable, len()-able,
+        lazily materialized) over all ILexRefType objects that define the
+        types of lexical relations available in the project, such as
+        Synonym, Antonym, Part-Whole, etc.
 
         Yields:
             ILexRefType: Each lexical reference type object in the project
@@ -1030,6 +1032,7 @@ class LexReferenceOperations(BaseOperations):
         # The owner of a LexReference is always a LexRefType.
         return ILexRefType(lex_ref.Owner)
 
+    @wrap_enumerable
     @OperationsMethod
     def GetReferencesOfType(self, ref_type_or_name):
         """

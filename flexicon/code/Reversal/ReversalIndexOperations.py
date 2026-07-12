@@ -97,7 +97,7 @@ class ReversalIndexOperations(BaseOperations):
             French (fr): 120 entries
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Indexes are returned in database order
             - Each index is tied to a specific analysis writing system
             - Empty project returns empty iterator
@@ -407,6 +407,7 @@ class ReversalIndexOperations(BaseOperations):
 
         return index.WritingSystem or ""
 
+    @wrap_enumerable
     @OperationsMethod
     def GetEntries(self, index_or_hvo):
         """
@@ -431,7 +432,7 @@ class ReversalIndexOperations(BaseOperations):
             walk: 2 senses
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Entries are in hierarchical order (top-level first)
             - Does not include subentries (use GetSubentries for those)
             - Returns empty iterator if index has no entries

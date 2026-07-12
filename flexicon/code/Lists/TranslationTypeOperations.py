@@ -22,7 +22,7 @@ import System
 
 # Import flexlibs exceptions
 from ..FLExProject import FP_ParameterError
-from ..BaseOperations import OperationsMethod
+from ..BaseOperations import OperationsMethod, wrap_enumerable
 from .possibility_item_base import PossibilityItemOperations
 
 
@@ -263,6 +263,7 @@ class TranslationTypeOperations(PossibilityItemOperations):
 
     # --- Usage Tracking ---
 
+    @wrap_enumerable
     @OperationsMethod
     def GetTextsWithType(self, type_or_hvo):
         """

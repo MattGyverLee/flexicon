@@ -90,7 +90,7 @@ class PersonOperations(BaseOperations):
         """
         Get all people in the project.
 
-        This method returns an iterator over all ICmPerson objects in the
+        This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all ICmPerson objects in the
         project database, allowing iteration over all registered people.
 
         Yields:
@@ -106,7 +106,7 @@ class PersonOperations(BaseOperations):
             Ahmed Hassan: ahmed.hassan@example.com
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - People are returned in database order
             - Includes all person types (consultants, researchers, speakers)
             - Use GetName() to access the display name

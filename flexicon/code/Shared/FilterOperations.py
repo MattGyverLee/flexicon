@@ -155,7 +155,7 @@ class FilterOperations:
             Correct Wordforms (Wordform)
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Filters are loaded from project custom settings
             - Each filter is returned as a dictionary
             - Use Find() to get a specific filter by name
@@ -911,6 +911,7 @@ class FilterOperations:
 
     # --- Utility Methods ---
 
+    @wrap_enumerable
     @OperationsMethod
     def GetFiltersByType(self, filter_type):
         """
@@ -939,7 +940,7 @@ class FilterOperations:
             >>> print(f"Found {len(wf_filters)} wordform filters")
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Returns empty iterator if no filters of that type exist
             - Filter types are defined in FilterTypes class
 

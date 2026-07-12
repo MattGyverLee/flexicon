@@ -81,7 +81,7 @@ class ScrDraftOperations(BaseOperations):
         """
         Get all Scripture drafts in the project.
 
-        This method returns an iterator over all IScrDraft objects in the
+        This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all IScrDraft objects in the
         project, allowing iteration over all saved Scripture versions.
 
         Yields:
@@ -96,7 +96,7 @@ class ScrDraftOperations(BaseOperations):
             Draft: Final Version - March 2025
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Drafts are returned in database order
             - Use GetDescription() to get the draft description
 

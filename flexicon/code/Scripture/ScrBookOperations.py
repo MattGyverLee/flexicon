@@ -86,7 +86,7 @@ class ScrBookOperations(BaseOperations):
         """
         Get all Scripture books in the project.
 
-        This method returns an iterator over all IScrBook objects in the
+        This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all IScrBook objects in the
         project, allowing iteration over all Scripture books.
 
         Yields:
@@ -102,7 +102,7 @@ class ScrBookOperations(BaseOperations):
             40: Matthew
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Books are returned in database order (not canonical order)
             - Use GetCanonicalNum() to get the book number
             - For sorted books, sort by canonical number

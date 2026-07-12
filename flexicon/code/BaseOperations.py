@@ -117,12 +117,64 @@ class EnumerableWrapper:
         return f"EnumerableWrapper({self._enumerable})"
 
 
+def _needs_enumerable_wrap(result):
+    """
+    Decide whether `result` needs to be wrapped in EnumerableWrapper.
+
+    Historically this only checked for raw C# IEnumerable objects (those
+    exposing `GetEnumerator`). That missed two common return shapes used
+    throughout the Operations classes:
+
+    - `self.project.ObjectsIn(...)`, which already calls Python's
+      built-in `iter()` on the underlying C# enumerable before returning
+      it. The resulting object exposes `__next__`/`__iter__` but *not*
+      `GetEnumerator`, so it slipped past the old check untouched.
+    - Generator-function GetAll()/GetAnalyses() implementations (using
+      `yield`), which return a plain Python generator object -- also has
+      `__next__` but no `GetEnumerator`, and is not subscriptable and
+      has no `len()`.
+
+    Both shapes produced the exact bug in issue #201: callers got back a
+    bare iterator/generator that looked list-like but raised
+    `TypeError` on `entries[0]` or `len(entries)`.
+
+    Anything that already supports both indexing and `len()` (plain
+    lists, tuples, existing EnumerableWrapper/SmartCollection instances,
+    etc.) is left alone -- there's nothing to fix and no need to
+    re-wrap it.
+
+    Args:
+        result: The raw value returned by the wrapped method.
+
+    Returns:
+        bool: True if `result` should be wrapped in EnumerableWrapper.
+    """
+    if result is None:
+        return False
+    if isinstance(result, EnumerableWrapper):
+        return False
+    # Raw C# IEnumerable (pythonnet objects exposing GetEnumerator).
+    if hasattr(result, "GetEnumerator"):
+        return True
+    # Plain Python iterator/generator (has __next__) that does not
+    # already behave like a sequence (no __len__ + __getitem__ pair).
+    # This covers both `iter(repo.AllInstances())` (from ObjectsIn())
+    # and generator-function bodies using `yield`.
+    if hasattr(result, "__next__"):
+        already_sequence = hasattr(result, "__len__") and hasattr(result, "__getitem__")
+        if not already_sequence:
+            return True
+    return False
+
+
 class wrap_enumerable:
     """
-    Descriptor to automatically wrap IEnumerable return values.
+    Descriptor to automatically wrap IEnumerable/iterator return values.
 
-    Wraps methods that return C# IEnumerable collections to make them
-    Pythonic with .Count property and indexing support.
+    Wraps methods that return C# IEnumerable collections -- or plain
+    Python iterators/generators built on top of them (e.g. via
+    `self.project.ObjectsIn(...)` or a `yield`-based method body) -- to
+    make them Pythonic with `.Count`, `len()`, and indexing support.
 
     Must be a descriptor to properly delegate to OperationsMethod's __get__,
     ensuring the descriptor protocol works correctly when stacked decorators
@@ -140,6 +192,7 @@ class wrap_enumerable:
             items = GetAll(project)
             count = items.Count      # Works!
             first = items[0]         # Works!
+            length = len(items)      # Works!
     """
 
     def __init__(self, func):
@@ -169,8 +222,7 @@ class wrap_enumerable:
         # Return a wrapper that will wrap the result
         def wrapped_method(*args, **kwargs):
             result = inner_method(*args, **kwargs)
-            # Only wrap if it looks like an IEnumerable (has GetEnumerator)
-            if result is not None and hasattr(result, "GetEnumerator"):
+            if _needs_enumerable_wrap(result):
                 return EnumerableWrapper(result)
             return result
 
@@ -179,13 +231,12 @@ class wrap_enumerable:
     def __call__(self, *args, **kwargs):
         """
         Direct call support (when decorator is applied to a function, not a method).
-        
+
         This is called when the wrapped method is invoked without going through
         the descriptor protocol (rare, but needed for some edge cases).
         """
         result = self.func(*args, **kwargs)
-        # Only wrap if it looks like an IEnumerable (has GetEnumerator)
-        if result is not None and hasattr(result, "GetEnumerator"):
+        if _needs_enumerable_wrap(result):
             return EnumerableWrapper(result)
         return result
 

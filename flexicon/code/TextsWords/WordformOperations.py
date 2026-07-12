@@ -105,7 +105,7 @@ class WordformOperations(BaseOperations):
         """
         Retrieve all wordforms in the FLEx project.
 
-        This method returns an iterator over all IWfiWordform objects in the
+        This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all IWfiWordform objects in the
         project database, allowing iteration over the complete wordform inventory.
 
         Yields:
@@ -117,7 +117,7 @@ class WordformOperations(BaseOperations):
             ...     print(form)
 
         Notes:
-            - Returns an iterator for memory efficiency with large projects
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency with large projects; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Wordforms are returned in database order (not alphabetical)
             - Use GetForm() to access the surface text
 
@@ -611,6 +611,7 @@ class WordformOperations(BaseOperations):
 
         return wordform.Checksum
 
+    @wrap_enumerable
     @OperationsMethod
     def GetAllWithStatus(self, status):
         """
@@ -636,7 +637,7 @@ class WordformOperations(BaseOperations):
             ...     print(f"Misspelling: {form}")
 
         Notes:
-            - Returns an iterator for memory efficiency with large projects
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency with large projects; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Valid status values (from SpellingStatusStates):
               - UNDECIDED (0): Not yet reviewed
               - INCORRECT (1): Known misspelling
@@ -653,6 +654,7 @@ class WordformOperations(BaseOperations):
             if wf.SpellingStatus == status:
                 yield wf
 
+    @wrap_enumerable
     @OperationsMethod
     def GetAllUnapproved(self):
         """
@@ -673,7 +675,7 @@ class WordformOperations(BaseOperations):
             >>> print(f"Total unapproved: {unapproved_count}")
 
         Notes:
-            - Returns an iterator for memory efficiency with large projects
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency with large projects; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Includes both UNDECIDED (0) and INCORRECT (1) statuses
             - Excludes only CORRECT (2) status wordforms
             - Useful for spell-checking and wordform review workflows

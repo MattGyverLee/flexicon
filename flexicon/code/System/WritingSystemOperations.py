@@ -114,6 +114,7 @@ class WritingSystemOperations(BaseOperations):
             if ws.Id in active_tags:
                 yield ws
 
+    @wrap_enumerable
     @OperationsMethod
     def GetVernacular(self):
         """
@@ -147,6 +148,7 @@ class WritingSystemOperations(BaseOperations):
             if ws.Id in vern_ws_set:
                 yield ws
 
+    @wrap_enumerable
     @OperationsMethod
     def GetAnalysis(self):
         """

@@ -950,6 +950,7 @@ class AnnotationDefOperations(BaseOperations):
             if self.GetAnnotationType(anno_def) == type_value:
                 yield anno_def
 
+    @wrap_enumerable
     @OperationsMethod
     def GetUserCreatableTypes(self):
         """

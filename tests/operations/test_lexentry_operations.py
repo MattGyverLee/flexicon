@@ -211,6 +211,33 @@ class TestLexEntryOperationsMockBehavior:
             assert len(result) == 3
             assert all(isinstance(e, MockLCMObject) for e in result)
 
+    def test_getall_result_is_subscriptable_and_lenable(self, mock_flex_project):
+        """
+        Regression test for issue #201.
+
+        `project.LexEntry.GetAll()` must return an object that supports
+        `len()` and `entries[i]` directly -- without the caller needing to
+        wrap the result in `list(...)` first. Before the fix, GetAll()
+        returned the bare Python iterator produced by
+        `self.project.ObjectsIn(...)` (via `iter(repo.AllInstances())`),
+        which raised `TypeError` on both operations.
+        """
+        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+
+        mock_entries = [MockLCMObject(hvo=i) for i in range(3)]
+
+        with patch.object(mock_flex_project, "ObjectsIn", return_value=iter(mock_entries)):
+            ops = LexEntryOperations(mock_flex_project)
+            entries = ops.GetAll()
+
+            assert len(entries) == 3
+            assert entries[0].Hvo == mock_entries[0].Hvo
+            assert entries[-1].Hvo == mock_entries[-1].Hvo
+            # Iterating more than once must still yield everything (the
+            # wrapper caches its materialized list rather than exhausting
+            # a single-use generator/iterator).
+            assert list(entries) == list(entries) == mock_entries
+
     def test_getsensecount_with_mock_entry(self, mock_flex_project, mock_lex_entry):
         """Test GetSenseCount with mock entry."""
         from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations

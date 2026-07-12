@@ -112,6 +112,7 @@ class VariantOperations(BaseOperations):
 
     # --- Variant Type Management ---
 
+    @wrap_enumerable
     @OperationsMethod
     def GetAllTypes(self):
         """

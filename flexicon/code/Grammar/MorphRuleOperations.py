@@ -262,6 +262,7 @@ class MorphRuleOperations(BaseOperations):
             return AffixTemplateCollection(wrapped)
         return AffixTemplateCollection()
 
+    @wrap_enumerable
     @OperationsMethod
     def GetAllAdhocCoProhibitions(self):
         """

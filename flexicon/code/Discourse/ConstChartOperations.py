@@ -82,7 +82,7 @@ class ConstChartOperations(BaseOperations):
         """
         Get all constituent charts in the project.
 
-        This method returns an iterator over all IDsConstChart objects in the
+        This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all IDsConstChart objects in the
         project database, allowing iteration over all discourse analysis charts.
 
         Yields:
@@ -97,7 +97,7 @@ class ConstChartOperations(BaseOperations):
             Mark 1 Analysis (32 rows)
 
         Notes:
-            - Returns an iterator for memory efficiency
+            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access
             - Charts are returned in database order
             - Each chart can contain multiple rows for analysis
             - Use GetName() to access the chart name

@@ -823,6 +823,7 @@ class NoteOperations(BaseOperations):
 
     # --- Discussion/Threading Operations ---
 
+    @wrap_enumerable
     @OperationsMethod
     def GetReplies(self, note):
         """

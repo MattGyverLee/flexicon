@@ -441,8 +441,9 @@ class ParagraphOperations(BaseOperations):
         """
         Get all paragraphs in a text.
 
-        Returns a generator that yields all paragraph objects in the text's
-        paragraph collection in order.
+        Returns an EnumerableWrapper (subscriptable, len()-able, lazily
+        materialized) over all paragraph objects in the text's paragraph
+        collection, in order.
 
         Args:
             text_or_hvo: Either an IText object or its HVO (integer identifier).
