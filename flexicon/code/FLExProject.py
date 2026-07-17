@@ -2407,42 +2407,10 @@ class FLExProject(object):
             self._constchartclausemarker_ops = ConstChartClauseMarkerOperations(self)
         return self._constchartclausemarker_ops
 
-    # Singular aliases for backward compatibility
-
-    @property
-    def Agent(self):
-        """Alias for Agents (singular form for backward compatibility)."""
-        return self.Agents
-
-    @property
-    def PossibilityList(self):
-        """Alias for PossibilityLists (singular form for backward compatibility)."""
-        return self.PossibilityLists
-
-    @property
-    def WritingSystem(self):
-        """Alias for WritingSystems (singular form for backward compatibility)."""
-        return self.WritingSystems
-
-    @property
-    def Overlay(self):
-        """Alias for Overlays (singular form for backward compatibility)."""
-        return self.Overlays
-
-    @property
-    def Publication(self):
-        """Alias for Publications (singular form for backward compatibility)."""
-        return self.Publications
-
-    @property
-    def TranslationType(self):
-        """Alias for TranslationTypes (singular form for backward compatibility)."""
-        return self.TranslationTypes
-
-    @property
-    def Note(self):
-        """Alias for Notes (singular form for backward compatibility)."""
-        return self.Notes
+    # Singular/plural aliases for backward compatibility are generated at
+    # module scope from FLExProject._OP_NAMESPACE_ALIASES (see the end of
+    # this module). Each generated alias emits a DeprecationWarning that
+    # names the canonical accessor. See issue #200.
 
     def ImportLocalizedLists(self, language_code, progress=None):
         """Deprecated. Use ``project.LocalizedLists.Import(language_code)``."""
@@ -2468,21 +2436,6 @@ class FLExProject(object):
         return self.LocalizedLists.ImportForAllAnalysisWritingSystems(
             progress=progress
         )
-
-    @property
-    def AnnotationDef(self):
-        """Alias for AnnotationDefs (singular form for backward compatibility)."""
-        return self.AnnotationDefs
-
-    @property
-    def Check(self):
-        """Alias for Checks (singular form for backward compatibility)."""
-        return self.Checks
-
-    @property
-    def CustomField(self):
-        """Alias for CustomFields (singular form for backward compatibility)."""
-        return self.CustomFields
 
     # --- General ---
 
@@ -4442,3 +4395,20 @@ class FLExProject(object):
                     yield name, "\n".join(content)
                 else:
                     yield "\n".join(content)
+
+
+# ============================================================================
+# Operation-namespace naming aliases (issue #200)
+# ============================================================================
+# Deprecated singular/plural aliases for the operation-namespace accessors are
+# generated from a single table in the SIL-free ._op_aliases module and
+# attached here. Each alias forwards to the canonical accessor and emits a
+# DeprecationWarning. Keeping the table and generator SIL-free lets them be
+# unit-tested without FieldWorks (tests/test_flexproject_aliases.py).
+from ._op_aliases import (  # noqa: E402
+    OP_NAMESPACE_ALIASES as _OP_NAMESPACE_ALIASES,
+    install_op_namespace_aliases as _install_op_namespace_aliases,
+)
+
+FLExProject._OP_NAMESPACE_ALIASES = _OP_NAMESPACE_ALIASES
+_install_op_namespace_aliases(FLExProject)
