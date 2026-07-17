@@ -38,7 +38,7 @@ import logging
 import os
 import clr
 
-from .Shared.string_utils import normalize_ws_handle
+from .Shared.string_utils import normalize_ws_handle, best_multistring_alternative
 
 clr.AddReference("System")
 import System
@@ -3353,7 +3353,27 @@ class FLExProject(object):
                 WSHandle = self.__WSHandle(languageTagOrHandle, None)
                 return mua.get_String(WSHandle)
             else:
-                return ITsString(mua.BestAnalysisVernacularAlternative)
+                # mua is a bare ITsMultiString (SIL.LCModel.Core.KernelInterfaces),
+                # which has no BestAnalysisVernacularAlternative accessor (that
+                # lives on IMultiAccessorBase). Reimplement the "best available
+                # alternative" priority walk on top of get_String() instead.
+                # See issue #224.
+                analWsHandles = [int(ws.Handle) for ws in self.lp.CurrentAnalysisWritingSystems]
+                vernWsHandles = [int(ws.Handle) for ws in self.lp.CurrentVernacularWritingSystems]
+                best = best_multistring_alternative(
+                    mua,
+                    self.project.DefaultAnalWs,
+                    self.project.DefaultVernWs,
+                    analWsHandles,
+                    vernWsHandles,
+                )
+                if best is not None:
+                    return best
+                # Total miss across every configured WS: still return a
+                # (possibly empty) ITsString so this branch's contract
+                # matches the sibling branches above/below, which always
+                # return ITsString.
+                return ITsString(mua.get_String(self.project.DefaultAnalWs))
 
         elif fieldType == CellarPropertyType.Integer:
             return self.project.DomainDataByFlid.get_IntProp(hvo, fieldID)

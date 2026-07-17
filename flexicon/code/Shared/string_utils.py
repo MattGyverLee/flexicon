@@ -223,3 +223,84 @@ def best_text(multi_obj):
         return ""
     text = multi_obj.BestAnalysisVernacularAlternative.Text
     return normalize_text(text)
+
+
+def best_multistring_alternative(mua, default_anal_ws, default_vern_ws,
+                                  fallback_anal_ws_handles=(),
+                                  fallback_vern_ws_handles=()):
+    """
+    Get the best-available alternative from a bare ``ITsMultiString`` as an
+    ``ITsString``, without relying on ``BestAnalysisVernacularAlternative``.
+
+    ``ITsMultiString`` (``SIL.LCModel.Core.KernelInterfaces``) does NOT
+    implement ``IMultiAccessorBase``, so it has no
+    ``BestAnalysisAlternative`` / ``BestVernacularAlternative`` /
+    ``BestAnalysisVernacularAlternative`` accessors -- only
+    ``get_String(wsHandle)``, ``StringCount``, and
+    ``GetStringFromIndex(i, out ws)``. This helper reimplements the "best
+    alternative" priority walk directly on top of ``get_String`` so callers
+    that only hold an ``ITsMultiString`` (e.g. custom field values obtained
+    via ``get_MultiStringProp``) can still get a sensible fallback string.
+
+    Priority order (first hit wins). A candidate is a MISS if it is None or
+    its ``.Text`` is falsy or equal to the FLEx null marker (``***``):
+        1. ``default_anal_ws``
+        2. ``default_vern_ws``
+        3. each handle in ``fallback_anal_ws_handles``, in order
+        4. each handle in ``fallback_vern_ws_handles``, in order
+
+    Args:
+        mua: An ``ITsMultiString`` (or ``None``).
+        default_anal_ws: Default analysis writing-system handle (int).
+        default_vern_ws: Default vernacular writing-system handle (int).
+        fallback_anal_ws_handles: Ordered iterable of additional analysis
+            writing-system handles to try (int handles).
+        fallback_vern_ws_handles: Ordered iterable of additional vernacular
+            writing-system handles to try (int handles).
+
+    Returns:
+        The first non-empty alternative as an ``ITsString``, or ``None`` if
+        every candidate was empty/unset or ``mua`` is ``None``. Callers must
+        handle the ``None`` case (e.g. falling back to an empty ``ITsString``)
+        since this helper never fabricates one itself.
+
+    Example:
+        >>> best = best_multistring_alternative(
+        ...     mua, project.DefaultAnalWs, project.DefaultVernWs,
+        ...     anal_handles, vern_handles)
+        >>> if best is None:
+        ...     best = ITsString(mua.get_String(project.DefaultAnalWs))
+    """
+    if mua is None:
+        return None
+
+    def _hit(ws_handle):
+        if ws_handle is None:
+            return None
+        candidate = mua.get_String(ws_handle)
+        if candidate is None:
+            return None
+        text = getattr(candidate, "Text", None)
+        if not text or text == FLEX_NULL_MARKER:
+            return None
+        return candidate
+
+    result = _hit(default_anal_ws)
+    if result is not None:
+        return result
+
+    result = _hit(default_vern_ws)
+    if result is not None:
+        return result
+
+    for ws_handle in fallback_anal_ws_handles:
+        result = _hit(ws_handle)
+        if result is not None:
+            return result
+
+    for ws_handle in fallback_vern_ws_handles:
+        result = _hit(ws_handle)
+        if result is not None:
+            return result
+
+    return None

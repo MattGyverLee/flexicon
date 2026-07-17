@@ -147,6 +147,19 @@ class _FLExTransaction:
             logger.debug(f"Transaction '{self._label}': read-only project, skipping mark")
             return self
 
+        if self._mark_fn is None:
+            # The LCM Mark/RollbackToMark API is not discoverable in this build
+            # (see docstring above and issue #210). This is the expected default,
+            # not an error, so log at debug rather than emitting a misleading
+            # "could not set mark: 'NoneType' object is not callable" warning
+            # once per transaction (issue #221).
+            self._mark = None
+            logger.debug(
+                f"Transaction '{self._label}': LCM mark API unavailable, "
+                f"proceeding without rollback capability"
+            )
+            return self
+
         try:
             self._mark = self._mark_fn()
             logger.debug(f"Transaction '{self._label}': marked at {self._mark}")
