@@ -99,6 +99,51 @@ class MediaOperations(BaseOperations):
             return self.project.project.DefaultAnalWs
         return self.project._FLExProject__WSHandle(wsHandle, self.project.project.DefaultAnalWs)
 
+    # Image extensions used to route a new file to the Pictures folder.
+    __IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tif", ".tiff", ".svg"}
+
+    def __GetOrCreateMediaFolder(self, file_path):
+        """
+        Return an owned CmFolder suitable for a new media file, creating one if
+        the project has none yet.
+
+        In LibLCM a CmFile must live in a CmFolder before its InternalPath can be
+        set (see issue #226). Images belong under LangProject.PicturesOC ("Local
+        Pictures"); audio, video and everything else belong under
+        LangProject.MediaOC ("Local Media"). Reuses the first existing folder in
+        the relevant owning collection when present.
+
+        Args:
+            file_path: The internal/external file path (used to pick the folder
+                       by extension).
+
+        Returns:
+            ICmFolder: An owned folder to which the new CmFile can be added.
+        """
+        lp = self.project.lp
+        _, ext = os.path.splitext(file_path.lower())
+
+        if ext in self.__IMAGE_EXTS:
+            owning_collection = lp.PicturesOC
+            folder_name = "Local Pictures"
+        else:
+            owning_collection = lp.MediaOC
+            folder_name = "Local Media"
+
+        # Reuse an existing folder if the project already has one.
+        for folder in owning_collection:
+            return folder
+
+        # Otherwise create and own a new folder.
+        folder_factory = self.project.project.ServiceLocator.GetService(ICmFolderFactory)
+        folder = folder_factory.Create()
+        owning_collection.Add(folder)
+
+        wsHandle = self.project.project.DefaultAnalWs
+        folder.Name.set_String(wsHandle, TsStringUtils.MakeString(folder_name, wsHandle))
+
+        return folder
+
     # --- Core CRUD Operations ---
 
     @wrap_enumerable
@@ -182,12 +227,21 @@ class MediaOperations(BaseOperations):
 
         wsHandle = self.__WSHandle(wsHandle)
 
+        file_path = file_path.strip()
+
         # Get the factory and create the media file
         factory = self.project.project.ServiceLocator.GetService(ICmFileFactory)
         new_media = factory.Create()
 
-        # Set the internal path
-        new_media.InternalPath = file_path.strip()
+        # An ICmFile must be owned by a CmFolder *before* InternalPath is set.
+        # CmFile.set_InternalPath resolves the path against its owning folder /
+        # LinkedFilesRootDir, so setting it on a freshly-created, unowned file
+        # dereferences null and throws a .NET NullReferenceException (issue #226).
+        folder = self.__GetOrCreateMediaFolder(file_path)
+        folder.FilesOC.Add(new_media)
+
+        # Set the internal path (safe now that the file is owned)
+        new_media.InternalPath = file_path
 
         # Set label if provided
         if label:
@@ -636,11 +690,11 @@ class MediaOperations(BaseOperations):
         if os.path.isabs(internal_path):
             return internal_path
 
-        # Otherwise, resolve relative to project LinkedFiles directory
-        # Note: This assumes project has a LinkedFiles directory
-        # In actual FLEx, this would use the project's LinkedFilesRootDir
-        if hasattr(self.project.project, "LinkedFilesRootDir"):
-            linked_files_dir = self.project.project.LinkedFilesRootDir
+        # Otherwise, resolve relative to project LinkedFiles directory.
+        # LinkedFilesRootDir lives on ILangProject, not on the LcmCache
+        # (self.project.project) — see issue #226.
+        linked_files_dir = getattr(self.project.lp, "LinkedFilesRootDir", None)
+        if linked_files_dir:
             return os.path.join(linked_files_dir, internal_path)
 
         # Fallback: return internal path if we can't resolve
@@ -1246,7 +1300,7 @@ class MediaOperations(BaseOperations):
             ...     label="Speaker 1"
             ... )
             >>> print(project.Media.GetInternalPath(media))
-            LinkedFiles/AudioVisual/audio.wav
+            AudioVisual/audio.wav
 
             >>> # Import an image
             >>> photo = project.Media.CopyToProject(
@@ -1277,13 +1331,15 @@ class MediaOperations(BaseOperations):
         if not os.path.exists(external_path):
             raise FP_ParameterError(f"File not found: {external_path}")
 
-        # Get LinkedFiles directory
-        if not hasattr(self.project.project, "LinkedFilesRootDir"):
+        # Get LinkedFiles directory. LinkedFilesRootDir lives on ILangProject, not
+        # on the LcmCache (self.project.project); testing it on the cache made the
+        # guard always fire and skip the copy (issue #226).
+        linked_files_dir = getattr(self.project.lp, "LinkedFilesRootDir", None)
+        if not linked_files_dir:
             # If LinkedFilesRootDir not available, create reference only
             logger.warning("LinkedFilesRootDir not available, creating reference without copying")
             return self.Create(external_path, label, wsHandle)
 
-        linked_files_dir = self.project.project.LinkedFilesRootDir
         target_dir = os.path.join(linked_files_dir, internal_subdir)
 
         # Create target directory if it doesn't exist
@@ -1306,8 +1362,10 @@ class MediaOperations(BaseOperations):
         # Copy the file
         shutil.copy2(external_path, target_path)
 
-        # Create internal path (relative to LinkedFiles)
-        internal_path = os.path.join("LinkedFiles", internal_subdir, filename)
+        # Create internal path relative to LinkedFilesRootDir (which already *is*
+        # the LinkedFiles directory), so CmFile.AbsoluteInternalPath resolves to
+        # the copied file rather than a doubled "LinkedFiles/LinkedFiles/..." path.
+        internal_path = os.path.join(internal_subdir, filename)
 
         # Create media reference
         return self.Create(internal_path, label, wsHandle)

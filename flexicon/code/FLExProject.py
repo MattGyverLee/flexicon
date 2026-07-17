@@ -2711,9 +2711,10 @@ class FLExProject(object):
         """
         import os
 
-        # Try to get LinkedFilesRootDir from project
-        if hasattr(self.project, "LinkedFilesRootDir") and self.project.LinkedFilesRootDir:
-            return self.project.LinkedFilesRootDir
+        # Try to get LinkedFilesRootDir. It lives on ILangProject (self.lp), not
+        # on the LcmCache (self.project) — see issue #226.
+        if getattr(self.lp, "LinkedFilesRootDir", None):
+            return self.lp.LinkedFilesRootDir
 
         # Fallback: construct default path from project folder
         if hasattr(self.project, "ProjectId") and hasattr(self.project.ProjectId, "ProjectFolder"):
