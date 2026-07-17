@@ -85,6 +85,52 @@ class WfiGlossOperations(BaseOperations):
             return self.project.project.DefaultAnalWs
         return self.project._FLExProject__WSHandle(wsHandle, self.project.project.DefaultAnalWs)
 
+    def __ResolveGloss(self, gloss_or_hvo):
+        """
+        Resolve an HVO or object to a concrete IWfiGloss proxy.
+
+        Segment analyses (SegmentOperations.GetAnalyses) come back as
+        polymorphic IAnalysis references. Reading ``.Form`` off an
+        IAnalysis-typed proxy silently yields '' even when the underlying
+        object *is* a gloss -- the classic issue #212 trap. Casting with
+        ``IWfiGloss(obj)`` surfaces the real Form regardless of the proxy's
+        static type. A genuinely non-gloss token raises a clear, actionable
+        error instead of silently returning ''.
+
+        Args:
+            gloss_or_hvo: An IWfiGloss / IAnalysis object, or an HVO (int).
+
+        Returns:
+            IWfiGloss: The object cast to the concrete gloss interface.
+
+        Raises:
+            FP_ParameterError: If the object is not an IWfiGloss.
+        """
+        if isinstance(gloss_or_hvo, int):
+            gloss = self.project.Object(gloss_or_hvo)
+        else:
+            gloss = gloss_or_hvo
+
+        # pythonnet isinstance() against the concrete IWfiGloss interface
+        # returns False for a base IAnalysis-typed reference even when the
+        # object IS a gloss -- exactly what SegmentOperations.GetAnalyses hands
+        # back. Dispatch on ClassName (the cast_to_concrete idiom) instead of
+        # isinstance so the guard fires only on genuinely non-gloss tokens.
+        if getattr(gloss, "ClassName", None) != "WfiGloss":
+            raise FP_ParameterError(
+                "Expected an IWfiGloss but got {0}. Segment analyses are "
+                "polymorphic IAnalysis objects; only IWfiGloss tokens carry a "
+                "gloss form, and reading .Form off another subtype silently "
+                "returns ''. Cast with IWfiGloss(obj) or use "
+                "SegmentOperations.GetGloss(analysis, ws).".format(
+                    getattr(gloss, "ClassName", type(gloss).__name__)
+                )
+            )
+
+        # Explicit cast so pythonnet surfaces IWfiGloss.Form even when the
+        # caller passed an IAnalysis-typed reference (issue #212).
+        return IWfiGloss(gloss)
+
     # --- Core CRUD Operations ---
 
     @wrap_enumerable
@@ -323,13 +369,9 @@ class WfiGlossOperations(BaseOperations):
 
         self._ValidateParam(gloss_or_hvo, "gloss_or_hvo")
 
-        # Resolve to gloss object
-        if isinstance(gloss_or_hvo, int):
-            gloss = self.project.Object(gloss_or_hvo)
-            if not isinstance(gloss, IWfiGloss):
-                raise FP_ParameterError("HVO does not refer to a wordform gloss")
-        else:
-            gloss = gloss_or_hvo
+        # Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises
+        # on non-gloss subtypes instead of silently returning '' -- issue #212)
+        gloss = self.__ResolveGloss(gloss_or_hvo)
 
         # Get the owning analysis; MeaningsOC is declared on IWfiAnalysis so
         # cast unconditionally to surface the typed collection accessor.
@@ -386,13 +428,8 @@ class WfiGlossOperations(BaseOperations):
 
         self._ValidateParam(item_or_hvo, "item_or_hvo")
 
-        # Resolve to gloss object
-        if isinstance(item_or_hvo, int):
-            source = self.project.Object(item_or_hvo)
-            if not isinstance(source, IWfiGloss):
-                raise FP_ParameterError("HVO does not refer to a wordform gloss")
-        else:
-            source = item_or_hvo
+        # Resolve to a concrete IWfiGloss (issue #212)
+        source = self.__ResolveGloss(item_or_hvo)
 
         parent = self._GetObject(source.Owner.Hvo)
 
@@ -447,13 +484,9 @@ class WfiGlossOperations(BaseOperations):
         """
         self._ValidateParam(gloss_or_hvo, "gloss_or_hvo")
 
-        # Resolve to gloss object
-        if isinstance(gloss_or_hvo, int):
-            gloss = self.project.Object(gloss_or_hvo)
-            if not isinstance(gloss, IWfiGloss):
-                raise FP_ParameterError("HVO does not refer to a wordform gloss")
-        else:
-            gloss = gloss_or_hvo
+        # Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises
+        # on non-gloss subtypes instead of silently returning '' -- issue #212)
+        gloss = self.__ResolveGloss(gloss_or_hvo)
 
         wsHandle = self.__WSHandle(wsHandle)
 
@@ -502,13 +535,9 @@ class WfiGlossOperations(BaseOperations):
         self._ValidateParam(gloss_or_hvo, "gloss_or_hvo")
         self._ValidateParam(text, "text")
 
-        # Resolve to gloss object
-        if isinstance(gloss_or_hvo, int):
-            gloss = self.project.Object(gloss_or_hvo)
-            if not isinstance(gloss, IWfiGloss):
-                raise FP_ParameterError("HVO does not refer to a wordform gloss")
-        else:
-            gloss = gloss_or_hvo
+        # Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises
+        # on non-gloss subtypes instead of silently returning '' -- issue #212)
+        gloss = self.__ResolveGloss(gloss_or_hvo)
 
         wsHandle = self.__WSHandle(wsHandle)
 
@@ -552,13 +581,9 @@ class WfiGlossOperations(BaseOperations):
         """
         self._ValidateParam(gloss_or_hvo, "gloss_or_hvo")
 
-        # Resolve to gloss object
-        if isinstance(gloss_or_hvo, int):
-            gloss = self.project.Object(gloss_or_hvo)
-            if not isinstance(gloss, IWfiGloss):
-                raise FP_ParameterError("HVO does not refer to a wordform gloss")
-        else:
-            gloss = gloss_or_hvo
+        # Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises
+        # on non-gloss subtypes instead of silently returning '' -- issue #212)
+        gloss = self.__ResolveGloss(gloss_or_hvo)
 
         forms = {}
         # Iterate through available writing systems
@@ -606,13 +631,9 @@ class WfiGlossOperations(BaseOperations):
         """
         self._ValidateParam(gloss_or_hvo, "gloss_or_hvo")
 
-        # Resolve to gloss object
-        if isinstance(gloss_or_hvo, int):
-            gloss = self.project.Object(gloss_or_hvo)
-            if not isinstance(gloss, IWfiGloss):
-                raise FP_ParameterError("HVO does not refer to a wordform gloss")
-        else:
-            gloss = gloss_or_hvo
+        # Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises
+        # on non-gloss subtypes instead of silently returning '' -- issue #212)
+        gloss = self.__ResolveGloss(gloss_or_hvo)
 
         # Cast to declared return type IWfiAnalysis. Raw gloss.Owner is typed
         # as ICmObject in LCM; pythonnet only surfaces IWfiAnalysis properties
@@ -654,13 +675,9 @@ class WfiGlossOperations(BaseOperations):
         """
         self._ValidateParam(gloss_or_hvo, "gloss_or_hvo")
 
-        # Resolve to gloss object
-        if isinstance(gloss_or_hvo, int):
-            gloss = self.project.Object(gloss_or_hvo)
-            if not isinstance(gloss, IWfiGloss):
-                raise FP_ParameterError("HVO does not refer to a wordform gloss")
-        else:
-            gloss = gloss_or_hvo
+        # Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises
+        # on non-gloss subtypes instead of silently returning '' -- issue #212)
+        gloss = self.__ResolveGloss(gloss_or_hvo)
 
         return gloss.Guid
 
@@ -848,13 +865,9 @@ class WfiGlossOperations(BaseOperations):
         """
         self._ValidateParam(gloss_or_hvo, "gloss_or_hvo")
 
-        # Resolve to gloss object
-        if isinstance(gloss_or_hvo, int):
-            gloss = self.project.Object(gloss_or_hvo)
-            if not isinstance(gloss, IWfiGloss):
-                raise FP_ParameterError("HVO does not refer to a wordform gloss")
-        else:
-            gloss = gloss_or_hvo
+        # Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises
+        # on non-gloss subtypes instead of silently returning '' -- issue #212)
+        gloss = self.__ResolveGloss(gloss_or_hvo)
 
         # Try default analysis WS first
         default_ws = self.project.project.DefaultAnalWs
@@ -912,13 +925,8 @@ class WfiGlossOperations(BaseOperations):
         self._ValidateParam(gloss_or_hvo, "gloss_or_hvo")
         self._ValidateParam(target_analysis_or_hvo, "target_analysis_or_hvo")
 
-        # Resolve to gloss object
-        if isinstance(gloss_or_hvo, int):
-            source_gloss = self.project.Object(gloss_or_hvo)
-            if not isinstance(source_gloss, IWfiGloss):
-                raise FP_ParameterError("HVO does not refer to a wordform gloss")
-        else:
-            source_gloss = gloss_or_hvo
+        # Resolve to a concrete IWfiGloss (issue #212)
+        source_gloss = self.__ResolveGloss(gloss_or_hvo)
 
         # Resolve to target analysis object
         if isinstance(target_analysis_or_hvo, int):

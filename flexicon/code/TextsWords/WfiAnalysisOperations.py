@@ -188,6 +188,43 @@ class WfiAnalysisOperations(BaseOperations):
             return analysis
         return analysis_or_hvo
 
+    def __ResolveOwningAnalysis(self, analysis_or_hvo):
+        """
+        Map any segment analysis token to its owning IWfiAnalysis.
+
+        ``SegmentOperations.GetAnalyses`` yields polymorphic ``IAnalysis``
+        tokens. The owner-chasing needed to reach a usable ``IWfiAnalysis``
+        (for category / morph bundles) differs per concrete type, which is why
+        interlinear loops kept re-implementing it (issue #212):
+
+          - ``IWfiGloss``  -> its ``Owner`` is the ``IWfiAnalysis``.
+          - ``IWfiAnalysis`` -> itself (cast so typed members surface).
+          - ``IWfiWordform`` (unanalyzed) / ``IPunctuationForm`` -> no owning
+            analysis; returns ``None``.
+
+        Args:
+            analysis_or_hvo: An IAnalysis token or its HVO (int).
+
+        Returns:
+            IWfiAnalysis or None: The owning analysis, or None for token types
+            that have none.
+        """
+        if isinstance(analysis_or_hvo, int):
+            obj = self.project.Object(analysis_or_hvo)
+        else:
+            obj = analysis_or_hvo
+
+        # Dispatch on ClassName: pythonnet isinstance() against the concrete
+        # IWfiGloss/IWfiAnalysis interfaces is False for the base IAnalysis-typed
+        # tokens GetAnalyses returns (issue #212). WfiGloss is checked first
+        # because its owner is the analysis we want, not the gloss itself.
+        class_name = getattr(obj, "ClassName", None)
+        if class_name == "WfiGloss":
+            return IWfiAnalysis(obj.Owner)
+        if class_name == "WfiAnalysis":
+            return IWfiAnalysis(obj)
+        return None
+
     # --- Core CRUD Operations ---
 
     @wrap_enumerable
@@ -1158,6 +1195,45 @@ class WfiAnalysisOperations(BaseOperations):
 
         return analysis.MorphBundlesOS.Count
 
+    @OperationsMethod
+    def GetMorphemeBundles(self, analysis_or_hvo):
+        """
+        Get morpheme bundles for any segment analysis token (owner-resolving).
+
+        Unlike :meth:`GetMorphBundles` (which requires a concrete
+        ``IWfiAnalysis``), this accepts the polymorphic ``IAnalysis`` tokens
+        that ``SegmentOperations.GetAnalyses`` returns and resolves the owning
+        ``IWfiAnalysis`` automatically. This is the traversal helper interlinear
+        loops kept hand-rolling (issue #212).
+
+        Args:
+            analysis_or_hvo: An IAnalysis token (IWfiGloss / IWfiAnalysis /
+                IWfiWordform / IPunctuationForm) or its HVO.
+
+        Returns:
+            list: The IWfiMorphBundle objects for the owning analysis, in
+            sequence order. Empty list for token types with no owning analysis
+            (unanalyzed wordform, punctuation).
+
+        Raises:
+            FP_NullParameterError: If analysis_or_hvo is None.
+
+        Example:
+            >>> for tok in project.Segments.GetAnalyses(segment):
+            ...     for mb in project.WfiAnalyses.GetMorphemeBundles(tok):
+            ...         ...  # no manual IWfiGloss -> Owner -> WfiAnalysis chase
+
+        See Also:
+            GetMorphBundles, GetCategoryAbbrev, SegmentOperations.GetGloss
+        """
+        self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
+
+        analysis = self.__ResolveOwningAnalysis(analysis_or_hvo)
+        if analysis is None:
+            return []
+
+        return list(analysis.MorphBundlesOS)
+
     # --- Category Operations ---
 
     @OperationsMethod
@@ -1204,6 +1280,50 @@ class WfiAnalysisOperations(BaseOperations):
             return analysis.CategoryRA
 
         return None
+
+    @OperationsMethod
+    def GetCategoryAbbrev(self, analysis_or_hvo, wsHandle=None):
+        """
+        Get the category (POS) abbreviation for any analysis token.
+
+        Owner-resolving convenience wrapper over :meth:`GetCategory` +
+        ``project.POS.GetAbbreviation`` that accepts the polymorphic
+        ``IAnalysis`` tokens from ``SegmentOperations.GetAnalyses`` -- an
+        ``IWfiGloss`` resolves to its owning ``IWfiAnalysis`` automatically.
+        Saves interlinear loops from hand-rolling the
+        ``gloss -> Owner -> WfiAnalysis -> CategoryRA -> Abbreviation`` chase
+        (issue #212).
+
+        Args:
+            analysis_or_hvo: An IAnalysis token or its HVO.
+            wsHandle: Optional writing system handle. Defaults to analysis WS.
+
+        Returns:
+            str: The POS abbreviation (e.g. "V", "N"), or '' when the token has
+            no owning analysis or no category assigned.
+
+        Raises:
+            FP_NullParameterError: If analysis_or_hvo is None.
+
+        Example:
+            >>> for tok in project.Segments.GetAnalyses(segment):
+            ...     abbr = project.WfiAnalyses.GetCategoryAbbrev(tok)
+            ...     print(abbr)
+
+        See Also:
+            GetCategory, GetMorphemeBundles, SegmentOperations.GetGloss
+        """
+        self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
+
+        analysis = self.__ResolveOwningAnalysis(analysis_or_hvo)
+        if analysis is None:
+            return ""
+
+        category = analysis.CategoryRA
+        if category is None:
+            return ""
+
+        return self.project.POS.GetAbbreviation(category, wsHandle)
 
     @OperationsMethod
     def SetCategory(self, analysis_or_hvo, category):

@@ -230,7 +230,10 @@ class SegmentOperations(BaseOperations):
             GetAll, GetBaselineText
 
         Notes:
-            Each analysis can be an IWfiWordform, IWfiGloss, or IWfiAnalysis object.
+            Each analysis can be an IWfiWordform, IWfiAnalysis, IWfiGloss, or
+            IPunctuationForm object. IPunctuationForm is a legitimate member
+            of this collection (punctuation tokens implement IAnalysis too),
+            not an error case -- callers must not assume every entry is a word.
             These represent different levels of linguistic analysis for each word.
         """
         self._ValidateParam(segment_or_hvo, "segment_or_hvo")
@@ -238,6 +241,54 @@ class SegmentOperations(BaseOperations):
         segment_obj = self.__GetSegmentObject(segment_or_hvo)
         analyses = list(segment_obj.AnalysesRS)
         return analyses
+
+    @OperationsMethod
+    def GetGloss(self, analysis_or_hvo, wsHandle=None):
+        """
+        Get the gloss text for a segment analysis token of any type.
+
+        ``GetAnalyses()`` returns polymorphic ``IAnalysis`` objects -- a mix of
+        ``IWfiWordform`` (unanalyzed), ``IWfiAnalysis`` (analyzed, no chosen
+        gloss), ``IWfiGloss`` (fully glossed), and ``IPunctuationForm``. Only
+        ``IWfiGloss`` tokens carry a chosen word gloss; reading it off the wrong
+        subtype (or off an un-cast ``IAnalysis`` reference) silently yields ''
+        (issue #212). This helper dispatches on the concrete type so callers
+        stop hand-rolling ``IWfiGloss(tok)`` casts in interlinear loops.
+
+        Args:
+            analysis_or_hvo: An IAnalysis token (from GetAnalyses) or its HVO.
+            wsHandle: Optional writing system handle. Defaults to analysis WS.
+
+        Returns:
+            str: The gloss text for an IWfiGloss token; '' for token types that
+            carry no chosen word gloss (wordform, bare analysis, punctuation).
+
+        Raises:
+            FP_NullParameterError: If analysis_or_hvo is None.
+
+        Example:
+            >>> for tok in project.Segments.GetAnalyses(segment):
+            ...     gloss = project.Segments.GetGloss(tok, eng_ws)   # no cast!
+            ...     print(gloss)
+
+        See Also:
+            GetAnalyses, WfiAnalyses.GetCategoryAbbrev, WfiAnalyses.GetMorphemeBundles
+        """
+        self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
+
+        if isinstance(analysis_or_hvo, int):
+            token = self.project.Object(analysis_or_hvo)
+        else:
+            token = analysis_or_hvo
+
+        # Only IWfiGloss carries a chosen word gloss. Dispatch on ClassName --
+        # pythonnet isinstance() against IWfiGloss is False for the base
+        # IAnalysis-typed refs GetAnalyses returns (issue #212). WfiGlosses
+        # .GetForm does the concrete IWfiGloss(...) cast internally.
+        if getattr(token, "ClassName", None) == "WfiGloss":
+            return self.project.WfiGlosses.GetForm(token, wsHandle)
+
+        return ""
 
     @OperationsMethod
     def GetBaselineText(self, segment_or_hvo):
