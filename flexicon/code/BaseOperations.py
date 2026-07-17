@@ -1826,10 +1826,12 @@ class BaseOperations:
 
     def _ValidateParam(self, param: any, param_name: str = "parameter") -> None:
         """
-        Validate that a parameter is not None.
+        Validate that a parameter is not None and not a stale LCM object.
 
         This method performs a null check on a required parameter. Use this for
-        any parameter that must be provided and non-None.
+        any parameter that must be provided and non-None. When the parameter is
+        a live LCM object reference, it is additionally rejected if it refers to
+        a deleted/invalid object (``IsValidObject`` is False).
 
         Args:
             param: The parameter value to validate (any type).
@@ -1840,7 +1842,9 @@ class BaseOperations:
             None
 
         Raises:
-            Exception: If param is None.
+            FP_NullParameterError: If param is None.
+            FP_ParameterError: If param is an LCM object that has been deleted
+                or otherwise invalidated (``IsValidObject`` is False).
 
         Example:
             >>> def SetGloss(self, sense, gloss):
@@ -1862,11 +1866,25 @@ class BaseOperations:
 
         Implementation Notes:
             - Simple if param is None check
+            - Stale-reference guard: a cascade-deleted LCM object keeps a live
+              .NET reference but its Cache/Services pointers are torn down, so
+              touching any property raises a NullReferenceException from deep
+              inside LCM. ICmObject exposes IsValidObject (False once deleted);
+              mirrors LCM's own guard pattern (OverridesLing_Lex.cs:1500).
+            - getattr(..., None) means non-LCM params (str/int/dict/etc.) have
+              no IsValidObject attribute -> None -> skipped. Only an explicit
+              False triggers the error, so a True value is never mistaken.
             - No side effects
             - Exception message includes parameter name
         """
         if param is None:
             raise FP_NullParameterError()
+        # Reject stale LCM object references (cascade-deleted / invalidated).
+        # Non-LCM params return None here and are left untouched.
+        if getattr(param, "IsValidObject", None) is False:
+            raise FP_ParameterError(
+                f"{param_name} refers to a deleted or invalid LCM object"
+            )
 
     def _ValidateParamNotEmpty(self, param: any, param_name: str = "parameter") -> None:
         """

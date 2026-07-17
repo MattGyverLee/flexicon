@@ -646,6 +646,32 @@ Both bugs share the root cause: a pattern that works correctly for one LCM type 
 
 ---
 
+## Category 11: Stale LCM object references (issue #205)
+### [DONE] RESOLVED - `_ValidateParam` stale-reference guard
+
+**Status**: Implemented. `BaseOperations._ValidateParam` now rejects deleted/invalid LCM objects framework-wide.
+
+**Problem**: A cascade-deleted LCM object keeps a live .NET reference, but its internal Cache/Services pointers are torn down. Touching *any* property — read, edit, or delete — then raises `System.NullReferenceException` from deep inside LCM (e.g. `LcmSet.Remove` -> `CmObject.DeleteObject`), far from the call site that actually passed the stale reference. The concrete origin was `MSAOperations.ChangeAffixVariant`, where the new-MSA factory call cascade-deleted the old MSA (no senses left referencing it) and a subsequent `MorphoSyntaxAnalysesOC.Remove(old_msa)` NPE'd.
+
+**Fix**: `_ValidateParam` (the entry-point null check nearly every operation already calls) additionally rejects LCM objects whose `IsValidObject` is `False`:
+
+```python
+if getattr(param, "IsValidObject", None) is False:
+    raise FP_ParameterError(
+        f"{param_name} refers to a deleted or invalid LCM object"
+    )
+```
+
+This mirrors LCM's own guard pattern (`OverridesLing_Lex.cs:1500`). It converts an opaque downstream NPE into a clear `FP_ParameterError` naming the offending parameter.
+
+**Why `getattr(..., None) is False`**: non-LCM parameters (`str`, `int`, `dict`, `list`, `bool`, plain objects) have no `IsValidObject` attribute, so `getattr` returns `None` and the guard is skipped. Only an explicit `False` triggers the error — a falsy-but-not-`False` value (e.g. `0`, `""`, empty dict, bare `False`) is never mistaken for an invalid object, and `IsValidObject == None` is likewise ignored.
+
+**Coverage**: `tests/operations/test_validate_param_isvalidobject.py` (pure-Python, no LCM/FieldWorks required).
+
+**Scope note**: the guard covers the dominant risk window — a stale reference passed in at method entry. It does *not* cover an object cascade-deleted *mid-method* by a prior mutation in the same call; those sites still need a local `if obj.IsValidObject:` check before the delete/remove (see #205 risk table).
+
+---
+
 ## Summary Statistics
 
 ### By Status (Updated):
