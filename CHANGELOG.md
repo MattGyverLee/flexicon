@@ -15,6 +15,16 @@ _Nothing yet. Non-breaking fixes and breaking changes accumulate here until the 
 
 ---
 
+## [4.2.1]
+
+### Fixed
+- **Runtime version string:** bumped the `flexicon.version` attribute in
+  `flexicon/__init__.py`, which was left at `4.1.2` during the 4.2.0 cut so
+  the published 4.2.0 wheel reported a stale runtime version. Now matches the
+  distribution version.
+
+---
+
 ## [4.2.0]
 
 ### Added
