@@ -15,6 +15,65 @@ _Nothing yet. Non-breaking fixes and breaking changes accumulate here until the 
 
 ---
 
+## [4.2.0]
+
+### Added
+- **`MsaFactoryOperations.CreateStem` / `CreateUnclassifiedAffix`** now
+  accept `pos=None` for a category-less stem or unclassified-affix MSA
+  (a valid, blank-category-cell FLEx state), mirroring the existing
+  `CreateDerivAff` `to_pos=None` precedent. Unblocks cross-project
+  transfer of category-less MSAs (9c04ab8).
+
+### Fixed
+- **`MsaFactoryOperations.CreateInflAff`** accepts `pos=None` for a
+  category-less inflectional affix, matching `CreateStem` /
+  `CreateUnclassifiedAffix` (6f316b3).
+- **Morph-type classification** unified into a single shared module
+  (`Shared/morph_type_utils.py`); `LexEntryOperations`,
+  `AllomorphOperations`, and `LexSenseOperations` no longer each carry
+  independently drifting stem/affix GUID sets. Fixes a silent logical
+  inversion in `LexSenseOperations.__EntryHasAffixMorphType`'s GUID set.
+  `MorphRuleOperations.Duplicate` now defaults `deep=True`, matching the
+  LexEntry/Text family (#203, #213, #214).
+- **`wrap_enumerable`** now catches bare Python iterators/generators (not
+  just raw C# `IEnumerable`), so `GetAll()`/`GetAnalyses()`-style methods
+  across ~20 Operations classes reliably return a subscriptable,
+  `len()`-able collection instead of raising `TypeError` on `entries[0]`
+  or `len(entries)` (#201).
+- **`MediaOperations.Create`** now owns a new `CmFile` in the appropriate
+  `CmFolder` before setting `InternalPath`, fixing a
+  `NullReferenceException` that made the add-a-picture/media surface
+  (`AddPicture`, `CopyToProject`, `Create`, `AddMediaFile`) unusable.
+  `CopyToProject`'s `LinkedFilesRootDir` guard now reads from `ILangProject`
+  instead of the `LcmCache` (#226).
+- **`GetCustomFieldValue`** on a bare `ITsMultiString` (no
+  `BestAnalysisVernacularAlternative` accessor) now resolves the best
+  alternative by writing-system priority instead of failing (#224).
+  Transaction entry no longer logs a misleading "NoneType is not
+  callable" warning when the LCM `Mark` API is unavailable; it logs at
+  debug level and proceeds without rollback capability (#221).
+- **`BaseOperations._ValidateParam`** guards against stale/deleted LCM
+  objects (`IsValidObject is False`), raising `FP_ParameterError` naming
+  the parameter instead of an opaque `NullReferenceException` deep
+  inside LCM (#205).
+- **`SegmentOperations.GetAnalyses`** / `WfiGlossOperations` — polymorphic
+  `IAnalysis` tokens (`IWfiWordform` / `IWfiAnalysis` / `IWfiGloss` /
+  `IPunctuationForm`) are now resolved by `ClassName` rather than
+  `isinstance`, which is unreliable against base-typed LCM refs. Adds
+  `SegmentOperations.GetGloss`, `WfiAnalysisOperations.GetCategoryAbbrev`,
+  and `GetMorphemeBundles` polymorphic helpers (#212).
+
+### Changed
+- **`FLExProject`** singular/plural accessor aliases (e.g.
+  `InflectionFeature`/`InflectionFeatures`) are now generated from a
+  single table (`_op_aliases.py`, 58 aliases) instead of ~10 hand-written
+  properties, closing the gap where a guessed accessor name raised
+  `AttributeError`. All previously hand-written aliases are preserved;
+  each now emits a `DeprecationWarning` naming the canonical accessor
+  (#200).
+
+---
+
 ## [4.1.2]
 
 ### Fixed
