@@ -4,7 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyflexicon"
-version = "4.2.1"
+# Single source of truth: flexicon/__init__.py `version`. setuptools reads this
+# statically (no package import needed) via [tool.setuptools.dynamic] below.
+dynamic = ["version"]
 description = "flexicon: a user-centric Python library for FieldWorks Language Explorer (FLEx) projects via the SIL Language and Culture Model (LCM) API"
 readme = { file = "README.rst", content-type = "text/x-rst" }
 requires-python = ">=3.8,<3.14"
@@ -57,6 +59,11 @@ dev = [
 Homepage = "https://github.com/MattGyverLee/flexicon"
 Repository = "https://github.com/MattGyverLee/flexicon"
 Changelog = "https://github.com/MattGyverLee/flexicon/blob/main/CHANGELOG.md"
+
+[tool.setuptools.dynamic]
+# Version is read from the `version` attribute in flexicon/__init__.py so the
+# distribution version and the runtime `flexicon.version` never diverge.
+version = { attr = "flexicon.version" }
 
 [tool.setuptools.packages.find]
 where = ["."]

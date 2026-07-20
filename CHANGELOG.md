@@ -11,7 +11,13 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
-_Nothing yet. Non-breaking fixes and breaking changes accumulate here until the next version cut._
+### Changed
+- **Build:** the package version is now a single source of truth. `pyproject.toml`
+  declares `dynamic = ["version"]` and reads it from the `flexicon.version`
+  attribute via `[tool.setuptools.dynamic]`, so the distribution version and the
+  runtime `flexicon.version` can no longer diverge (the root cause of the 4.2.0
+  stale-version issue). Requires `setuptools>=77` (already pinned in
+  `[build-system]`).
 
 ---
 
