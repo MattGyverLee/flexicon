@@ -121,8 +121,8 @@ class LexSenseOperations(BaseOperations):
                 subsenses (depth-first, parents before children). If False,
                 yields only top-level senses on each entry.
 
-        Yields:
-            ILexSense: Each sense.
+        Returns:
+            EnumerableWrapper[ILexSense]: Each sense.
 
         Example:
             >>> # Every sense in the project, subsenses included

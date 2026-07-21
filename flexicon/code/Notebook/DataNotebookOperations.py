@@ -201,8 +201,8 @@ class DataNotebookOperations(BaseOperations):
         Returns all top-level notebook records. Use GetSubRecords() to navigate
         the hierarchical structure of records and their sub-records.
 
-        Yields:
-            IRnGenericRec: Each notebook record object.
+        Returns:
+            EnumerableWrapper[IRnGenericRec]: Each notebook record object.
 
         Example:
             >>> for record in project.DataNotebook.GetAll():

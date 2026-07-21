@@ -137,8 +137,8 @@ class MorphRuleOperations(BaseOperations):
         Ad hoc co-prohibitions are NOT included (different property interface);
         use GetAllAdhocCoProhibitions() separately.
 
-        Yields:
-            Each compound rule or affix template object.
+        Returns:
+            EnumerableWrapper[IMoCompoundRule | IMoInflAffixTemplate]: Each compound rule or affix template object.
 
         Example:
             >>> ruleOps = MorphRuleOperations(project)
@@ -160,7 +160,7 @@ class MorphRuleOperations(BaseOperations):
         Get all compound rules from MoMorphData.CompoundRulesOS.
 
         Returns:
-            CompoundRuleCollection: Collection of CompoundRule wrapper objects
+            CompoundRuleCollection[CompoundRule]: Collection of CompoundRule wrapper objects
                 (MoEndoCompound or MoExoCompound).
 
         Example:
@@ -194,7 +194,7 @@ class MorphRuleOperations(BaseOperations):
         as a smart collection with filtering capabilities.
 
         Returns:
-            AffixTemplateCollection: Collection of AffixTemplate wrapper objects
+            AffixTemplateCollection[AffixTemplate]: Collection of AffixTemplate wrapper objects
                 from all parts of speech.
 
         Example:
@@ -232,7 +232,7 @@ class MorphRuleOperations(BaseOperations):
             pos_or_hvo: The IPartOfSpeech object or HVO.
 
         Returns:
-            AffixTemplateCollection: Collection of AffixTemplate wrapper objects
+            AffixTemplateCollection[AffixTemplate]: Collection of AffixTemplate wrapper objects
                 on the given POS.
 
         Raises:
@@ -273,8 +273,8 @@ class MorphRuleOperations(BaseOperations):
         determine the subtype: MoAdhocProhibGr, MoAdhocProhibMorph,
         or MoAdhocProhibAllomorph.
 
-        Yields:
-            IMoAdhocProhib: Each co-occurrence prohibition.
+        Returns:
+            EnumerableWrapper[IMoAdhocProhib]: Each co-occurrence prohibition.
 
         Example:
             >>> for prohib in ruleOps.GetAllAdhocCoProhibitions():

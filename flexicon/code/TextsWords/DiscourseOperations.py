@@ -228,8 +228,8 @@ class DiscourseOperations(BaseOperations):
         Args:
             text_or_hvo: Either an IText object or its HVO (integer identifier).
 
-        Yields:
-            Chart objects (IConstChart or IDsChart): Each chart associated with the text.
+        Returns:
+            EnumerableWrapper[IConstChart | IDsChart]: Each chart associated with the text.
 
         Raises:
             FP_NullParameterError: If text_or_hvo is None.

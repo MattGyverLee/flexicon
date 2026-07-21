@@ -142,8 +142,8 @@ class LexReferenceOperations(BaseOperations):
         types of lexical relations available in the project, such as
         Synonym, Antonym, Part-Whole, etc.
 
-        Yields:
-            ILexRefType: Each lexical reference type object in the project
+        Returns:
+            EnumerableWrapper[ILexRefType]: Each lexical reference type object in the project
 
         Example:
             >>> for ref_type in project.LexReferences.GetAllTypes():
@@ -620,8 +620,8 @@ class LexReferenceOperations(BaseOperations):
             sense_or_entry: Either an ILexSense or ILexEntry object (or HVO).
                            If None, iterates all lexical references in the entire project.
 
-        Yields:
-            ILexReference: Each reference that includes this sense/entry (or project)
+        Returns:
+            EnumerableWrapper[ILexReference]: Each reference that includes this sense/entry (or project)
 
         Example:
             >>> # Get references for specific sense

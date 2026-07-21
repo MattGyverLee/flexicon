@@ -142,8 +142,8 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         """
         Get all phonological features in the project.
 
-        Yields:
-            IFsClosedFeature: Each feature in PhFeatureSystemOA.FeaturesOC.
+        Returns:
+            EnumerableWrapper[IFsClosedFeature]: Each feature in PhFeatureSystemOA.FeaturesOC.
 
         Notes:
             - ``FeaturesOC`` is typed as ``IFsFeatDefn`` in C#. Each yielded

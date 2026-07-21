@@ -93,8 +93,8 @@ class PersonOperations(BaseOperations):
         This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all ICmPerson objects in the
         project database, allowing iteration over all registered people.
 
-        Yields:
-            ICmPerson: Each person object in the project
+        Returns:
+            EnumerableWrapper[ICmPerson]: Each person object in the project
 
         Example:
             >>> for person in project.Person.GetAll():

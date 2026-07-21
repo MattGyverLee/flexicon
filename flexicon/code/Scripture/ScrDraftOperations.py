@@ -84,8 +84,8 @@ class ScrDraftOperations(BaseOperations):
         This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all IScrDraft objects in the
         project, allowing iteration over all saved Scripture versions.
 
-        Yields:
-            IScrDraft: Each Scripture draft object in the project
+        Returns:
+            EnumerableWrapper[IScrDraft]: Each Scripture draft object in the project
 
         Example:
             >>> for draft in project.ScrDrafts.GetAll():

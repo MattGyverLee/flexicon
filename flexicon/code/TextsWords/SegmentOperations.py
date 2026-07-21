@@ -181,8 +181,8 @@ class SegmentOperations(BaseOperations):
         Args:
             paragraph_or_hvo: The IStTxtPara object or HVO.
 
-        Yields:
-            ISegment: Each segment in the paragraph.
+        Returns:
+            EnumerableWrapper[ISegment]: Each segment in the paragraph.
 
         Raises:
             FP_NullParameterError: If paragraph_or_hvo is None.

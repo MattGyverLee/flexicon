@@ -111,8 +111,8 @@ class CheckOperations(BaseOperations):
         Returns all check types that are available for validation and
         consistency checking.
 
-        Yields:
-            ICmPossibility: Each check type object
+        Returns:
+            EnumerableWrapper[ICmPossibility]: Each check type object
 
         Example:
             >>> for check_type in project.Checks.GetAllCheckTypes():

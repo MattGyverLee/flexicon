@@ -89,8 +89,8 @@ class ScrBookOperations(BaseOperations):
         This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all IScrBook objects in the
         project, allowing iteration over all Scripture books.
 
-        Yields:
-            IScrBook: Each Scripture book object in the project
+        Returns:
+            EnumerableWrapper[IScrBook]: Each Scripture book object in the project
 
         Example:
             >>> for book in project.ScrBooks.GetAll():

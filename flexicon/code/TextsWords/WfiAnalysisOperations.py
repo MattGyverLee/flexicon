@@ -240,7 +240,7 @@ class WfiAnalysisOperations(BaseOperations):
             wordform_or_hvo: Either an IWfiWordform object or its HVO
 
         Returns:
-            list: List of IWfiAnalysis objects for this wordform
+            list[IWfiAnalysis]: All analyses for this wordform
 
         Raises:
             FP_NullParameterError: If wordform_or_hvo is None

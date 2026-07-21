@@ -183,7 +183,7 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                 GetSubitems.
 
         Returns:
-            list: List of ICmAnthroItem objects.
+            list[ICmAnthroItem]: All anthropology items.
 
         Example:
             >>> for item in project.Anthropology.GetAll():

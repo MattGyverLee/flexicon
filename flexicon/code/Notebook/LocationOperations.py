@@ -101,7 +101,7 @@ class LocationOperations(BaseOperations):
                 descend via GetSublocations.
 
         Returns:
-            list: List of ICmLocation objects.
+            list[ICmLocation]: All locations.
 
         Example:
             >>> for location in project.Location.GetAll():

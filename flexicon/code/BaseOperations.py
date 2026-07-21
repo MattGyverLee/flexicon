@@ -193,6 +193,17 @@ class wrap_enumerable:
             count = items.Count      # Works!
             first = items[0]         # Works!
             length = len(items)      # Works!
+
+    Behavioral collection contract:
+        Every ``GetAll`` in flexicon returns a **behavioral collection**: you
+        can always loop it, ``len()`` it, index into it, and re-iterate it.
+        The concrete return type -- ``EnumerableWrapper`` (this decorator, for
+        large/lazily-materialized results), a plain ``list`` (already a
+        sequence, so wrapping is a no-op), or a ``SmartCollection`` subtype
+        (adds ``.filter()``/type-breakdown display on top of the same
+        sequence guarantees) -- is an implementation detail callers never
+        have to branch on. See ``docs/getall-contract.md`` for the full
+        guarantee and rationale.
     """
 
     def __init__(self, func):

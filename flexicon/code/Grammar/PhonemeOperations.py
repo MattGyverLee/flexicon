@@ -115,8 +115,8 @@ class PhonemeOperations(BaseOperations):
         """
         Get all phonemes in the project.
 
-        Yields:
-            IPhPhoneme: Each phoneme object in the project's phoneme inventory.
+        Returns:
+            EnumerableWrapper[IPhPhoneme]: Each phoneme object in the project's phoneme inventory.
 
         Example:
             >>> phonemeOps = PhonemeOperations(project)

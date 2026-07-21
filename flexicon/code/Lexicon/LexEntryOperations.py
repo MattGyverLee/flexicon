@@ -112,8 +112,8 @@ class LexEntryOperations(BaseOperations):
         This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all ILexEntry objects in the
         project database, allowing iteration over the complete lexicon.
 
-        Yields:
-            ILexEntry: Each lexical entry object in the project
+        Returns:
+            EnumerableWrapper[ILexEntry]: All lexical entries in the project
 
         Example:
             >>> for entry in project.LexEntry.GetAll():

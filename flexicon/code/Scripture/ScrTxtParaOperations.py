@@ -255,7 +255,7 @@ class ScrTxtParaOperations(BaseOperations):
             section_or_hvo: Either an IScrSection object or its HVO
 
         Returns:
-            list: List of IScrTxtPara objects (empty list if none)
+            list[IScrTxtPara]: List of paragraphs (empty list if none)
 
         Raises:
             FP_NullParameterError: If section_or_hvo is None

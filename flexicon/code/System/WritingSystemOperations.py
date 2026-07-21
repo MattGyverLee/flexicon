@@ -85,8 +85,8 @@ class WritingSystemOperations(BaseOperations):
         Returns all writing systems that are currently active (both vernacular
         and analysis) in the project.
 
-        Yields:
-            IWritingSystemDefinition: Each writing system object
+        Returns:
+            EnumerableWrapper[IWritingSystemDefinition]: Each writing system object
 
         Example:
             >>> for ws in project.WritingSystems.GetAll():

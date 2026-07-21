@@ -22,9 +22,9 @@ import shutil
 from SIL.LCModel import (
     ICmFile,
     ICmFileFactory,
+    ICmFileRepository,
     ICmFolder,
     ICmFolderFactory,
-    ICmObjectRepository,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
@@ -155,8 +155,8 @@ class MediaOperations(BaseOperations):
         This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all ICmFile objects in the
         project database, allowing iteration over the complete media inventory.
 
-        Yields:
-            ICmFile: Each media file object in the project
+        Returns:
+            EnumerableWrapper[ICmFile]: Each media file object in the project
 
         Example:
             >>> for media in project.Media.GetAll():
@@ -172,11 +172,15 @@ class MediaOperations(BaseOperations):
             - Media files are returned in database order
             - Use GetInternalPath() to access the file path
             - Includes all media types (audio, video, image)
+            - Repository enumeration returns EVERY ICmFile instance in the database
+              (pronunciation media, external-link files, orphans included), which is
+              BROADER than walking LangProject.MediaOC/PicturesOC folders; more correct
+              for audio-rename use cases but not strictly a folder-walk equivalent
 
         See Also:
             Find, Create, GetMediaType
         """
-        return self.project.ObjectsIn(ICmObjectRepository, ICmFile)
+        return self.project.ObjectsIn(ICmFileRepository)
 
     @OperationsMethod
     def Create(self, file_path, label=None, wsHandle=None):
@@ -1571,8 +1575,8 @@ class MediaOperations(BaseOperations):
         Args:
             media_type: Media type constant (MediaType.AUDIO, VIDEO, IMAGE)
 
-        Yields:
-            ICmFile: Each media file of the specified type
+        Returns:
+            EnumerableWrapper[ICmFile]: Each media file of the specified type
 
         Raises:
             FP_ParameterError: If media_type is invalid

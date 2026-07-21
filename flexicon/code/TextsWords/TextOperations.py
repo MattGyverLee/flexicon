@@ -465,8 +465,8 @@ class TextOperations(BaseOperations):
         the existing TextsGetAll method but returns the raw IText objects instead
         of (name, content) tuples.
 
-        Yields:
-            IText: Each text object in the project.
+        Returns:
+            EnumerableWrapper[IText]: Each text object in the project.
 
         Example:
             >>> # Iterate over all texts

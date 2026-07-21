@@ -104,7 +104,7 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                 via GetSubdomains.
 
         Returns:
-            list: List of ICmSemanticDomain objects.
+            list[ICmSemanticDomain]: All semantic domains.
 
         Example:
             >>> for domain in project.SemanticDomains.GetAll():

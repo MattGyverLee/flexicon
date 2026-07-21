@@ -105,8 +105,8 @@ class PronunciationOperations(BaseOperations):
             entry_or_hvo: The ILexEntry object or HVO. If None, iterates all pronunciations
                          in the entire project.
 
-        Yields:
-            ILexPronunciation: Each pronunciation for the entry (or project).
+        Returns:
+            EnumerableWrapper[ILexPronunciation]: Each pronunciation for the entry (or project).
 
         Example:
             >>> # Get pronunciations for specific entry

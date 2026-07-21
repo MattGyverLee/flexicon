@@ -232,7 +232,7 @@ class ConstChartWordGroupOperations(BaseOperations):
             row_or_hvo: Either an IConstChartRow object or its HVO
 
         Returns:
-            list: List of IConstChartWordGroup objects (empty list if none)
+            list[IConstChartWordGroup]: List of word groups (empty list if none)
 
         Raises:
             FP_NullParameterError: If row_or_hvo is None

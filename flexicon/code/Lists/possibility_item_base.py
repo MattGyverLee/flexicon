@@ -144,7 +144,7 @@ class PossibilityItemOperations(BaseOperations):
         """Get all items in the list.
 
         Returns:
-            list: List of ICmPossibility objects representing items.
+            list[ICmPossibility]: All items in the list.
 
         Notes:
             - Returns flat list of all items

@@ -158,8 +158,8 @@ class NaturalClassOperations(BaseOperations):
         """
         Get all natural classes in the phonological inventory.
 
-        Yields:
-            IPhNaturalClass: Each natural class in the project.
+        Returns:
+            EnumerableWrapper[IPhNaturalClass]: Each natural class in the project.
 
         Example:
             >>> for nc in project.NaturalClasses.GetAll():

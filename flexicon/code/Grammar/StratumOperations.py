@@ -108,8 +108,8 @@ class StratumOperations(BaseOperations):
         """
         Yield every stratum in ``MorphologicalDataOA.StrataOS``.
 
-        Yields:
-            IMoStratum: Each stratum in declaration order.
+        Returns:
+            EnumerableWrapper[IMoStratum]: Each stratum in declaration order.
         """
         morph_data = self.project.lp.MorphologicalDataOA
         if morph_data is None:

@@ -231,7 +231,7 @@ class ScrSectionOperations(BaseOperations):
             book_or_hvo: Either an IScrBook object or its HVO
 
         Returns:
-            list: List of IScrSection objects (empty list if none)
+            list[IScrSection]: List of sections (empty list if none)
 
         Raises:
             FP_NullParameterError: If book_or_hvo is None

@@ -107,7 +107,7 @@ class PhonologicalRuleOperations(BaseOperations):
         Get all phonological rules in the project.
 
         Returns:
-            RuleCollection: Smart collection of PhonologicalRule wrapped objects.
+            RuleCollection[PhonologicalRule]: Smart collection of PhonologicalRule wrapped objects.
 
         Example:
             >>> phonRuleOps = PhonologicalRuleOperations(project)

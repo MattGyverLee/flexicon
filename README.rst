@@ -48,6 +48,11 @@ Full API documentation is published at https://flexicon.langtech.cloud.
 The rendered HTML API help is also bundled and accessible from Python via
 ``flexicon.APIHelpFile``.
 
+Every ``GetAll`` returns a loop/``len()``/index/re-iterate-able collection
+regardless of its concrete type (``EnumerableWrapper``, ``list``, or a
+``SmartCollection`` subtype) -- see ``docs/getall-contract.md`` for the
+full guarantee.
+
 Usage
 -----
 

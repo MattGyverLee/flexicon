@@ -10,6 +10,42 @@ None
 
 ## History
 
+### 2026-07-20 — GetAll behavioral collection contract + repository/decorator/fail-loud fixes
+
+Three targeted `GetAll` fixes plus a codebase-wide docstring standardization
+pass, closing MattGyverLee/FlexToolsMCP#37.
+
+**Fixes (T1-T3):**
+- `MediaOperations.GetAll` now enumerates `ICmFileRepository` instead of
+  incorrectly casting through `ICmObjectRepository`; docstring documents the
+  folder-walk-vs-repository-enumeration caveat.
+- `AgentOperations.GetAll` gains the `@OperationsMethod` decorator it was
+  missing.
+- `TranslationTypeOperations.GetSegmentsWithType` now raises
+  `NotImplementedError` instead of silently returning `None` -- segment
+  translations have no typed link to a translation-type possibility, so the
+  method never had a well-defined answer to give.
+
+**Docstring standardization (T7-T9):** ~51 `GetAll`/`GetAll*` docstrings
+across ~50 `Operations.py` files standardized to `Returns:\n
+<ContainerType>[<Element>]: ...`, dropping `Yields:` wording since
+`@wrap_enumerable` always converts generator bodies to a re-iterable
+`EnumerableWrapper` before the caller sees them. `BaseOperations.py`'s
+`wrap_enumerable` docstring gains a "Behavioral collection contract"
+paragraph. New `docs/getall-contract.md` + a `README.rst` pointer document
+the guarantee (loop/`len()`/index/re-iterate) that `EnumerableWrapper[T]`,
+`list[T]`, and `SmartCollection[T]` subtypes all satisfy.
+
+Verification: regression-clean, delta 0 vs `ff1c008`; QC 91/100; domain
+review PASS.
+
+Deferred (filed as follow-ups, not in this commit):
+- #228 -- pre-existing `param: any` (lowercase builtin, not `typing.Any`)
+  bug in `BaseOperations.py` at lines 1838 and 2116.
+- #229 -- `.pyi` stub `Iterator[Any]` return annotations need reconciling
+  with `EnumerableWrapper[T]`/`list[T]`/`SmartCollection[T]` (T10; blocked
+  on modeling those generics and fixing pre-existing signature drift).
+
 ### 2026-06-24 to 2026-06-30 — v4.0.1 patch: null-guards, cast-on-yield fixes, test hygiene
 
 **`LexEntryOperations.GetComplexFormsNotSubentries` null-guard** (`66b8eb3`)

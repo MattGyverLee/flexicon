@@ -108,8 +108,8 @@ class WordformOperations(BaseOperations):
         This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all IWfiWordform objects in the
         project database, allowing iteration over the complete wordform inventory.
 
-        Yields:
-            IWfiWordform: Each wordform object in the project
+        Returns:
+            EnumerableWrapper[IWfiWordform]: Each wordform object in the project
 
         Example:
             >>> for wordform in project.Wordforms.GetAll():
@@ -620,8 +620,8 @@ class WordformOperations(BaseOperations):
         Args:
             status: The spelling status to filter by (from SpellingStatusStates)
 
-        Yields:
-            IWfiWordform: Each wordform object with the specified status
+        Returns:
+            EnumerableWrapper[IWfiWordform]: Each wordform object with the specified status
 
         Raises:
             FP_ParameterError: If status is invalid
@@ -660,8 +660,8 @@ class WordformOperations(BaseOperations):
         """
         Retrieve all wordforms that are not approved (not CORRECT status).
 
-        Yields:
-            IWfiWordform: Each wordform object with UNDECIDED or INCORRECT status
+        Returns:
+            EnumerableWrapper[IWfiWordform]: Each wordform object with UNDECIDED or INCORRECT status
 
         Example:
             >>> # Get all unapproved wordforms

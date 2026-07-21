@@ -122,8 +122,8 @@ class VariantOperations(BaseOperations):
         such as spelling variants, dialectal variants, irregularly inflected
         forms, etc.
 
-        Yields:
-            ILexEntryType: Each variant type defined in the project.
+        Returns:
+            EnumerableWrapper[ILexEntryType]: Each variant type defined in the project.
 
         Example:
             >>> for vtype in project.Variants.GetAllTypes():
@@ -302,8 +302,8 @@ class VariantOperations(BaseOperations):
             entry_or_hvo: The ILexEntry object or HVO. If None, iterates all variant
                          references in the entire project.
 
-        Yields:
-            ILexEntryRef: Each variant reference associated with the entry (or project).
+        Returns:
+            EnumerableWrapper[ILexEntryRef]: Each variant reference associated with the entry (or project).
 
         Example:
             >>> # Get variant references for specific entry

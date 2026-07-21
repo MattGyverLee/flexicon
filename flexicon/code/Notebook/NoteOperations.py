@@ -92,8 +92,8 @@ class NoteOperations(BaseOperations):
             owner_object: The object whose notes to retrieve. Can be an
                 ILexEntry, ILexSense, IText, IStPara, or any annotatable object.
 
-        Yields:
-            ICmBaseAnnotation: Each note/annotation attached to the object.
+        Returns:
+            EnumerableWrapper[ICmBaseAnnotation]: Each note/annotation attached to the object.
 
         Raises:
             FP_NullParameterError: If owner_object is None.

@@ -112,7 +112,7 @@ class AllomorphOperations(BaseOperations):
                          in the entire project.
 
         Returns:
-            AllomorphCollection: Smart collection of Allomorph wrapper objects
+            AllomorphCollection[Allomorph]: Smart collection of Allomorph wrapper objects
                 showing type breakdown and supporting filtered queries.
 
         Example:

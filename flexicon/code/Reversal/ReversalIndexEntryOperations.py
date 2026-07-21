@@ -96,8 +96,8 @@ class ReversalIndexEntryOperations(BaseOperations):
         Args:
             index_or_hvo: Either an IReversalIndex object or its HVO
 
-        Yields:
-            IReversalIndexEntry: Each reversal entry in the index
+        Returns:
+            EnumerableWrapper[IReversalIndexEntry]: Each reversal entry in the index
 
         Raises:
             FP_NullParameterError: If index_or_hvo is None

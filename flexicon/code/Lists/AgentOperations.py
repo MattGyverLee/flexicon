@@ -81,6 +81,7 @@ class AgentOperations(PossibilityItemOperations):
         """Get the agents list container."""
         return self.project.lp.AnalyzingAgentsOC
 
+    @OperationsMethod
     def GetAll(self):
         """
         Iterate over all agents in the project's AnalyzingAgentsOC.
@@ -93,7 +94,7 @@ class AgentOperations(PossibilityItemOperations):
         collection directly.
 
         Returns:
-            list: List of ICmAgent objects.
+            list[ICmAgent]: All agents.
 
         Notes:
             - Returns ALL agents, including stale parser-version agents

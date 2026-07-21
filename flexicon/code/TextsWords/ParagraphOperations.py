@@ -448,8 +448,8 @@ class ParagraphOperations(BaseOperations):
         Args:
             text_or_hvo: Either an IText object or its HVO (integer identifier).
 
-        Yields:
-            IStTxtPara: Each paragraph object in the text.
+        Returns:
+            EnumerableWrapper[IStTxtPara]: Each paragraph object in the text.
 
         Raises:
             FP_NullParameterError: If text_or_hvo is None.

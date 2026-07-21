@@ -101,8 +101,8 @@ class AnnotationDefOperations(BaseOperations):
         """
         Get all annotation definitions in the project.
 
-        Yields:
-            ICmAnnotationDefn: Each annotation definition in the project.
+        Returns:
+            EnumerableWrapper[ICmAnnotationDefn]: Each annotation definition in the project.
 
         Example:
             >>> for anno_def in project.AnnotationDef.GetAll():

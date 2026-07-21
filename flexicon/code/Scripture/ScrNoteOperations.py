@@ -298,7 +298,7 @@ class ScrNoteOperations(BaseOperations):
             book_or_hvo: Either an IScrBook object or its HVO
 
         Returns:
-            list: List of IScrScriptureNote objects (empty list if none)
+            list[IScrScriptureNote]: List of Scripture notes (empty list if none)
 
         Raises:
             FP_NullParameterError: If book_or_hvo is None

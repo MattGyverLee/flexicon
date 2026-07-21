@@ -84,8 +84,8 @@ class ReversalIndexOperations(BaseOperations):
         """
         Get all reversal indexes in the project.
 
-        Yields:
-            IReversalIndex: Each reversal index object in the project
+        Returns:
+            EnumerableWrapper[IReversalIndex]: Each reversal index object in the project
 
         Example:
             >>> for idx in project.ReversalIndexes.GetAll():

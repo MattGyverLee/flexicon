@@ -11,6 +11,20 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+### Fixed
+- **`MediaOperations.GetAll`** now enumerates `ICmFileRepository` directly
+  instead of the incorrect `ICmObjectRepository` cast, and its docstring now
+  states the caveat that repository enumeration returns every `ICmFile` in
+  the database (pronunciation media, external-link files, orphans included),
+  which is broader than walking `LangProject.MediaOC`/`PicturesOC` folders.
+- **`AgentOperations.GetAll`** now carries the `@OperationsMethod` decorator
+  it was missing, matching every other `GetAll` in the codebase.
+- **`TranslationTypeOperations.GetSegmentsWithType`** now raises
+  `NotImplementedError` instead of silently returning `None`. `ISegment`
+  translations have no typed link to a translation-type possibility the way
+  text-level translations do, so the method could never do what its name
+  promised; it now fails loudly and points callers at `GetTextsWithType()`.
+
 ### Changed
 - **Build:** the package version is now a single source of truth. `pyproject.toml`
   declares `dynamic = ["version"]` and reads it from the `flexicon.version`
@@ -18,6 +32,20 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   runtime `flexicon.version` can no longer diverge (the root cause of the 4.2.0
   stale-version issue). Requires `setuptools>=77` (already pinned in
   `[build-system]`).
+
+### Docs
+- **`GetAll`/`GetAll*` collection-return contract**: standardized ~51
+  docstrings across ~50 `flexicon/code/**/*Operations.py` files to a
+  consistent `Returns:\n    <ContainerType>[<Element>]: ...` form, dropping
+  `Yields:` generator-style wording (the `@wrap_enumerable` decorator always
+  converts generator bodies to a re-iterable `EnumerableWrapper` before the
+  caller sees them, so `Yields:` misdescribed the actual contract).
+  `BaseOperations.wrap_enumerable`'s docstring gains a "Behavioral
+  collection contract" paragraph explaining the three concrete return
+  shapes (`EnumerableWrapper[T]`, `list[T]`, `SmartCollection[T]`
+  subtypes) and the loop/`len()`/index/re-iterate guarantee they all
+  satisfy. New `docs/getall-contract.md` documents the full guarantee;
+  `README.rst` links to it.
 
 ---
 

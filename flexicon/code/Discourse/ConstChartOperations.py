@@ -85,8 +85,8 @@ class ConstChartOperations(BaseOperations):
         This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all IDsConstChart objects in the
         project database, allowing iteration over all discourse analysis charts.
 
-        Yields:
-            IDsConstChart: Each constituent chart object in the project
+        Returns:
+            EnumerableWrapper[IDsConstChart]: Each constituent chart object in the project
 
         Example:
             >>> for chart in project.ConstCharts.GetAll():

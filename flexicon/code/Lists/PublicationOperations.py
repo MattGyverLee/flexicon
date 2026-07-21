@@ -139,7 +139,7 @@ class PublicationOperations(PossibilityItemOperations):
                 must descend via GetSubPublications.
 
         Returns:
-            list: List of ICmPossibility objects representing publications.
+            list[ICmPossibility]: All publications.
 
         Example:
             >>> for pub in project.Publications.GetAll():

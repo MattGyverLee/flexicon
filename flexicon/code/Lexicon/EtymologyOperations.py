@@ -109,8 +109,8 @@ class EtymologyOperations(BaseOperations):
             entry_or_hvo: The ILexEntry object or HVO. If None, iterates all etymologies
                          in the entire project.
 
-        Yields:
-            ILexEtymology: Each etymology object for the entry (or project).
+        Returns:
+            EnumerableWrapper[ILexEtymology]: Each etymology object for the entry (or project).
 
         Example:
             >>> etymOps = EtymologyOperations(project)

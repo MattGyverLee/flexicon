@@ -112,8 +112,8 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
                 yields only top-level POSs and the caller must descend via
                 GetSubcategories.
 
-        Yields:
-            IPartOfSpeech: Each part of speech object.
+        Returns:
+            EnumerableWrapper[IPartOfSpeech]: Each part of speech object.
 
         Example:
             >>> posOps = POSOperations(project)

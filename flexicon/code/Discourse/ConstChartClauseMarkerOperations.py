@@ -224,7 +224,7 @@ class ConstChartClauseMarkerOperations(BaseOperations):
             row_or_hvo: Either an IConstChartRow object or its HVO
 
         Returns:
-            list: List of IConstChartClauseMarker objects (empty list if none)
+            list[IConstChartClauseMarker]: List of clause markers (empty list if none)
 
         Raises:
             FP_NullParameterError: If row_or_hvo is None

@@ -82,8 +82,8 @@ class EnvironmentOperations(BaseOperations):
         """
         Get all phonological environments in the project.
 
-        Yields:
-            IPhEnvironment: Each environment object in the project's environment list.
+        Returns:
+            EnumerableWrapper[IPhEnvironment]: Each environment object in the project's environment list.
 
         Example:
             >>> envOps = EnvironmentOperations(project)

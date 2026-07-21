@@ -101,8 +101,8 @@ class ExampleOperations(BaseOperations):
                          If provided, returns examples for that sense only.
                          If None, returns ALL examples in the entire project.
 
-        Yields:
-            ILexExampleSentence: Each example sentence.
+        Returns:
+            EnumerableWrapper[ILexExampleSentence]: Each example sentence.
 
         Example:
             >>> exampleOps = ExampleOperations(project)

@@ -142,8 +142,8 @@ class FilterOperations:
         This method returns all filter objects stored in the project,
         regardless of their type.
 
-        Yields:
-            dict: Each filter object with keys: guid, name, filter_type, criteria
+        Returns:
+            EnumerableWrapper[dict]: Each filter object with keys: guid, name, filter_type, criteria
 
         Example:
             >>> for filter_obj in project.Filter.GetAll():

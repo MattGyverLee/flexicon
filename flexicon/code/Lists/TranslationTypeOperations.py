@@ -14,7 +14,6 @@
 # Import FLEx LCM types
 from SIL.LCModel import (
     ITextRepository,
-    IStTxtParaRepository,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
@@ -327,49 +326,35 @@ class TranslationTypeOperations(PossibilityItemOperations):
         Args:
             type_or_hvo: The ICmPossibility object or HVO.
 
-        Yields:
-            ISegment: Each segment object that uses this translation type.
-
         Raises:
             FP_NullParameterError: If type_or_hvo is None.
-
-        Example:
-            >>> literal = project.TranslationTypes.GetLiteralTranslationType()
-            >>> segments = list(project.TranslationTypes.GetSegmentsWithType(literal))
-            >>> print(f"{len(segments)} segments use literal translation")
-            458 segments use literal translation
-
-        Warning:
-            - This operation can be very slow for large projects
-            - Scans all paragraphs and segments in the entire project
-            - Consider using GetTextsWithType() for faster overview
+            NotImplementedError: Always. Segments do not carry typed
+                translations the way texts do (ISegment has plain
+                FreeTranslation/LiteralTranslation multistrings with no
+                TypeRA-style link to a translation-type possibility), so
+                there is no well-defined "segment uses this type" query to
+                perform. Use GetTextsWithType() instead, or design a
+                dedicated spec if segment-level typing is genuinely needed.
 
         Notes:
-            - Returns empty sequence if type is not used
-            - Useful for detailed usage analysis
-            - Each segment is yielded only once
+            - Not implemented. This method previously scanned every
+              paragraph/segment in the project and returned nothing (a
+              silent `None`) because segment translations have no typed
+              link to compare against. It now fails loudly instead of
+              lying about its contract.
 
         See Also:
             GetTextsWithType, Delete
         """
         self._ValidateParam(type_or_hvo, "type_or_hvo")
 
-        trans_type = self._PossibilityItemOperations__ResolveObject(type_or_hvo)
-        type_guid = trans_type.Guid
-
-        # Search all paragraphs and their segments
-        para_repo = self.project.project.ServiceLocator.GetInstance(IStTxtParaRepository)
-        for para in para_repo.AllInstances():
-            if hasattr(para, "SegmentsOS"):
-                for segment in para.SegmentsOS:
-                    # Check segment translations
-                    # Note: Segments typically don't have typed translations
-                    # in the same way texts do, but we check for completeness
-                    if hasattr(segment, "FreeTranslation"):
-                        # Segments have FreeTranslation and LiteralTranslation
-                        # but these are typically not typed in the same way
-                        # This method is provided for API completeness
-                        pass
+        raise NotImplementedError(
+            "GetSegmentsWithType is not implemented: ISegment translations "
+            "(FreeTranslation/LiteralTranslation) have no typed link to a "
+            "translation-type possibility, unlike text-level translations. "
+            "Use GetTextsWithType() for text-level usage analysis, or file "
+            "a spec if segment-level typed-translation support is needed."
+        )
 
     # --- Predefined Translation Types ---
 

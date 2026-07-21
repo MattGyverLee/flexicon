@@ -212,7 +212,7 @@ class ConstChartMovedTextOperations(BaseOperations):
             chart_or_hvo: Either an IDsConstChart object or its HVO
 
         Returns:
-            list: List of IConstChartMovedTextMarker objects (empty list if none)
+            list[IConstChartMovedTextMarker]: List of moved text markers (empty list if none)
 
         Raises:
             FP_NullParameterError: If chart_or_hvo is None

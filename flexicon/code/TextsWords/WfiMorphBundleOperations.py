@@ -99,8 +99,8 @@ class WfiMorphBundleOperations(BaseOperations):
         Args:
             analysis_or_hvo: The IWfiAnalysis object or HVO.
 
-        Yields:
-            IWfiMorphBundle: Each morph bundle in the analysis.
+        Returns:
+            EnumerableWrapper[IWfiMorphBundle]: Each morph bundle in the analysis.
 
         Raises:
             FP_NullParameterError: If analysis_or_hvo is None.

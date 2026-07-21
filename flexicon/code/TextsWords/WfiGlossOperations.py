@@ -146,8 +146,8 @@ class WfiGlossOperations(BaseOperations):
         Args:
             analysis_or_hvo: Either an IWfiAnalysis object or its HVO
 
-        Yields:
-            IWfiGloss: Each gloss object for the analysis
+        Returns:
+            EnumerableWrapper[IWfiGloss]: Each gloss object for the analysis
 
         Raises:
             FP_NullParameterError: If analysis_or_hvo is None

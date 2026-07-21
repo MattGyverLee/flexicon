@@ -94,8 +94,8 @@ class GramCatOperations(BaseOperations):
                 yields only top-level categories and the caller must descend
                 via GetSubcategories.
 
-        Yields:
-            ICmPossibility: Each grammatical category.
+        Returns:
+            EnumerableWrapper[ICmPossibility]: Each grammatical category.
 
         Example:
             >>> gramCatOps = GramCatOperations(project)
