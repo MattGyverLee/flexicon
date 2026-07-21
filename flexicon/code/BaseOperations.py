@@ -13,6 +13,8 @@
 
 # --- Imports ------------------------------------------------------------------
 
+from typing import Any
+
 from .exceptions import (
     FP_ReadOnlyError,
     FP_NullParameterError,
@@ -1835,7 +1837,7 @@ class BaseOperations:
 
         return _NestingAwareTransaction(self.project, label)
 
-    def _ValidateParam(self, param: any, param_name: str = "parameter") -> None:
+    def _ValidateParam(self, param: Any, param_name: str = "parameter") -> None:
         """
         Validate that a parameter is not None and not a stale LCM object.
 
@@ -1897,7 +1899,7 @@ class BaseOperations:
                 f"{param_name} refers to a deleted or invalid LCM object"
             )
 
-    def _ValidateParamNotEmpty(self, param: any, param_name: str = "parameter") -> None:
+    def _ValidateParamNotEmpty(self, param: Any, param_name: str = "parameter") -> None:
         """
         Validate that a parameter is not None and not empty.
 
@@ -1948,7 +1950,7 @@ class BaseOperations:
         if len(param) == 0:
             raise FP_ParameterError(f"{param_name} cannot be empty")
 
-    def _ValidateInstanceOf(self, obj: any, expected_type: type, param_name: str = "object") -> None:
+    def _ValidateInstanceOf(self, obj: Any, expected_type: type, param_name: str = "object") -> None:
         """
         Validate that an object is an instance of expected type.
 
@@ -2113,7 +2115,7 @@ class BaseOperations:
         if index >= max_count:
             raise IndexError(f"{param_name} out of bounds: {index} >= {max_count} " f"(valid range: 0-{max_count - 1})")
 
-    def _ValidateOwner(self, obj: any, expected_owner: any, param_name: str = "object") -> None:
+    def _ValidateOwner(self, obj: Any, expected_owner: Any, param_name: str = "object") -> None:
         """
         Validate that an object has expected owner.
 
