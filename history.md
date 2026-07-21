@@ -10,7 +10,7 @@ None
 
 ## History
 
-### 2026-07-20 — GetAll behavioral collection contract + repository/decorator/fail-loud fixes
+### 2026-07-20 — v4.3.0: GetAll behavioral collection contract + repository/decorator/fail-loud fixes
 
 Three targeted `GetAll` fixes plus a codebase-wide docstring standardization
 pass, closing MattGyverLee/FlexToolsMCP#37.

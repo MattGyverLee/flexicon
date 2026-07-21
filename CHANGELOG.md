@@ -11,6 +11,10 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+---
+
+## [4.3.0] - 2026-07-20
+
 ### Fixed
 - **`MediaOperations.GetAll`** now enumerates `ICmFileRepository` directly
   instead of the incorrect `ICmObjectRepository` cast, and its docstring now
