@@ -51,9 +51,29 @@ Example::
     if common_props:
         print(f"Rule has {len(common_props)} input contexts")
 
+External Casting (pythonnet interface casts):
+    Wrapper instances are plain Python objects, so pythonnet cannot cast
+    them directly to a .NET interface (e.g. ``ICmObject(wrapped_obj)``
+    raises ``TypeError: object does not implement ICmObject``). External
+    code that needs to perform its own interface cast should use the
+    public ``lcm_object`` property to retrieve the raw LCM object first::
+
+        from SIL.LCModel import ICmObject
+
+        wrapped = phonRuleOps.GetAll()[0]
+        raw = wrapped.lcm_object          # unwrap to the raw C# object
+        class_name = ICmObject(raw).ClassName
+
+    For the common ``ICmObject`` cast specifically, ``AsICmObject()`` is
+    provided as a convenience shortcut::
+
+        class_name = wrapped.AsICmObject().ClassName
+
 Usage Notes:
     - Wrapper classes inherit from LCMObjectWrapper
     - Never access _obj or _concrete directly in subclasses
+    - External code should use the public `lcm_object` property (not
+      `_obj`/`_concrete`) to reach the raw LCM object for casting
     - Use get_property() for safe access with defaults
     - Use class_type property to check the concrete type
 """
@@ -67,6 +87,12 @@ class LCMObjectWrapper:
 
     Stores both the base interface and concrete type, routing property access
     intelligently to support the two-layer LCM type system transparently.
+
+    External callers needing to cast the wrapped object to a specific
+    pythonnet/.NET interface (ICmObject, ICmPossibility, ICmMajorObject,
+    IMoInflAffixTemplate, etc.) should use the `lcm_object` property to
+    retrieve the raw LCM object, then cast it themselves; or call
+    `AsICmObject()` for the common ICmObject case.
 
     Attributes:
         _obj: The base interface object (e.g., IPhSegmentRule)
@@ -171,6 +197,66 @@ class LCMObjectWrapper:
                 pass
         """
         return self._obj.ClassName
+
+    @property
+    def lcm_object(self):
+        """
+        Get the raw LCM object underlying this wrapper.
+
+        This is the SUPPORTED public accessor for external code that needs
+        to perform its own pythonnet interface cast (e.g. ``ICmObject``,
+        ``ICmPossibility``, ``ICmMajorObject``, ``IMoInflAffixTemplate``).
+        Wrapper instances are plain Python objects and cannot themselves be
+        passed to a pythonnet interface constructor -- only the raw LCM
+        object stored in ``_obj`` can. Subclasses and external callers
+        should use `lcm_object` rather than reaching into `_obj` directly.
+
+        Returns:
+            The raw LCM object (the same object passed to `__init__()`).
+            This is typically a base interface type (e.g. IPhSegmentRule,
+            IMoMorphSynAnalysis, IMoForm) rather than the concrete cast.
+
+        Example::
+
+            from SIL.LCModel import ICmObject
+
+            wrapped = phonRuleOps.GetAll()[0]
+            raw = wrapped.lcm_object
+            print(ICmObject(raw).ClassName)
+        """
+        return self._obj
+
+    def AsICmObject(self):
+        """
+        Cast the wrapped object to ICmObject.
+
+        Convenience method for the common case of needing an ICmObject-typed
+        reference (e.g. to read `.ClassName`, `.Hvo`, `.Guid`, `.Owner`, or
+        other properties defined on the base LCM object interface). This is
+        equivalent to ``ICmObject(wrapped.lcm_object)`` but raises a
+        flexlibs-style exception instead of a raw TypeError when there is no
+        underlying object to cast.
+
+        Returns:
+            ICmObject: The wrapped object cast to ICmObject.
+
+        Raises:
+            FP_NullParameterError: If the wrapper has no underlying LCM
+                object (`lcm_object` is None).
+
+        Example::
+
+            wrapped = phonRuleOps.GetAll()[0]
+            class_name = wrapped.AsICmObject().ClassName
+        """
+        from ..FLExProject import FP_NullParameterError
+
+        if self._obj is None:
+            raise FP_NullParameterError()
+
+        from SIL.LCModel import ICmObject
+
+        return ICmObject(self._obj)
 
     def get_property(self, prop_name, default=None):
         """

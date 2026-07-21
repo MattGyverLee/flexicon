@@ -566,5 +566,67 @@ class TestLCMObjectWrapperWithMockTypes:
         assert result == mock_concrete_interface
 
 
+# =============================================================================
+# TESTS FOR lcm_object / AsICmObject (issue #199)
+# =============================================================================
+
+
+class TestLCMObjectWrapperLcmObject:
+    """Test the public `lcm_object` accessor for external casting."""
+
+    def test_lcm_object_returns_exact_stored_object(self, mock_base_interface, mock_cast_to_concrete):
+        """lcm_object must return the exact object passed to __init__ (the raw _obj)."""
+        wrapper = LCMObjectWrapper(mock_base_interface)
+        assert wrapper.lcm_object is mock_base_interface
+
+    def test_lcm_object_is_not_the_concrete_cast(self, mock_base_interface, mock_concrete_interface, mock_cast_to_concrete):
+        """lcm_object should return the base object, not the concrete cast."""
+        wrapper = LCMObjectWrapper(mock_base_interface)
+        assert wrapper.lcm_object is not mock_concrete_interface
+
+    def test_lcm_object_is_read_only(self, wrapped_object):
+        """lcm_object should be a read-only property."""
+        with pytest.raises(AttributeError):
+            wrapped_object.lcm_object = "something else"
+
+    def test_lcm_object_none_when_obj_is_none(self, monkeypatch):
+        """If the wrapper was constructed with None, lcm_object reflects that."""
+        monkeypatch.setattr("flexlibs2.code.Shared.wrapper_base.cast_to_concrete", lambda obj: obj)
+        wrapper = LCMObjectWrapper(None)
+        assert wrapper.lcm_object is None
+
+
+class TestLCMObjectWrapperAsICmObject:
+    """Test the AsICmObject() convenience cast method."""
+
+    def test_as_icmobject_calls_icmobject_cast(self, mock_base_interface, mock_cast_to_concrete, monkeypatch):
+        """AsICmObject() should cast lcm_object via ICmObject and return the result."""
+        sentinel = Mock(name="ICmObject-cast-result")
+        fake_icmobject_ctor = Mock(return_value=sentinel)
+
+        # SIL.LCModel may not be importable in this environment; provide a fake module.
+        fake_module = MagicMock()
+        fake_module.ICmObject = fake_icmobject_ctor
+        monkeypatch.setitem(sys.modules, "SIL.LCModel", fake_module)
+
+        wrapper = LCMObjectWrapper(mock_base_interface)
+        result = wrapper.AsICmObject()
+
+        fake_icmobject_ctor.assert_called_once_with(mock_base_interface)
+        assert result is sentinel
+
+    def test_as_icmobject_raises_fp_null_parameter_error_when_obj_is_none(self, monkeypatch):
+        """AsICmObject() must raise FP_NullParameterError (not a raw TypeError) when there is
+        no underlying LCM object to cast."""
+        monkeypatch.setattr("flexlibs2.code.Shared.wrapper_base.cast_to_concrete", lambda obj: obj)
+
+        from flexlibs2.code.FLExProject import FP_NullParameterError
+
+        wrapper = LCMObjectWrapper(None)
+
+        with pytest.raises(FP_NullParameterError):
+            wrapper.AsICmObject()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
