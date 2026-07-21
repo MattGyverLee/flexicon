@@ -46,7 +46,11 @@ test = ["pytest"]
 docs = ["sphinx", "ghp-import"]
 # Wheel/sdist build + PyPI upload. setuptools is NOT listed: `python -m build`
 # provisions it from [build-system].requires in an isolated env.
-build = ["build", "twine"]
+# twine/pkginfo are pinned to versions that understand Metadata 2.4
+# (PEP 639 License-Expression / License-File) -- older releases fail
+# `twine check` against wheels/sdists built with modern setuptools even
+# though the distributions themselves are valid (see issue #227).
+build = ["build", "twine>=5.1", "pkginfo>=1.10"]
 # Everything needed to work on flexicon locally. pre-commit bootstraps its own
 # isolated envs for black / flake8 / detect-secrets (pinned in
 # .pre-commit-config.yaml), so those tools are not duplicated here.
