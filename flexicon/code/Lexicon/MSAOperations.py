@@ -26,6 +26,7 @@
 #
 
 import logging
+from collections import namedtuple
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,8 @@ from SIL.LCModel import (
     IMoUnclassifiedAffixMsaFactory,
     ILexSense,
     ILexEntry,
+    ILexEntryRepository,
+    IWfiMorphBundleRepository,
     LexEntryTags,
     MsaType,
 )
@@ -57,6 +60,56 @@ from ..FLExProject import (
     FP_ReadOnlyError,
     FP_NullParameterError,
 )
+
+
+# --- Structured result for RemoveOrphaned (issue #206) ----------------------
+# Follows the namedtuple-with-docstring convention used elsewhere in this
+# codebase for multi-value structured results (see
+# LocalizedListsOperations.ImportLocalizedListsResult).
+
+RemovedMSA = namedtuple("RemovedMSA", ("entry_hvo", "msa_hvo", "class_name"))
+RemovedMSA.__doc__ = """
+One MSA removed by MSAOperations.RemoveOrphaned.
+
+Fields:
+    entry_hvo (int): Hvo of the owning ILexEntry the MSA was removed from.
+    msa_hvo (int): Hvo of the removed MSA.
+    class_name (str): ClassName of the removed MSA (e.g. "MoStemMsa").
+"""
+
+EntryOrphanBreakdown = namedtuple(
+    "EntryOrphanBreakdown", ("entry_hvo", "removed_count", "kept_count")
+)
+EntryOrphanBreakdown.__doc__ = """
+Per-entry breakdown produced by MSAOperations.RemoveOrphaned.
+
+Fields:
+    entry_hvo (int): Hvo of the scanned ILexEntry.
+    removed_count (int): Number of orphaned MSAs removed from this
+        entry's MorphoSyntaxAnalysesOC.
+    kept_count (int): Number of MSAs in this entry's MorphoSyntaxAnalysesOC
+        that were still referenced (by an entry-local sense or a
+        project-wide morph bundle) and therefore kept.
+"""
+
+RemoveOrphanedResult = namedtuple(
+    "RemoveOrphanedResult",
+    ("removed_count", "kept_count", "removed", "by_entry"),
+)
+RemoveOrphanedResult.__doc__ = """
+Structured result for MSAOperations.RemoveOrphaned.
+
+Fields:
+    removed_count (int): Total number of orphaned MSAs removed.
+    kept_count (int): Total number of MSAs examined that were still
+        referenced (by an entry-local sense's MorphoSyntaxAnalysisRA, or
+        project-wide by an IWfiMorphBundle.MsaRA) and therefore kept.
+    removed (list[RemovedMSA]): One entry per MSA actually removed.
+    by_entry (list[EntryOrphanBreakdown]): One entry per scanned
+        ILexEntry that owned at least one MSA, summarising removed/kept
+        counts for that entry. Entries with an empty
+        MorphoSyntaxAnalysesOC are omitted.
+"""
 
 
 class MSAOperations(BaseOperations):
@@ -397,10 +450,14 @@ class MSAOperations(BaseOperations):
                 is not one of the recognised values.
 
         Notes:
-            - WfiMorphBundle.MsaRA references are NOT updated here; that
-              is handled by a follow-up issue. An orphaned old MSA that
-              is still referenced by morph bundles will be left in place
-              and a warning is logged.
+            - WfiMorphBundle.MsaRA references are NOT scanned here, so an
+              old MSA that is still referenced by morph bundles elsewhere
+              in the project will be left in place even after all
+              entry-local senses have been repointed. Call
+              ``project.MSA.RemoveOrphaned(entry)`` (or
+              ``RemoveOrphaned()`` for a project-wide sweep) afterwards
+              to safely clean up any MSA that is truly unreferenced by
+              both senses and morph bundles (issue #206).
             - Fields that cannot transfer across a conversion (SlotsRC,
               InflFeatsOA, FromPartOfSpeechRA, From/ToInflectionClassRA,
               StratumRA, From/ToProdRestrictRC) are logged as warnings
@@ -587,12 +644,161 @@ class MSAOperations(BaseOperations):
             logger.warning(
                 "ChangeAffixVariant: old MSA Hvo=%s is still referenced by "
                 "one or more senses after repointing and has been left in "
-                "MorphoSyntaxAnalysesOC. This is unexpected; a future "
-                "orphan-cleanup API will address any residual references.",
+                "MorphoSyntaxAnalysesOC. Call RemoveOrphaned() afterwards "
+                "to clean up any MSA that is truly unreferenced (issue #206).",
                 msa.Hvo,
             )
 
         return new_msa
+
+    # ------------------------------------------------------------------
+    # Orphan cleanup
+    # ------------------------------------------------------------------
+
+    @OperationsMethod
+    def RemoveOrphaned(self, entry=None, progress=None):
+        """
+        Remove MSAs that are no longer referenced by any sense or morph
+        bundle.
+
+        SetPartOfSpeech and ChangeAffixVariant detach a sense's
+        MorphoSyntaxAnalysisRA from an old MSA when reassigning or
+        converting it, but the old MSA can remain in its owning entry's
+        MorphoSyntaxAnalysesOC. That is safe to leave in place ONLY if
+        nothing else still points at it. This method performs the
+        project-wide safety check and removes any MSA that is truly
+        unreferenced.
+
+        An MSA is considered orphaned iff it is referenced by NEITHER:
+            1. Any ILexSense.MorphoSyntaxAnalysisRA (entry-local senses), NOR
+            2. Any IWfiMorphBundle.MsaRA (project-wide, across all
+               interlinear texts).
+
+        Args:
+            entry: An ILexEntry (or HVO) to limit the *scanned* MSAs to
+                (only that entry's MorphoSyntaxAnalysesOC is examined for
+                removal candidates). Pass None (the default) to sweep
+                every entry in the project. In BOTH cases, the safety
+                check against morph bundles is performed project-wide --
+                scoping to a single entry never skips the bundle
+                cross-check, since a bundle anywhere in the project can
+                be the only thing keeping an entry-local MSA alive.
+            progress: Optional callback invoked as ``progress(current,
+                total)`` once per entry scanned, where ``total`` is the
+                number of entries in scope (1 if ``entry`` was supplied,
+                or the full entry count for a project-wide sweep). Pass
+                None (the default) for no progress reporting. Exceptions
+                raised by the callback are caught and logged, never
+                propagated -- a broken progress reporter should not abort
+                the sweep.
+
+        Returns:
+            RemoveOrphanedResult: namedtuple with ``removed_count``,
+            ``kept_count``, ``removed`` (list[RemovedMSA]), and
+            ``by_entry`` (list[EntryOrphanBreakdown]).
+
+        Raises:
+            FP_ReadOnlyError: If the project is not opened with write
+                enabled.
+            FP_ParameterError: If ``entry`` does not resolve to a valid
+                ILexEntry.
+
+        Notes:
+            - Back-refs checked are exactly MorphoSyntaxAnalysisRA (on
+              senses) and MsaRA (on morph bundles). LexemeFormOA /
+              AlternateFormsOS allomorphs and ILexEntryRef do NOT carry
+              MSA references and are intentionally not checked.
+            - Performance: morph-bundle references are gathered in ONE
+              pass over ``IWfiMorphBundleRepository.AllInstances()`` into
+              a set of referenced HVOs, then each candidate MSA is tested
+              against that set -- never an O(MSAs x bundles) nested scan.
+            - Guards ``IsValidObject`` before removal, mirroring the
+              cascade-delete guard already used by ChangeAffixVariant.
+        """
+        self._EnsureWriteEnabled()
+
+        if entry is not None:
+            entries = [self.__ResolveEntry(entry)]
+        else:
+            entries = list(self.project.ObjectsIn(ILexEntryRepository))
+
+        # --- Project-wide morph-bundle reference set, built in ONE pass. ---
+        # Safety-first (issue #206): even an entry-scoped call must
+        # cross-check against ALL morph bundles project-wide, since a
+        # bundle in some other interlinear text can be the only thing
+        # keeping an otherwise entry-orphaned MSA alive.
+        bundle_msa_hvos = set()
+        for bundle in self.project.ObjectsIn(IWfiMorphBundleRepository):
+            msa = bundle.MsaRA
+            if msa is not None:
+                bundle_msa_hvos.add(msa.Hvo)
+
+        removed = []
+        by_entry = []
+        removed_count = 0
+        kept_count = 0
+
+        total = len(entries)
+        with self._TransactionCM("Remove orphaned MSAs"):
+            for i, entry_obj in enumerate(entries, start=1):
+                # Entry-local sense back-refs.
+                sense_msa_hvos = set()
+                for sense in entry_obj.SensesOS:
+                    msa_ra = sense.MorphoSyntaxAnalysisRA
+                    if msa_ra is not None:
+                        sense_msa_hvos.add(msa_ra.Hvo)
+
+                entry_removed = 0
+                entry_kept = 0
+
+                # Snapshot the collection before mutating it -- removing
+                # from MorphoSyntaxAnalysesOC while iterating it directly
+                # would be unsafe.
+                candidate_msas = list(entry_obj.MorphoSyntaxAnalysesOC)
+                for msa in candidate_msas:
+                    if msa.Hvo in sense_msa_hvos or msa.Hvo in bundle_msa_hvos:
+                        entry_kept += 1
+                        continue
+                    if not msa.IsValidObject:
+                        # Already gone (e.g. cascade-deleted); nothing to
+                        # remove and nothing to count as kept.
+                        continue
+                    class_name = msa.ClassName
+                    entry_obj.MorphoSyntaxAnalysesOC.Remove(msa)
+                    removed.append(
+                        RemovedMSA(entry_obj.Hvo, msa.Hvo, class_name)
+                    )
+                    entry_removed += 1
+
+                removed_count += entry_removed
+                kept_count += entry_kept
+                if entry_removed or entry_kept:
+                    by_entry.append(
+                        EntryOrphanBreakdown(
+                            entry_obj.Hvo, entry_removed, entry_kept
+                        )
+                    )
+
+                if progress is not None:
+                    try:
+                        progress(i, total)
+                    except Exception:
+                        logger.debug(
+                            "RemoveOrphaned: progress callback raised; "
+                            "ignoring.",
+                            exc_info=True,
+                        )
+
+        logger.info(
+            "RemoveOrphaned: removed %d orphaned MSA(s), kept %d "
+            "still-referenced MSA(s) across %d entr%s.",
+            removed_count,
+            kept_count,
+            total,
+            "y" if total == 1 else "ies",
+        )
+
+        return RemoveOrphanedResult(removed_count, kept_count, removed, by_entry)
 
     # ------------------------------------------------------------------
     # Internals
@@ -647,3 +853,14 @@ class MSAOperations(BaseOperations):
         if hasattr(obj_or_hvo, "_obj"):
             return obj_or_hvo._obj
         return obj_or_hvo
+
+    def __ResolveEntry(self, entry_or_hvo):
+        """Resolve an entry parameter, accepting either an object or HVO."""
+        obj = self.__Resolve(entry_or_hvo)
+        try:
+            return ILexEntry(obj)
+        except Exception:
+            raise FP_ParameterError(
+                "entry must be an ILexEntry (or its HVO); "
+                f"got {obj!r}"
+            )

@@ -1285,7 +1285,10 @@ class LexSenseOperations(BaseOperations):
               is repointed at it. The wrong-type MSA is detached from
               this sense but left in the entry's MorphoSyntaxAnalysesOC
               collection (it may still be referenced by other senses
-              or morph bundles).
+              or morph bundles). Call
+              ``project.MSA.RemoveOrphaned(entry)`` afterwards to
+              safely remove it once nothing references it any longer
+              (issue #206).
             - When msa_kind='auto' and the existing MSA already matches
               the family, only PartOfSpeechRA is updated -- the specific
               affix variant (MoInflAffMsa vs MoDerivAffMsa vs
@@ -1302,7 +1305,7 @@ class LexSenseOperations(BaseOperations):
 
         See Also:
             GetPartOfSpeech, SetGrammaticalInfo,
-            MSAOperations.ChangeAffixVariant
+            MSAOperations.ChangeAffixVariant, MSAOperations.RemoveOrphaned
         """
         _VALID_MSA_KINDS = {"auto", "infl", "deriv", "unclassified"}
         if msa_kind not in _VALID_MSA_KINDS:

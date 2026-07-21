@@ -32,3 +32,7 @@ class MSAOperations(BaseOperations[Any]):
 
     # Convert an affix MSA to a different affix variant (returns the MSA).
     def ChangeAffixVariant(self, msa: Any, target_kind: str) -> Any: ...
+
+    # Remove orphaned MSAs (unreferenced by senses and morph bundles).
+    # Returns a RemoveOrphanedResult namedtuple; see MSAOperations.py.
+    def RemoveOrphaned(self, entry: Any = None, progress: Any = None) -> Any: ...
