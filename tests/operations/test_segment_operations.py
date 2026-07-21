@@ -668,3 +668,263 @@ class TestMergeSegmentsNullAndPolicy:
 
         with pytest.raises(FP_ParameterError):
             writable_ops.MergeSegments(mock_seg1, mock_seg2, translation_policy="Migrate")
+
+
+# ---------------------------------------------------------------------------
+# AnalysesRS write methods (issue #215)
+# ---------------------------------------------------------------------------
+
+
+class _FakeAnalysesRS:
+    """
+    Minimal stand-in for an LCM reference sequence (ISegment.AnalysesRS),
+    exposing just the members SegmentOperations' new write methods rely on:
+    .Count, indexer get/set, .Insert(), .Add(), .RemoveAt(), and __iter__/
+    __contains__ (via list(...) in ReplaceAnalysis).
+    """
+
+    def __init__(self, items=None):
+        self._items = list(items) if items else []
+
+    @property
+    def Count(self):
+        return len(self._items)
+
+    def __len__(self):
+        return len(self._items)
+
+    def __iter__(self):
+        return iter(self._items)
+
+    def __getitem__(self, index):
+        return self._items[index]
+
+    def __setitem__(self, index, value):
+        self._items[index] = value
+
+    def Insert(self, index, value):
+        self._items.insert(index, value)
+
+    def Add(self, value):
+        self._items.append(value)
+
+    def RemoveAt(self, index):
+        del self._items[index]
+
+
+class TestSegmentAnalysesRSWriteMethods:
+    """
+    Coverage for SegmentOperations.SetAnalysis, ReplaceAnalysis,
+    InsertAnalysis, AppendAnalysis, and RemoveAnalysis (issue #215).
+
+    Uses the mock-project pattern (no live FLEx connection required) with a
+    fake AnalysesRS collection standing in for the real LCM reference
+    sequence, mirroring the pattern used by TestReadOnlyGuard and
+    TestMergeSegmentsNullAndPolicy elsewhere in this module.
+    """
+
+    @pytest.fixture
+    def writable_ops(self):
+        """
+        Return a SegmentOperations instance backed by a write-enabled mock
+        project. Uses MagicMock (not Mock) for the project so that
+        ``_TransactionCM``'s ``project.Transaction(label)`` call yields an
+        object that supports the context-manager protocol
+        (``__enter__``/``__exit__`` are auto-specced by MagicMock).
+        ``_undoable`` is explicitly False so Phase 1 (``project.Transaction``)
+        is selected instead of Phase 2 (``project.UndoableOperation``).
+        """
+        from unittest.mock import MagicMock, Mock
+        from flexlibs2.code.TextsWords.SegmentOperations import SegmentOperations
+
+        mock_project = MagicMock()
+        mock_project.writeEnabled = True
+        mock_project._undoable = False
+        mock_project._transaction_depth = 0
+        mock_project.project = Mock()
+        mock_project.project.DefaultVernWs = 1
+        mock_project.project.DefaultAnalWs = 2
+        mock_project._FLExProject__WSHandle = Mock(return_value=2)
+        return SegmentOperations(mock_project)
+
+    @pytest.fixture
+    def readonly_ops(self):
+        """Return a SegmentOperations instance backed by a read-only mock project."""
+        from unittest.mock import Mock
+        from flexlibs2.code.TextsWords.SegmentOperations import SegmentOperations
+
+        mock_project = Mock()
+        mock_project.writeEnabled = False
+        mock_project.project = Mock()
+        mock_project.project.DefaultVernWs = 1
+        mock_project.project.DefaultAnalWs = 2
+        mock_project._FLExProject__WSHandle = Mock(return_value=1)
+        return SegmentOperations(mock_project)
+
+    def _make_segment(self, analyses=None):
+        from unittest.mock import Mock
+
+        seg = Mock()
+        seg.AnalysesRS = _FakeAnalysesRS(analyses)
+        return seg
+
+    # --- SetAnalysis ---
+
+    def test_SetAnalysis_replaces_token_at_index(self, writable_ops):
+        old_tok, new_tok = object(), object()
+        seg = self._make_segment([old_tok, "other"])
+
+        writable_ops.SetAnalysis(seg, 0, new_tok)
+
+        assert list(seg.AnalysesRS) == [new_tok, "other"]
+
+    def test_SetAnalysis_raises_on_out_of_range_index(self, writable_ops):
+        from flexlibs2.code.FLExProject import FP_ParameterError
+
+        seg = self._make_segment(["only"])
+        with pytest.raises(FP_ParameterError):
+            writable_ops.SetAnalysis(seg, 5, object())
+
+    def test_SetAnalysis_raises_on_none_segment(self, writable_ops):
+        from flexlibs2.code.FLExProject import FP_NullParameterError
+
+        with pytest.raises(FP_NullParameterError):
+            writable_ops.SetAnalysis(None, 0, object())
+
+    def test_SetAnalysis_raises_on_none_analysis(self, writable_ops):
+        from flexlibs2.code.FLExProject import FP_NullParameterError
+
+        seg = self._make_segment(["only"])
+        with pytest.raises(FP_NullParameterError):
+            writable_ops.SetAnalysis(seg, 0, None)
+
+    def test_SetAnalysis_raises_on_readonly(self, readonly_ops):
+        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+
+        seg = self._make_segment(["only"])
+        with pytest.raises(FP_ReadOnlyError):
+            readonly_ops.SetAnalysis(seg, 0, object())
+
+    # --- ReplaceAnalysis ---
+
+    def test_ReplaceAnalysis_finds_and_replaces_old_token(self, writable_ops):
+        old_tok, new_tok = object(), object()
+        seg = self._make_segment(["a", old_tok, "b"])
+
+        writable_ops.ReplaceAnalysis(seg, old_tok, new_tok)
+
+        assert list(seg.AnalysesRS) == ["a", new_tok, "b"]
+
+    def test_ReplaceAnalysis_raises_when_old_not_found(self, writable_ops):
+        from flexlibs2.code.FLExProject import FP_ParameterError
+
+        seg = self._make_segment(["a", "b"])
+        with pytest.raises(FP_ParameterError):
+            writable_ops.ReplaceAnalysis(seg, object(), object())
+
+    def test_ReplaceAnalysis_raises_on_none_old(self, writable_ops):
+        from flexlibs2.code.FLExProject import FP_NullParameterError
+
+        seg = self._make_segment(["a"])
+        with pytest.raises(FP_NullParameterError):
+            writable_ops.ReplaceAnalysis(seg, None, object())
+
+    def test_ReplaceAnalysis_raises_on_none_new(self, writable_ops):
+        from flexlibs2.code.FLExProject import FP_NullParameterError
+
+        seg = self._make_segment(["a"])
+        with pytest.raises(FP_NullParameterError):
+            writable_ops.ReplaceAnalysis(seg, "a", None)
+
+    def test_ReplaceAnalysis_raises_on_readonly(self, readonly_ops):
+        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+
+        seg = self._make_segment(["a"])
+        with pytest.raises(FP_ReadOnlyError):
+            readonly_ops.ReplaceAnalysis(seg, "a", "b")
+
+    # --- InsertAnalysis ---
+
+    def test_InsertAnalysis_inserts_at_index(self, writable_ops):
+        new_tok = object()
+        seg = self._make_segment(["a", "b"])
+
+        writable_ops.InsertAnalysis(seg, 1, new_tok)
+
+        assert list(seg.AnalysesRS) == ["a", new_tok, "b"]
+
+    def test_InsertAnalysis_allows_index_equal_to_count(self, writable_ops):
+        """index == Count is a valid append-at-end position."""
+        new_tok = object()
+        seg = self._make_segment(["a"])
+
+        writable_ops.InsertAnalysis(seg, 1, new_tok)
+
+        assert list(seg.AnalysesRS) == ["a", new_tok]
+
+    def test_InsertAnalysis_raises_on_out_of_range_index(self, writable_ops):
+        from flexlibs2.code.FLExProject import FP_ParameterError
+
+        seg = self._make_segment(["a"])
+        with pytest.raises(FP_ParameterError):
+            writable_ops.InsertAnalysis(seg, 5, object())
+
+    def test_InsertAnalysis_raises_on_negative_index(self, writable_ops):
+        from flexlibs2.code.FLExProject import FP_ParameterError
+
+        seg = self._make_segment(["a"])
+        with pytest.raises(FP_ParameterError):
+            writable_ops.InsertAnalysis(seg, -1, object())
+
+    def test_InsertAnalysis_raises_on_readonly(self, readonly_ops):
+        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+
+        seg = self._make_segment(["a"])
+        with pytest.raises(FP_ReadOnlyError):
+            readonly_ops.InsertAnalysis(seg, 0, object())
+
+    # --- AppendAnalysis ---
+
+    def test_AppendAnalysis_appends_to_end(self, writable_ops):
+        new_tok = object()
+        seg = self._make_segment(["a", "b"])
+
+        writable_ops.AppendAnalysis(seg, new_tok)
+
+        assert list(seg.AnalysesRS) == ["a", "b", new_tok]
+
+    def test_AppendAnalysis_raises_on_readonly(self, readonly_ops):
+        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+
+        seg = self._make_segment([])
+        with pytest.raises(FP_ReadOnlyError):
+            readonly_ops.AppendAnalysis(seg, object())
+
+    # --- RemoveAnalysis ---
+
+    def test_RemoveAnalysis_removes_token_at_index(self, writable_ops):
+        seg = self._make_segment(["a", "b", "c"])
+
+        writable_ops.RemoveAnalysis(seg, 1)
+
+        assert list(seg.AnalysesRS) == ["a", "c"]
+
+    def test_RemoveAnalysis_raises_on_out_of_range_index(self, writable_ops):
+        from flexlibs2.code.FLExProject import FP_ParameterError
+
+        seg = self._make_segment(["a"])
+        with pytest.raises(FP_ParameterError):
+            writable_ops.RemoveAnalysis(seg, 5)
+
+    def test_RemoveAnalysis_raises_on_none_segment(self, writable_ops):
+        from flexlibs2.code.FLExProject import FP_NullParameterError
+
+        with pytest.raises(FP_NullParameterError):
+            writable_ops.RemoveAnalysis(None, 0)
+
+    def test_RemoveAnalysis_raises_on_readonly(self, readonly_ops):
+        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+
+        seg = self._make_segment(["a"])
+        with pytest.raises(FP_ReadOnlyError):
+            readonly_ops.RemoveAnalysis(seg, 0)

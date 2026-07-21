@@ -170,6 +170,21 @@ class SegmentOperations(BaseOperations):
         """Return the ISegmentFactory from the service locator."""
         return self.project.project.ServiceLocator.GetService(ISegmentFactory)
 
+    def __GetAnalysisObject(self, analysis_or_hvo):
+        """
+        Internal helper to get an IAnalysis object from HVO or object.
+
+        Args:
+            analysis_or_hvo: An IAnalysis object (IWfiWordform, IWfiAnalysis,
+                IWfiGloss, or IPunctuationForm) or its HVO integer.
+
+        Returns:
+            IAnalysis: The analysis object.
+        """
+        if isinstance(analysis_or_hvo, int):
+            return self.project.Object(analysis_or_hvo)
+        return analysis_or_hvo
+
     # ========== READ METHODS ==========
 
     @wrap_enumerable
@@ -647,6 +662,207 @@ class SegmentOperations(BaseOperations):
         if owner is None:
             raise FP_ParameterError("Segment has no owning paragraph")
         owner.SegmentsOS.Remove(segment_obj)
+
+    @OperationsMethod
+    def SetAnalysis(self, segment_or_hvo, index, analysis_or_hvo):
+        """
+        Replace the analysis token at a given index in a segment's AnalysesRS.
+
+        Writes directly to ``ISegment.AnalysesRS`` (a reference sequence),
+        which previously required dropping to raw LCM reflection (issue #215).
+
+        Args:
+            segment_or_hvo: The ISegment object or HVO.
+            index: The 0-based index within AnalysesRS to replace.
+            analysis_or_hvo: The replacement IAnalysis object (IWfiWordform,
+                IWfiAnalysis, IWfiGloss, or IPunctuationForm) or its HVO.
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with writeEnabled=True.
+            FP_NullParameterError: If segment_or_hvo or analysis_or_hvo is None.
+            FP_ParameterError: If index is out of range for AnalysesRS.
+
+        Example:
+            >>> segment = segments[0]
+            >>> analyses = project.Segments.GetAnalyses(segment)
+            >>> project.Segments.SetAnalysis(segment, 0, replacement_gloss)
+
+        See Also:
+            GetAnalyses, ReplaceAnalysis, InsertAnalysis
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(segment_or_hvo, "segment_or_hvo")
+        self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
+
+        segment_obj = self.__GetSegmentObject(segment_or_hvo)
+        analysis_obj = self.__GetAnalysisObject(analysis_or_hvo)
+
+        count = segment_obj.AnalysesRS.Count
+        if not isinstance(index, int) or index < 0 or index >= count:
+            raise FP_ParameterError(
+                f"index must be between 0 and {count - 1} (inclusive); got {index!r}"
+            )
+
+        with self._TransactionCM("Set segment analysis"):
+            segment_obj.AnalysesRS[index] = analysis_obj
+
+    @OperationsMethod
+    def ReplaceAnalysis(self, segment_or_hvo, old_analysis_or_hvo, new_analysis_or_hvo):
+        """
+        Find an analysis token in a segment's AnalysesRS and replace it.
+
+        Writes directly to ``ISegment.AnalysesRS`` (a reference sequence),
+        which previously required dropping to raw LCM reflection (issue #215).
+
+        Args:
+            segment_or_hvo: The ISegment object or HVO.
+            old_analysis_or_hvo: The existing IAnalysis object or HVO to
+                locate within AnalysesRS.
+            new_analysis_or_hvo: The IAnalysis object or HVO to put in its place.
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with writeEnabled=True.
+            FP_NullParameterError: If segment_or_hvo, old_analysis_or_hvo, or
+                new_analysis_or_hvo is None.
+            FP_ParameterError: If old_analysis_or_hvo is not found in
+                AnalysesRS.
+
+        Example:
+            >>> segment = segments[0]
+            >>> analyses = project.Segments.GetAnalyses(segment)
+            >>> project.Segments.ReplaceAnalysis(segment, analyses[2], new_gloss)
+
+        See Also:
+            GetAnalyses, SetAnalysis, InsertAnalysis
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(segment_or_hvo, "segment_or_hvo")
+        self._ValidateParam(old_analysis_or_hvo, "old_analysis_or_hvo")
+        self._ValidateParam(new_analysis_or_hvo, "new_analysis_or_hvo")
+
+        segment_obj = self.__GetSegmentObject(segment_or_hvo)
+        old_obj = self.__GetAnalysisObject(old_analysis_or_hvo)
+        new_obj = self.__GetAnalysisObject(new_analysis_or_hvo)
+
+        analyses = list(segment_obj.AnalysesRS)
+        if old_obj not in analyses:
+            raise FP_ParameterError(
+                "old_analysis_or_hvo was not found in the segment's AnalysesRS"
+            )
+        index = analyses.index(old_obj)
+
+        with self._TransactionCM("Replace segment analysis"):
+            segment_obj.AnalysesRS[index] = new_obj
+
+    @OperationsMethod
+    def InsertAnalysis(self, segment_or_hvo, index, analysis_or_hvo):
+        """
+        Insert an analysis token at a given index in a segment's AnalysesRS.
+
+        Writes directly to ``ISegment.AnalysesRS`` (a reference sequence),
+        which previously required dropping to raw LCM reflection (issue #215).
+
+        Args:
+            segment_or_hvo: The ISegment object or HVO.
+            index: The 0-based index at which to insert. May equal the
+                current AnalysesRS.Count to append at the end.
+            analysis_or_hvo: The IAnalysis object or HVO to insert.
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with writeEnabled=True.
+            FP_NullParameterError: If segment_or_hvo or analysis_or_hvo is None.
+            FP_ParameterError: If index is out of range for AnalysesRS.
+
+        Example:
+            >>> segment = segments[0]
+            >>> project.Segments.InsertAnalysis(segment, 0, new_wordform)
+
+        See Also:
+            GetAnalyses, SetAnalysis, ReplaceAnalysis, AppendAnalysis
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(segment_or_hvo, "segment_or_hvo")
+        self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
+
+        segment_obj = self.__GetSegmentObject(segment_or_hvo)
+        analysis_obj = self.__GetAnalysisObject(analysis_or_hvo)
+
+        count = segment_obj.AnalysesRS.Count
+        if not isinstance(index, int) or index < 0 or index > count:
+            raise FP_ParameterError(
+                f"index must be between 0 and {count} (inclusive); got {index!r}"
+            )
+
+        with self._TransactionCM("Insert segment analysis"):
+            segment_obj.AnalysesRS.Insert(index, analysis_obj)
+
+    @OperationsMethod
+    def AppendAnalysis(self, segment_or_hvo, analysis_or_hvo):
+        """
+        Append an analysis token to the end of a segment's AnalysesRS.
+
+        Convenience wrapper around ``InsertAnalysis`` at
+        ``AnalysesRS.Count`` (issue #215).
+
+        Args:
+            segment_or_hvo: The ISegment object or HVO.
+            analysis_or_hvo: The IAnalysis object or HVO to append.
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with writeEnabled=True.
+            FP_NullParameterError: If segment_or_hvo or analysis_or_hvo is None.
+
+        Example:
+            >>> segment = segments[0]
+            >>> project.Segments.AppendAnalysis(segment, new_gloss)
+
+        See Also:
+            InsertAnalysis, SetAnalysis, RemoveAnalysis
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(segment_or_hvo, "segment_or_hvo")
+        self._ValidateParam(analysis_or_hvo, "analysis_or_hvo")
+
+        segment_obj = self.__GetSegmentObject(segment_or_hvo)
+        analysis_obj = self.__GetAnalysisObject(analysis_or_hvo)
+
+        with self._TransactionCM("Append segment analysis"):
+            segment_obj.AnalysesRS.Add(analysis_obj)
+
+    @OperationsMethod
+    def RemoveAnalysis(self, segment_or_hvo, index):
+        """
+        Remove the analysis token at a given index from a segment's AnalysesRS.
+
+        Args:
+            segment_or_hvo: The ISegment object or HVO.
+            index: The 0-based index within AnalysesRS to remove.
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with writeEnabled=True.
+            FP_NullParameterError: If segment_or_hvo is None.
+            FP_ParameterError: If index is out of range for AnalysesRS.
+
+        Example:
+            >>> segment = segments[0]
+            >>> project.Segments.RemoveAnalysis(segment, 0)
+
+        See Also:
+            InsertAnalysis, AppendAnalysis, SetAnalysis
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(segment_or_hvo, "segment_or_hvo")
+
+        segment_obj = self.__GetSegmentObject(segment_or_hvo)
+
+        count = segment_obj.AnalysesRS.Count
+        if not isinstance(index, int) or index < 0 or index >= count:
+            raise FP_ParameterError(
+                f"index must be between 0 and {count - 1} (inclusive); got {index!r}"
+            )
+
+        with self._TransactionCM("Remove segment analysis"):
+            segment_obj.AnalysesRS.RemoveAt(index)
 
     @OperationsMethod
     def SplitSegment(self, segment_or_hvo, offset_within_segment):
