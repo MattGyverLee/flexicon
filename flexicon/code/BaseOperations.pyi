@@ -5,9 +5,31 @@
 #   Base class for all Operations classes
 #
 
-from typing import Any, Optional, Iterator, List, Union, Generic, TypeVar
+from typing import Any, Optional, Iterator, List, Union, Generic, TypeVar, overload
 
 T = TypeVar("T")
+
+class EnumerableWrapper(Generic[T]):
+    """
+    Behavioral-collection wrapper around a raw C# IEnumerable / Python
+    iterator or generator (see docs/getall-contract.md).
+
+    Materializes to a list on first access, then caches it, so it supports
+    re-iteration, len(), and indexing/slicing like a real Sequence -- unlike
+    the one-shot Iterator it wraps.
+    """
+
+    def __init__(self, enumerable: Any) -> None: ...
+    @property
+    def Count(self) -> int: ...
+    def __len__(self) -> int: ...
+    @overload
+    def __getitem__(self, index: int) -> T: ...
+    @overload
+    def __getitem__(self, index: slice) -> List[T]: ...
+    def __iter__(self) -> Iterator[T]: ...
+    def __contains__(self, item: Any) -> bool: ...
+    def __repr__(self) -> str: ...
 
 class BaseOperations(Generic[T]):
     """Base class for all FLEx Operations"""
@@ -17,7 +39,15 @@ class BaseOperations(Generic[T]):
     def __init__(self, project: Any) -> None: ...
 
     # Common CRUD methods (flexible signatures to accommodate various Operations classes)
-    def GetAll(self, *args: Any, **kwargs: Any) -> Iterator[Any]: ...
+    #
+    # NOTE: GetAll returns Any (not Iterator[Any]) at this base-class level.
+    # Per docs/getall-contract.md, every GetAll/GetAll* subclass override
+    # actually returns one of EnumerableWrapper[T], list[T], or a
+    # SmartCollection[T] subtype -- never a one-shot Iterator. None of those
+    # three shapes is an Iterator (they lack __next__), so Iterator[Any]
+    # would make every subclass override an LSP violation under a strict
+    # checker. Subclasses declare the concrete shape they actually return.
+    def GetAll(self, *args: Any, **kwargs: Any) -> Any: ...
     def Find(self, *args: Any, **kwargs: Any) -> Optional[Any]: ...
     def Exists(self, *args: Any, **kwargs: Any) -> bool: ...
     def Create(self, *args: Any, **kwargs: Any) -> Any: ...  # Signature varies by Operations class

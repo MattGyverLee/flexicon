@@ -5,12 +5,16 @@
 #
 
 from typing import Any, Optional, Iterator
-from ..BaseOperations import BaseOperations
+from ..BaseOperations import BaseOperations, EnumerableWrapper
 
 class DiscourseOperations(BaseOperations[Any]):
     """DiscourseOperations operations"""
 
-    def GetAll(self, *args: Any, **kwargs: Any) -> Iterator[Any]: ...
+    # NOTE: this class has no GetAll of its own; it defines
+    # GetAllCharts(text_or_hvo) instead (see below). The previous
+    # `GetAll(...) -> Iterator[Any]` line here asserted an override that
+    # does not exist in the runtime implementation.
+    def GetAllCharts(self, text_or_hvo: Any) -> EnumerableWrapper[Any]: ...
     def Find(self, *args: Any, **kwargs: Any) -> Optional[Any]: ...
     def Exists(self, *args: Any, **kwargs: Any) -> bool: ...
     def Create(self, *args: Any, **kwargs: Any) -> Any: ...

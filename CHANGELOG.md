@@ -11,6 +11,58 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+### Fixed
+- **`.pyi` stub `GetAll`/`GetAll*` return annotations** across ~40 Operations
+  stub files no longer collapse to a blanket `Iterator[Any]`. Each method is
+  now annotated with the concrete behavioral-collection shape it actually
+  returns per `docs/getall-contract.md`: `EnumerableWrapper[T]`, `list[T]`
+  (spelled `List[Any]` for stub compatibility), or a `SmartCollection[T]`
+  subtype (`RuleCollection`, `CompoundRuleCollection`,
+  `AffixTemplateCollection`, `AllomorphCollection`). `BaseOperations.pyi` now
+  declares `EnumerableWrapper` as a proper `Generic[T]` stub class with typed
+  `__iter__`/`__len__`/`__getitem__`/`Count`, instead of leaving it
+  unshadowed-but-untyped. `BaseOperations.GetAll`'s own declared return type
+  changed from `Iterator[Any]` to `Any` -- none of the three real shapes is
+  an `Iterator` (no `__next__`), so `Iterator[Any]` at the base would make
+  every subclass override an LSP violation under a strict checker.
+- **Stale/orphaned `.pyi` paths.** `AllomorphOperations.pyi`,
+  `FilterOperations.pyi`, and `MediaOperations.pyi` were shadow-stubbed at
+  their pre-refactor locations (`Grammar/`, `TextsWords/`) which no longer
+  match the real modules (`Lexicon/`, `Shared/`); a type checker resolving
+  those modules got no stub coverage at all. Relocated to match the real
+  module paths.
+- **Fabricated `GetAll`/`GetAll*` overrides removed or corrected** for
+  classes whose stub asserted a per-class `GetAll` override that does not
+  exist in the runtime implementation (`InflectionFeatureOperations`,
+  `ProjectSettingsOperations`, `PossibilityListOperations`,
+  `CheckOperations`, `CustomFieldOperations`, `DiscourseOperations`) --
+  these either inherit `GetAll` from a base class or only define a
+  `GetAll*`-named sibling method. Also dropped `LexEntryOperations.pyi`'s
+  fabricated `GetAllomorphs` stub method, which does not exist in
+  `LexEntryOperations.py`.
+- **Missing `GetAll*` sibling methods added to stubs** (previously absent
+  entirely, so any call site fell through the class's blanket
+  `__getattr__ -> Any`): `GetAllCompoundRules`, `GetAllAffixTemplates`,
+  `GetAllAffixTemplatesForPOS`, `GetAllAdhocCoProhibitions`,
+  `GetAllByMorphType`, `GetAllSenses` (both `LexEntryOperations` and
+  `LexSenseOperations`), `GetAllTypes` (`LexReferenceOperations` and
+  `VariantOperations`), `GetAllLists`, `GetAllRecordTypes`,
+  `GetAllStatuses`, `GetAllCheckTypes`, `GetAllFields`, `GetAllCharts`,
+  `GetAllForms`, `GetAllWithStatus`, `GetAllUnapproved`, `GetAllByType`.
+  Each now has the real method's parameter signature (positional args and
+  defaults) instead of a blanket `*args: Any, **kwargs: Any`, resolving the
+  pre-existing signature drift noted as a prerequisite in the original T10
+  assessment.
+
+### Deferred (documented, not fixed in this pass)
+- Three whole Operations packages (`Discourse/`, `Reversal/`, `Scripture/`)
+  have **no `.pyi` stubs at all** -- a pre-existing gap outside this issue's
+  scope (adding a new stub tree, not reconciling an existing one).
+- The non-`GetAll` methods on every stub (`Find`, `Create`, `Delete`, etc.)
+  still use the blanket `*args: Any, **kwargs: Any -> Any`/`__getattr__`
+  pattern; only `GetAll`/`GetAll*` methods were reconciled in this pass, per
+  the issue's stated scope.
+
 ---
 
 ## [4.3.0] - 2026-07-20

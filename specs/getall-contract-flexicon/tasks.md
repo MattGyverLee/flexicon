@@ -42,16 +42,23 @@ Repo: flexicon (main). Issue: FlexToolsMCP#37 (cross-repo).
 - [x] T9 (straggler re-verify) Re-ran the raw-shape-without-`@wrap_enumerable`
       sweep across all real `GetAll*` methods: confirmed 0 stragglers (matches
       Cycle-1 audit). No runtime changes required.
-- [x] T10 (.pyi stubs — assessed, deferred) `.pyi` stubs use blanket
-      `(*args: Any, **kwargs: Any) -> Iterator[Any]` for nearly every method
-      across ~30 files, not just `GetAll` — the return-type annotations are
-      already generic/inaccurate independent of this feature, and the
-      parameter signatures don't match the real methods either. Reconciling
-      `GetAll` return annotations to `EnumerableWrapper[T]`/`list[T]`/
-      `SmartCollection[T]` properly requires (a) modeling those generics in
-      the stub layer, plus (b) fixing the pre-existing `*args/**kwargs`
-      signature drift, which is a distinct, larger pre-existing defect.
-      Recommend a dedicated follow-up cycle rather than folding it in here.
+- [x] T10 (.pyi stubs — resolved) Follow-up cycle (GitHub issue #229) landed
+      the deferred work: `BaseOperations.pyi` now models `EnumerableWrapper`
+      as a proper `Generic[T]` stub class, and every `GetAll`/`GetAll*`
+      method across ~40 Operations `.pyi` files declares the concrete
+      per-method return shape (`EnumerableWrapper[T]`, `list[T]`, or the
+      matching `SmartCollection` subtype) instead of blanket
+      `Iterator[Any]`, with the real parameter signature instead of
+      `*args/**kwargs`. Also fixed 3 orphaned stub paths
+      (`AllomorphOperations`/`FilterOperations`/`MediaOperations` were
+      shadow-stubbing stale pre-refactor module paths) and removed/annotated
+      several fabricated `GetAll` overrides that don't exist at runtime.
+      Deferred (documented, separate scope): `Discourse/`/`Reversal/`/
+      `Scripture/` packages have no `.pyi` stubs at all; non-`GetAll`
+      methods keep the blanket `*args/**kwargs -> Any` signature. See
+      `history.md` 2026-07-21 entry and `CHANGELOG.md` `[Unreleased]` for
+      full detail. Verified: `ast.parse()` + `mypy` clean on all 46 stub
+      files.
 
 **Checkpoint:** T7-T9 implemented and self-verified (py_compile green, import
 smoke pending live review); T10 explicitly deferred with rationale above.

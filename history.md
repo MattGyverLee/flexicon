@@ -10,6 +10,67 @@ None
 
 ## History
 
+### 2026-07-21 — `.pyi` stub reconciliation with the GetAll behavioral contract (#229)
+
+Closes MattGyverLee/flexlibs#229. Follow-up to T10 in
+`specs/getall-contract-flexicon/tasks.md`, which had deferred this work
+pending an assessment of whether the flagged prerequisite (pre-existing
+`*args`/`**kwargs` stub/runtime signature drift) was safely resolvable in
+one pass.
+
+**Assessment finding:** the drift was real and, on inspection, larger than
+originally scoped -- three `.pyi` files (`AllomorphOperations`,
+`FilterOperations`, `MediaOperations`) were shadow-stubbing modules at
+pre-refactor paths that no longer exist, giving those three classes *zero*
+stub coverage under any type checker that resolves stubs by path. Several
+other classes had a fabricated per-class `GetAll` override that doesn't
+exist in the runtime implementation at all (falls through to
+`__getattr__ -> Any` instead). Modeling the three generics
+(`EnumerableWrapper[T]`, `SmartCollection[T]` + 8 concrete subtypes) plus
+correcting every `GetAll`/`GetAll*` return annotation and parameter
+signature across ~40 files was judged safe to land in one pass -- the
+wrapper/collection classes themselves have no `.pyi` (so they were never
+shadowed and are already structurally correct); only the Operations-class
+stubs needed changes.
+
+**What changed:**
+- `BaseOperations.pyi` gains a proper `EnumerableWrapper(Generic[T])` stub
+  (typed `__iter__`/`__len__`/`__getitem__`/`Count`/`__contains__`) and its
+  base `GetAll` return type changes from `Iterator[Any]` to `Any` (an
+  `Iterator[Any]` base would make every subclass's real return shape --
+  none of which is an `Iterator` -- an LSP violation).
+- Every `GetAll`/`GetAll*` method across ~40 stub files now declares the
+  concrete return shape it actually has at runtime (`EnumerableWrapper[T]`,
+  `list[T]`, or the matching `SmartCollection` subtype --
+  `RuleCollection`, `CompoundRuleCollection`, `AffixTemplateCollection`,
+  `AllomorphCollection`), determined per-method from the already-audited
+  T7 docstrings cross-checked against each method's actual decorator and
+  return statement.
+- Missing `GetAll*` sibling methods (previously entirely absent from the
+  stub, e.g. `GetAllCompoundRules`, `GetAllTypes`, `GetAllCheckTypes`, ...)
+  were added with the real method's actual parameter signature, fixing the
+  `*args`/`**kwargs` drift for the methods this issue touches.
+- `AllomorphOperations.pyi`, `FilterOperations.pyi`, `MediaOperations.pyi`
+  relocated from their stale pre-refactor paths (`Grammar/`, `TextsWords/`)
+  to the real module paths (`Lexicon/`, `Shared/`).
+- Fabricated overrides removed where the runtime has no such method
+  (`InflectionFeatureOperations.GetAll`, `ProjectSettingsOperations.GetAll`,
+  `PossibilityListOperations.GetAll`, `CheckOperations.GetAll`,
+  `CustomFieldOperations.GetAll`, `DiscourseOperations.GetAll`,
+  `LexEntryOperations.GetAllomorphs`).
+
+**Deferred, documented, out of scope for this pass:**
+- `Discourse/`, `Reversal/`, `Scripture/` Operations packages have no
+  `.pyi` stubs at all (a pre-existing gap; adding a new stub tree is a
+  larger, separate effort than reconciling an existing one).
+- Non-`GetAll` methods (`Find`, `Create`, `Delete`, etc.) keep the blanket
+  `*args`/`**kwargs -> Any` signature and the `__getattr__` fallback on
+  every stub class; only `GetAll`/`GetAll*` were in scope here.
+
+**Verification:** `ast.parse()` on all 46 `.pyi` files (0 syntax errors);
+`mypy --ignore-missing-imports --follow-imports=silent` on all 46 files
+(0 issues).
+
 ### 2026-07-20 — v4.3.0: GetAll behavioral collection contract + repository/decorator/fail-loud fixes
 
 Three targeted `GetAll` fixes plus a codebase-wide docstring standardization

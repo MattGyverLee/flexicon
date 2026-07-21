@@ -4,13 +4,17 @@
 #   Type stubs for PossibilityListOperations
 #
 
-from typing import Any, Optional, Iterator
+from typing import Any, List, Optional, Iterator
 from ..BaseOperations import BaseOperations
 
 class PossibilityListOperations(BaseOperations[Any]):
     """PossibilityListOperations operations"""
 
-    def GetAll(self, *args: Any, **kwargs: Any) -> Iterator[Any]: ...
+    # NOTE: this class has no GetAll of its own; it defines GetAllLists()
+    # instead (see below). The previous `GetAll(...) -> Iterator[Any]` line
+    # here asserted an override that does not exist in the runtime
+    # implementation.
+    def GetAllLists(self) -> List[Any]: ...
     def Find(self, *args: Any, **kwargs: Any) -> Optional[Any]: ...
     def Exists(self, *args: Any, **kwargs: Any) -> bool: ...
     def Create(self, *args: Any, **kwargs: Any) -> Any: ...

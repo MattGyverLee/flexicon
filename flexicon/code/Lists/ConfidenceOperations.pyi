@@ -4,13 +4,14 @@
 #   Type stubs for ConfidenceOperations
 #
 
-from typing import Any, Optional, Iterator
+from typing import Any, List, Optional, Iterator
 from ..BaseOperations import BaseOperations
 
 class ConfidenceOperations(BaseOperations[Any]):
     """ConfidenceOperations operations"""
 
-    def GetAll(self, *args: Any, **kwargs: Any) -> Iterator[Any]: ...
+    # Inherited from PossibilityItemOperations.GetAll (list[ICmPossibility]).
+    def GetAll(self) -> List[Any]: ...
     def Find(self, *args: Any, **kwargs: Any) -> Optional[Any]: ...
     def Exists(self, *args: Any, **kwargs: Any) -> bool: ...
     def Create(self, *args: Any, **kwargs: Any) -> Any: ...

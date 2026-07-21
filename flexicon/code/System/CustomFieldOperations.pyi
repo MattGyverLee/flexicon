@@ -4,13 +4,17 @@
 #   Type stubs for CustomFieldOperations
 #
 
-from typing import Any, Optional, Iterator
+from typing import Any, List, Optional, Iterator, Tuple
 from ..BaseOperations import BaseOperations
 
 class CustomFieldOperations(BaseOperations[Any]):
     """CustomFieldOperations operations"""
 
-    def GetAll(self, *args: Any, **kwargs: Any) -> Iterator[Any]: ...
+    # NOTE: this class has no GetAll of its own; it defines
+    # GetAllFields(owner_class) instead (see below). The previous
+    # `GetAll(...) -> Iterator[Any]` line here asserted an override that
+    # does not exist in the runtime implementation.
+    def GetAllFields(self, owner_class: Any) -> List[Tuple[Any, Any]]: ...
     def Find(self, *args: Any, **kwargs: Any) -> Optional[Any]: ...
     def Exists(self, *args: Any, **kwargs: Any) -> bool: ...
     def Create(self, *args: Any, **kwargs: Any) -> Any: ...

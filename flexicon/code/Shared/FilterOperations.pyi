@@ -1,16 +1,16 @@
 #
-#   MediaOperations.pyi
+#   FilterOperations.pyi
 #
-#   Type stubs for MediaOperations
+#   Type stubs for FilterOperations
 #
 
 from typing import Any, Optional, Iterator
-from ..BaseOperations import BaseOperations
+from ..BaseOperations import BaseOperations, EnumerableWrapper
 
-class MediaOperations(BaseOperations[Any]):
-    """MediaOperations operations"""
+class FilterOperations(BaseOperations[Any]):
+    """FilterOperations operations"""
 
-    def GetAll(self, *args: Any, **kwargs: Any) -> Iterator[Any]: ...
+    def GetAll(self) -> EnumerableWrapper[Any]: ...
     def Find(self, *args: Any, **kwargs: Any) -> Optional[Any]: ...
     def Exists(self, *args: Any, **kwargs: Any) -> bool: ...
     def Create(self, *args: Any, **kwargs: Any) -> Any: ...
