@@ -10,6 +10,28 @@ None
 
 ## History
 
+### 2026-07-22 — v4.3.0 release cut: SegmentOperations AnalysesRS writes, MSA.RemoveOrphaned, wrapper_base cast fix
+
+Closes MattGyverLee/flexlibs#215, #206, #199. Completes the v4.3.0 release
+that was left uncut after the version bump in 08633e6 -- the three fixes
+below plus the already-recorded `.pyi` stub reconciliation (#229) and the
+GetAll repository/decorator/fail-loud pass all ship together as v4.3.0.
+
+**What changed:**
+- `SegmentOperations` gains an `AnalysesRS` write API: `SetAnalysis`,
+  `ReplaceAnalysis`, `InsertAnalysis`, `AppendAnalysis`, `RemoveAnalysis` on
+  `ISegment.AnalysesRS`, matching the pattern already established by
+  `SetFreeTranslation` (#215).
+- `project.MSA.RemoveOrphaned(entry=None, progress=None)`: project-wide,
+  `WfiMorphBundle`-aware MSA orphan cleanup, returning a structured
+  `RemoveOrphanedResult`; scoped to a single entry when `entry` is passed
+  (#206).
+- `LCMObjectWrapper` now exposes a `lcm_object` property and `AsICmObject()`
+  method so wrapper instances can be cast back to LCM interfaces from
+  external pythonnet call sites, fixing a runtime crash on cast (#199).
+
+See `CHANGELOG.md` `[4.3.0]` for the full user-facing entry.
+
 ### 2026-07-21 — `.pyi` stub reconciliation with the GetAll behavioral contract (#229)
 
 Closes MattGyverLee/flexlibs#229. Follow-up to T10 in

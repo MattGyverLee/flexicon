@@ -11,7 +11,27 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+_Nothing yet. Non-breaking fixes and breaking changes accumulate here until the next version cut._
+
+---
+
+## [4.3.0] - 2026-07-22
+
+### Added
+- **`SegmentOperations` `AnalysesRS` write API**: new `SetAnalysis`,
+  `ReplaceAnalysis`, `InsertAnalysis`, `AppendAnalysis`, and `RemoveAnalysis`
+  methods on `ISegment.AnalysesRS`, bringing segment-level analysis-list
+  mutation in line with the existing `SetFreeTranslation` support (#215).
+- **`project.MSA.RemoveOrphaned(entry=None, progress=None)`**: project-wide
+  `WfiMorphBundle`-aware MSA orphan cleanup. Returns a structured
+  `RemoveOrphanedResult` describing what was removed, scoped to a single
+  entry when `entry` is supplied (#206).
+
 ### Fixed
+- **`LCMObjectWrapper` exposes `lcm_object` / `AsICmObject()`** so wrapper
+  objects returned by the API can be cast back to LCM interfaces from user
+  scripts; fixes a runtime crash that occurred when user code attempted to
+  cast a wrapper directly (#199).
 - **`.pyi` stub `GetAll`/`GetAll*` return annotations** across ~40 Operations
   stub files no longer collapse to a blanket `Iterator[Any]`. Each method is
   now annotated with the concrete behavioral-collection shape it actually
@@ -53,21 +73,6 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   defaults) instead of a blanket `*args: Any, **kwargs: Any`, resolving the
   pre-existing signature drift noted as a prerequisite in the original T10
   assessment.
-
-### Deferred (documented, not fixed in this pass)
-- Three whole Operations packages (`Discourse/`, `Reversal/`, `Scripture/`)
-  have **no `.pyi` stubs at all** -- a pre-existing gap outside this issue's
-  scope (adding a new stub tree, not reconciling an existing one).
-- The non-`GetAll` methods on every stub (`Find`, `Create`, `Delete`, etc.)
-  still use the blanket `*args: Any, **kwargs: Any -> Any`/`__getattr__`
-  pattern; only `GetAll`/`GetAll*` methods were reconciled in this pass, per
-  the issue's stated scope.
-
----
-
-## [4.3.0] - 2026-07-20
-
-### Fixed
 - **`MediaOperations.GetAll`** now enumerates `ICmFileRepository` directly
   instead of the incorrect `ICmObjectRepository` cast, and its docstring now
   states the caveat that repository enumeration returns every `ICmFile` in
@@ -80,6 +85,15 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   translations have no typed link to a translation-type possibility the way
   text-level translations do, so the method could never do what its name
   promised; it now fails loudly and points callers at `GetTextsWithType()`.
+
+### Deferred (documented, not fixed in this pass)
+- Three whole Operations packages (`Discourse/`, `Reversal/`, `Scripture/`)
+  have **no `.pyi` stubs at all** -- a pre-existing gap outside this issue's
+  scope (adding a new stub tree, not reconciling an existing one).
+- The non-`GetAll` methods on every stub (`Find`, `Create`, `Delete`, etc.)
+  still use the blanket `*args: Any, **kwargs: Any -> Any`/`__getattr__`
+  pattern; only `GetAll`/`GetAll*` methods were reconciled in this pass, per
+  the issue's stated scope.
 
 ### Changed
 - **Build:** the package version is now a single source of truth. `pyproject.toml`
