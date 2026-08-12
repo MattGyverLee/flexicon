@@ -11,7 +11,24 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
-_Nothing yet. Non-breaking fixes and breaking changes accumulate here until the next version cut._
+### Fixed
+- **`project.Senses.GetPartOfSpeechObject()` no longer returns `None` for every
+  sense.** The method read `getattr(msa, "PartOfSpeechRA", None)` off the base
+  `IMoMorphSynAnalysis` interface, where that property is not declared, so it
+  silently returned `None` even for ordinary stem and inflectional senses with
+  a perfectly valid part of speech. It now delegates to `get_pos_from_msa()`,
+  which casts to the concrete MSA subtype first: `MoStemMsa`, `MoInflAffMsa`,
+  `MoDerivAffMsa`, and `MoUnclassifiedAffixMsa` all now return their POS
+  correctly. For `MoDerivAffMsa`, the value returned is the output category
+  (`ToPartOfSpeechRA`), matching what `SetPartOfSpeech()` already writes for
+  that subtype (#87 precedent), so get/set round-trips as expected. A sense
+  with no MSA still returns `None` silently (unchanged contract); a sense
+  whose MSA has an unrecognized `ClassName` now returns `None` and logs a
+  warning naming the sense `Hvo` and the `ClassName`, so that gap is
+  discoverable rather than indistinguishable from "no POS set" (#232).
+  `GetPartOfSpeech()` (the string getter, which uses `InterlinearAbbr`) was
+  not affected and is unchanged -- `InterlinearAbbr` is declared on the base
+  interface.
 
 ---
 

@@ -42,8 +42,14 @@ from ..FLExProject import (
     FP_ParameterError,
 )
 
-# Import LCM casting utilities for pythonnet interface casting
-from ..lcm_casting import cast_to_concrete
+# Import LCM casting utilities for pythonnet interface casting.
+# POS_BEARING_MSA_CLASSES is the canonical (single source of truth) set of
+# MSA ClassName values that have a POS-bearing property -- it is defined
+# alongside get_pos_from_msa()'s own dispatch table in lcm_casting.py so the
+# two cannot silently diverge (issue #232 P1 followup). GetPartOfSpeechObject
+# uses it below to distinguish "no MSA" (normal, no log) from "unrecognized
+# MSA subtype" (logged, per issue #232).
+from ..lcm_casting import POS_BEARING_MSA_CLASSES, cast_to_concrete, get_pos_from_msa
 
 # Import string utilities
 from ..Shared.string_utils import best_analysis_text, normalize_match_key, normalize_text
@@ -1156,11 +1162,15 @@ class LexSenseOperations(BaseOperations):
             sense_or_hvo: The ILexSense object or HVO.
 
         Returns:
-            IPartOfSpeech | None: The POS object on the sense's MSA's
-            ``PartOfSpeechRA``, or ``None`` if the sense has no MSA, or
-            if the MSA is a derivational-affix variant that exposes only
-            ``FromPartOfSpeechRA`` / ``ToPartOfSpeechRA`` (issue #87
-            covers the derivational-affix asymmetry separately).
+            IPartOfSpeech | None: The POS object for all four recognized
+            MSA subtypes (``MoStemMsa``, ``MoInflAffMsa``,
+            ``MoDerivAffMsa``, ``MoUnclassifiedAffixMsa``). For
+            ``MoDerivAffMsa`` this is the *output* category
+            (``ToPartOfSpeechRA``), consistent with
+            :meth:`SetPartOfSpeech`. Returns ``None`` if the sense has
+            no MSA, or if the MSA's subtype is not one of the four
+            recognized POS-bearing types (a warning is logged in that
+            case).
 
         Raises:
             FP_NullParameterError: If sense_or_hvo is None.
@@ -1181,7 +1191,19 @@ class LexSenseOperations(BaseOperations):
         msa = sense.MorphoSyntaxAnalysisRA
         if msa is None:
             return None
-        return getattr(msa, "PartOfSpeechRA", None)
+
+        class_name = getattr(msa, "ClassName", None)
+        if class_name not in POS_BEARING_MSA_CLASSES:
+            logger.warning(
+                "GetPartOfSpeechObject: sense Hvo=%s has an MSA with "
+                "unrecognized ClassName=%r; no POS-bearing property "
+                "exists on this subtype",
+                getattr(sense, "Hvo", None),
+                class_name,
+            )
+            return None
+
+        return get_pos_from_msa(msa)
 
     # Map msa_kind strings to the LCM ClassName strings used for
     # subtype comparison.

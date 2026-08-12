@@ -351,6 +351,26 @@ def cast_to_concrete(obj):
         return obj
 
 
+# MSA ClassName -> the property that holds its Part-of-Speech reference.
+# This is the single source of truth for which MSA subtypes are
+# POS-bearing and which property to read; get_pos_from_msa() below
+# dispatches through it, and other Operations classes (e.g.
+# LexSenseOperations.GetPartOfSpeechObject) that need to know "is this
+# MSA subtype POS-bearing at all" should import POS_BEARING_MSA_CLASSES
+# rather than re-literalizing the class-name list (issue #232 P1 followup).
+_MSA_POS_PROPERTY = {
+    "MoStemMsa": "PartOfSpeechRA",
+    "MoDerivAffMsa": "ToPartOfSpeechRA",  # output POS of derivation (see #87)
+    "MoInflAffMsa": "PartOfSpeechRA",
+    "MoUnclassifiedAffixMsa": "PartOfSpeechRA",
+}
+
+# Public: exported for use by other modules that need to check whether an
+# MSA ClassName is one of the recognized POS-bearing subtypes without
+# duplicating the literal list (see LexSenseOperations.GetPartOfSpeechObject).
+POS_BEARING_MSA_CLASSES = frozenset(_MSA_POS_PROPERTY)
+
+
 def get_pos_from_msa(msa):
     """
     Get the Part of Speech from any MSA type.
@@ -407,31 +427,18 @@ def get_pos_from_msa(msa):
 
     class_name = msa.ClassName
 
+    pos_property = _MSA_POS_PROPERTY.get(class_name)
+    if pos_property is None:
+        # Unknown ClassName -- silently return None (no logging here;
+        # callers that want to distinguish "unrecognized subtype" from
+        # "no MSA" check POS_BEARING_MSA_CLASSES themselves, per #232).
+        return None
+
     try:
-        if class_name == "MoStemMsa":
-            interface_type = _interface_cache.get("MoStemMsa")
-            if interface_type:
-                concrete = interface_type(msa)
-                return concrete.PartOfSpeechRA
-
-        elif class_name == "MoDerivAffMsa":
-            interface_type = _interface_cache.get("MoDerivAffMsa")
-            if interface_type:
-                concrete = interface_type(msa)
-                # Return the "to" POS (output of derivation)
-                return concrete.ToPartOfSpeechRA
-
-        elif class_name == "MoInflAffMsa":
-            interface_type = _interface_cache.get("MoInflAffMsa")
-            if interface_type:
-                concrete = interface_type(msa)
-                return concrete.PartOfSpeechRA
-
-        elif class_name == "MoUnclassifiedAffixMsa":
-            interface_type = _interface_cache.get("MoUnclassifiedAffixMsa")
-            if interface_type:
-                concrete = interface_type(msa)
-                return concrete.PartOfSpeechRA
+        interface_type = _interface_cache.get(class_name)
+        if interface_type:
+            concrete = interface_type(msa)
+            return getattr(concrete, pos_property)
 
     except Exception:
         # If anything fails, return None rather than crashing
