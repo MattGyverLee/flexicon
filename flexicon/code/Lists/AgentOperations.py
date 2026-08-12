@@ -273,7 +273,9 @@ class AgentOperations(PossibilityItemOperations):
 
         Args:
             agent_or_hvo: Either an ICmAgent object or its HVO
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Ignored. Accepted for backwards compatibility only --
+                ICmAgent.Version is a monolingual Unicode property, so there
+                is no per-writing-system alternative to select.
 
         Returns:
             str: The agent's version string (empty string if not set)
@@ -297,6 +299,12 @@ class AgentOperations(PossibilityItemOperations):
             - Typically used for parser agents
             - Human agents usually don't have version numbers
             - Can use any version format (e.g., "1.0", "2.1.3", "v3-beta")
+            - ICmAgent.Version is a plain Unicode property in the LCM model
+              (unlike ICmAgent.Name, which is MultiUnicode). pythonnet
+              surfaces it as a Python str, so it must NOT be read through
+              get_String()/ITsString -- doing so raised
+              ``AttributeError: 'str' object has no attribute 'get_String'``
+              on every call.
 
         See Also:
             SetVersion, CreateParserAgent
@@ -304,10 +312,8 @@ class AgentOperations(PossibilityItemOperations):
         self._ValidateParam(agent_or_hvo, "agent_or_hvo")
 
         agent = self._PossibilityItemOperations__ResolveObject(agent_or_hvo)
-        wsHandle = self._PossibilityItemOperations__WSHandle(wsHandle)
 
-        version = ITsString(agent.Version.get_String(wsHandle)).Text
-        return version or ""
+        return agent.Version or ""
 
     @OperationsMethod
     def SetVersion(self, agent_or_hvo, version, wsHandle=None):
@@ -317,7 +323,9 @@ class AgentOperations(PossibilityItemOperations):
         Args:
             agent_or_hvo: Either an ICmAgent object or its HVO
             version (str): The version string (e.g., "1.0.0")
-            wsHandle: Optional writing system handle. Defaults to analysis WS.
+            wsHandle: Ignored. Accepted for backwards compatibility only --
+                ICmAgent.Version is a monolingual Unicode property, so there
+                is no per-writing-system alternative to set.
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
@@ -340,6 +348,9 @@ class AgentOperations(PossibilityItemOperations):
             - Can be empty string to clear
             - Use semantic versioning (e.g., "1.0.0") recommended
             - Update when parser algorithm changes
+            - ICmAgent.Version is a plain Unicode property in the LCM model
+              (unlike ICmAgent.Name, which is MultiUnicode). It is assigned
+              directly as a Python str, not via set_String().
 
         See Also:
             GetVersion, CreateParserAgent
@@ -350,10 +361,8 @@ class AgentOperations(PossibilityItemOperations):
         self._ValidateParam(version, "version")
 
         agent = self._PossibilityItemOperations__ResolveObject(agent_or_hvo)
-        wsHandle = self._PossibilityItemOperations__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(version, wsHandle)
-        agent.Version.set_String(wsHandle, mkstr)
+        agent.Version = version
 
     # --- Agent Type Operations ---
 

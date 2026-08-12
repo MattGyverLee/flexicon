@@ -15,6 +15,27 @@ _Nothing yet. Non-breaking fixes and breaking changes accumulate here until the 
 
 ---
 
+## [4.3.1] - 2026-08-13
+
+### Fixed
+- **`project.Agents.GetVersion()` / `SetVersion()` no longer treat
+  `ICmAgent.Version` as multilingual.** `Version` is a monolingual `Unicode`
+  property in the LCM model (unlike `ICmAgent.Name`, which is `MultiUnicode`),
+  so pythonnet surfaces it as a plain Python `str`. Both accessors routed it
+  through `get_String()` / `set_String()` / `TsStringUtils.MakeString()`,
+  raising `AttributeError: 'str' object has no attribute 'get_String'` on
+  every call and leaving parser-agent versions unreadable and unwritable.
+  `GetVersion` now returns `agent.Version or ""` and `SetVersion` assigns
+  `agent.Version` directly.
+
+### Changed
+- The `wsHandle` parameter on `Agents.GetVersion()` / `Agents.SetVersion()` is
+  now accepted but **ignored**, and documented as such. It is retained for
+  signature compatibility only -- a monolingual property has no
+  per-writing-system alternative to select. No caller changes are required.
+
+---
+
 ## [4.3.0] - 2026-07-22
 
 ### Added
