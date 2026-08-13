@@ -133,12 +133,16 @@ class WfiMorphBundleOperations(BaseOperations):
             yield bundle
 
     @OperationsMethod
-    def Create(self, analysis_or_hvo):
+    def Create(self, analysis_or_hvo, guid=None):
         """
         Create a new morph bundle for a wordform analysis.
 
         Args:
             analysis_or_hvo: The IWfiAnalysis object or HVO.
+            guid (optional): GUID to assign to the new morph bundle, as a
+                ``System.Guid`` or string. Use this when REPRODUCING a
+                morph bundle from another project so it keeps its original
+                identity. None (the default) mints a fresh GUID.
 
         Returns:
             IWfiMorphBundle: The newly created morph bundle object.
@@ -178,7 +182,7 @@ class WfiMorphBundleOperations(BaseOperations):
         with self._TransactionCM("Create morph bundle"):
             # Create the new morph bundle using the factory
             factory = self.project.project.ServiceLocator.GetService(IWfiMorphBundleFactory)
-            bundle = factory.Create()
+            bundle = self._CreateWithGuid(factory, guid, "IWfiMorphBundle")
 
             # Add to analysis's morph bundles collection
             analysis.MorphBundlesOS.Add(bundle)

@@ -270,7 +270,7 @@ class WfiAnalysisOperations(BaseOperations):
         return list(wordform.AnalysesOC)
 
     @OperationsMethod
-    def Create(self, wordform_or_hvo):
+    def Create(self, wordform_or_hvo, guid=None):
         """
         Create a new analysis for a wordform.
 
@@ -280,6 +280,10 @@ class WfiAnalysisOperations(BaseOperations):
 
         Args:
             wordform_or_hvo: Either an IWfiWordform object or its HVO
+            guid (optional): GUID to assign to the new analysis, as a
+                ``System.Guid`` or string. Use this when REPRODUCING a
+                analysis from another project so it keeps its original
+                identity. None (the default) mints a fresh GUID.
 
         Returns:
             IWfiAnalysis: The newly created analysis object
@@ -318,7 +322,7 @@ class WfiAnalysisOperations(BaseOperations):
         with self._TransactionCM("Create analysis"):
             # Create the analysis using the factory
             factory = self.project.project.ServiceLocator.GetService(IWfiAnalysisFactory)
-            new_analysis = factory.Create()
+            new_analysis = self._CreateWithGuid(factory, guid, "IWfiAnalysis")
 
             # Add to wordform's analysis collection
             wordform.AnalysesOC.Add(new_analysis)

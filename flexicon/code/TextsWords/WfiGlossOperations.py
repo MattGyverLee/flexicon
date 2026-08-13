@@ -185,7 +185,7 @@ class WfiGlossOperations(BaseOperations):
             yield gloss
 
     @OperationsMethod
-    def Create(self, analysis_or_hvo, form, wsHandle=None):
+    def Create(self, analysis_or_hvo, form, wsHandle=None, guid=None):
         """
         Create a new gloss for a wordform analysis.
 
@@ -193,6 +193,10 @@ class WfiGlossOperations(BaseOperations):
             analysis_or_hvo: Either an IWfiAnalysis object or its HVO
             form: The gloss text (meaning/translation)
             wsHandle: Optional writing system handle. Defaults to analysis WS.
+            guid (optional): GUID to assign to the new gloss, as a
+                ``System.Guid`` or string. Use this when REPRODUCING a
+                gloss from another project so it keeps its original
+                identity. None (the default) mints a fresh GUID.
 
         Returns:
             IWfiGloss: The newly created gloss object
@@ -242,7 +246,7 @@ class WfiGlossOperations(BaseOperations):
         with self._TransactionCM("Create gloss"):
             # Get the factory and create the gloss
             factory = self.project.project.ServiceLocator.GetService(IWfiGlossFactory)
-            new_gloss = factory.Create()
+            new_gloss = self._CreateWithGuid(factory, guid, "IWfiGloss")
 
             # Add to analysis's Meanings collection (must be done before setting properties)
             analysis.MeaningsOC.Add(new_gloss)
