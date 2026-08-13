@@ -541,7 +541,7 @@ class SegmentOperations(BaseOperations):
     # ========== WRITE METHODS ==========
 
     @OperationsMethod
-    def AppendSentence(self, paragraph_or_hvo, text, wsHandle=None):
+    def AppendSentence(self, paragraph_or_hvo, text, wsHandle=None, guid=None):
         """
         Append a new sentence to a paragraph, creating a new segment.
 
@@ -558,6 +558,10 @@ class SegmentOperations(BaseOperations):
             text: The sentence text to append. Must be non-empty.
             wsHandle: Optional writing system handle. Defaults to project
                       default vernacular WS.
+            guid (optional): GUID to assign to the new segment, as a
+                ``System.Guid`` or string. Use this when REPRODUCING a
+                segment from another project so it keeps its original
+                identity. None (the default) mints a fresh GUID.
 
         Returns:
             ISegment: The newly created segment object.
@@ -622,7 +626,7 @@ class SegmentOperations(BaseOperations):
 
             # --- Step 2: add new segment to SegmentsOS ---
             factory = self.__GetSegmentFactory()
-            seg = factory.Create()
+            seg = self._CreateWithGuid(factory, guid, "ISegment")
             para.SegmentsOS.Add(seg)
             # AnalysisAdjuster (fired by the Contents setter above) will set
             # seg.BeginOffset / seg.EndOffset when the paragraph is re-parsed.

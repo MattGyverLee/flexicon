@@ -127,13 +127,17 @@ class WordformOperations(BaseOperations):
         return self.project.ObjectsIn(IWfiWordformRepository)
 
     @OperationsMethod
-    def Create(self, form, wsHandle=None):
+    def Create(self, form, wsHandle=None, guid=None):
         """
         Create a new wordform in the FLEx project.
 
         Args:
             form: The surface text form of the wordform
             wsHandle: Optional writing system handle. Defaults to vernacular WS.
+            guid (optional): GUID to assign to the new wordform, as a
+                ``System.Guid`` or string. Use this when REPRODUCING a
+                wordform from another project so it keeps its original
+                identity. None (the default) mints a fresh GUID.
 
         Returns:
             IWfiWordform: The newly created wordform object
@@ -166,7 +170,7 @@ class WordformOperations(BaseOperations):
         with self._TransactionCM("Create wordform"):
             # Factory.Create() owns the wordform automatically in FLEx 9 LCM
             factory = self.project.project.ServiceLocator.GetService(IWfiWordformFactory)
-            new_wf = factory.Create()
+            new_wf = self._CreateWithGuid(factory, guid, "IWfiWordform")
 
             # Set the form
             mkstr = TsStringUtils.MakeString(form, wsHandle)

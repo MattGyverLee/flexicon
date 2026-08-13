@@ -1844,6 +1844,74 @@ class BaseOperations:
 
         return _NestingAwareTransaction(self.project, label)
 
+    def _CreateWithGuid(self, factory, guid=None, kind=None):
+        """
+        Create an object through an LCM factory, preserving a caller-supplied GUID.
+
+        Nearly every LibLCM factory exposes a ``Create(Guid)`` overload alongside
+        the no-arg ``Create()``. Callers that are REPRODUCING an object from
+        another project (a transfer, a merge, a round-trip) must be able to keep
+        the original identity: a target object carrying the source GUID is
+        recognisably the same object on a later run, which is what makes
+        deduplication and re-linking possible at all. Without it, downstream
+        tools are forced to invent structural fingerprints to recover identity
+        that was needlessly discarded.
+
+        When ``guid`` is None this is exactly the old no-arg ``Create()``, so
+        existing callers are unaffected.
+
+        Args:
+            factory: An LCM factory instance exposing ``Create()`` and,
+                optionally, ``Create(Guid)``.
+            guid: Optional. The GUID to assign, as a ``System.Guid`` or a string
+                (braced or unbraced). None (the default) mints a fresh GUID.
+            kind (str, optional): Descriptive name used in the warning logged
+                when a requested GUID could not be honoured.
+
+        Returns:
+            The newly created object.
+
+        Raises:
+            FP_ParameterError: If ``guid`` was supplied but is not a valid GUID.
+
+        Note:
+            If the GUID is already present in the project, LCM raises and this
+            falls back to a fresh identity, logging a warning that names the
+            GUID. Callers that must not silently lose identity should check for
+            an existing object first (see the ``Find``/``Get*`` helpers).
+
+        Example:
+            >>> # Reproduce a paragraph from another project under its own GUID
+            >>> para = project.Paragraphs.Create(text, "In the beginning...",
+            ...                                  guid=src_para.Guid)
+            >>> str(para.Guid) == str(src_para.Guid)
+            True
+
+        See Also:
+            _ValidateParam
+        """
+        import logging
+
+        if guid is None:
+            return factory.Create()
+
+        guid_arg = guid
+        if isinstance(guid, str):
+            from System import Guid as _DotNetGuid
+            try:
+                guid_arg = _DotNetGuid.Parse(guid)
+            except Exception as exc:
+                raise FP_ParameterError(
+                    "guid %r is not a valid GUID" % (guid,)) from exc
+        try:
+            return factory.Create(guid_arg)
+        except Exception as exc:
+            logging.getLogger("flexicon").warning(
+                "%s: Create(Guid=%s) failed (%s: %s); falling back to a new "
+                "identity. The requested GUID was NOT preserved.",
+                kind or type(factory).__name__, guid, type(exc).__name__, exc)
+            return factory.Create()
+
     def _ValidateParam(self, param: Any, param_name: str = "parameter") -> None:
         """
         Validate that a parameter is not None and not a stale LCM object.

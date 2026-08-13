@@ -107,7 +107,7 @@ class TextOperations(BaseOperations):
     # --- Core CRUD Operations ---
 
     @OperationsMethod
-    def Create(self, name, genre=None):
+    def Create(self, name, genre=None, guid=None, contents_guid=None):
         """
         Create a new text in the project.
 
@@ -119,6 +119,12 @@ class TextOperations(BaseOperations):
             genre (ICmPossibility, optional): Genre classification for the text.
                 If provided, must be a valid ICmPossibility from the project's
                 genre list. Defaults to None.
+            guid (optional): GUID to assign to the new text, as a
+                ``System.Guid`` or string. Use this when REPRODUCING a
+                text from another project so it keeps its original
+                identity. None (the default) mints a fresh GUID.
+            contents_guid (optional): GUID for the text's owned StText
+                contents object. Same semantics as ``guid``.
 
         Returns:
             IText: The newly created text object.
@@ -152,7 +158,7 @@ class TextOperations(BaseOperations):
         with self._TransactionCM(f"Create text '{name}'"):
             # Create the text object
             text_factory = self.project.project.ServiceLocator.GetService(ITextFactory)
-            new_text = text_factory.Create()
+            new_text = self._CreateWithGuid(text_factory, guid, "IText")
 
             # Add to the texts collection. In newer LCM builds ILangProject's
             # texts accessor is `Texts` (not `TextsOC` -- the latter has been
@@ -166,7 +172,7 @@ class TextOperations(BaseOperations):
 
             # Create the contents (StText)
             sttext_factory = self.project.project.ServiceLocator.GetService(IStTextFactory)
-            contents = sttext_factory.Create()
+            contents = self._CreateWithGuid(sttext_factory, contents_guid, "IStText")
             new_text.ContentsOA = contents
 
             # Set genre if provided

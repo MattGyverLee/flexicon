@@ -125,7 +125,7 @@ class ParagraphOperations(BaseOperations):
     # --- Core CRUD Operations ---
 
     @OperationsMethod
-    def Create(self, text_or_hvo, content, wsHandle=None):
+    def Create(self, text_or_hvo, content, wsHandle=None, guid=None):
         """
         Create a new paragraph and append it to a text.
 
@@ -138,6 +138,10 @@ class ParagraphOperations(BaseOperations):
             content (str): The text content for the new paragraph. Must be non-empty.
             wsHandle (int, optional): Writing system handle. If None, uses the
                 default vernacular writing system. Can also be a language tag string.
+            guid (optional): GUID to assign to the new paragraph, as a
+                ``System.Guid`` or string. Use this when REPRODUCING a paragraph
+                from another project so it keeps its original identity. None
+                (the default) mints a fresh GUID.
 
         Returns:
             IStTxtPara: The newly created paragraph object.
@@ -180,7 +184,7 @@ class ParagraphOperations(BaseOperations):
         with self._TransactionCM("Create paragraph"):
             # Create the new paragraph using the factory
             factory = self.project.project.ServiceLocator.GetService(IStTxtParaFactory)
-            para = factory.Create()
+            para = self._CreateWithGuid(factory, guid, "IStTxtPara")
 
             # Add to text's paragraphs collection
             text_obj.ContentsOA.ParagraphsOS.Add(para)
