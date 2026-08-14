@@ -235,8 +235,9 @@ class ReversalIndexEntryOperations(BaseOperations):
 
         entry = self.__ResolveObject(entry_or_hvo)
 
-        # Delete the entry (LCM handles removal from collections)
-        entry.Delete()
+        with self._TransactionCM("Delete reversal entry"):
+            # Delete the entry (LCM handles removal from collections)
+            entry.Delete()
 
     @OperationsMethod
     def Find(self, index_or_hvo, form, wsHandle=None):
@@ -407,8 +408,9 @@ class ReversalIndexEntryOperations(BaseOperations):
         if wsHandle is None:
             wsHandle = self.__GetEntryWS(entry)
 
-        mkstr = TsStringUtils.MakeString(text, wsHandle)
-        entry.ReversalForm.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set reversal form '{text}'"):
+            mkstr = TsStringUtils.MakeString(text, wsHandle)
+            entry.ReversalForm.set_String(wsHandle, mkstr)
 
     # --- Sense Linking ---
 
@@ -484,9 +486,12 @@ class ReversalIndexEntryOperations(BaseOperations):
 
         entry = self.__ResolveObject(entry_or_hvo)
 
-        # Add sense if not already linked
+        # Add sense if not already linked. The membership test stays OUTSIDE
+        # the transaction so an already-linked sense is a true no-op and does
+        # not open an empty undo task.
         if sense not in entry.SensesRS:
-            entry.SensesRS.Add(sense)
+            with self._TransactionCM("Link sense to reversal entry"):
+                entry.SensesRS.Add(sense)
 
     @OperationsMethod
     def RemoveSense(self, entry_or_hvo, sense):
@@ -521,9 +526,12 @@ class ReversalIndexEntryOperations(BaseOperations):
 
         entry = self.__ResolveObject(entry_or_hvo)
 
-        # Remove sense if linked
+        # Remove sense if linked. The membership test stays OUTSIDE the
+        # transaction so an unlinked sense is a true no-op and does not open
+        # an empty undo task.
         if sense in entry.SensesRS:
-            entry.SensesRS.Remove(sense)
+            with self._TransactionCM("Unlink sense from reversal entry"):
+                entry.SensesRS.Remove(sense)
 
     # --- Hierarchical Structure ---
 

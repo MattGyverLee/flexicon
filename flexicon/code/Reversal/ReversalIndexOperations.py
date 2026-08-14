@@ -213,8 +213,9 @@ class ReversalIndexOperations(BaseOperations):
 
         index = self.__ResolveObject(index_or_hvo)
 
-        # Delete the index (LCM handles removal from repository)
-        index.Delete()
+        with self._TransactionCM("Delete reversal index"):
+            # Delete the index (LCM handles removal from repository)
+            index.Delete()
 
     @OperationsMethod
     def Find(self, name):
@@ -375,8 +376,9 @@ class ReversalIndexOperations(BaseOperations):
         index = self.__ResolveObject(index_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(name, wsHandle)
-        index.Name.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set reversal index name '{name}'"):
+            mkstr = TsStringUtils.MakeString(name, wsHandle)
+            index.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetWritingSystem(self, index_or_hvo):
