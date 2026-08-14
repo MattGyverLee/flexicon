@@ -193,8 +193,9 @@ class ScrTxtParaOperations(BaseOperations):
         # Resolve to paragraph object
         para = self.__ResolveObject(para_or_hvo)
 
-        # Delete the paragraph (LCM handles removal from repository)
-        para.Delete()
+        with self._TransactionCM("Delete scripture paragraph"):
+            # Delete the paragraph (LCM handles removal from repository)
+            para.Delete()
 
     @OperationsMethod
     def Find(self, section_or_hvo, index):

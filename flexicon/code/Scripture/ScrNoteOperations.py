@@ -233,8 +233,9 @@ class ScrNoteOperations(BaseOperations):
         # Resolve to note object
         note = self.__ResolveObject(note_or_hvo)
 
-        # Delete the note (LCM handles removal from repository)
-        note.Delete()
+        with self._TransactionCM("Delete scripture note"):
+            # Delete the note (LCM handles removal from repository)
+            note.Delete()
 
     @OperationsMethod
     def Find(self, book_or_hvo, index):
