@@ -34,21 +34,38 @@ and `issues/createfield-always-raises.md`). Where a source report says "NOT
 FOUND IN SOURCE," this document says **unknown — do not build on it**, not a
 plausible guess.
 
-**Test-suite state, stated plainly.** An independent verification run
-(`reviews/cycle2-verification.md`, re-confirmed in `reviews/cycle2-p0-fix.md`)
-measured, with `tests/contract` excluded: **1638 passed, 139 failed, 20
-skipped, 17 errors**. The suite is **not green**. The 139 failures are a mix
-of three unrelated causes, confirmed by direct inspection, not assumed:
-stale `flexlibs2`→`flexicon` rename paths (~15-20 tests, e.g.
-`tests/test_write_enabled_fix.py` hardcodes `Path("flexlibs2/code/...")`),
-live-LCM state pollution from a real FieldWorks project used as a fixture
-(e.g. `test_text_operations.py::test_create_and_delete_text` fails on a
-leftover `"Test Text 123"` from a prior run), and genuine sync-engine bugs
-unrelated to this feature (e.g. `test_diff_engine.py::test_compare_unchanged_objects`,
-and 60 Mock-based failures in `flexicon/sync/tests/test_duplicate_operations.py`).
+**Test-suite state, stated plainly.** The required invocation is:
+
+```
+python -m pytest -m "not requires_live_project" -q
+```
+
+Measured on that command against the current tree: **1424 passed, 117 failed,
+11 skipped, 322 deselected, 17 errors.** The suite is **not green**. The 117
+failures are a mix of causes unrelated to this feature, confirmed by
+inspection: stale `flexlibs2`->`flexicon` rename paths (e.g.
+`tests/test_write_enabled_fix.py` hardcodes `Path("flexlibs2/code/...")` — see
+issue #240), and genuine pre-existing sync-engine failures (e.g.
+`test_diff_engine.py::test_compare_unchanged_objects`, plus Mock-based
+failures and errors in `flexicon/sync/tests/test_duplicate_operations.py`).
 `tests/contract/` (Mode 1, checked-in baseline snapshot, no live liblcm) is
 separately green: 22 passed. Do not cite "the suite passes" without this
 qualification.
+
+**Do NOT use `pytest --ignore=tests/contract`.** It applies no `-m` filter, so
+it collects and EXECUTES the 322 `requires_live_project` tests. Per
+`tests/conftest.py:1221`, Phases A-D of those run **in-place against the real
+Sena 3 project** (only Phase E uses the isolated `sena3_sandbox` tempdir).
+That invocation therefore performs live LCM writes against a real FLEx project
+on the machine running it. An earlier revision of this document quoted
+**1638 passed / 139 failed / 20 skipped / 17 errors** from that broader
+command; those figures were accurate arithmetic but were produced by a run
+that wrote to a live project, and the "live-LCM state pollution" they were
+attributed to was that live suite executing. The two totals reconcile exactly
+by scope — `-m` pool 117+1394+11+17+322 = 1861, minus the 22 contract tests
+absent from the other pool = 1839 = 139+1663+20+17 — so neither number hid a
+regression. The narrower command is the correct one because it is the only one
+that does not touch a real project.
 
 ---
 
@@ -68,10 +85,17 @@ Any wrapper method the script calls that also opens a UoW sees
 `ActionHandlerAccessor.CurrentDepth > 0` (already true inside the script's
 envelope) and **joins** it rather than nesting — this is not new machinery to
 build; it is the same idiom already in use at
-`flexicon/code/System/CustomFieldOperations.py:300` and, since **B1** landed,
-implemented for nesting at `transaction.py`'s `_NestingAwareTransaction.__enter__`
-(`transaction.py`: reads `cache.ActionHandlerAccessor.CurrentDepth` directly —
-no Python-side counter — and no-ops when depth > 0). Nothing needs
+`flexicon/code/System/CustomFieldOperations.py:300`.
+
+**B1 status, precisely.** B1 is implemented and has passed offline verification
+against a test double that reproduces liblcm's destructive double-begin
+ordering, but it is **committed on the branch
+`write-path-transactions-b1-b3` only — not merged to `main`, not released, and
+therefore NOT present in any version satisfying `pyflexicon>=4.3.0,<5`.** On
+that branch `_NestingAwareTransaction.__enter__` reads
+`cache.ActionHandlerAccessor.CurrentDepth` directly, with the Python-side
+`_transaction_depth` counter deleted, and no-ops when depth > 0. Treat B1 as
+PLANNED for integration purposes until it ships in a release. Nothing needs
 hand-rolling; `DoUsingNewOrCurrentUOW`'s body is literally
 `if actionHandler.CurrentDepth > 0: task() else: Do(undoText, redoText,
 actionHandler, task)` (**F3**, lines 94-97). The result is a single

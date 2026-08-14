@@ -355,6 +355,40 @@ against a scratch project before code depends on it.
 
 ## 7. Test plan
 
+### 7.0 REQUIRED test invocation
+
+Every brief in this feature must state this command explicitly. Do not rely on a
+prose instruction such as "no live writes" — it is not a control, and it failed
+twice in practice.
+
+```
+python -m pytest -m "not requires_live_project" -q
+```
+
+Current measurement on that command: **1424 passed, 117 failed, 11 skipped, 322
+deselected, 17 errors.** Not green; the failures are pre-existing and unrelated
+(rename-path breakage — issue #240 — plus sync-engine failures).
+
+**Never use `pytest --ignore=tests/contract`.** It applies no `-m` filter, so it
+collects and EXECUTES the 322 `requires_live_project` tests. Per
+`tests/conftest.py:1221`, Phases A-D of those run **in-place against the real
+Sena 3 project**; only Phase E uses the isolated `sena3_sandbox` tempdir. That
+command therefore performs live LCM writes against a real FLEx project.
+
+This happened twice in this feature's history — once in the cycle-2 verification
+pass (undetected at the time, and the source of the 139/1638 figures quoted in
+commit `b3a5bb9` and in early revisions of the MCP contract), and once in cycle 3
+during a baseline-reconciliation run (self-disclosed). No corruption resulted in
+either case — the Phase A-D tests are self-restoring and the fixture backup is
+unmodified — but the gate was not held either time, and prose prohibitions are
+why.
+
+The two totals reconcile exactly by scope, so neither concealed a regression:
+`-m` pool 117+1394+11+17+322 = 1861; minus the 22 contract tests absent from the
+other pool = 1839 = 139+1663+20+17.
+
+### 7.1 Per-task coverage
+
 Track A:
 - Headless `ILcmUI`: unit-test each of the 12 members in isolation; assert
   `ConflictingSave()` returns `False` and raises, and that no member touches
