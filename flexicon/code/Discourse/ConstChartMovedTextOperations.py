@@ -164,8 +164,9 @@ class ConstChartMovedTextOperations(BaseOperations):
         # Resolve to marker object
         marker = self.__ResolveObject(marker_or_hvo)
 
-        # Delete the marker (LCM handles removal from repository)
-        marker.Delete()
+        with self._TransactionCM("Delete moved text marker"):
+            # Delete the marker (LCM handles removal from repository)
+            marker.Delete()
 
     @OperationsMethod
     def Find(self, word_group_or_hvo):

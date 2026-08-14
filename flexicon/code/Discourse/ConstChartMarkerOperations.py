@@ -126,7 +126,8 @@ class ConstChartMarkerOperations(BaseOperations):
         self._EnsureWriteEnabled()
         self._ValidateParam(marker_or_hvo, "marker_or_hvo")
         marker = self.__ResolveMarker(marker_or_hvo)
-        marker.Delete()
+        with self._TransactionCM("Delete chart marker"):
+            marker.Delete()
 
     @OperationsMethod
     def Find(self, name, wsHandle=None):
@@ -201,9 +202,10 @@ class ConstChartMarkerOperations(BaseOperations):
 
         marker = self.__ResolveMarker(marker_or_hvo)
         ws_handle = self.__WSHandle(None)
-        marker.Name.set_String(
-            ws_handle, TsStringUtils.MakeString(name, ws_handle)
-        )
+        with self._TransactionCM(f"Set chart marker name '{name}'"):
+            marker.Name.set_String(
+                ws_handle, TsStringUtils.MakeString(name, ws_handle)
+            )
 
     @OperationsMethod
     def GetDescription(self, marker_or_hvo, wsHandle=None):
@@ -221,9 +223,10 @@ class ConstChartMarkerOperations(BaseOperations):
         self._ValidateParam(text, "text")
         marker = self.__ResolveMarker(marker_or_hvo)
         ws_handle = self.__WSHandle(wsHandle)
-        marker.Description.set_String(
-            ws_handle, TsStringUtils.MakeString(text, ws_handle)
-        )
+        with self._TransactionCM("Set chart marker description"):
+            marker.Description.set_String(
+                ws_handle, TsStringUtils.MakeString(text, ws_handle)
+            )
 
     # --- Reordering Support --------------------------------------------
 
@@ -292,14 +295,21 @@ class ConstChartMarkerOperations(BaseOperations):
         sl = self.project.project.ServiceLocator
         lp = self.project.lp
 
+        # Each `is None` guard stays OUTSIDE its transaction so an
+        # already-initialised slot is a true no-op and does not open an empty
+        # undo task. The bracket lives here rather than at the callers because
+        # this helper runs before Create's own transaction is entered; the CM
+        # is nesting-aware, so a future caller may still wrap it safely.
         if lp.DiscourseDataOA is None:
             dd_factory = sl.GetService(IDsDiscourseDataFactory)
-            lp.DiscourseDataOA = dd_factory.Create()
+            with self._TransactionCM("Initialise discourse data"):
+                lp.DiscourseDataOA = dd_factory.Create()
         discourse = lp.DiscourseDataOA
 
         if discourse.ChartMarkersOA is None:
             list_factory = sl.GetService(ICmPossibilityListFactory)
-            discourse.ChartMarkersOA = list_factory.Create()
+            with self._TransactionCM("Initialise chart marker list"):
+                discourse.ChartMarkersOA = list_factory.Create()
 
         return discourse.ChartMarkersOA.PossibilitiesOS
 

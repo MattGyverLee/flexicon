@@ -96,7 +96,8 @@ class ConstChartCellTagOperations(BaseOperations):
         factory = self.project.project.ServiceLocator.GetService(
             IConstChartTagFactory
         )
-        return factory.Create(row, index, column, marker)
+        with self._TransactionCM("Create chart cell tag"):
+            return factory.Create(row, index, column, marker)
 
     @OperationsMethod
     def Delete(self, tag_or_hvo):
@@ -109,7 +110,8 @@ class ConstChartCellTagOperations(BaseOperations):
         self._EnsureWriteEnabled()
         self._ValidateParam(tag_or_hvo, "tag_or_hvo")
         tag = self.__ResolveTag(tag_or_hvo)
-        tag.Delete()
+        with self._TransactionCM("Delete chart cell tag"):
+            tag.Delete()
 
     @OperationsMethod
     def Find(self, row_or_hvo, column):
@@ -168,7 +170,8 @@ class ConstChartCellTagOperations(BaseOperations):
         self._ValidateParam(tag_or_hvo, "tag_or_hvo")
         self._ValidateParam(marker, "marker")
         tag = self.__ResolveTag(tag_or_hvo)
-        tag.TagRA = marker
+        with self._TransactionCM("Set chart cell tag marker"):
+            tag.TagRA = marker
 
     @OperationsMethod
     def GetColumn(self, tag_or_hvo):
