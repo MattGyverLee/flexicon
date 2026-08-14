@@ -23,6 +23,7 @@
     ],
     "SIL.LCModel": [
       "DsConstChartTags",
+      "FileSelection",
       "GenDate",
       "IAnalysis",
       "ICmAgent",
@@ -37,6 +38,7 @@
       "ICmBaseAnnotationFactory",
       "ICmFile",
       "ICmFileFactory",
+      "ICmFileRepository",
       "ICmFilter",
       "ICmFilterFactory",
       "ICmFolder",
@@ -45,6 +47,7 @@
       "ICmLocationFactory",
       "ICmMedia",
       "ICmMediaFactory",
+      "ICmObject",
       "ICmObjectRepository",
       "ICmPerson",
       "ICmPersonFactory",
@@ -90,6 +93,7 @@
       "IFsSymFeatVal",
       "IFsSymFeatValFactory",
       "ILangProject",
+      "ILcmUI",
       "ILexEntry",
       "ILexEntryFactory",
       "ILexEntryRef",
@@ -200,7 +204,6 @@
       "IStTextFactory",
       "IStTxtPara",
       "IStTxtParaFactory",
-      "IStTxtParaRepository",
       "IText",
       "ITextFactory",
       "ITextRepository",
@@ -214,6 +217,7 @@
       "IWfiGlossRepository",
       "IWfiMorphBundle",
       "IWfiMorphBundleFactory",
+      "IWfiMorphBundleRepository",
       "IWfiWordform",
       "IWfiWordformFactory",
       "IWfiWordformRepository",
@@ -229,6 +233,7 @@
       "LexExampleSentenceTags",
       "LexRefTypeTags",
       "LexSenseTags",
+      "MessageType",
       "MoFormTags",
       "MoMorphTypeTags",
       "MsaType",
@@ -240,7 +245,8 @@
       "WfiAnalysisTags",
       "WfiGlossTags",
       "WfiMorphBundleTags",
-      "WfiWordformTags"
+      "WfiWordformTags",
+      "YesNoCancel"
     ],
     "SIL.LCModel.Application.ApplicationServices": [
       "XmlList",
@@ -252,6 +258,7 @@
     ],
     "SIL.LCModel.Core.KernelInterfaces": [
       "FwObjDataTypes",
+      "IActionHandler",
       "IMultiString",
       "IMultiUnicode",
       "ITsStrBldr",
@@ -264,7 +271,9 @@
       "SandboxGenericMSA"
     ],
     "SIL.LCModel.Infrastructure": [
-      "IFwMetaDataCacheManaged"
+      "IFwMetaDataCacheManaged",
+      "NonUndoableUnitOfWorkHelper",
+      "UndoableUnitOfWorkHelper"
     ],
     "SIL.LCModel.Utils": [
       "ReflectionHelper",
@@ -299,6 +308,12 @@
       ],
       "methods": []
     },
+    "FileSelection": {
+      "properties": [
+        "OkKeepNewer"
+      ],
+      "methods": []
+    },
     "FwDirectoryFinder": {
       "properties": [
         "LcmDirectories",
@@ -326,6 +341,33 @@
       ],
       "methods": [
         "InitializeIcu"
+      ]
+    },
+    "IActionHandler": {
+      "properties": [
+        "BeginUndoTask",
+        "CanRedo",
+        "CanUndo",
+        "CollapseToMark",
+        "CurrentDepth",
+        "DiscardToMark",
+        "EndUndoTask",
+        "Mark",
+        "Redo",
+        "Rollback",
+        "Undo"
+      ],
+      "methods": [
+        "BeginUndoTask",
+        "CanRedo",
+        "CanUndo",
+        "CollapseToMark",
+        "DiscardToMark",
+        "EndUndoTask",
+        "Mark",
+        "Redo",
+        "Rollback",
+        "Undo"
       ]
     },
     "LcmCache": {
@@ -369,6 +411,13 @@
       ],
       "methods": []
     },
+    "MessageType": {
+      "properties": [
+        "Error",
+        "Warning"
+      ],
+      "methods": []
+    },
     "MoFormTags": {
       "properties": [
         "kClassId"
@@ -379,23 +428,14 @@
       "properties": [
         "kguidMorphBoundRoot",
         "kguidMorphBoundStem",
-        "kguidMorphCircumfix",
         "kguidMorphClitic",
         "kguidMorphDiscontiguousPhrase",
         "kguidMorphEnclitic",
-        "kguidMorphInfix",
-        "kguidMorphInfixingInterfix",
         "kguidMorphParticle",
         "kguidMorphPhrase",
-        "kguidMorphPrefix",
-        "kguidMorphPrefixingInterfix",
         "kguidMorphProclitic",
         "kguidMorphRoot",
-        "kguidMorphSimulfix",
-        "kguidMorphStem",
-        "kguidMorphSuffix",
-        "kguidMorphSuffixingInterfix",
-        "kguidMorphSuprafix"
+        "kguidMorphStem"
       ],
       "methods": []
     },
@@ -407,6 +447,14 @@
         "kUnclassified"
       ],
       "methods": []
+    },
+    "NonUndoableUnitOfWorkHelper": {
+      "properties": [
+        "Dispose"
+      ],
+      "methods": [
+        "Dispose"
+      ]
     },
     "Opinions": {
       "properties": [
@@ -460,6 +508,14 @@
         "MakeString"
       ]
     },
+    "UndoableUnitOfWorkHelper": {
+      "properties": [
+        "Dispose"
+      ],
+      "methods": [
+        "Dispose"
+      ]
+    },
     "WfiAnalysisTags": {
       "properties": [
         "kClassId"
@@ -485,6 +541,12 @@
       "methods": [
         "ImportTranslatedListsForWs"
       ]
+    },
+    "YesNoCancel": {
+      "properties": [
+        "OkNo"
+      ],
+      "methods": []
     },
     "_LCMCellarPropertyType": {
       "properties": [
@@ -579,6 +641,7 @@
   ],
   "repositories": [
     "ICmAnnotationDefnRepository",
+    "ICmFileRepository",
     "ICmObjectRepository",
     "ICmPersonRepository",
     "ICmPossibilityRepository",
@@ -591,13 +654,14 @@
     "IRnResearchNbkRepository",
     "IScrBookRepository",
     "ISegmentRepository",
-    "IStTxtParaRepository",
     "ITextRepository",
     "IWfiAnalysisRepository",
     "IWfiGlossRepository",
+    "IWfiMorphBundleRepository",
     "IWfiWordformRepository"
   ],
   "interfaces": [
+    "IActionHandler",
     "IAnalysis",
     "ICmAgent",
     "ICmAgentEvaluation",
@@ -609,6 +673,7 @@
     "ICmFolder",
     "ICmLocation",
     "ICmMedia",
+    "ICmObject",
     "ICmPerson",
     "ICmPicture",
     "ICmPossibility",
@@ -632,6 +697,7 @@
     "IFsSymFeatVal",
     "IFwMetaDataCacheManaged",
     "ILangProject",
+    "ILcmUI",
     "ILexEntry",
     "ILexEntryRef",
     "ILexEntryType",
@@ -704,6 +770,7 @@
     "CellarPropertyTypeFilter",
     "ChooseLangProjectDialog",
     "DsConstChartTags",
+    "FileSelection",
     "FwAppArgs",
     "FwDirectoryFinder",
     "FwLcmUI",
@@ -723,9 +790,11 @@
     "LexExampleSentenceTags",
     "LexRefTypeTags",
     "LexSenseTags",
+    "MessageType",
     "MoFormTags",
     "MoMorphTypeTags",
     "MsaType",
+    "NonUndoableUnitOfWorkHelper",
     "Opinions",
     "PartOfSpeechTags",
     "ProgressDialogWithTask",
@@ -739,6 +808,7 @@
     "TextTags",
     "ThreadHelper",
     "TsStringUtils",
+    "UndoableUnitOfWorkHelper",
     "VersionInfoProvider",
     "WfiAnalysisTags",
     "WfiGlossTags",
@@ -747,7 +817,8 @@
     "WorkerThreadException",
     "WritingSystemDefinition",
     "XmlList",
-    "XmlTranslatedLists"
+    "XmlTranslatedLists",
+    "YesNoCancel"
   ],
   "files": {
     "code/BaseOperations.py": {
@@ -1321,7 +1392,10 @@
         "SIL.LCModel": [
           "ICmObjectRepository",
           "IFsClosedFeature",
+          "IFsClosedValue",
+          "IFsClosedValueFactory",
           "IFsFeatStruc",
+          "IFsFeatStrucFactory",
           "IPhCode",
           "IPhCodeFactory",
           "IPhPhoneme",
@@ -1467,6 +1541,37 @@
         }
       }
     },
+    "code/headless_ui.py": {
+      "imports": {
+        "SIL.LCModel": [
+          "FileSelection",
+          "ILcmUI",
+          "MessageType",
+          "YesNoCancel"
+        ]
+      },
+      "type_usage": {
+        "MessageType": {
+          "properties": [
+            "Error",
+            "Warning"
+          ],
+          "methods": []
+        },
+        "FileSelection": {
+          "properties": [
+            "OkKeepNewer"
+          ],
+          "methods": []
+        },
+        "YesNoCancel": {
+          "properties": [
+            "OkNo"
+          ],
+          "methods": []
+        }
+      }
+    },
     "code/lcm_casting.py": {
       "imports": {
         "SIL.LCModel": [
@@ -1527,8 +1632,7 @@
           "IMoForm",
           "IMoStemAllomorphFactory",
           "IMoStemAllomorphFactory",
-          "IPhEnvironment",
-          "MoMorphTypeTags"
+          "IPhEnvironment"
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "ITsString"
@@ -1545,21 +1649,6 @@
           "methods": [
             "MakeString"
           ]
-        },
-        "MoMorphTypeTags": {
-          "properties": [
-            "kguidMorphBoundRoot",
-            "kguidMorphBoundStem",
-            "kguidMorphClitic",
-            "kguidMorphDiscontiguousPhrase",
-            "kguidMorphEnclitic",
-            "kguidMorphParticle",
-            "kguidMorphPhrase",
-            "kguidMorphProclitic",
-            "kguidMorphRoot",
-            "kguidMorphStem"
-          ],
-          "methods": []
         }
       }
     },
@@ -1637,8 +1726,7 @@
           "IMoForm",
           "IMoMorphType",
           "IMoStemAllomorphFactory",
-          "LexEntryRefTags",
-          "MoMorphTypeTags"
+          "LexEntryRefTags"
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "ITsString"
@@ -1659,21 +1747,6 @@
         "LexEntryRefTags": {
           "properties": [
             "krtComplexForm"
-          ],
-          "methods": []
-        },
-        "MoMorphTypeTags": {
-          "properties": [
-            "kguidMorphBoundRoot",
-            "kguidMorphBoundStem",
-            "kguidMorphClitic",
-            "kguidMorphDiscontiguousPhrase",
-            "kguidMorphEnclitic",
-            "kguidMorphParticle",
-            "kguidMorphPhrase",
-            "kguidMorphProclitic",
-            "kguidMorphRoot",
-            "kguidMorphStem"
           ],
           "methods": []
         }
@@ -1724,8 +1797,7 @@
           "ILexSense",
           "ILexSenseFactory",
           "IReversalIndexEntry",
-          "LexEntryTags",
-          "MoMorphTypeTags"
+          "LexEntryTags"
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "ITsString"
@@ -1738,20 +1810,6 @@
         ]
       },
       "type_usage": {
-        "MoMorphTypeTags": {
-          "properties": [
-            "kguidMorphCircumfix",
-            "kguidMorphInfix",
-            "kguidMorphInfixingInterfix",
-            "kguidMorphPrefix",
-            "kguidMorphPrefixingInterfix",
-            "kguidMorphSimulfix",
-            "kguidMorphSuffix",
-            "kguidMorphSuffixingInterfix",
-            "kguidMorphSuprafix"
-          ],
-          "methods": []
-        },
         "TsStringUtils": {
           "properties": [
             "MakeString"
@@ -1780,6 +1838,7 @@
       "imports": {
         "SIL.LCModel": [
           "ILexEntry",
+          "ILexEntryRepository",
           "ILexSense",
           "IMoDerivAffMsa",
           "IMoDerivAffMsaFactory",
@@ -1789,6 +1848,7 @@
           "IMoStemMsaFactory",
           "IMoUnclassifiedAffixMsa",
           "IMoUnclassifiedAffixMsaFactory",
+          "IWfiMorphBundleRepository",
           "LexEntryTags",
           "MsaType"
         ],
@@ -2049,7 +2109,6 @@
     "code/Lists/TranslationTypeOperations.py": {
       "imports": {
         "SIL.LCModel": [
-          "IStTxtParaRepository",
           "ITextRepository"
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
@@ -2472,9 +2531,9 @@
         "SIL.LCModel": [
           "ICmFile",
           "ICmFileFactory",
+          "ICmFileRepository",
           "ICmFolder",
-          "ICmFolderFactory",
-          "ICmObjectRepository"
+          "ICmFolderFactory"
         ],
         "SIL.LCModel.Core.KernelInterfaces": [
           "ITsString"
@@ -2493,6 +2552,38 @@
           ]
         }
       }
+    },
+    "code/Shared/morph_type_utils.py": {
+      "imports": {
+        "SIL.LCModel": [
+          "MoMorphTypeTags"
+        ]
+      },
+      "type_usage": {
+        "MoMorphTypeTags": {
+          "properties": [
+            "kguidMorphBoundRoot",
+            "kguidMorphBoundStem",
+            "kguidMorphClitic",
+            "kguidMorphDiscontiguousPhrase",
+            "kguidMorphEnclitic",
+            "kguidMorphParticle",
+            "kguidMorphPhrase",
+            "kguidMorphProclitic",
+            "kguidMorphRoot",
+            "kguidMorphStem"
+          ],
+          "methods": []
+        }
+      }
+    },
+    "code/Shared/wrapper_base.py": {
+      "imports": {
+        "SIL.LCModel": [
+          "ICmObject"
+        ]
+      },
+      "type_usage": {}
     },
     "code/System/AnnotationDefOperations.py": {
       "imports": {
@@ -2904,16 +2995,72 @@
           ]
         }
       }
+    },
+    "_pending/pending_contract_seeds.py": {
+      "imports": {
+        "SIL.LCModel.Infrastructure": [
+          "NonUndoableUnitOfWorkHelper",
+          "UndoableUnitOfWorkHelper"
+        ],
+        "SIL.LCModel.Core.KernelInterfaces": [
+          "IActionHandler"
+        ]
+      },
+      "type_usage": {
+        "IActionHandler": {
+          "properties": [
+            "BeginUndoTask",
+            "CanRedo",
+            "CanUndo",
+            "CollapseToMark",
+            "CurrentDepth",
+            "DiscardToMark",
+            "EndUndoTask",
+            "Mark",
+            "Redo",
+            "Rollback",
+            "Undo"
+          ],
+          "methods": [
+            "BeginUndoTask",
+            "CanRedo",
+            "CanUndo",
+            "CollapseToMark",
+            "DiscardToMark",
+            "EndUndoTask",
+            "Mark",
+            "Redo",
+            "Rollback",
+            "Undo"
+          ]
+        },
+        "UndoableUnitOfWorkHelper": {
+          "properties": [
+            "Dispose"
+          ],
+          "methods": [
+            "Dispose"
+          ]
+        },
+        "NonUndoableUnitOfWorkHelper": {
+          "properties": [
+            "Dispose"
+          ],
+          "methods": [
+            "Dispose"
+          ]
+        }
+      }
     }
   },
   "summary": {
-    "total_files_with_lcm_deps": 75,
-    "total_unique_imports": 246,
+    "total_files_with_lcm_deps": 79,
+    "total_unique_imports": 255,
     "total_modules": 14,
     "total_factories": 80,
-    "total_repositories": 18,
-    "total_interfaces": 100,
-    "total_classes": 48,
-    "total_type_usages_tracked": 28
+    "total_repositories": 19,
+    "total_interfaces": 103,
+    "total_classes": 53,
+    "total_type_usages_tracked": 34
   }
 }

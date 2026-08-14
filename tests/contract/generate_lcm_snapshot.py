@@ -56,6 +56,93 @@ def _get_lcm_version():
         return "unknown"
 
 
+def _introspect_signatures(obj):
+    """
+    Best-effort deep reflection pass over an LCM type, on top of the
+    dir()/GetMethods()-based member listing in ``_introspect_type``.
+
+    ``_introspect_type`` answers "does this member name exist?" -- enough to
+    catch a renamed or removed member (e.g. issue #235's non-existent
+    ``LcmCache.UndoStack``). It cannot answer "does this member have the
+    shape my code assumes?" -- the class of error behind issue #233
+    (``BeginUndoTask`` called with 1 arg against a 2-arg API) and #236
+    (``RollbackToMark``, an API that exists nowhere, called as if it did).
+
+    This function uses ``clr.GetClrType()`` to get a real ``System.Type``
+    and records, additively:
+      - ``constructors``: list of parameter-type-name lists, one per ctor
+        overload
+      - ``method_signatures``: {method_name: [param-type-name lists]},
+        one entry per overload
+      - ``interfaces``: full names of interfaces the type implements
+        (e.g. "System.IDisposable")
+      - ``implements_idisposable``: convenience bool derived from the above
+      - ``reflected_properties``: {prop_name: {"type": ..., "can_read": bool,
+        "can_write": bool}}, straight from ``Type.GetProperties()``. This is
+        deliberately kept separate from the top-level ``properties`` list
+        (which comes from a Python ``dir()`` fallback for types whose CLR
+        metatype isn't directly reflectable -- see ``_introspect_type``).
+        That fallback misses write-only properties like
+        ``UndoableUnitOfWorkHelper.RollBack`` ({private get; set;}) under
+        their plain name, surfacing only a ``set_RollBack`` accessor. Use
+        this field, not ``properties``, when a check needs to know whether a
+        property exists at all regardless of read/write direction.
+
+    Returns an empty-shaped dict (all fields present, empty/False) on any
+    failure -- this is a best-effort enrichment, not required for
+    ``_introspect_type`` to succeed.
+    """
+    empty = {
+        "constructors": [],
+        "method_signatures": {},
+        "interfaces": [],
+        "implements_idisposable": False,
+        "reflected_properties": {},
+    }
+
+    try:
+        import clr
+
+        net_type = clr.GetClrType(obj)
+    except Exception:
+        return empty
+
+    try:
+        constructors = []
+        for ctor in net_type.GetConstructors():
+            constructors.append([str(p.ParameterType.Name) for p in ctor.GetParameters()])
+
+        method_signatures = {}
+        for method in net_type.GetMethods():
+            name = str(method.Name)
+            if name.startswith(("get_", "set_", "add_", "remove_")):
+                continue
+            if name in ("ToString", "GetHashCode", "Equals", "GetType", "ReferenceEquals"):
+                continue
+            params = [str(p.ParameterType.Name) for p in method.GetParameters()]
+            method_signatures.setdefault(name, []).append(params)
+
+        interfaces = sorted(str(i.FullName) for i in net_type.GetInterfaces())
+
+        reflected_properties = {}
+        for prop in net_type.GetProperties():
+            reflected_properties[str(prop.Name)] = {
+                "type": str(prop.PropertyType.Name),
+                "can_read": bool(prop.CanRead),
+                "can_write": bool(prop.CanWrite),
+            }
+
+        return {
+            "constructors": constructors,
+            "method_signatures": method_signatures,
+            "interfaces": interfaces,
+            "implements_idisposable": "System.IDisposable" in interfaces,
+            "reflected_properties": reflected_properties,
+        }
+    except Exception:
+        return empty
+
+
 def _introspect_type(type_name, namespace_hint=None):
     """
     Introspect a single LCM type and return its members.
@@ -65,13 +152,20 @@ def _introspect_type(type_name, namespace_hint=None):
         namespace_hint: Full namespace to look in (e.g. "SIL.LCModel").
 
     Returns:
-        dict with properties, methods, and whether the type was found.
+        dict with properties, methods, whether the type was found, and
+        (best-effort) constructors/method_signatures/interfaces from
+        ``_introspect_signatures``.
     """
     result = {
         "found": False,
         "properties": [],
         "methods": [],
         "error": None,
+        "constructors": [],
+        "method_signatures": {},
+        "interfaces": [],
+        "implements_idisposable": False,
+        "reflected_properties": {},
     }
 
     try:
@@ -109,6 +203,12 @@ def _introspect_type(type_name, namespace_hint=None):
             return result
 
         result["found"] = True
+
+        # Best-effort deep reflection (constructors/signatures/interfaces).
+        # Additive only -- does not alter the properties/methods derivation
+        # below, so it cannot shift existing baseline entries for the
+        # ~246 types already tracked.
+        result.update(_introspect_signatures(obj))
 
         # Get members via .NET reflection
         clr_type = None

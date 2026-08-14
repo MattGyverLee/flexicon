@@ -177,12 +177,26 @@ def extract_file_contract(filepath):
     }
 
 
-def extract_contract(source_root=None):
+#: A small AST-parseable file, checked in alongside this extractor, that
+#: registers LCM dependencies flexicon/code is specified to acquire soon
+#: but does not yet import anywhere (e.g. the write-path-transactions
+#: rewrite of transaction.py, tasks.md item B1). Scanned by the *same*
+#: mechanism as flexicon/code -- not a parallel one -- so the contract test
+#: suite can cover a type/member's shape before the real call site lands,
+#: per tasks.md item CB ("Must land before B1"). See its module docstring.
+PENDING_SEEDS_PATH = Path(__file__).resolve().parent / "pending_contract_seeds.py"
+
+
+def extract_contract(source_root=None, pending_seeds_path=PENDING_SEEDS_PATH):
     """
-    Extract the full LCM contract from the flexlibs2 source tree.
+    Extract the full LCM contract from the flexicon source tree.
 
     Args:
-        source_root: Path to ``flexlibs2/code/``. Auto-detected if None.
+        source_root: Path to ``flexicon/code/``. Auto-detected if None.
+        pending_seeds_path: Optional extra single file scanned with the same
+            AST extractor, for anticipated dependencies not yet organic to
+            source_root. Pass None to disable. Defaults to
+            ``PENDING_SEEDS_PATH`` (``tests/contract/pending_contract_seeds.py``).
 
     Returns:
         dict with the complete contract:
@@ -194,9 +208,15 @@ def extract_contract(source_root=None):
         - summary: {total_files, total_imports, total_types, ...}
     """
     if source_root is None:
-        # Auto-detect: look for flexlibs2/code/ relative to this file
+        # Auto-detect: look for flexicon/code/ relative to this file.
+        # flexicon/ is the post-rename package (was flexlibs2/ pre-9b82ffa);
+        # both candidates are kept so this still works against older
+        # checkouts/branches that predate the rename.
         here = Path(__file__).resolve().parent
         candidates = [
+            here.parent.parent / "flexicon" / "code",
+            here.parent / "flexicon" / "code",
+            Path.cwd() / "flexicon" / "code",
             here.parent.parent / "flexlibs2" / "code",
             here.parent / "flexlibs2" / "code",
             Path.cwd() / "flexlibs2" / "code",
@@ -206,7 +226,7 @@ def extract_contract(source_root=None):
                 source_root = c
                 break
         if source_root is None:
-            raise FileNotFoundError("Cannot find flexlibs2/code/. Pass source_root explicitly.")
+            raise FileNotFoundError("Cannot find flexicon/code/ (or legacy flexlibs2/code/). Pass source_root explicitly.")
 
     source_root = Path(source_root)
 
@@ -215,8 +235,14 @@ def extract_contract(source_root=None):
     all_type_usage = defaultdict(lambda: {"properties": set(), "methods": set()})
     files = {}
 
-    for pyfile in sorted(source_root.rglob("*.py")):
-        relpath = _relative_path(pyfile, source_root.parent)
+    scan_targets = [(pyfile, _relative_path(pyfile, source_root.parent)) for pyfile in sorted(source_root.rglob("*.py"))]
+
+    if pending_seeds_path is not None:
+        pending_seeds_path = Path(pending_seeds_path)
+        if pending_seeds_path.is_file():
+            scan_targets.append((pending_seeds_path, f"_pending/{pending_seeds_path.name}"))
+
+    for pyfile, relpath in scan_targets:
         file_contract = extract_file_contract(pyfile)
         if file_contract is None:
             continue

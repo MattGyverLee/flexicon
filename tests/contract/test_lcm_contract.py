@@ -344,6 +344,126 @@ class TestLiveRegressionCheck:
 
 
 # ============================================================
+# Transaction-layer shape checks (write-path-transactions CB task)
+# ============================================================
+#
+# Issues #233, #235, #236 were all API-*shape* errors that a plain
+# "does this member name exist" check cannot catch:
+#   #233 BeginUndoTask(str) called against a 2-arg API
+#   #235 LcmCache.UndoStack referenced -- a member that never existed
+#   #236 RollbackToMark() called -- an API that exists nowhere in liblcm
+#
+# These tests read the checked-in baseline_snapshot fixture directly (no
+# live liblcm required -- Mode 1), asserting on the deep-reflection fields
+# (constructors/method_signatures/interfaces/reflected_properties) that
+# generate_lcm_snapshot.py's _introspect_signatures() adds on top of the
+# plain member-name lists. A missing-member assertion (RollbackToMark must
+# NOT exist) is exercised alongside the present-member assertions, since
+# #235/#236 were both non-existent members flexicon code assumed existed.
+
+
+class TestTransactionLayerContract:
+    """Shape assertions for the four transaction-layer LCM types."""
+
+    def test_action_handler_begin_undo_task_is_two_string_args(self, baseline_snapshot):
+        """
+        Issue #233: BeginUndoTask was called with 1 arg. liblcm's actual
+        signature takes exactly 2 string parameters (undo text, redo text).
+        """
+        info = baseline_snapshot["types"]["IActionHandler"]
+        sigs = info["method_signatures"].get("BeginUndoTask")
+        assert sigs is not None, "IActionHandler.BeginUndoTask not found at all"
+        assert sigs == [["String", "String"]], (
+            f"BeginUndoTask signature changed: expected exactly one 2-string-arg "
+            f"overload, got {sigs}"
+        )
+
+    def test_action_handler_exposes_expected_undo_redo_surface(self, baseline_snapshot):
+        """
+        The nesting/undo/redo/mark surface that transaction.py's rewrite (B1)
+        and AbortSession (A3) are specified to build on.
+        """
+        info = baseline_snapshot["types"]["IActionHandler"]
+        properties = set(info["properties"])
+        methods = set(info["methods"])
+
+        assert "CurrentDepth" in properties, "IActionHandler.CurrentDepth missing"
+        for method in (
+            "CanUndo", "CanRedo", "Undo", "Redo", "Rollback",
+            "Mark", "DiscardToMark", "CollapseToMark",
+        ):
+            assert method in methods, f"IActionHandler.{method} missing"
+
+        # Rollback(Int32) specifically -- not a parameterless overload.
+        rollback_sigs = info["method_signatures"].get("Rollback")
+        assert rollback_sigs is not None, "IActionHandler.Rollback not found"
+        assert ["Int32"] in rollback_sigs, (
+            f"IActionHandler.Rollback(Int32) overload not found, got {rollback_sigs}"
+        )
+
+    def test_action_handler_does_not_expose_rollback_to_mark(self, baseline_snapshot):
+        """
+        Issue #236: RollbackToMark() was called as if it existed. It does
+        not, anywhere in liblcm. This is the missing-member half of the
+        contract: a positive assertion that this name is ABSENT.
+        """
+        info = baseline_snapshot["types"]["IActionHandler"]
+        assert "RollbackToMark" not in info["methods"]
+        assert "RollbackToMark" not in info["method_signatures"]
+
+    def test_undoable_unit_of_work_helper_shape(self, baseline_snapshot):
+        """
+        UndoableUnitOfWorkHelper: 3-arg ctor (IActionHandler, String, String),
+        a RollBack property (write-only -- see O1 in tasks.md, hence checked
+        via reflected_properties rather than the dir()-based properties
+        list), and IDisposable.
+        """
+        info = baseline_snapshot["types"]["UndoableUnitOfWorkHelper"]
+        assert info["found"], "UndoableUnitOfWorkHelper not found in liblcm"
+
+        ctors = info["constructors"]
+        assert ["IActionHandler", "String", "String"] in ctors, (
+            f"3-arg (IActionHandler, String, String) constructor not found, got {ctors}"
+        )
+
+        assert "RollBack" in info["reflected_properties"], "RollBack property missing"
+        assert info["reflected_properties"]["RollBack"]["can_write"] is True
+
+        assert info["implements_idisposable"] is True, (
+            "UndoableUnitOfWorkHelper no longer implements IDisposable"
+        )
+
+    def test_non_undoable_unit_of_work_helper_is_disposable(self, baseline_snapshot):
+        """Sibling helper for undoable=False; same disposal contract."""
+        info = baseline_snapshot["types"]["NonUndoableUnitOfWorkHelper"]
+        assert info["found"], "NonUndoableUnitOfWorkHelper not found in liblcm"
+        assert info["implements_idisposable"] is True
+
+    def test_ilcm_ui_full_surface(self, baseline_snapshot):
+        """
+        HeadlessLcmUI (A1b) and FwLcmUI both implement ILcmUI. Lock its full
+        surface: 10 methods + LastActivityTime + SynchronizeInvoke.
+        """
+        info = baseline_snapshot["types"]["ILcmUI"]
+        assert info["found"], "ILcmUI not found in liblcm"
+
+        properties = set(info["properties"])
+        methods = set(info["methods"])
+
+        assert {"LastActivityTime", "SynchronizeInvoke"} <= properties
+
+        expected_methods = {
+            "ConflictingSave", "ChooseFilesToUse", "RestoreLinkedFilesInProjectFolder",
+            "CannotRestoreLinkedFilesToOriginalLocation", "DisplayMessage", "ReportException",
+            "ReportDuplicateGuids", "DisplayCircularRefBreakerReport", "Retry", "OfferToRestore",
+        }
+        assert len(expected_methods) == 10
+        assert expected_methods <= methods, (
+            f"ILcmUI methods missing: {expected_methods - methods}"
+        )
+
+
+# ============================================================
 # Utility: per-file impact tests
 # ============================================================
 
