@@ -182,7 +182,8 @@ class AgentOperations(PossibilityItemOperations):
 
         agents_oc = self._get_list_object()
         if agents_oc is not None and agent in agents_oc:
-            agents_oc.Remove(agent)
+            with self._TransactionCM("Delete agent"):
+                agents_oc.Remove(agent)
 
     @OperationsMethod
     def Duplicate(self, agent_or_hvo, insert_after=True):

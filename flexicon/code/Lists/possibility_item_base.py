@@ -221,7 +221,8 @@ class PossibilityItemOperations(BaseOperations):
         # Remove from list
         list_obj = self._get_list_object()
         if list_obj and item in list_obj.PossibilitiesOS:
-            list_obj.PossibilitiesOS.Remove(item)
+            with self._TransactionCM(f"Delete {self._get_item_class_name()}"):
+                list_obj.PossibilitiesOS.Remove(item)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True):
@@ -352,8 +353,9 @@ class PossibilityItemOperations(BaseOperations):
         item = self.__ResolveObject(item_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(name or "", wsHandle)
-        item.Name.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set {self._get_item_class_name()} name {name!r}"):
+            mkstr = TsStringUtils.MakeString(name or "", wsHandle)
+            item.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetDescription(self, item_or_hvo, wsHandle=None):
@@ -395,8 +397,9 @@ class PossibilityItemOperations(BaseOperations):
         item = self.__ResolveObject(item_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(description or "", wsHandle)
-        item.Description.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set {self._get_item_class_name()} description"):
+            mkstr = TsStringUtils.MakeString(description or "", wsHandle)
+            item.Description.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetGuid(self, item_or_hvo):

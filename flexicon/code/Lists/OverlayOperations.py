@@ -202,10 +202,11 @@ class OverlayOperations(PossibilityItemOperations):
         overlay = self._PossibilityItemOperations__ResolveObject(overlay_or_hvo)
 
         # Set visibility flag
-        if hasattr(overlay, "IsVisibleRA"):
-            overlay.IsVisibleRA = bool(visible)
-        elif hasattr(overlay, "Hidden"):
-            overlay.Hidden = not visible
+        with self._TransactionCM(f"Set overlay visible={bool(visible)}"):
+            if hasattr(overlay, "IsVisibleRA"):
+                overlay.IsVisibleRA = bool(visible)
+            elif hasattr(overlay, "Hidden"):
+                overlay.Hidden = not visible
 
     # --- Display Order Operations ---
 
@@ -337,13 +338,16 @@ class OverlayOperations(PossibilityItemOperations):
 
         overlay = self._PossibilityItemOperations__ResolveObject(overlay_or_hvo)
 
-        # Add element to sequence
+        # Add element to sequence. The membership tests stay outside the
+        # transaction so an already-present element is a true no-op.
         if hasattr(overlay, "InstancesOS"):
             if element not in overlay.InstancesOS:
-                overlay.InstancesOS.Add(element)
+                with self._TransactionCM("Add overlay element"):
+                    overlay.InstancesOS.Add(element)
         elif hasattr(overlay, "Elements"):
             if element not in overlay.Elements:
-                overlay.Elements.Add(element)
+                with self._TransactionCM("Add overlay element"):
+                    overlay.Elements.Add(element)
 
     @OperationsMethod
     def RemoveElement(self, overlay_or_hvo, element):
@@ -373,13 +377,16 @@ class OverlayOperations(PossibilityItemOperations):
 
         overlay = self._PossibilityItemOperations__ResolveObject(overlay_or_hvo)
 
-        # Remove element from sequence
+        # Remove element from sequence. The membership tests stay outside the
+        # transaction so an absent element is a true no-op.
         if hasattr(overlay, "InstancesOS"):
             if element in overlay.InstancesOS:
-                overlay.InstancesOS.Remove(element)
+                with self._TransactionCM("Remove overlay element"):
+                    overlay.InstancesOS.Remove(element)
         elif hasattr(overlay, "Elements"):
             if element in overlay.Elements:
-                overlay.Elements.Remove(element)
+                with self._TransactionCM("Remove overlay element"):
+                    overlay.Elements.Remove(element)
 
     # --- Chart Association Operations ---
 
