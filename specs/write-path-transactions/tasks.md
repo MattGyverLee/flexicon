@@ -47,22 +47,28 @@ Everything here is reachable by FlexToolsMCP today under `undoable=False`.
 Per **D3** this is the critical path for interactive shared-mode use, not follow-up.
 Shape of B2 fixed by **D5** below (per-site, all 294).
 
-### Checkpoint 2a — engine (this spurt)
+### Checkpoint 2a — engine — COMPLETE
 
-- [ ] **B1** Rewrite `transaction.py` on `UndoableUnitOfWorkHelper`; delete
+Landed on `write-path-transactions-b1-b3`: `1dfc464` (B1, B3), `b996d89` (B2g),
+`3d4fdc9` (B1t + verification). Offline gate per **§7.0**: `117 failed, 1424 passed,
+11 skipped, 322 deselected, 17 errors` — +30 passed vs. baseline, zero regressions;
+the 117 are pre-existing and unrelated (#240 rename path, sync engine).
+
+- [x] **B1** Rewrite `transaction.py` on `UndoableUnitOfWorkHelper`; delete
       `_transaction_depth` outright (kills #234 by construction). Use the liblcm nesting
       idiom verbatim: `if actionHandler.CurrentDepth > 0: task() else: Do(...)`.
       Closes #233, #234, #236-for-undoable. **174** `with self._TransactionCM(...)` call
       sites across the tree must keep working unchanged. Does **not** close #237 — that
       needs B2 + B2t.
-- [ ] **B3** `Undo()`/`Redo()` on `cache.ActionHandlerAccessor`, gated on
+- [x] **B3** `Undo()`/`Redo()` on `cache.ActionHandlerAccessor`, gated on
       `CanUndo()`/`CanRedo()`. Delete the dead `if undo_stack is None` and `else`
       branches at `FLExProject.py:719-733` and `:765-779`. Close #235 as
       **in-process-only**, recording that scope caveat on the issue.
-- [ ] **B1t** Offline tests: nesting join-vs-open, inner-CM raise leaves no residual
+- [x] **B1t** Offline tests: nesting join-vs-open, inner-CM raise leaves no residual
       depth, double-`BeginUndoTask` guard. Uses an action-handler double; **no live
-      LCM write**.
-- [ ] **B2g** Ratchet guard: AST mutator scan as a pytest with a frozen baseline, so the
+      LCM write**. Landed as `tests/test_b1t_action_handler_double.py` (30 tests);
+      all 6 required properties independently verified — `reviews/cycle3-verification.md`.
+- [x] **B2g** Ratchet guard: AST mutator scan as a pytest with a frozen baseline, so the
       294 can only shrink and no 295th can be added unnoticed. Makes D5 enforceable.
 
 ### Checkpoint 2b..2n — the sweep (later spurts, batched by domain)
@@ -88,9 +94,12 @@ Shape of B2 fixed by **D5** below (per-site, all 294).
 
 ## Checkpoint 3 — Close-out
 
-- [ ] **B3** `Undo()`/`Redo()` on `cache.ActionHandlerAccessor`, gated on
-      `CanUndo()`/`CanRedo()`. Remove dead branches at `FLExProject.py:673-685` and
-      `:718-731`. Close #235 as **in-process-only**, recording that scope on the issue.
+- [x] ~~**B3**~~ Duplicate of the Checkpoint 2a entry (stale line numbers); B3 landed
+      in `1dfc464`. Residual close-out work: record the **in-process-only** scope
+      caveat on #235 — tracked under **CO1** below.
+- [ ] **CO1** Close #235 with the in-process-only scope caveat recorded on the issue
+      (`Undo()`/`Redo()` drive the live `ActionHandlerAccessor`; they do not reverse
+      changes already committed to disk by a prior session).
 - [ ] **A3** `FLExProject.AbortSession()` -> `IActionHandler.Rollback(0)`. Demoted below
       Track B. Must document the **O2 catch**: `Rollback` leaves the FSM in
       `ReadyForBeginTask`, so in `undoable=False` it terminates the session envelope and
