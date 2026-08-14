@@ -253,8 +253,9 @@ class ProjectSettingsOperations(BaseOperations):
             logger.warning("Description MultiString not initialized")
             return
 
-        ts = TsStringUtils.MakeString(description, ws_handle)
-        self.project.lp.Description.set_String(ws_handle, ts)
+        with self._TransactionCM("Set project description"):
+            ts = TsStringUtils.MakeString(description, ws_handle)
+            self.project.lp.Description.set_String(ws_handle, ts)
 
     # --- Language Settings ---
 

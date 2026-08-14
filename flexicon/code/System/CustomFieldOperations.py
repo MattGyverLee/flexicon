@@ -773,15 +773,16 @@ class CustomFieldOperations(BaseOperations):
         mdc = IFwMetaDataCacheManaged(self.project.project.MetaDataCacheAccessor)
         field_type = CellarPropertyType(mdc.GetFieldType(field_id))
 
-        # Handle multi-string fields with specific writing system
-        if field_type in FLExLCM.CellarMultiStringTypes and ws is not None:
-            # Clear only the specified writing system
-            wsHandle = self.project.WSHandle(ws)
-            mua = self.project.project.DomainDataByFlid.get_MultiStringProp(hvo, field_id)
-            mua.set_String(wsHandle, None)
-        else:
-            # Clear all writing systems (or single-value field)
-            self.project.LexiconClearField(obj, field_id)
+        with self._TransactionCM(f"Clear custom field '{field_name}'"):
+            # Handle multi-string fields with specific writing system
+            if field_type in FLExLCM.CellarMultiStringTypes and ws is not None:
+                # Clear only the specified writing system
+                wsHandle = self.project.WSHandle(ws)
+                mua = self.project.project.DomainDataByFlid.get_MultiStringProp(hvo, field_id)
+                mua.set_String(wsHandle, None)
+            else:
+                # Clear all writing systems (or single-value field)
+                self.project.LexiconClearField(obj, field_id)
 
     # --- List Field Operations ---
 
