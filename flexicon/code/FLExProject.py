@@ -32,6 +32,7 @@ from .exceptions import (
     FP_NullParameterError,
     FP_ParameterError,
     FP_TransactionError,
+    FP_ConflictingSaveError,
 )
 
 import logging
@@ -160,7 +161,7 @@ class FLExProject(object):
 
     """
 
-    def OpenProject(self, projectName, writeEnabled=False, undoable=False):
+    def OpenProject(self, projectName, writeEnabled=False, undoable=False, ui=None):
         """
         Open a project. The project must be closed with `CloseProject()` to
         save any changes, and release the lock.
@@ -186,6 +187,26 @@ class FLExProject(object):
             Phase 2 feature: requires LCM BeginUndoTask/EndUndoTask support.
             See docs/internal/RESEARCH_NEEDED.md for details.
 
+        ui:
+            Optional `ILcmUI` implementation, passed through to
+            `FLExLCM.OpenProject()`. When None (the default, unchanged for
+            backward compatibility), LCM is given the WinForms `FwLcmUI`,
+            which opens modal dialogs and marshals through
+            `Control.Invoke` -- fine for an interactive FLEx-hosted
+            process, but unsafe in a headless one (issue #238): a
+            conflicting save can block the commit thread on a dialog with
+            no owner, or silently discard this session's unsaved changes.
+
+            Headless callers (services, scripts, MCP servers) should pass
+            `HeadlessLcmUI()` from `flexicon.code.headless_ui`:
+
+                from flexicon.code.headless_ui import HeadlessLcmUI
+                project.OpenProject("MyProject", writeEnabled=True,
+                                     ui=HeadlessLcmUI())
+
+            `HeadlessLcmUI` never blocks and never silently reverts; a
+            conflicting save raises `FP_ConflictingSaveError` instead.
+
         Note:
             A call to `OpenProject()` may fail with a `FP_FileLockedError`
             exception if the project is open in Fieldworks (or another
@@ -198,7 +219,7 @@ class FLExProject(object):
         """
 
         try:
-            self.project = FLExLCM.OpenProject(projectName)
+            self.project = FLExLCM.OpenProject(projectName, ui)
 
         except System.IO.FileNotFoundException as e:
             raise FP_FileNotFoundError(projectName, e)
@@ -234,6 +255,22 @@ class FLExProject(object):
         self._transaction_depth = 0
 
         if self.writeEnabled and not self._undoable:
+            # One-shot warning (issue #236 honesty pass): emitted once per
+            # OpenProject() call rather than once per Transaction(), so it
+            # cannot train callers to tune it out. See A2 in
+            # specs/write-path-transactions/spec.md and
+            # docs/EXCEPTION_HANDLING.md.
+            logging.getLogger(__name__).warning(
+                "OpenProject: writeEnabled=True, undoable=False. In this "
+                "mode Transaction() is a labelling/nesting construct only -- "
+                "liblcm exposes no reachable rollback-to-mark API in this "
+                "mode (issue #236). The atomicity unit for this whole "
+                "session is the SESSION, not the operation: if code raises "
+                "mid-operation, every mutation applied before the failure "
+                "remains in the in-memory cache and will be written to disk "
+                "by CloseProject()/SaveChanges(). See "
+                "docs/EXCEPTION_HANDLING.md."
+            )
             # Phase 1 behavior: whole session is non-undoable (rollback transactions only)
             try:
                 # This must be called before calling any methods that change
@@ -415,14 +452,42 @@ class FLExProject(object):
 
     def Transaction(self, label="transaction"):
         """
-        Return a context manager for a safe rollback transaction.
+        Return a context manager for labelling and nesting a group of writes.
 
-        If an exception occurs inside the `with` block, all LCM changes made
-        within that block are rolled back to the state at the start of the block.
-        If no exception occurs, changes are committed (saved at CloseProject).
+        Mode-dependent semantics (read this before relying on it for safety):
 
-        This is Phase 1 (rollback-only) behavior. Transactions do NOT appear
-        in the FLEx Ctrl+Z undo menu; they are programmatic safety nets only.
+        * ``undoable=False`` (the default mode): **there is no rollback.**
+          liblcm exposes no reachable "roll back to a mark" primitive in
+          this mode (issue #236; confirmed by reflection over
+          `SIL.LCModel.dll` -- see `specs/write-path-transactions/spec.md`
+          section 2 and D1 for the specific API name checked and confirmed
+          absent). ``Transaction()`` still opens and closes cleanly, and nested
+          ``with`` blocks (including the per-method
+          ``BaseOperations._TransactionCM`` blocks used internally by
+          Operations methods) still compose without error, but no exception
+          raised inside the block undoes anything. The atomicity unit in
+          this mode is the **whole session**: a mid-operation exception
+          leaves every mutation applied up to that point sitting in the
+          in-memory cache, and it will be written to disk on the next
+          ``SaveChanges()``/``CloseProject()``. A per-session warning to this
+          effect is logged once per ``OpenProject()`` call (not once per
+          process or per instance -- a second ``OpenProject()`` call in the
+          same session re-logs it), rather than on every ``Transaction()``
+          call. See
+          `docs/EXCEPTION_HANDLING.md`.
+        * ``undoable=True``: once the Track B rewrite of
+          ``flexicon/code/transaction.py`` lands (delegating to liblcm's
+          ``UndoableUnitOfWorkHelper``), ``Transaction()`` in this mode is
+          genuinely transactional -- an exception rolls back everything
+          written inside the block. Until that lands, this mode has the
+          same no-rollback limitation described above.
+
+        The name is kept (see D4 in `specs/write-path-transactions/tasks.md`):
+        an earlier draft of this spec preferred renaming this method to
+        avoid over-promising, but once the ``undoable=True`` rewrite lands
+        the name is accurate for the mode this project is migrating
+        towards, so renaming it away would make the name wrong exactly
+        where it will soon be right.
 
         Args:
             label (str): Human-readable description for logging. Default: "transaction"
@@ -437,91 +502,23 @@ class FLExProject(object):
 
             project = FLExProject()
             project.OpenProject("MyProject", writeEnabled=True)
-            try:
-                with project.Transaction("import batch"):
-                    for word, gloss in data:
-                        entry = project.LexEntry.Create(word, "stem")
-                        project.Senses.Create(entry, gloss, "en")
-            except Exception as e:
-                print(f"Import failed and was rolled back: {e}")
+            with project.Transaction("import batch"):
+                for word, gloss in data:
+                    entry = project.LexEntry.Create(word, "stem")
+                    project.Senses.Create(entry, gloss, "en")
             project.CloseProject()
 
-        Note:
-            Nesting is supported and safe. Each ``with`` block calls
-            ``Mark()`` independently, creating a separate mark token on the
-            LCM undo stack. An inner rollback rolls back only to the inner
-            mark; an outer rollback rolls back everything done inside it --
-            including work done by inner blocks that already exited cleanly
-            (there is no two-phase commit; "commit" is simply not rolling
-            back). This is the desired semantics for batch operations: a
-            caller's outer ``with project.Transaction("batch"):`` captures
-            every write made inside it, including the per-method
-            ``_TransactionCM`` blocks that individual Operations methods use
-            internally.
-
         See Also:
-            UndoableOperation() - Phase 2 (pending research), adds to FLEx Ctrl+Z menu
+            UndoableOperation() - the ``undoable=True`` path; adds to FLEx Ctrl+Z menu.
         """
         from .transaction import _FLExTransaction
 
-        mark_fn, rollback_fn = self._GetTransactionAPI()
-        return _FLExTransaction(self, label, mark_fn, rollback_fn)
-
-    def _GetTransactionAPI(self):
-        """
-        Internal: Discover the available LCM rollback API.
-
-        Returns a (mark_fn, rollback_fn) tuple. If the LCM rollback API
-        is not found, returns (None, None) - the transaction will log
-        a warning but still executes (without rollback capability).
-
-        The discovery order (preferred first):
-            1. project.UndoStack.Mark() + RollbackToMark(mark)
-            2. project.MainCacheAccessor.Mark() + RollbackToMark(mark)
-            3. IUndoStackManager.Mark() + RollbackToMark(mark) via ObjectRepository
-            4. No API found - returns (None, None)
-
-        Returns:
-            tuple: (mark_fn: callable or None, rollback_fn: callable or None)
-        """
-        # Candidate 1: UndoStack on the project object
-        undo_stack = getattr(self.project, "UndoStack", None)
-        if undo_stack is not None:
-            mark_fn = getattr(undo_stack, "Mark", None)
-            rollback_fn = getattr(undo_stack, "RollbackToMark", None)
-            if mark_fn is not None and rollback_fn is not None:
-                logging.getLogger(__name__).debug("Transaction API: Using UndoStack.Mark/RollbackToMark")
-                return (mark_fn, rollback_fn)
-
-        # Candidate 2: MainCacheAccessor
-        try:
-            mca = self.project.MainCacheAccessor
-            mark_fn = getattr(mca, "Mark", None)
-            rollback_fn = getattr(mca, "RollbackToMark", None)
-            if mark_fn is not None and rollback_fn is not None:
-                logging.getLogger(__name__).debug("Transaction API: Using MainCacheAccessor.Mark/RollbackToMark")
-                return (mark_fn, rollback_fn)
-        except Exception:
-            pass
-
-        # Candidate 3: IUndoStackManager
-        try:
-            usm = self.ObjectRepository(IUndoStackManager)
-            mark_fn = getattr(usm, "Mark", None)
-            rollback_fn = getattr(usm, "RollbackToMark", None)
-            if mark_fn is not None and rollback_fn is not None:
-                logging.getLogger(__name__).debug("Transaction API: Using IUndoStackManager.Mark/RollbackToMark")
-                return (mark_fn, rollback_fn)
-        except Exception:
-            pass
-
-        # No rollback API found
-        logging.getLogger(__name__).warning(
-            "FLExProject.Transaction: no LCM rollback API found. "
-            "Transactions will execute but rollback on failure is not available. "
-            "See docs/internal/RESEARCH_NEEDED.md for details on Phase 2 research."
-        )
-        return (None, None)
+        # No LCM rollback API is reachable in this mode (see docstring and
+        # issue #236) -- there is no discovery left to perform. Passing
+        # (None, None) is the honest, permanent state; _FLExTransaction
+        # still runs the body and re-raises any exception, it simply never
+        # attempts a rollback.
+        return _FLExTransaction(self, label, None, None)
 
     def SaveChanges(self):
         """
@@ -549,6 +546,53 @@ class FLExProject(object):
 
         usm = self.ObjectRepository(IUndoStackManager)
         usm.Save()
+
+    def RefreshFromDisk(self):
+        """
+        Reconcile in-memory state with a foreign change and unblock auto-save.
+
+        Wraps `IUndoStackManager.Refresh()`, obtained via the same
+        `ObjectRepository(IUndoStackManager)` accessor used by `SaveChanges()`
+        and `CloseProject()`.
+
+        Rationale (issue A4, `specs/write-path-transactions/spec.md` D3):
+        `UnitOfWorkService.cs:245` in liblcm refuses to auto-save while
+        `m_pendingReconciliation` is non-null -- LCM's own comment is
+        "don't auto-save until the user Refreshes." In FLEx a human clicks
+        Edit > Refresh. Headless, nothing ever calls the equivalent, so once
+        another client (typically FLEx itself, opened on the same project in
+        shared mode) saves a change that this session must reconcile, saving
+        is wedged for the remainder of the session -- in BOTH `undoable=True`
+        and `undoable=False` modes, since the guard is in the shared
+        `UnitOfWorkService`, not in either undo-stack implementation. Calling
+        this method after a detected (or suspected) foreign change clears
+        that pending-reconciliation state so subsequent saves proceed.
+
+        Raises:
+            FP_ReadOnlyError: If project is not write-enabled.
+
+        Note on the write-enabled guard:
+            The failure mode this method exists to fix -- auto-save
+            permanently refusing to run -- is only possible while a
+            write-enabled session holds an open UnitOfWork envelope
+            (`BeginNonUndoableTask()`/`BeginUndoTask()`). A read-only
+            session never saves, so there is nothing for a pending
+            reconciliation to block. Guarding here matches `SaveChanges()`,
+            which raises `FP_ReadOnlyError` for the same reason: the
+            operation is meaningless outside a write-enabled session.
+
+        Example::
+
+            project.OpenProject("MyProject", writeEnabled=True)
+            # ... FLEx (or another client) saves a conflicting change ...
+            project.RefreshFromDisk()
+            project.SaveChanges()  # No longer wedged
+        """
+        if not self.writeEnabled:
+            raise FP_ReadOnlyError()
+
+        usm = self.ObjectRepository(IUndoStackManager)
+        usm.Refresh()
 
     def UndoableOperation(self, label):
         """
@@ -589,9 +633,13 @@ class FLExProject(object):
             transactional. If an exception is raised inside the block, partial
             mutations already committed to the LCM cache are NOT automatically
             rolled back. The FLEx Ctrl+Z undo entry may be absent or incomplete.
-            Rollback/atomicity applies only to the Phase-1 ``Transaction()``
-            (mark + ``RollbackToMark``) path. Callers that require atomic
-            all-or-nothing semantics should use ``Transaction()`` instead.
+            ``Transaction()`` does NOT provide an escape hatch here either --
+            it has the identical limitation in the current build (no
+            reachable LCM rollback API; see its docstring and issue #236).
+            Neither path is atomic today. The Track B rewrite of
+            ``flexicon/code/transaction.py`` on liblcm's
+            ``UndoableUnitOfWorkHelper`` will make ``undoable=True`` genuinely
+            rollback-capable; see `specs/write-path-transactions/spec.md` B1.
         """
         from .undoable_operation import _FLExUndoableOperation
 

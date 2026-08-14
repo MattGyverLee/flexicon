@@ -87,3 +87,24 @@ class FP_ParameterError(FP_RuntimeError):
 class FP_TransactionError(FP_RuntimeError):
     def __init__(self, message):
         super().__init__(message)
+
+
+class FP_ConflictingSaveError(FP_RuntimeError):
+    """
+    Raised when LCM reports that another client saved changes which cannot be
+    reconciled with this session's unsaved changes.
+
+    Raised by ``flexicon.code.headless_ui.HeadlessLcmUI.ConflictingSave()``.
+    Raising is deliberate: the alternatives LCM offers are to block on a
+    modal dialog or to discard the caller's unsaved work; neither is
+    acceptable unattended. The caller is expected to abandon or retry the
+    operation.
+
+    Subclasses ``FP_RuntimeError`` (rather than ``FP_ProjectError``) because
+    the condition is discovered mid-session, on a save that occurs after the
+    project is already open and in use -- it is a runtime failure of an
+    in-progress write, not a problem opening the project.
+    """
+
+    def __init__(self, message):
+        super().__init__(message)

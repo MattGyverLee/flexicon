@@ -34,6 +34,7 @@ from .code.FLExProject import (
     AllProjectNames,
     OpenProjectInFW,
     FLExProject,
+    FP_ConflictingSaveError,
     FP_FileLockedError,
     FP_FileNotFoundError,
     FP_MigrationRequired,

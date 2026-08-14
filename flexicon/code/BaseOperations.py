@@ -1775,10 +1775,11 @@ class BaseOperations:
 
         Auto-selects Phase 2 (``UndoableOperation``, visible in the FLEx
         Ctrl+Z menu) when the project was opened with ``undoable=True``,
-        otherwise Phase 1 (``Transaction``, programmatic rollback-only). Use
-        this to wrap the body of any write method that performs two or more
-        LCM mutations, so a failure partway through does not leave a
-        partially-constructed object persisted in the cache with no rollback.
+        otherwise Phase 1 (``Transaction``). Use this to wrap the body of
+        any write method that performs two or more LCM mutations, so a
+        failure partway through is at least labelled and grouped -- see the
+        Notes below for what this wrapper does and does NOT protect against
+        in each mode; today, neither mode auto-rolls-back a partial write.
 
         Wrap only the mutation portion of a method: call validation helpers
         (``_EnsureWriteEnabled``, ``_Validate*``) and any lookups that may
@@ -1807,21 +1808,27 @@ class BaseOperations:
                     return entry
 
         Notes:
-            - Phase 1 (``Transaction``) rolls back to a mark on exception.
+            - Phase 1 (``Transaction``) does NOT roll back on exception in the
+              current build. liblcm exposes no reachable rollback-to-mark API
+              in this mode (issue #236; see
+              ``specs/write-path-transactions/spec.md`` D1 and
+              ``FLExProject.Transaction()``'s docstring for the specific API
+              name checked). ``_TransactionCM`` in Phase 1 is a labelling and
+              nesting construct only; the atomicity unit is the whole
+              session, not this block. See ``docs/EXCEPTION_HANDLING.md``.
             - Phase 2 (``UndoableOperation``) wraps the changes in a single
-              named undo task; it does NOT auto-rollback on exception, but
-              the partial work is undoable by the FLEx user via Ctrl+Z.
+              named undo task; it does NOT auto-rollback on exception either,
+              but the partial work is undoable by the FLEx user via Ctrl+Z.
             - ``_undoable`` is only ever True when the project is also
               write-enabled, so Phase 2 selection cannot collide with the
               read-only guard already enforced by ``_EnsureWriteEnabled``.
             - Nesting differs by phase:
 
-              * Phase 1 (``Transaction``) nests safely. Each ``with`` block
-                marks an independent rollback point; an inner rollback rolls
-                back to the inner mark, an outer rollback rolls back
-                everything. A caller-supplied outer
-                ``with project.Transaction("batch"):`` therefore captures
-                every write made by the inner ``_TransactionCM`` blocks.
+              * Phase 1 (``Transaction``) nests without error. Each ``with``
+                block enters and exits cleanly, but since neither the inner
+                nor the outer block can roll back, "nesting" here means only
+                that labels compose and the depth counter balances -- there
+                is no independent rollback point to speak of at any depth.
               * Phase 2 (``UndoableOperation``) does NOT nest at the LCM level:
                 ``BeginUndoTask``/``EndUndoTask`` cannot be nested without
                 corrupting the undo stack. ``_TransactionCM`` guards against

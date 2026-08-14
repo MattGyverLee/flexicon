@@ -30,6 +30,7 @@ These are raised during normal operation:
 - **`FP_WritingSystemError`** - Invalid writing system for the project
 - **`FP_NullParameterError`** - Required parameter is None
 - **`FP_ParameterError`** - Invalid parameter value or type
+- **`FP_ConflictingSaveError`** - Another client saved changes to the project that cannot be reconciled with this session's unsaved changes; raised by `flexicon.code.headless_ui.HeadlessLcmUI.ConflictingSave()` (see issue #238)
 
 ### .NET Exception Types to Catch
 
@@ -505,6 +506,61 @@ def add_allomorph(entry, form_text):
 
 ---
 
+## Atomicity Under `undoable=False`: the Session Is the Unit
+
+**This section states the actual, verified atomicity guarantee for the
+default write mode (`undoable=False`). Read it before relying on
+`Transaction()` or `_TransactionCM` for rollback.**
+
+`OpenProject(..., writeEnabled=True)` with the default `undoable=False`
+opens exactly one LCM `NonUndoableUnitOfWork` for the entire session
+(`BeginNonUndoableTask()` at open, `EndNonUndoableTask()` at close). There is
+no per-operation or per-`Transaction()` rollback boundary inside that
+envelope, because the LCM API a rollback would need --
+`RollbackToMark` -- **does not exist** anywhere in liblcm or FieldWorks
+(issue #236, confirmed by reflection over `SIL.LCModel.dll`; see
+`specs/write-path-transactions/spec.md` section 2 and decision D1).
+
+**Consequence:** the atomicity unit in this mode is the **session**, not the
+operation and not the `Transaction()`/`_TransactionCM` block. If any code
+raises partway through a multi-step write -- whether inside a
+`with project.Transaction(...)` block, inside a `_TransactionCM`-wrapped
+Operations method, or between unrelated calls -- every mutation applied
+**before** that point remains in the in-memory LCM cache. Nothing is undone.
+Those mutations will be written to disk on the next `SaveChanges()` or
+`CloseProject()` call, exception or no exception.
+
+```python
+project.OpenProject("MyProject", writeEnabled=True)  # undoable=False (default)
+
+with project.Transaction("import batch"):
+    project.LexEntry.Create("run", "stem")     # (1) applied
+    project.LexEntry.Create("walk", "stem")    # (2) applied
+    raise RuntimeError("network timeout mid-import")
+    # (1) and (2) are NOT rolled back. They are still in the cache.
+
+project.CloseProject()  # (1) and (2) are saved to disk, despite the exception.
+```
+
+**What this means for callers:**
+- Design write operations to be safely re-runnable, or checkpoint before a
+  risky batch so a failure is recoverable by inspection rather than by
+  rollback.
+- Do not treat a caught exception from inside a `Transaction()` block as
+  evidence that no partial state was written -- assume the opposite.
+- A single warning to this effect is logged once, at `OpenProject()` time
+  (not once per transaction, which would train callers to ignore it).
+- `FLExProject.RefreshFromDisk()` and `FLExProject.AbortSession()` (planned)
+  operate at session granularity for the same reason: there is no finer
+  granularity available in `undoable=False`.
+- If you need real per-operation rollback, `undoable=True` is the
+  destination mode once the Track B rewrite of `flexicon/code/transaction.py`
+  (on liblcm's `UndoableUnitOfWorkHelper`) lands; see
+  `specs/write-path-transactions/spec.md` D2/D3/B1. Until then, `undoable=True`
+  has the same no-rollback limitation.
+
+---
+
 ## Testing Exception Handlers
 
 ### Unit Testing Pattern
@@ -577,6 +633,7 @@ from flexlibs2 import (
     FP_WritingSystemError,
     FP_NullParameterError,
     FP_ParameterError,
+    FP_ConflictingSaveError,
 )
 ```
 

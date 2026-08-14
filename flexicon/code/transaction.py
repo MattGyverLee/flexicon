@@ -1,8 +1,13 @@
 #
 #   transaction.py
 #
-#   Class: _FLExTransaction
-#          Context manager for safe rollback transactions within a FLEx project.
+#   Classes: _NestingAwareTransaction
+#                Phase-aware, nesting-safe context manager returned by
+#                BaseOperations._TransactionCM(); auto-selects Phase 1
+#                (Transaction, no rollback) or Phase 2 (UndoableOperation).
+#            _FLExTransaction
+#                Context manager for safe rollback transactions within a
+#                FLEx project (Phase 1).
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -83,25 +88,28 @@ class _NestingAwareTransaction:
 
 class _FLExTransaction:
     """
-    Context manager providing safe rollback transactions on a FLEx project.
+    Context manager for FLExProject.Transaction() -- labelling/nesting only.
 
-    Marks a point in the LCM undo stack (if supported) and rolls back to
-    that mark if an exception occurs inside the block.
+    If constructed with a real ``mark_fn``/``rollback_fn`` pair, marks a
+    point in the LCM undo stack and rolls back to it on exception. In the
+    current build, ``FLExProject.Transaction()`` always constructs this
+    class with ``(None, None)``: no such LCM rollback-to-mark API exists
+    (issue #236; see `specs/write-path-transactions/spec.md` section 2 for
+    the specific API confirmed absent by reflection). So in
+    practice today this class provides labelling and safe nesting only --
+    it does NOT roll anything back. See ``FLExProject.Transaction()``'s
+    docstring for the full mode-dependent explanation, and
+    ``docs/EXCEPTION_HANDLING.md`` for the atomicity-unit consequence.
 
-    This is Phase 1 (rollback-only) behavior. The transaction does NOT
-    appear in the FLEx Ctrl+Z undo menu - it is a programmatic safety net.
+    This does NOT appear in the FLEx Ctrl+Z undo menu regardless of mode -
+    it is (or, once real, would be) a programmatic safety net only.
 
     Usage::
 
         with project.Transaction("Import entries") as txn:
             project.LexEntry.Create("run", "stem")
             project.LexEntry.Create("walk", "stem")
-        # If any line raises, all changes in the block are rolled back.
-
-    Nesting Behavior:
-        Nested transactions are allowed but share outer-level semantics:
-        a rollback in an inner transaction rolls back to the outer mark.
-        This is documented behavior, not an error.
+        # No exception here is rolled back in the current build (see above).
 
     Note:
         This class is internal. Obtain instances via FLExProject.Transaction().
@@ -132,13 +140,23 @@ class _FLExTransaction:
         If the project is read-only, skips marking (any write will fail at validation).
 
         Note:
-            When the LCM rollback API (mark_fn / rollback_fn) is unavailable on a
-            write-enabled project, this logs a warning and proceeds WITHOUT rollback
-            capability rather than raising. The Phase-1 Mark/RollbackToMark API is
-            not yet discoverable in the shipped LCM build (see docs/internal/RESEARCH_NEEDED.md),
-            so failing fast here would make every write operation impossible. Until
-            that API exists, degraded-but-functional is the only viable default; a
-            strict opt-in mode is tracked separately (see issue #210).
+            When no LCM rollback API (mark_fn / rollback_fn) has been supplied
+            to this instance, entering proceeds WITHOUT rollback capability
+            rather than raising. In the current build ``FLExProject.Transaction()``
+            always passes ``(None, None)`` here: no rollback-to-mark API
+            exists anywhere in liblcm or FieldWorks (issue #236, confirmed by
+            reflection over ``SIL.LCModel.dll`` -- see
+            ``specs/write-path-transactions/spec.md`` D1 for the specific API
+            name checked). This is not a
+            build-specific gap that might resolve later; there is no such API
+            to discover. Failing fast here would make every write operation
+            under ``undoable=False`` impossible, so degraded-but-functional
+            (no rollback, body still runs, exceptions still propagate) is the
+            permanent behavior in this mode. A per-session warning to this
+            effect is logged once per ``FLExProject.OpenProject()`` call (not
+            once per process or per instance -- a second ``OpenProject()``
+            call in the same session re-logs it), and not per transaction
+            (issue #221) -- see ``docs/EXCEPTION_HANDLING.md``.
         """
         if not self._project.writeEnabled:
             # Silently allow entering on read-only project;
@@ -148,16 +166,11 @@ class _FLExTransaction:
             return self
 
         if self._mark_fn is None:
-            # The LCM Mark/RollbackToMark API is not discoverable in this build
-            # (see docstring above and issue #210). This is the expected default,
-            # not an error, so log at debug rather than emitting a misleading
-            # "could not set mark: 'NoneType' object is not callable" warning
-            # once per transaction (issue #221).
+            # No rollback API exists to use (see docstring above). Expected
+            # and permanent in the current build, not an error -- the
+            # one-shot OpenProject() warning already told the caller this
+            # mode has no rollback, so no further per-call logging here.
             self._mark = None
-            logger.debug(
-                f"Transaction '{self._label}': LCM mark API unavailable, "
-                f"proceeding without rollback capability"
-            )
             return self
 
         try:

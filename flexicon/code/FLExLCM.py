@@ -72,13 +72,22 @@ def GetListOfProjects():
 # -----------------------------------------------------------
 
 
-def OpenProject(projectName):
+def OpenProject(projectName, ui=None):
     """
     Open a FieldWorks project.
 
     projectName:
         - Either the full path including ".fwdata" suffix, or
         - The name only, opened from the default project location.
+
+    ui:
+        - Optional ILcmUI implementation. When None (the default) the historical
+          WinForms `FwLcmUI` is used, preserving backward compatibility.
+        - Headless callers should pass `HeadlessLcmUI()` from
+          `flexicon.code.headless_ui`. `FwLcmUI` opens modal dialogs and
+          marshals through `Control.Invoke`, which in a process with no message
+          pump blocks the commit thread and defaults to discarding writes on a
+          conflicting save. See issue #238.
     """
 
     projectFileName = LcmFileHelper.GetXmlDataFileName(projectName)
@@ -86,7 +95,8 @@ def OpenProject(projectName):
     projId = ProjectId(projectFileName)
 
     th = ThreadHelper()
-    ui = FwLcmUI(None, th)  # IHelpTopicProvider, ISynchronizeInvoke
+    if ui is None:
+        ui = FwLcmUI(None, th)  # IHelpTopicProvider, ISynchronizeInvoke
     dirs = FwDirectoryFinder.LcmDirectories
     settings = LcmSettings()
     # Migration should be done within FieldWorks
