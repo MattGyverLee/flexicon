@@ -1,0 +1,108 @@
+{
+  "workflow": "speckit",
+  "specName": "write-path-transactions",
+  "branch": "write-path-transactions-b1-b3",
+  "selectedAt": "2026-08-14T06:48:48.070Z",
+  "currentStep": "implement",
+  "status": "implementing",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-08-14T07:08:43.759Z"
+    },
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-14T07:11:44.046Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "start",
+      "by": "ai",
+      "at": "2026-08-14T07:11:44.246Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-14T07:11:44.446Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "start",
+      "by": "ai",
+      "at": "2026-08-14T07:11:44.646Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-14T07:11:44.846Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "ai",
+      "at": "2026-08-14T07:11:45.046Z"
+    }
+  ],
+  "telemetryInstanceId": "23b3fddf-568f-441a-be88-88f8edc7d953",
+  "verified": [
+    {
+      "what": "B2g ratchet guard after bracketing 21 Discourse sites; scanner and baseline both report 211",
+      "command": "python -m pytest tests/write_path_transactions/ -q",
+      "result": "4 passed",
+      "warnings": [
+        "flexlibs2->flexicon rename DeprecationWarning from tests/conftest.py:133 - benign, pre-existing"
+      ]
+    },
+    {
+      "what": "Discourse/chart behavior preserved after per-site bracketing",
+      "command": "python -m pytest -m \"not requires_live_project\" -k \"chart or discourse\" -q",
+      "result": "48 passed, 1842 deselected"
+    },
+    {
+      "what": "B1t nesting/action-handler-double suite plus ratchet guard still green",
+      "command": "python -m pytest tests/write_path_transactions/ tests/test_b1t_action_handler_double.py -q",
+      "result": "34 passed"
+    },
+    {
+      "what": "Full offline gate; 117 failures confirmed pre-existing by stashing the batch and re-running on a clean tree (identical 117/1424/11/17)",
+      "command": "python -m pytest -m \"not requires_live_project\" -q",
+      "result": "117 failed, 1424 passed, 11 skipped, 17 errors - identical with and without this batch"
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Bracket the two lazy-init private helpers (__GetOrCreateChartMarkers, __GetOrCreateDiscourse) inside the helper, not at the call site",
+      "why": "Both are invoked before their Create method enters its own _TransactionCM, so a call-site bracket would leave DiscourseDataOA/ChartMarkersOA creation unbracketed; _TransactionCM is nesting-aware so a future caller can still wrap them",
+      "rejected": "Bracketing at the Create call sites, or hoisting the helper call inside Create-s existing with-block"
+    },
+    {
+      "decision": "Keep hasattr capability checks and membership tests outside the transaction in AddDependentClause and the two lazy-init guards",
+      "why": "A redundant add or an already-initialised slot stays a true no-op instead of opening an empty named undo entry that Phase 2 would also Rollback(0)",
+      "rejected": "Wrapping the whole conditional including the guard"
+    }
+  ],
+  "concerns": [
+    {
+      "note": "The full offline gate has 117 pre-existing failures and 17 errors unrelated to this feature (largely flexicon/sync/tests/test_duplicate_operations.py). Verified identical on a clean tree, but it means the gate cannot be read as a simple pass/fail for later B2 batches - compare counts against a stashed baseline instead.",
+      "step": "implement"
+    },
+    {
+      "note": "Companion tooling cannot track this feature: task_sync.py COMPLETED_TASK_RE/PENDING_TASK_RE only match ids shaped T<digits>, but this feature uses A1a/B2/CB/CO1/DEF. Consequences: status-context.py falsely reports complete:true (resume dispatches nothing), and --materialize cannot flip any tasks.md checkbox, so they must be maintained by hand. Also status-context.py crashes on its own arrow glyph under Windows cp1252 unless PYTHONUTF8=1.",
+      "step": "implement"
+    }
+  ],
+  "last_action": "B2 batch 7/11 (Discourse, 21 sites) committed d2dfdfe; baseline ratcheted 232->211; next batch 8/11 TextsWords 24"
+}
