@@ -1916,9 +1916,15 @@ class BaseOperations:
         """
         import logging
 
-        if guid is None:
-            return factory.Create()
+        label = f"Create {kind}" if kind else "Create object"
 
+        if guid is None:
+            with self._TransactionCM(label):
+                return factory.Create()
+
+        # GUID parsing happens BEFORE the transaction: a malformed GUID is a
+        # caller error and must raise without opening an undo task (decision
+        # D5's validate-then-mutate discipline).
         guid_arg = guid
         if isinstance(guid, str):
             from System import Guid as _DotNetGuid
@@ -1927,14 +1933,20 @@ class BaseOperations:
             except Exception as exc:
                 raise FP_ParameterError(
                     "guid %r is not a valid GUID" % (guid,)) from exc
-        try:
-            return factory.Create(guid_arg)
-        except Exception as exc:
-            logging.getLogger("flexicon").warning(
-                "%s: Create(Guid=%s) failed (%s: %s); falling back to a new "
-                "identity. The requested GUID was NOT preserved.",
-                kind or type(factory).__name__, guid, type(exc).__name__, exc)
-            return factory.Create()
+
+        # The attempt-then-fallback pair is ONE transaction. The failed
+        # Create(Guid) is caught here rather than escaping, so the block still
+        # exits cleanly and commits the fallback object -- the identity-loss
+        # warning, not a rollback, is the documented outcome.
+        with self._TransactionCM(label):
+            try:
+                return factory.Create(guid_arg)
+            except Exception as exc:
+                logging.getLogger("flexicon").warning(
+                    "%s: Create(Guid=%s) failed (%s: %s); falling back to a new "
+                    "identity. The requested GUID was NOT preserved.",
+                    kind or type(factory).__name__, guid, type(exc).__name__, exc)
+                return factory.Create()
 
     def _ValidateParam(self, param: Any, param_name: str = "parameter") -> None:
         """
