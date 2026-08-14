@@ -592,22 +592,27 @@ class BaseOperations:
         else:
             items_with_indices.sort(key=lambda x: x[1], reverse=reverse)
 
-        # Apply new order using MoveTo
-        # We need to move items from their current position to their target position
-        # Process from end to beginning to avoid index shifting issues
-        for target_index in range(count):
-            # Find where the item that should be at target_index currently is
-            current_index = target_index
-            for j in range(target_index, count):
-                if sequence[j] == items_with_indices[target_index][1]:
-                    current_index = j
-                    break
+        # Apply new order using MoveTo. Bracketed as ONE transaction: a sort
+        # issues up to `count` MoveTo calls, and a failure partway through
+        # leaves the sequence in a half-sorted order that is neither the old
+        # nor the new one. This is exactly the multi-mutation case
+        # _TransactionCM exists for.
+        with self._TransactionCM("Sort sequence"):
+            # We need to move items from their current position to their target position
+            # Process from end to beginning to avoid index shifting issues
+            for target_index in range(count):
+                # Find where the item that should be at target_index currently is
+                current_index = target_index
+                for j in range(target_index, count):
+                    if sequence[j] == items_with_indices[target_index][1]:
+                        current_index = j
+                        break
 
-            # Move it to the target position if not already there
-            if current_index != target_index:
-                sequence.MoveTo(current_index, current_index, sequence, target_index)
+                # Move it to the target position if not already there
+                if current_index != target_index:
+                    sequence.MoveTo(current_index, current_index, sequence, target_index)
 
-        return count
+            return count
 
     @OperationsMethod
     def MoveUp(self, parent_or_hvo, item, positions=1):
@@ -701,7 +706,8 @@ class BaseOperations:
         # Move using FLEx's MoveTo method
         # When moving backward (up), use target index directly
         if actual_moved > 0:
-            sequence.MoveTo(current_index, current_index, sequence, new_index)
+            with self._TransactionCM(f"Move item up {actual_moved} position(s)"):
+                sequence.MoveTo(current_index, current_index, sequence, new_index)
 
         return actual_moved
 
@@ -798,7 +804,8 @@ class BaseOperations:
         # Move using FLEx's MoveTo method
         # When moving forward (down), need to use new_index + 1 due to FLEx behavior
         if actual_moved > 0:
-            sequence.MoveTo(current_index, current_index, sequence, new_index + 1)
+            with self._TransactionCM(f"Move item down {actual_moved} position(s)"):
+                sequence.MoveTo(current_index, current_index, sequence, new_index + 1)
 
         return actual_moved
 
@@ -878,12 +885,13 @@ class BaseOperations:
         # Move using FLEx's MoveTo method
         # Adjust destination index based on direction
         if current_index != new_index:
-            if current_index < new_index:
-                # Moving forward - use new_index + 1
-                sequence.MoveTo(current_index, current_index, sequence, new_index + 1)
-            else:
-                # Moving backward - use new_index directly
-                sequence.MoveTo(current_index, current_index, sequence, new_index)
+            with self._TransactionCM(f"Move item to index {new_index}"):
+                if current_index < new_index:
+                    # Moving forward - use new_index + 1
+                    sequence.MoveTo(current_index, current_index, sequence, new_index + 1)
+                else:
+                    # Moving backward - use new_index directly
+                    sequence.MoveTo(current_index, current_index, sequence, new_index)
 
         return True
 
@@ -953,12 +961,13 @@ class BaseOperations:
 
         # Move using FLEx's MoveTo method
         if move_index != -1 and target_index != -1 and move_index != target_index:
-            if move_index < target_index:
-                # Moving forward - use target_index (will end up before target)
-                sequence.MoveTo(move_index, move_index, sequence, target_index)
-            else:
-                # Moving backward - use target_index directly
-                sequence.MoveTo(move_index, move_index, sequence, target_index)
+            with self._TransactionCM("Move item before target"):
+                if move_index < target_index:
+                    # Moving forward - use target_index (will end up before target)
+                    sequence.MoveTo(move_index, move_index, sequence, target_index)
+                else:
+                    # Moving backward - use target_index directly
+                    sequence.MoveTo(move_index, move_index, sequence, target_index)
 
         return True
 
@@ -1028,13 +1037,14 @@ class BaseOperations:
 
         # Move to position after target
         if move_index != -1 and target_index != -1 and move_index != target_index:
-            # When moving after, we want to end up at target_index + 1
-            # If moving forward: use target_index + 1 (will insert after due to removal)
-            # If moving backward: use target_index + 1 directly
-            if move_index < target_index:
-                sequence.MoveTo(move_index, move_index, sequence, target_index + 1)
-            else:
-                sequence.MoveTo(move_index, move_index, sequence, target_index + 1)
+            with self._TransactionCM("Move item after target"):
+                # When moving after, we want to end up at target_index + 1
+                # If moving forward: use target_index + 1 (will insert after due to removal)
+                # If moving backward: use target_index + 1 directly
+                if move_index < target_index:
+                    sequence.MoveTo(move_index, move_index, sequence, target_index + 1)
+                else:
+                    sequence.MoveTo(move_index, move_index, sequence, target_index + 1)
 
         return True
 
@@ -1101,23 +1111,27 @@ class BaseOperations:
                 idx2 = index
             index += 1
 
-        # Swap using MoveTo operations
+        # Swap using MoveTo operations. Bracketed as ONE transaction: the swap
+        # is a deliberate two-step MoveTo dance, and failing between the steps
+        # leaves the sequence in an order that is neither the original nor the
+        # swapped one.
         # Strategy: Move lower-index item after higher-index item, then move higher item to original position
         if idx1 != -1 and idx2 != -1 and idx1 != idx2:
-            if idx1 < idx2:
-                # item1 is before item2
-                # Step 1: Move item1 to after item2 (this pushes item2 earlier)
-                # After this: [..., item2 at idx1, ..., item1 at idx2, ...]
-                sequence.MoveTo(idx1, idx1, sequence, idx2 + 1)
-                # Step 2: Now item2 is at idx1, move it to idx2
-                # But idx2 is now idx2-1 because we removed item1
-                sequence.MoveTo(idx1, idx1, sequence, idx2)
-            else:
-                # item2 is before item1
-                # Step 1: Move item2 to after item1
-                sequence.MoveTo(idx2, idx2, sequence, idx1 + 1)
-                # Step 2: Now item1 is at idx2, move it to idx1
-                sequence.MoveTo(idx2, idx2, sequence, idx1)
+            with self._TransactionCM("Swap items"):
+                if idx1 < idx2:
+                    # item1 is before item2
+                    # Step 1: Move item1 to after item2 (this pushes item2 earlier)
+                    # After this: [..., item2 at idx1, ..., item1 at idx2, ...]
+                    sequence.MoveTo(idx1, idx1, sequence, idx2 + 1)
+                    # Step 2: Now item2 is at idx1, move it to idx2
+                    # But idx2 is now idx2-1 because we removed item1
+                    sequence.MoveTo(idx1, idx1, sequence, idx2)
+                else:
+                    # item2 is before item1
+                    # Step 1: Move item2 to after item1
+                    sequence.MoveTo(idx2, idx2, sequence, idx1 + 1)
+                    # Step 2: Now item1 is at idx2, move it to idx1
+                    sequence.MoveTo(idx2, idx2, sequence, idx1)
 
         return True
 

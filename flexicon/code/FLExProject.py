@@ -656,6 +656,39 @@ class FLExProject(object):
 
         return _FLExUndoableOperation(self, label)
 
+    def _TransactionCM(self, label):
+        """
+        Internal: the mode-selecting transaction context manager, for the write
+        methods that live on ``FLExProject`` itself.
+
+        Identical in behavior to ``BaseOperations._TransactionCM`` -- see that
+        docstring for the full Phase 1 / Phase 2 semantics, the nesting rules,
+        and what each mode does and does not guarantee. It exists here too
+        because a handful of write methods (``LexiconSetFieldText``,
+        ``LexiconClearField``, ``LexiconSetListFieldMultiple``,
+        ``LexiconDeleteObject``, ``LexiconSetComplexFormType``,
+        ``LexiconAddComplexForm``, ``SetAudioPath``) are defined on this facade
+        rather than on an Operations class, so they have no ``BaseOperations``
+        to inherit it from. Without this they would be the only LCM mutators in
+        the tree unable to use the standard bracket (decision D5,
+        `specs/write-path-transactions/tasks.md` B2).
+
+        ``_NestingAwareTransaction`` needs only ``_undoable``,
+        ``Transaction(label)`` and ``project.ActionHandlerAccessor`` from the
+        object it is handed, all of which this class provides directly -- so
+        the same class serves both call sites with no special-casing.
+
+        Args:
+            label (str): Human-readable description, used for logging and, in
+                Phase 2, as the FLEx undo-menu entry.
+
+        Returns:
+            A ``_NestingAwareTransaction`` context manager.
+        """
+        from .transaction import _NestingAwareTransaction
+
+        return _NestingAwareTransaction(self, label)
+
     def Undo(self):
         """
         Undo the last UndoableOperation.
@@ -2828,28 +2861,33 @@ class FLExProject(object):
             raise FP_ReadOnlyError()
 
         try:
-            # Create ITsString with embedded file path
-            bldr = self.project.ServiceLocator.GetInstance("TsStrBldr")
-            bldr.Clear()
+            # Create ITsString with embedded file path. The TsStrBldr work is
+            # pure string building against a builder, not an LCM mutation, so
+            # only the final set_String needs the transaction -- but the whole
+            # sequence is bracketed together to keep the built string and the
+            # write that consumes it in one unit.
+            with self._TransactionCM(f"Set audio path '{file_path}'"):
+                bldr = self.project.ServiceLocator.GetInstance("TsStrBldr")
+                bldr.Clear()
 
-            # Add ORC character
-            bldr.Replace(0, 0, "\ufffc", None)
+                # Add ORC character
+                bldr.Replace(0, 0, "\ufffc", None)
 
-            # Create properties with embedded path
-            # Format: kodtExternalPathName character + file path
-            from SIL.LCModel.Core.KernelInterfaces import FwObjDataTypes
+                # Create properties with embedded path
+                # Format: kodtExternalPathName character + file path
+                from SIL.LCModel.Core.KernelInterfaces import FwObjDataTypes
 
-            obj_data = chr(FwObjDataTypes.kodtExternalPathName) + file_path
+                obj_data = chr(FwObjDataTypes.kodtExternalPathName) + file_path
 
-            # Set the ObjData property on the character
-            props_bldr = self.project.ServiceLocator.GetInstance("ITsPropsBldr")
-            props_bldr.SetStrPropValue(ord("k"), obj_data)  # Property tag for ObjData
+                # Set the ObjData property on the character
+                props_bldr = self.project.ServiceLocator.GetInstance("ITsPropsBldr")
+                props_bldr.SetStrPropValue(ord("k"), obj_data)  # Property tag for ObjData
 
-            # Apply properties to the ORC character
-            bldr.SetProperties(0, 1, props_bldr.GetTextProps())
+                # Apply properties to the ORC character
+                bldr.SetProperties(0, 1, props_bldr.GetTextProps())
 
-            # Set the string in the multistring field
-            multistring_field.set_String(wsHandle, bldr.GetString())
+                # Set the string in the multistring field
+                multistring_field.set_String(wsHandle, bldr.GetString())
 
         except Exception as e:
             import logging
@@ -3473,21 +3511,25 @@ class FLExProject(object):
 
         tss = TsStringUtils.MakeString(text, WSHandle)
 
-        if fieldType in FLExLCM.CellarStringTypes:
-            try:
-                self.project.DomainDataByFlid.SetString(hvo, fieldID, tss)
-            except LcmInvalidFieldException as msg:
-                # This exception indicates that the project is not in write mode
-                raise FP_ReadOnlyError()
-        elif fieldType in FLExLCM.CellarMultiStringTypes:
-            # MultiUnicodeAccessor
-            mua = self.project.DomainDataByFlid.get_MultiStringProp(hvo, fieldID)
-            try:
-                mua.set_String(WSHandle, tss)
-            except LcmInvalidFieldException as msg:
-                raise FP_ReadOnlyError()
-        else:
+        # The unsupported-type rejection is checked first, outside the
+        # transaction, so a bad field type never opens an undo task.
+        if fieldType not in FLExLCM.CellarStringTypes and fieldType not in FLExLCM.CellarMultiStringTypes:
             raise FP_ParameterError("LexiconSetFieldText: field is not a supported type")
+
+        with self._TransactionCM("Set field text"):
+            if fieldType in FLExLCM.CellarStringTypes:
+                try:
+                    self.project.DomainDataByFlid.SetString(hvo, fieldID, tss)
+                except LcmInvalidFieldException as msg:
+                    # This exception indicates that the project is not in write mode
+                    raise FP_ReadOnlyError()
+            else:
+                # MultiUnicodeAccessor
+                mua = self.project.DomainDataByFlid.get_MultiStringProp(hvo, fieldID)
+                try:
+                    mua.set_String(WSHandle, tss)
+                except LcmInvalidFieldException as msg:
+                    raise FP_ReadOnlyError()
 
     def LexiconClearField(self, senseOrEntryOrHvo, fieldID):
         """
@@ -3504,22 +3546,29 @@ class FLExProject(object):
         mdc = IFwMetaDataCacheManaged(self.project.MetaDataCacheAccessor)
         fieldType = CellarPropertyType(mdc.GetFieldType(fieldID))
 
-        if fieldType in FLExLCM.CellarStringTypes:
-            try:
-                self.project.DomainDataByFlid.SetString(hvo, fieldID, None)
-            except LcmInvalidFieldException as msg:
-                # This exception indicates that the project is not in write mode
-                raise FP_ReadOnlyError()
-        elif fieldType in FLExLCM.CellarMultiStringTypes:
-            # MultiUnicodeAccessor
-            mua = self.project.DomainDataByFlid.get_MultiStringProp(hvo, fieldID)
-            try:
-                for ws in self.GetAllAnalysisWSs() | self.GetAllVernacularWSs():
-                    mua.set_String(self.WSHandle(ws), None)
-            except LcmInvalidFieldException as msg:
-                raise FP_ReadOnlyError()
-        else:
+        # The unsupported-type rejection is checked first, outside the
+        # transaction, so a bad field type never opens an undo task.
+        if fieldType not in FLExLCM.CellarStringTypes and fieldType not in FLExLCM.CellarMultiStringTypes:
             raise FP_ParameterError("LexiconClearField: field is not a supported type")
+
+        # One transaction for the whole field: clearing a multistring writes
+        # every analysis and vernacular WS, and a partial clear is not a state
+        # any caller asked for.
+        with self._TransactionCM("Clear field"):
+            if fieldType in FLExLCM.CellarStringTypes:
+                try:
+                    self.project.DomainDataByFlid.SetString(hvo, fieldID, None)
+                except LcmInvalidFieldException as msg:
+                    # This exception indicates that the project is not in write mode
+                    raise FP_ReadOnlyError()
+            else:
+                # MultiUnicodeAccessor
+                mua = self.project.DomainDataByFlid.get_MultiStringProp(hvo, fieldID)
+                try:
+                    for ws in self.GetAllAnalysisWSs() | self.GetAllVernacularWSs():
+                        mua.set_String(self.WSHandle(ws), None)
+                except LcmInvalidFieldException as msg:
+                    raise FP_ReadOnlyError()
 
     def LexiconSetFieldInteger(self, senseOrEntryOrHvo, fieldID, integer):
         """
@@ -3706,7 +3755,8 @@ class FLExProject(object):
         numItems = ddbf.get_VecSize(senseOrEntry.Hvo, fieldID)
 
         # Replace the current items with the new list
-        ddbf.Replace(senseOrEntry.Hvo, fieldID, 0, numItems, hvoList, len(hvoList))
+        with self._TransactionCM(f"Set list field ({len(hvoList)} value(s))"):
+            ddbf.Replace(senseOrEntry.Hvo, fieldID, 0, numItems, hvoList, len(hvoList))
 
     # --- Lexicon: Custom fields ---
 
@@ -4039,26 +4089,30 @@ class FLExProject(object):
         elif class_name in ("LexEntryRef", "VariantEntryRef"):
             return self.Variants.Delete(obj)
         else:
-            # Generic delete using LCM
-            if hasattr(obj, "Owner") and obj.Owner:
-                owner = obj.Owner
-                # Try to find and remove from owning collection
-                for prop_name in dir(owner):
-                    if prop_name.endswith("OS") or prop_name.endswith("OC"):
-                        try:
-                            collection = getattr(owner, prop_name)
-                            if hasattr(collection, "Remove") and obj in collection:
-                                collection.Remove(obj)
-                                return
-                        except Exception:
-                            pass
+            # Generic delete using LCM. Only this fallback branch is bracketed
+            # here: every branch above delegates to an Operations class whose
+            # own Delete() carries its own transaction (and would simply join
+            # this one under Phase 2 if it were nested inside).
+            with self._TransactionCM(f"Delete {class_name}"):
+                if hasattr(obj, "Owner") and obj.Owner:
+                    owner = obj.Owner
+                    # Try to find and remove from owning collection
+                    for prop_name in dir(owner):
+                        if prop_name.endswith("OS") or prop_name.endswith("OC"):
+                            try:
+                                collection = getattr(owner, prop_name)
+                                if hasattr(collection, "Remove") and obj in collection:
+                                    collection.Remove(obj)
+                                    return
+                            except Exception:
+                                pass
 
-            # Fallback: delete via the object's own ICmObject.Delete().
-            # The earlier code reached for IDataReader.DeleteUnderlyingObject,
-            # but that interface is `internal` in liblcm and pythonnet only
-            # exposes `public` types, so the import always failed.
-            # ICmObject.Delete() is the documented public deletion entry point.
-            obj.Delete()
+                # Fallback: delete via the object's own ICmObject.Delete().
+                # The earlier code reached for IDataReader.DeleteUnderlyingObject,
+                # but that interface is `internal` in liblcm and pythonnet only
+                # exposes `public` types, so the import always failed.
+                # ICmObject.Delete() is the documented public deletion entry point.
+                obj.Delete()
 
     def LexiconGetHeadWord(self, entry):
         """
@@ -4288,8 +4342,12 @@ class FLExProject(object):
             Replaces any existing complex form types with the specified one.
         """
         if hasattr(entry_ref, "ComplexEntryTypesRS"):
-            entry_ref.ComplexEntryTypesRS.Clear()
-            entry_ref.ComplexEntryTypesRS.Append(complex_form_type)
+            # Clear-then-Append is two mutations: a failure between them would
+            # leave the entry ref with no complex form type at all, which is
+            # neither the old value nor the requested one.
+            with self._TransactionCM("Set complex form type"):
+                entry_ref.ComplexEntryTypesRS.Clear()
+                entry_ref.ComplexEntryTypesRS.Append(complex_form_type)
 
     def LexiconAddComplexForm(self, entry, components, complex_form_type):
         """
@@ -4316,19 +4374,20 @@ class FLExProject(object):
         """
         from SIL.LCModel import ILexEntryRefFactory
 
-        factory = self.project.ServiceLocator.GetInstance(ILexEntryRefFactory)
-        entry_ref = factory.Create()
-        entry.EntryRefsOS.Add(entry_ref)
+        with self._TransactionCM(f"Add complex form ({len(components)} component(s))"):
+            factory = self.project.ServiceLocator.GetInstance(ILexEntryRefFactory)
+            entry_ref = factory.Create()
+            entry.EntryRefsOS.Add(entry_ref)
 
-        # Add components
-        for component in components:
-            entry_ref.ComponentLexemesRS.Append(component)
+            # Add components
+            for component in components:
+                entry_ref.ComponentLexemesRS.Append(component)
 
-        # Set complex form type
-        if complex_form_type:
-            entry_ref.ComplexEntryTypesRS.Append(complex_form_type)
+            # Set complex form type
+            if complex_form_type:
+                entry_ref.ComplexEntryTypesRS.Append(complex_form_type)
 
-        return entry_ref
+            return entry_ref
 
     # --- Lexical Relations ---
 
