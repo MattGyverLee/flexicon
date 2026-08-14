@@ -907,7 +907,8 @@ class FilterOperations:
                 )
 
         # Create the filter (this assigns new GUID and dates)
-        return self.Create(import_name, filter_data["filter_type"], filter_data["criteria"])
+        with self._TransactionCM(f"Import filter '{import_name}'"):
+            return self.Create(import_name, filter_data["filter_type"], filter_data["criteria"])
 
     # --- Utility Methods ---
 
