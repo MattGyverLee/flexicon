@@ -641,12 +641,13 @@ def _make_infl_project(features=None, write_enabled=True):
     project = Mock()
     project.writeEnabled = write_enabled
 
-    # _TransactionCM reads these as real values (not auto-vivified Mocks) so it
-    # can choose Phase 1 and maintain the nesting-depth counter. Phase 1
-    # (non-undoable) is used here; Transaction()/UndoableOperation() return real
-    # no-op context managers so `with self._TransactionCM(...)` enters cleanly.
+    # _TransactionCM reads this as a real value (not an auto-vivified Mock) so
+    # it can choose Phase 1. Phase 1 (non-undoable) is used here;
+    # Transaction()/UndoableOperation() return real no-op context managers so
+    # `with self._TransactionCM(...)` enters cleanly. Phase 1 never consults
+    # ActionHandlerAccessor.CurrentDepth (only Phase 2 does), so no action
+    # handler double is needed here.
     project._undoable = False
-    project._transaction_depth = 0
     project.Transaction = Mock(side_effect=lambda label="transaction": contextlib.nullcontext())
     project.UndoableOperation = Mock(side_effect=lambda label: contextlib.nullcontext())
 

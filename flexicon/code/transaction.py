@@ -4,7 +4,9 @@
 #   Classes: _NestingAwareTransaction
 #                Phase-aware, nesting-safe context manager returned by
 #                BaseOperations._TransactionCM(); auto-selects Phase 1
-#                (Transaction, no rollback) or Phase 2 (UndoableOperation).
+#                (Transaction, no rollback) or Phase 2 (a real, rollback-
+#                capable liblcm UnitOfWork, backed by
+#                UndoableUnitOfWorkHelper).
 #            _FLExTransaction
 #                Context manager for safe rollback transactions within a
 #                FLEx project (Phase 1).
@@ -12,10 +14,12 @@
 #   Platform: Python.NET
 #             FieldWorks Version 9+
 #
-#   Copyright 2025
+#   Copyright 2025-2026
 #
 
 import logging
+
+from SIL.LCModel.Infrastructure import UndoableUnitOfWorkHelper
 
 logger = logging.getLogger(__name__)
 
@@ -24,66 +28,150 @@ class _NestingAwareTransaction:
     """
     Phase-aware, nesting-safe wrapper returned by ``BaseOperations._TransactionCM``.
 
-    Chooses the underlying context manager at ``__enter__`` time based on the
-    project mode and the current nesting depth, then maintains the depth count:
+    Chooses behavior at ``__enter__`` time based on the project mode:
 
         * Phase 1 (``_undoable`` False): always delegates to
-          ``project.Transaction()``. Phase 1 nests safely - each block marks an
-          independent rollback point on the LCM undo stack, so nested blocks are
-          fine at any depth.
-        * Phase 2 (``_undoable`` True), OUTERMOST block (depth 0): delegates to
-          ``project.UndoableOperation()``, opening a single named FLEx undo task.
-        * Phase 2, NESTED block (depth > 0): becomes a NO-OP. ``BeginUndoTask`` /
-          ``EndUndoTask`` cannot nest - opening a second undo task inside an
-          active one corrupts the undo stack. The outermost ``UndoableOperation``
-          already groups every inner mutation into its single named task, which
-          is exactly the Phase 2 contract (recover via FLEx Ctrl+Z), so the inner
-          block must touch no undo API at all.
+          ``project.Transaction()``, regardless of nesting depth. ``Transaction()``
+          never opens an LCM undo task itself -- the single non-undoable
+          envelope for the whole session is opened once, at ``OpenProject()``
+          (``MainCacheAccessor.BeginNonUndoableTask()``), and stays open until
+          ``CloseProject()``. So nested ``with`` blocks in this mode compose
+          without any LCM-level nesting concern; there is nothing to join or
+          open per block.
+        * Phase 2 (``_undoable`` True): joins or opens a real liblcm
+          ``UndoableUnitOfWorkHelper`` UnitOfWork, following the *exact* idiom
+          liblcm itself uses in
+          ``UndoableUnitOfWorkHelper.DoUsingNewOrCurrentUOW``
+          (``UndoableUnitOfWorkHelper.cs:91-98``)::
 
-    Depth is tracked on the project (``project._transaction_depth``) rather than
-    on the Operations instance, because nesting routinely crosses Operations
-    boundaries (e.g. ``LexEntry.Create`` calling ``Senses.Create``).
+              if (actionHandler.CurrentDepth > 0) task();
+              else Do(undoText, redoText, actionHandler, task);
+
+          Nesting depth is asked of LCM itself
+          (``cache.ActionHandlerAccessor.CurrentDepth``) at every
+          ``__enter__`` call -- it is never tracked locally in Python. This
+          is deliberate: a hand-maintained depth counter, formerly stored on
+          the project instance, is exactly what issue #234 was -- it
+          permanently leaked when an inner ``__enter__`` raised, because
+          nothing on that path ever decremented it. There is no longer any
+          local counter to leak; ``CurrentDepth`` also correctly reflects a
+          task opened by ANY caller (e.g.
+          ``FLExProject.UndoableOperation()`` called directly, not just
+          through this class), which the old Python-side counter could not
+          see. See ``docs/EXCEPTION_HANDLING.md`` and
+          ``specs/write-path-transactions/spec.md`` section 5, B1.
+
+    A second ``BeginUndoTask`` while one is already open does not merely
+    raise in liblcm -- ``UndoStack.cs:209-216`` rolls back the *already-open*
+    UnitOfWork first (discarding its changes), resets the FSM, and only then
+    throws. Joining (never opening a second task while one is active) is
+    therefore not an optional nicety; it is what keeps this class from
+    silently destroying whatever the outer block already did.
     """
 
     def __init__(self, project, label: str) -> None:
         self._project = project
         self._label = label
-        self._inner = None  # underlying CM, or None for a nested Phase 2 no-op
+        self._inner = None  # Phase 1: the _FLExTransaction context manager.
+        self._helper = None  # Phase 2, outermost block only: the raw
+        # UndoableUnitOfWorkHelper instance this block opened. None both
+        # for Phase 1 and for a nested (joined) Phase 2 block -- in the
+        # latter case the enclosing helper (wherever it lives) owns
+        # Dispose(), not this instance.
 
     def __enter__(self) -> "_NestingAwareTransaction":
         project = self._project
-        depth = getattr(project, "_transaction_depth", 0)
-        if not isinstance(depth, int):
-            # Defensive: a project that bypassed __init__ (or a test double)
-            # may not carry a real counter; treat it as the outermost block.
-            depth = 0
         undoable = getattr(project, "_undoable", False)
 
-        if undoable and depth > 0:
-            # Nested Phase 2: no-op. Outer UndoableOperation owns these mutations.
-            self._inner = None
-            logger.debug(
-                f"_TransactionCM '{self._label}': nested in undoable mode "
-                f"(depth {depth}), reusing outer undo task (no-op)"
-            )
-        elif undoable:
-            self._inner = project.UndoableOperation(self._label)
-        else:
+        if not undoable:
+            # Phase 1: always delegate, regardless of nesting depth -- see
+            # class docstring. No LCM undo task is opened here at all.
             self._inner = project.Transaction(self._label)
-
-        project._transaction_depth = depth + 1
-        if self._inner is not None:
             self._inner.__enter__()
+            return self
+
+        # Phase 2: ask LCM's own state; never track it ourselves (kills
+        # #234 by construction -- see class docstring).
+        depth = self._current_depth(project)
+
+        if depth > 0:
+            # JOIN: liblcm's own idiom -- "if (actionHandler.CurrentDepth > 0)
+            # task();" (UndoableUnitOfWorkHelper.cs:94). Simply run the body;
+            # the enclosing UnitOfWork (opened by this class, by
+            # UndoableOperation(), or by any other caller) already owns
+            # these mutations. Nothing to construct or close.
+            logger.debug(
+                f"_TransactionCM '{self._label}': joining open UnitOfWork "
+                f"(CurrentDepth={depth})"
+            )
+            return self
+
+        # OPEN: "else Do(undoText, redoText, actionHandler, task);"
+        # (UndoableUnitOfWorkHelper.cs:97). A Python context manager cannot
+        # hand liblcm a callable body the way Do() wants one, so this
+        # replicates Do()'s constructor-then-Dispose shape directly:
+        # construct the helper (its ctor begins the undo task --
+        # UnitOfWorkHelper.cs:31, via BeginUndoTask(label, label)), run the
+        # body, then clear RollBack on a clean exit before Dispose() (see
+        # __exit__). The ctor takes both an undo and a redo string, so this
+        # can never repeat the one-argument BeginUndoTask call that was
+        # issue #233. (Module-level import above -- not lazy -- so tests can
+        # patch `flexicon.code.transaction.UndoableUnitOfWorkHelper`
+        # directly with a double, without touching a live LcmCache.)
+        action_handler = project.project.ActionHandlerAccessor
+        self._helper = UndoableUnitOfWorkHelper(action_handler, self._label, self._label)
+        logger.debug(f"_TransactionCM '{self._label}': opened new UnitOfWork")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
-        project = self._project
         try:
             if self._inner is not None:
+                # Phase 1.
                 return self._inner.__exit__(exc_type, exc_val, exc_tb)
-            return False  # no-op: do not suppress exceptions
+
+            if self._helper is not None:
+                # Phase 2, outermost block. RollBack defaults to True from
+                # the helper's constructor (UnitOfWorkHelper.cs:31);
+                # Dispose() rolls back when it is True, or calls
+                # EndUndoTask() when it is False (UnitOfWorkHelper.cs:115-118).
+                # RollBack is write-only (no getter) -- only ever set it,
+                # never read it back.
+                self._helper.RollBack = exc_type is not None
+                self._helper.Dispose()
+                if exc_type is None:
+                    logger.debug(f"_TransactionCM '{self._label}': committed")
+                else:
+                    logger.warning(
+                        f"_TransactionCM '{self._label}': exception "
+                        f"{exc_type.__name__}, UnitOfWork rolled back"
+                    )
+
+            # Either Phase 2 nested (joined an already-open UnitOfWork, so
+            # self._helper is None) or nothing was opened: do not suppress
+            # the exception in any case.
+            return False
         finally:
-            project._transaction_depth = getattr(project, "_transaction_depth", 1) - 1
+            self._inner = None
+            self._helper = None
+
+    @staticmethod
+    def _current_depth(project) -> int:
+        """
+        Read ``CurrentDepth`` from LCM's own action handler.
+
+        Only ever called in Phase 2 (``_undoable`` True), where
+        ``project.project`` (the ``LcmCache``) and its
+        ``ActionHandlerAccessor`` are expected to be real. Returns 0 (treat
+        as outermost) if the value is not a real ``int`` -- a defensive
+        fallback for test doubles that stand in an incomplete
+        ``IActionHandler``, so a malformed double degrades to "open a new
+        UnitOfWork" rather than raising.
+        """
+        try:
+            depth = project.project.ActionHandlerAccessor.CurrentDepth
+        except Exception:
+            depth = 0
+        return depth if isinstance(depth, int) else 0
 
 
 class _FLExTransaction:

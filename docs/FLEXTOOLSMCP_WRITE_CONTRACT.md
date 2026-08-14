@@ -68,10 +68,10 @@ Any wrapper method the script calls that also opens a UoW sees
 `ActionHandlerAccessor.CurrentDepth > 0` (already true inside the script's
 envelope) and **joins** it rather than nesting — this is not new machinery to
 build; it is the same idiom already in use at
-`flexicon/code/System/CustomFieldOperations.py:300` and already implemented
-for nesting at `transaction.py`'s `_NestingAwareTransaction.__enter__`
-(`transaction.py:48-69`, confirmed by the dispatch-layer probe, **P2**: it
-reads `project._transaction_depth` and no-ops when depth > 0). Nothing needs
+`flexicon/code/System/CustomFieldOperations.py:300` and, since **B1** landed,
+implemented for nesting at `transaction.py`'s `_NestingAwareTransaction.__enter__`
+(`transaction.py`: reads `cache.ActionHandlerAccessor.CurrentDepth` directly —
+no Python-side counter — and no-ops when depth > 0). Nothing needs
 hand-rolling; `DoUsingNewOrCurrentUOW`'s body is literally
 `if actionHandler.CurrentDepth > 0: task() else: Do(undoText, redoText,
 actionHandler, task)` (**F3**, lines 94-97). The result is a single
@@ -250,10 +250,10 @@ exist today (P2):**
   `self.project.Segments.AppendSentence` (`TextsWords/SegmentOperations.py:544`)
 
 Nesting-awareness for these is **not new work**: `_NestingAwareTransaction.__enter__`
-(`transaction.py:48-69`) already reads `project._transaction_depth` and
-no-ops when depth > 0 — this machinery predates Track B and just needs B1's
-rewrite to sit on liblcm's own `CurrentDepth` instead of the hand-rolled
-counter (which is itself defect #234, dying by construction once B1 lands).
+(`transaction.py`) reads `cache.ActionHandlerAccessor.CurrentDepth` and
+no-ops when depth > 0 — this machinery predates Track B; **B1** has now
+landed it on liblcm's own `CurrentDepth` instead of the hand-rolled
+`_transaction_depth` counter (defect #234, which no longer exists to leak).
 
 **The one-sentence rule a caller can memorise:** *a wrapper method that calls
 another wrapper method never opens a second bracket — it always joins

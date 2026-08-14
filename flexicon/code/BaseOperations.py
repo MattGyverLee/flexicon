@@ -1816,9 +1816,13 @@ class BaseOperations:
               name checked). ``_TransactionCM`` in Phase 1 is a labelling and
               nesting construct only; the atomicity unit is the whole
               session, not this block. See ``docs/EXCEPTION_HANDLING.md``.
-            - Phase 2 (``UndoableOperation``) wraps the changes in a single
-              named undo task; it does NOT auto-rollback on exception either,
-              but the partial work is undoable by the FLEx user via Ctrl+Z.
+            - Phase 2 (``UndoableOperation``) IS rollback-capable (see B1,
+              `specs/write-path-transactions/spec.md`): ``_TransactionCM``
+              constructs liblcm's own ``UndoableUnitOfWorkHelper`` directly
+              for the outermost block. An exception raised inside the block
+              rolls back every mutation that block made, in addition to the
+              partial work remaining undoable by the FLEx user via Ctrl+Z up
+              until the point of rollback.
             - ``_undoable`` is only ever True when the project is also
               write-enabled, so Phase 2 selection cannot collide with the
               read-only guard already enforced by ``_EnsureWriteEnabled``.
@@ -1827,18 +1831,24 @@ class BaseOperations:
               * Phase 1 (``Transaction``) nests without error. Each ``with``
                 block enters and exits cleanly, but since neither the inner
                 nor the outer block can roll back, "nesting" here means only
-                that labels compose and the depth counter balances -- there
-                is no independent rollback point to speak of at any depth.
+                that labels compose -- there is no independent rollback point
+                to speak of at any depth.
               * Phase 2 (``UndoableOperation``) does NOT nest at the LCM level:
                 ``BeginUndoTask``/``EndUndoTask`` cannot be nested without
                 corrupting the undo stack. ``_TransactionCM`` guards against
-                this automatically using ``project._transaction_depth``: only
-                the OUTERMOST block opens an undo task; any ``_TransactionCM``
-                entered while one is already active becomes a no-op and lets
-                the outer task group all of its mutations into the single
-                named undo entry (the desired Phase 2 behavior). This means an
-                inner method's mutations are not separately undoable in Phase 2
-                - they are absorbed into the enclosing operation's undo task.
+                this automatically by asking LCM's own
+                ``cache.ActionHandlerAccessor.CurrentDepth`` at every
+                ``__enter__`` -- never by tracking depth itself in Python
+                (that hand-rolled counter was issue #234, and is gone). Only
+                the OUTERMOST block (``CurrentDepth == 0``) opens a new
+                ``UndoableUnitOfWorkHelper``; any ``_TransactionCM`` entered
+                while one is already active (``CurrentDepth > 0``) becomes a
+                no-op and lets the outer task group all of its mutations into
+                the single named undo entry (the desired Phase 2 behavior).
+                This means an inner method's mutations are not separately
+                undoable (or separately rolled back) in Phase 2 -- they are
+                absorbed into the enclosing operation's undo task, and its
+                rollback decision covers them too.
         """
         from .transaction import _NestingAwareTransaction
 

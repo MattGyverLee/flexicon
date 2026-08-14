@@ -249,10 +249,15 @@ class FLExProject(object):
 
         self.writeEnabled = writeEnabled
         self._undoable = undoable and writeEnabled  # Only meaningful if write-enabled
-        # Nesting depth of active _TransactionCM blocks. Used to guard against
-        # nested Phase 2 UndoableOperation tasks (BeginUndoTask/EndUndoTask
-        # cannot nest); only the outermost block opens an undo task.
-        self._transaction_depth = 0
+        # Note: nesting depth of active _TransactionCM / UndoableOperation
+        # blocks is intentionally NOT tracked here. A hand-maintained Python
+        # counter (formerly `self._transaction_depth`) was issue #234: it
+        # leaked permanently whenever an inner block's __enter__ raised,
+        # because nothing on that path decremented it. `_NestingAwareTransaction`
+        # and `_FLExUndoableOperation` now ask LCM's own
+        # `ActionHandlerAccessor.CurrentDepth` at every __enter__ instead --
+        # there is no local state left to leak. See
+        # specs/write-path-transactions/spec.md B1.
 
         if self.writeEnabled and not self._undoable:
             # One-shot warning (issue #236 honesty pass): emitted once per
@@ -475,12 +480,19 @@ class FLExProject(object):
           same session re-logs it), rather than on every ``Transaction()``
           call. See
           `docs/EXCEPTION_HANDLING.md`.
-        * ``undoable=True``: once the Track B rewrite of
-          ``flexicon/code/transaction.py`` lands (delegating to liblcm's
-          ``UndoableUnitOfWorkHelper``), ``Transaction()`` in this mode is
-          genuinely transactional -- an exception rolls back everything
-          written inside the block. Until that lands, this mode has the
-          same no-rollback limitation described above.
+        * ``undoable=True``: this method itself is unchanged by the B1
+          rewrite -- calling ``project.Transaction(label)`` directly still
+          always returns the Phase 1, no-rollback ``_FLExTransaction``
+          above (see ``test_transaction_body_always_passes_none_none``,
+          which locks this). What changed under B1 is the internal
+          ``BaseOperations._TransactionCM()`` wrapper that most Operations
+          methods use: it no longer calls this method at all in
+          ``undoable=True`` mode, and instead delegates to
+          ``_NestingAwareTransaction``, which is genuinely transactional --
+          backed directly by liblcm's ``UndoableUnitOfWorkHelper``, an
+          exception rolls back everything written inside the block. See
+          ``UndoableOperation()`` for the equivalent public, directly
+          callable entry point in this mode.
 
         The name is kept (see D4 in `specs/write-path-transactions/tasks.md`):
         an earlier draft of this spec preferred renaming this method to
@@ -626,69 +638,23 @@ class FLExProject(object):
             project.Redo()   # Ctrl+Y equivalent
 
         Note:
-            Phase 2 feature. Requires research-verified LCM APIs.
-            See docs/internal/RESEARCH_NEEDED.md and docs/TRANSACTION_GUIDE.md.
-
-            Atomicity caveat (Phase 2): ``BeginUndoTask``/``EndUndoTask`` is NOT
-            transactional. If an exception is raised inside the block, partial
-            mutations already committed to the LCM cache are NOT automatically
-            rolled back. The FLEx Ctrl+Z undo entry may be absent or incomplete.
-            ``Transaction()`` does NOT provide an escape hatch here either --
-            it has the identical limitation in the current build (no
-            reachable LCM rollback API; see its docstring and issue #236).
-            Neither path is atomic today. The Track B rewrite of
-            ``flexicon/code/transaction.py`` on liblcm's
-            ``UndoableUnitOfWorkHelper`` will make ``undoable=True`` genuinely
-            rollback-capable; see `specs/write-path-transactions/spec.md` B1.
+            Rollback-capable (issue #233, #236-for-undoable): this now
+            delegates to ``_FLExUndoableOperation``, which constructs
+            liblcm's own ``UndoableUnitOfWorkHelper`` directly (or joins an
+            already-open one, via ``ActionHandlerAccessor.CurrentDepth``)
+            instead of hand-rolling ``BeginUndoTask``/``EndUndoTask`` calls.
+            If an exception is raised inside the block and this call was the
+            one that opened the UnitOfWork, the mutations made inside it ARE
+            rolled back -- ``UndoableUnitOfWorkHelper``'s ``RollBack`` flag
+            defaults to True and is only cleared on a clean exit. If this
+            call instead joined an already-open UnitOfWork (nested inside
+            another ``UndoableOperation()`` or a ``_TransactionCM`` block),
+            rollback authority belongs to whichever call opened it. See
+            `specs/write-path-transactions/spec.md` B1.
         """
         from .undoable_operation import _FLExUndoableOperation
 
-        begin_fn, end_fn = self._GetUndoRedoAPI()
-        return _FLExUndoableOperation(self, label, begin_fn, end_fn)
-
-    def _GetUndoRedoAPI(self):
-        """
-        Internal: Discover the available LCM undo/redo APIs.
-
-        Returns a (begin_fn, end_fn) tuple. If the LCM APIs are not found,
-        raises FP_TransactionError.
-
-        The discovery order (preferred first):
-            1. project.BeginUndoTask + EndUndoTask
-            2. project.MainCacheAccessor.BeginUndoTask + EndUndoTask
-            3. Not found - raises error
-
-        Returns:
-            tuple: (begin_fn: callable, end_fn: callable)
-
-        Raises:
-            FP_TransactionError: If no undo/redo API found
-        """
-        # Candidate 1: project-level BeginUndoTask
-        begin_fn = getattr(self.project, "BeginUndoTask", None)
-        end_fn = getattr(self.project, "EndUndoTask", None)
-        if begin_fn is not None and end_fn is not None:
-            logging.getLogger(__name__).debug("Undo/Redo API: Using project.BeginUndoTask/EndUndoTask")
-            return (begin_fn, end_fn)
-
-        # Candidate 2: MainCacheAccessor
-        try:
-            mca = self.project.MainCacheAccessor
-            begin_fn = getattr(mca, "BeginUndoTask", None)
-            end_fn = getattr(mca, "EndUndoTask", None)
-            if begin_fn is not None and end_fn is not None:
-                logging.getLogger(__name__).debug("Undo/Redo API: Using MainCacheAccessor.BeginUndoTask/EndUndoTask")
-                return (begin_fn, end_fn)
-        except Exception:
-            pass
-
-        # No undo/redo API found
-        raise FP_TransactionError(
-            "FLExProject: no LCM undo/redo API found. "
-            "UndoableOperation() requires BeginUndoTask/EndUndoTask methods. "
-            "Verify your FieldWorks version supports these APIs. "
-            "See docs/internal/RESEARCH_NEEDED.md for Phase 2 research details."
-        )
+        return _FLExUndoableOperation(self, label)
 
     def Undo(self):
         """
@@ -697,11 +663,25 @@ class FLExProject(object):
         Reverses the changes of the last operation added with UndoableOperation().
         Only valid when the project was opened with undoable=True.
 
+        Scope -- IN-PROCESS ONLY (issue #235): liblcm's undo stack
+        (``IActionHandler``, obtained here from
+        ``LcmCache.ActionHandlerAccessor``) lives entirely in this process's
+        RAM and holds live ``ICmObject`` references. Nothing serializes undo
+        records into ``.fwdata``; a freshly opened ``LcmCache`` always starts
+        at ``UndoableActionCount == 0``. There is no cross-process and no
+        cross-session undo: closing and reopening the project -- even within
+        the same script -- loses the entire stack. Cross-*session* reversal
+        is a separate, still-open concern tracked at the wrapper layer
+        (``flexicon/sync/engine.py``'s ``create_snapshot``/``Snapshot``
+        stubs), not here.
+
         Returns:
-            bool: True if undo succeeded, False if nothing to undo.
+            bool: True if undo succeeded, False if there was nothing to undo
+                (``CanUndo()`` was False).
 
         Raises:
-            FP_TransactionError: If project not opened with undoable=True
+            FP_TransactionError: If project not opened with undoable=True,
+                or if the underlying LCM ``Undo()`` call fails unexpectedly.
 
         Example::
 
@@ -716,24 +696,20 @@ class FLExProject(object):
                 f"Current project was opened with undoable=False."
             )
 
-        try:
-            undo_stack = self.project.UndoStack
-            if undo_stack is None:
-                logging.getLogger(__name__).warning("UndoStack not available")
-                return False
+        action_handler = self.project.ActionHandlerAccessor
 
-            # Try to call Undo if it exists
-            undo_fn = getattr(undo_stack, "Undo", None)
-            if undo_fn is not None:
-                undo_fn()
-                logging.getLogger(__name__).debug("Undo() called successfully")
-                return True
-            else:
-                logging.getLogger(__name__).warning("UndoStack.Undo method not found")
-                return False
+        if not action_handler.CanUndo():
+            logging.getLogger(__name__).debug("Undo(): CanUndo() is False, nothing to undo")
+            return False
+
+        try:
+            action_handler.Undo()
         except Exception as e:
             logging.getLogger(__name__).error(f"Undo() failed: {e}")
             raise FP_TransactionError(f"Undo() operation failed: {e}")
+
+        logging.getLogger(__name__).debug("Undo() succeeded")
+        return True
 
     def Redo(self):
         """
@@ -742,11 +718,19 @@ class FLExProject(object):
         Re-applies a change reversed by Undo().
         Only valid when the project was opened with undoable=True.
 
+        Scope -- IN-PROCESS ONLY (issue #235): the same RAM-only limitation
+        documented on ``Undo()`` applies here. liblcm's redo stack lives
+        entirely in this process's ``LcmCache.ActionHandlerAccessor``; there
+        is no cross-process or cross-session redo, and a freshly opened
+        project never has anything to redo.
+
         Returns:
-            bool: True if redo succeeded, False if nothing to redo.
+            bool: True if redo succeeded, False if there was nothing to redo
+                (``CanRedo()`` was False).
 
         Raises:
-            FP_TransactionError: If project not opened with undoable=True
+            FP_TransactionError: If project not opened with undoable=True,
+                or if the underlying LCM ``Redo()`` call fails unexpectedly.
 
         Example::
 
@@ -762,24 +746,20 @@ class FLExProject(object):
                 f"Current project was opened with undoable=False."
             )
 
-        try:
-            undo_stack = self.project.UndoStack
-            if undo_stack is None:
-                logging.getLogger(__name__).warning("UndoStack not available")
-                return False
+        action_handler = self.project.ActionHandlerAccessor
 
-            # Try to call Redo if it exists
-            redo_fn = getattr(undo_stack, "Redo", None)
-            if redo_fn is not None:
-                redo_fn()
-                logging.getLogger(__name__).debug("Redo() called successfully")
-                return True
-            else:
-                logging.getLogger(__name__).warning("UndoStack.Redo method not found")
-                return False
+        if not action_handler.CanRedo():
+            logging.getLogger(__name__).debug("Redo(): CanRedo() is False, nothing to redo")
+            return False
+
+        try:
+            action_handler.Redo()
         except Exception as e:
             logging.getLogger(__name__).error(f"Redo() failed: {e}")
             raise FP_TransactionError(f"Redo() operation failed: {e}")
+
+        logging.getLogger(__name__).debug("Redo() succeeded")
+        return True
 
     # --- Advanced Operations ---
 

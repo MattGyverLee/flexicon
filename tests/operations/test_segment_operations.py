@@ -740,7 +740,6 @@ class TestSegmentAnalysesRSWriteMethods:
         mock_project = MagicMock()
         mock_project.writeEnabled = True
         mock_project._undoable = False
-        mock_project._transaction_depth = 0
         mock_project.project = Mock()
         mock_project.project.DefaultVernWs = 1
         mock_project.project.DefaultAnalWs = 2
