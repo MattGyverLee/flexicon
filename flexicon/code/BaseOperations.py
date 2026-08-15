@@ -472,7 +472,7 @@ class BaseOperations:
 
     Usage::
 
-        from flexlibs2 import FLExProject
+        from flexicon import FLExProject
 
         project = FLExProject()
         project.OpenProject("MyProject", writeEnabled=True)
@@ -1129,7 +1129,7 @@ class BaseOperations:
         Get dictionary of syncable properties for cross-project synchronization.
 
         This method is OPTIONAL for sync framework integration. Subclasses that
-        want to support the sync framework (flexlibs2.sync) should implement this
+        want to support the sync framework (flexicon.sync) should implement this
         method to specify which properties can be safely synchronized between
         projects.
 
@@ -1165,7 +1165,7 @@ class BaseOperations:
             ...     }
 
         Example Usage (by sync framework):
-            >>> from flexlibs2.sync import DiffEngine
+            >>> from flexicon.sync import DiffEngine
             >>>
             >>> # Compare senses between two projects
             >>> props1 = project1.Senses.GetSyncableProperties(sense1)
@@ -1204,18 +1204,18 @@ class BaseOperations:
             - DateCreated/DateModified (use merge strategy instead)
 
         Sync Framework Integration:
-            Used by: flexlibs2.sync.DiffEngine.CompareItems()
-            Used by: flexlibs2.sync.MergeOperations.MergeProperties()
+            Used by: flexicon.sync.DiffEngine.CompareItems()
+            Used by: flexicon.sync.MergeOperations.MergeProperties()
             See also: CompareTo() for full item comparison
 
         See Also:
-            CompareTo, flexlibs2.sync.DiffEngine, flexlibs2.sync.MergeOperations
+            CompareTo, flexicon.sync.DiffEngine, flexicon.sync.MergeOperations
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement GetSyncableProperties(). "
             "This method is OPTIONAL for sync framework integration. "
             "Implement it if you want to enable property-level synchronization "
-            "for this item type. See flexlibs2.sync documentation for details."
+            "for this item type. See flexicon.sync documentation for details."
         )
 
     @OperationsMethod
@@ -1304,7 +1304,7 @@ class BaseOperations:
         Compare two items and return detailed differences.
 
         This method is OPTIONAL for sync framework integration. Subclasses that
-        want to support the sync framework (flexlibs2.sync) should implement this
+        want to support the sync framework (flexicon.sync) should implement this
         method to enable intelligent comparison and merging between projects.
 
         The sync framework uses this method to:
@@ -1391,7 +1391,7 @@ class BaseOperations:
             ...     return is_different, differences
 
         Example Usage (by sync framework):
-            >>> from flexlibs2.sync import DiffEngine
+            >>> from flexicon.sync import DiffEngine
             >>>
             >>> # Find matching senses by GUID in two projects
             >>> sense1 = project1.Senses.FindByGuid(guid)
@@ -1437,19 +1437,19 @@ class BaseOperations:
             - Use GUID for matching children across projects
 
         Sync Framework Integration:
-            Used by: flexlibs2.sync.DiffEngine.GenerateDiff()
-            Used by: flexlibs2.sync.MergeOperations.DetectConflicts()
+            Used by: flexicon.sync.DiffEngine.GenerateDiff()
+            Used by: flexicon.sync.MergeOperations.DetectConflicts()
             See also: GetSyncableProperties() for property extraction
 
         See Also:
-            GetSyncableProperties, flexlibs2.sync.DiffEngine,
-            flexlibs2.sync.MergeOperations
+            GetSyncableProperties, flexicon.sync.DiffEngine,
+            flexicon.sync.MergeOperations
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement CompareTo(). "
             "This method is OPTIONAL for sync framework integration. "
             "Implement it if you want to enable detailed comparison and "
-            "conflict detection for this item type. See flexlibs2.sync "
+            "conflict detection for this item type. See flexicon.sync "
             "documentation for details."
         )
 

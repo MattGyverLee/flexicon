@@ -29,7 +29,7 @@ This wrapper allows Python code to use suffix-free names:
 
 Usage::
 
-    from flexlibs2.code.PythonicWrapper import wrap, unwrap
+    from flexicon.code.PythonicWrapper import wrap, unwrap
 
     # Wrap an LCM object
     entry = wrap(raw_entry)
@@ -42,7 +42,7 @@ Usage::
     raw = unwrap(entry)
 
     # Or use the p() shorthand
-    from flexlibs2.code.PythonicWrapper import p
+    from flexicon.code.PythonicWrapper import p
     for sense in p(entry).Senses:
         print(p(sense).Gloss)
 """

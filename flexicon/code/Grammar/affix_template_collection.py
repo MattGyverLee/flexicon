@@ -34,7 +34,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Grammar.affix_template_collection import AffixTemplateCollection
+    from flexicon.code.Grammar.affix_template_collection import AffixTemplateCollection
 
     # GetAll() now returns AffixTemplateCollection
     templates = morphRuleOps.GetAllAffixTemplates()

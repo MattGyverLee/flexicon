@@ -70,7 +70,7 @@ class LexEntryOperations(BaseOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject
+        from flexicon import FLExProject
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)
@@ -491,7 +491,7 @@ class LexEntryOperations(BaseOperations):
         # (returns CoreWritingSystemDefinition objects with .Handle and .Id)
         # instead of the nonexistent GetAllWritingSystems() / GetWritingSystemTag()
         # methods. Matches the patch applied to the Grammar Operations classes
-        # (see STATUS.md "flexlibs2 fork" section).
+        # (see STATUS.md "flexicon fork" section).
         _ws_defs = list(self.project.WritingSystems.GetAll())
 
         # MultiString properties

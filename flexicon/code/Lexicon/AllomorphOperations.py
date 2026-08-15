@@ -56,7 +56,7 @@ class AllomorphOperations(BaseOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject, AllomorphOperations
+        from flexicon import FLExProject, AllomorphOperations
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)

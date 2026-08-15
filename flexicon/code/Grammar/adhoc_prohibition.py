@@ -45,7 +45,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Grammar.adhoc_prohibition import AdhocProhibition
+    from flexicon.code.Grammar.adhoc_prohibition import AdhocProhibition
 
     # Wrap a prohibition from GetAllAdhocCoProhibitions()
     prohib = morphRuleOps.GetAllAdhocCoProhibitions()[0]

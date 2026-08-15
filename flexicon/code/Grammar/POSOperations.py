@@ -45,7 +45,7 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
 
     Usage::
 
-        from flexlibs2 import FLExProject, POSOperations
+        from flexicon import FLExProject, POSOperations
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)

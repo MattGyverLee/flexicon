@@ -87,7 +87,7 @@ class OverlayOperations(PossibilityItemOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject, DiscourseOperations, OverlayOperations
+        from flexicon import FLExProject, DiscourseOperations, OverlayOperations
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)

@@ -42,7 +42,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Lexicon.allomorph import Allomorph
+    from flexicon.code.Lexicon.allomorph import Allomorph
 
     # Wrap an allomorph from GetAll()
     allomorph = allomorphOps.GetAll(entry)[0]  # Typed as IMoForm

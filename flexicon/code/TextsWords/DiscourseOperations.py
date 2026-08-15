@@ -55,7 +55,7 @@ class DiscourseOperations(BaseOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject, DiscourseOperations
+        from flexicon import FLExProject, DiscourseOperations
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)
