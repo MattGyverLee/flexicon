@@ -1,16 +1,16 @@
 #
-#   restore_sena3.py
+#   restore_target.py
 #
-#   Restore the Sena 3 fixture from tests/fixtures/Sena 3 *.fwbackup
+#   Restore the Target fixture from tests/fixtures/Target *.fwbackup
 #   into the user's FieldWorks projects directory, overwriting any
-#   existing Sena 3 project.
+#   existing Target project.
 #
-#   Sena 3 is the *full* live-test project: a populated FLEx database
-#   used for read-path coverage and for modifying pre-existing data.
-#   For write-path work against a clean slate, use the blank scratch
-#   project instead -- see scripts/restore_target.py.
+#   Target is the *scratch* live-test project: a mostly-blank FLEx
+#   database used for write-path verification (create / modify / delete
+#   against a clean slate). Sena 3 is the *full* example project, used
+#   for read-path and modify-pre-existing-data coverage.
 #
-#   Run before a live-DB test session to guarantee a clean baseline.
+#   Run before a live-DB write session to guarantee a clean baseline.
 #   Re-run after any session to wipe accumulated test mutations.
 #
 #   Platform: Windows + Python (FieldWorks 9+ installed)
@@ -22,30 +22,25 @@ import argparse
 import sys
 from pathlib import Path
 
-# Shared restore helpers live alongside this script.
+# Shared restore helpers live alongside restore_sena3.py.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from fw_restore import (  # noqa: E402
     check_state,
     find_fw_projects_dir,
-    find_fwbackup as _find_fwbackup,
+    find_fwbackup,
     restore_project,
 )
 
-_DEFAULT_TARGET = "Sena 3"
-_BACKUP_PATTERN = "Sena 3*.fwbackup"
-
-
-def find_fwbackup(fixtures_dir, pattern=_BACKUP_PATTERN):
-    """Locate the most recent matching .fwbackup in fixtures_dir."""
-    return _find_fwbackup(fixtures_dir, pattern)
+_DEFAULT_TARGET = "Target"
+_BACKUP_PATTERN = "Target*.fwbackup"
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description=(
-            "Restore the Sena 3 .fwbackup fixture into the FieldWorks "
-            "projects directory."
+            "Restore the Target .fwbackup fixture (blank scratch project) "
+            "into the FieldWorks projects directory."
         )
     )
     parser.add_argument(
@@ -96,7 +91,7 @@ def main(argv=None):
         check_state(projects_dir, args.target)
         return 0
 
-    fwbackup = find_fwbackup(fixtures_dir)
+    fwbackup = find_fwbackup(fixtures_dir, _BACKUP_PATTERN)
     if fwbackup is None:
         print(
             f"[ERROR] No {_BACKUP_PATTERN!r} found in {fixtures_dir}",

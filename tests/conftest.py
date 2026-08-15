@@ -55,6 +55,11 @@ collect_ignore = [
 # ========== SESSION-SCOPED FIXTURE FOR FIELDWORKS INITIALIZATION ==========
 # Using autouse=True ensures this runs before any tests, regardless of scope
 
+# Records whether this session actually reached a live LCM, or silently
+# degraded to mocks. Written into tests/live_status.json as "run_mode" so
+# a verification claim can be checked mechanically rather than trusted.
+_LCM_MODE = "unknown"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def initialize_flex_for_tests():
@@ -72,6 +77,8 @@ def initialize_flex_for_tests():
 
     Falls back to mock mode if FLEx initialization fails (e.g., in CI/test environments).
     """
+    global _LCM_MODE
+
     print("[INFO] [SESSION FIXTURE] Initializing FieldWorks for tests...")
     print("[INFO] Attempting full FLEx initialization (may fail in non-GUI environments)...")
     try:
@@ -246,7 +253,10 @@ def initialize_flex_for_tests():
         ops_found = [x for x in dir(flexlibs2) if "Operations" in x]
         print(f"[INFO] flexlibs2 now has {len(ops_found)} operations available")
 
+        _LCM_MODE = "live"
+
     except Exception as e:
+        _LCM_MODE = "mock"
         if os.environ.get("FLEXLIBS_REQUIRE_LIVE") == "1":
             raise pytest.UsageError(
                 f"FLEXLIBS_REQUIRE_LIVE=1 set but FLEx initialization failed: {e}. "
@@ -280,7 +290,8 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "string_validation: mark test for string validation")
     config.addinivalue_line(
         "markers",
-        "requires_live_project: test opens a real .fwdata project (Sena 3 / Test / SampleLexicon)",
+        "requires_live_project: test opens a real .fwdata project "
+        "(Target for write-path work; Sena 3 / Test / SampleLexicon for read-path)",
     )
     config.addinivalue_line(
         "markers",
@@ -1197,6 +1208,10 @@ def pytest_sessionfinish(session, exitstatus):
 
     payload = {
         "run_timestamp": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        # "live" means the session reached a real LCM; "mock" means FLEx
+        # initialization failed and the run silently degraded. A verification
+        # claim citing this file must check run_mode == "live".
+        "run_mode": _LCM_MODE,
         "by_test": by_test,
         "by_class": by_class,
         "uncategorized_live_tests": uncategorized,
@@ -1211,22 +1226,22 @@ def pytest_sessionfinish(session, exitstatus):
         print(f"[WARN] Could not write {out_path}: {exc}")
 
 
-# ========== SENA 3 SANDBOX FIXTURE (Phase E: destructive tests) ==========
+# ========== LIVE SANDBOX FIXTURES (Phase E: destructive tests) ==========
 #
-# Phase E tests modify a sandbox copy of Sena 3, never the user's real
-# project. Each invocation unzips tests/fixtures/Sena 3*.fwbackup into a
+# Phase E tests modify a sandbox copy of a live project, never the user's
+# real one. Each invocation unzips a tests/fixtures/*.fwbackup into a
 # fresh tempdir and opens the .fwdata by absolute path. Teardown removes
 # the tempdir.
 #
-# Why a separate fixture: Phases A-D run in-place on the real Sena 3 with
+# Why a separate fixture: Phases A-D run in-place on the real project with
 # self-restoring tests; Phase E is genuinely destructive so it gets its
 # own isolated environment.
 
 
-class _Sena3Sandbox:
+class _FwBackupSandbox:
     """Unzip an .fwbackup into a tempdir, yield the .fwdata path, clean up."""
 
-    def __init__(self, fwbackup_path, prefix="sena3_sandbox_"):
+    def __init__(self, fwbackup_path, prefix="fw_sandbox_"):
         import pathlib
 
         self.fwbackup_path = pathlib.Path(fwbackup_path)
@@ -1292,7 +1307,7 @@ def sena3_sandbox():
     except Exception as exc:
         pytest.skip(f"Could not import FLExProject: {exc}")
 
-    sandbox = _Sena3Sandbox(backups[-1])
+    sandbox = _FwBackupSandbox(backups[-1], prefix="sena3_sandbox_")
     fwdata_path = sandbox.__enter__()
 
     project = FLExProject()
@@ -1304,6 +1319,145 @@ def sena3_sandbox():
             pytest.skip(
                 f"OpenProject rejected sandbox path {fwdata_path}: {exc}"
             )
+        yield project
+    finally:
+        try:
+            project.CloseProject()
+        except Exception:
+            pass
+        sandbox.__exit__(None, None, None)
+
+
+# ========== TARGET FIXTURES (write-path verification, blank scratch) ==========
+#
+# "Target" is the blank scratch FLEx project. It is the DEFAULT live
+# database for write-path work: creating, modifying, and deleting objects
+# against a clean slate, where a leaked TEST_ object is obvious and a
+# restore is cheap (~1.3 MB backup vs Sena 3's ~15 MB).
+#
+# Division of labour:
+#   Target  -- write-path verification. Mostly blank. Restore with
+#              `python scripts/restore_target.py`.
+#   Sena 3  -- read-path coverage and modify-pre-existing-data tests.
+#              Populated. Restore with `python scripts/restore_sena3.py`.
+#
+# Any change written against the LCM write path MUST carry live evidence
+# from one of these. See CLAUDE.md "Live LCM Verification (required)".
+
+_TARGET_PROJECT_NAME = "Target"
+
+
+@pytest.fixture(scope="module")
+def target_project():
+    """
+    Module-scoped write-enabled FLExProject opened in-place on the real
+    'Target' scratch project.
+
+    Use for Phase B/C/D live verification (create-verify-delete,
+    reorder, modify-and-restore). Tests MUST clean up after themselves
+    in a `finally:` block -- prefix created objects with `TEST_`.
+
+    Skips if SIL.LCModel isn't loaded or Target cannot be opened for
+    writing, UNLESS FLEXLIBS_REQUIRE_LIVE=1, in which case it fails
+    loudly rather than letting a write-path change pass unverified.
+    """
+    require_live = os.environ.get("FLEXLIBS_REQUIRE_LIVE") == "1"
+
+    def _unavailable(reason):
+        if require_live:
+            if "another program" in reason or "in use" in reason:
+                remedy = (
+                    "Close the Target project in FieldWorks (the LCM file "
+                    "lock is exclusive), then retry. If FLEx is already "
+                    "closed the lock is stale -- log off and on again."
+                )
+            else:
+                remedy = (
+                    "Run `python scripts/restore_target.py` and retry."
+                )
+            pytest.fail(
+                f"FLEXLIBS_REQUIRE_LIVE=1 but the Target project is "
+                f"unavailable: {reason}\n{remedy}\n"
+                f"Refusing to skip a live write-path verification. "
+                f"If this change genuinely cannot be verified in-place, "
+                f"use the target_sandbox fixture instead."
+            )
+        pytest.skip(reason)
+
+    if "SIL.LCModel" not in sys.modules:
+        _unavailable("Requires SIL.LCModel (FieldWorks installed)")
+
+    try:
+        from flexlibs2.code.FLExProject import FLExProject
+    except Exception as exc:
+        _unavailable(f"Could not import FLExProject: {exc}")
+
+    project = FLExProject()
+    try:
+        project.OpenProject(_TARGET_PROJECT_NAME, writeEnabled=True)
+    except Exception as exc:
+        _unavailable(
+            f"Could not open {_TARGET_PROJECT_NAME!r} write-enabled: {exc}"
+        )
+
+    yield project
+
+    try:
+        project.CloseProject()
+    except Exception:
+        pass
+
+
+@pytest.fixture
+def target_sandbox():
+    """
+    Yield an open, write-enabled FLExProject restored fresh from the
+    Target .fwbackup fixture into a tempdir. Teardown closes the project
+    and deletes the temporary directory.
+
+    Use for Phase E (destructive) tests, or any test that cannot restore
+    the state it mutates. The user's real Target project is never touched.
+    """
+    import pathlib
+
+    require_live = os.environ.get("FLEXLIBS_REQUIRE_LIVE") == "1"
+
+    def _unavailable(reason):
+        if require_live:
+            pytest.fail(
+                f"FLEXLIBS_REQUIRE_LIVE=1 but the Target sandbox is "
+                f"unavailable: {reason}. Refusing to skip a live "
+                f"write-path verification."
+            )
+        pytest.skip(reason)
+
+    if "SIL.LCModel" not in sys.modules:
+        _unavailable("Requires SIL.LCModel (FieldWorks installed)")
+
+    repo_root = pathlib.Path(__file__).resolve().parent.parent
+    fixtures_dir = repo_root / "tests" / "fixtures"
+    backups = sorted(fixtures_dir.glob("Target*.fwbackup"))
+    if not backups:
+        _unavailable(
+            f"No Target .fwbackup found in {fixtures_dir}; copy the golden "
+            "backup in (see tests/LIVE_TESTING.md)."
+        )
+
+    try:
+        from flexlibs2.code.FLExProject import FLExProject
+    except Exception as exc:
+        _unavailable(f"Could not import FLExProject: {exc}")
+
+    sandbox = _FwBackupSandbox(backups[-1], prefix="target_sandbox_")
+    fwdata_path = sandbox.__enter__()
+
+    project = FLExProject()
+    try:
+        try:
+            project.OpenProject(str(fwdata_path), writeEnabled=True)
+        except Exception as exc:
+            sandbox.__exit__(None, None, None)
+            _unavailable(f"OpenProject rejected sandbox path {fwdata_path}: {exc}")
         yield project
     finally:
         try:
