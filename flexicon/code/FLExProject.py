@@ -364,7 +364,7 @@ class FLExProject(object):
           1. Direct overload-resolved call:
              `ServiceLocator.GetInstance(interface_type)`. Pythonnet
              normally binds this to the non-generic `GetInstance(Type)`
-             overload. This is the pattern used throughout flexlibs2.
+             overload. This is the pattern used throughout flexicon.
           2. Reflection: locate the parameterless `GetInstance<T>()`
              generic method, bind `T` to `interface_type`, and invoke.
              The resolved MethodInfo is cached on the FLExProject
@@ -399,7 +399,7 @@ class FLExProject(object):
 
         # Path 1: direct overload-resolved call. Matches the existing
         # ServiceLocator.GetInstance(InterfaceType) pattern used
-        # throughout flexlibs2 (e.g. FLExProject.py:3804, :4062). Works
+        # throughout flexicon (e.g. FLExProject.py:3804, :4062). Works
         # on standard pythonnet builds where the Type-taking overload
         # of GetInstance binds cleanly.
         try:
@@ -1195,7 +1195,7 @@ class FLExProject(object):
             PhonologicalRuleOperations: Instance providing phonological rule management methods
 
         Example:
-            >>> from flexlibs2 import FLExProject, Seg, NC
+            >>> from flexicon import FLExProject, Seg, NC
             >>> project = FLExProject()
             >>> project.OpenProject("MyProject", writeEnabled=True)
             >>> # Create a phonological rule
@@ -1314,7 +1314,7 @@ class FLExProject(object):
         Access to morphosyntactic-analysis (MSA) creation operations.
 
         Pairs with the reading wrapper in
-        flexlibs2.code.Lexicon.morphosyntax_analysis and the iteration
+        flexicon.code.Lexicon.morphosyntax_analysis and the iteration
         helper in msa_collection. Handles the four concrete MSA types
         (stem, derivational affix, inflectional affix, unclassified
         affix) and auto-attaches the new MSA to the supplied sense via
@@ -2508,7 +2508,7 @@ class FLExProject(object):
         """
         # Handle strings gracefully - just return them with a warning
         if isinstance(stringObj, str):
-            logger = logging.getLogger("flexlibs2")
+            logger = logging.getLogger(__name__)
             logger.warning(
                 f"BestStr() called with a string instead of IMultiUnicode/IMultiString. "
                 f"This should be called on multistring objects only. Returning the string as-is."

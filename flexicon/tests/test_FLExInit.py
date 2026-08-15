@@ -5,7 +5,7 @@ Author: FlexTools Development Team
 """
 
 import unittest
-from flexlibs2 import FLExInitialize, FLExCleanup
+from flexicon import FLExInitialize, FLExCleanup
 
 
 class TestFLExInit(unittest.TestCase):

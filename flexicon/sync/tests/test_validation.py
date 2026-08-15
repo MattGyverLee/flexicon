@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import Mock, MagicMock
 from datetime import datetime
 
-from flexlibs2.sync.validation import (
+from flexicon.sync.validation import (
     LinguisticValidator,
     ValidationResult,
     ValidationIssue,

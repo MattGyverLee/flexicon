@@ -25,7 +25,7 @@ from unittest.mock import MagicMock
 class TestCreateFieldRefusal:
     """Regression tests for the CreateField transaction-safety guard."""
 
-    SOURCE = Path("flexlibs2/code/System/CustomFieldOperations.py")
+    SOURCE = Path("flexicon/code/System/CustomFieldOperations.py")
 
     def test_no_notimplementederror_stub(self):
         """The old CreateField NotImplementedError stub message must be gone."""
@@ -101,10 +101,10 @@ class TestCreateFieldRefusal:
         FP_TransactionError with the expected message fragments.
         """
         try:
-            from flexlibs2.code.System.CustomFieldOperations import (
+            from flexicon.code.System.CustomFieldOperations import (
                 CustomFieldOperations,
             )
-            from flexlibs2.code.FLExProject import FP_TransactionError
+            from flexicon.code.FLExProject import FP_TransactionError
         except ImportError:
             # If FLEx isn't initialized (CI mock mode) the import path can
             # fail; the static checks above are still meaningful.

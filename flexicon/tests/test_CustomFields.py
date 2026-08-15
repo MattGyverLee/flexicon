@@ -6,7 +6,7 @@ Author: FlexTools Development Team
 
 import unittest
 
-from flexlibs2 import FLExProject, AllProjectNames, FP_FileLockedError
+from flexicon import FLExProject, AllProjectNames, FP_FileLockedError
 
 
 # Test constants

@@ -11,8 +11,8 @@
 
 import sys
 
-from flexlibs2 import FLExInitialize, FLExCleanup
-from flexlibs2 import FLExProject, FP_ProjectError
+from flexicon import FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FP_ProjectError
 
 
 # ============ Configurables ===============

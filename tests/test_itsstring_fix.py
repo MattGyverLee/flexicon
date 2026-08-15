@@ -24,7 +24,7 @@ class TestITsStringFix:
         Verifies that StringRepresentation uses .Text and TsStringUtils.MakeString()
         instead of the non-existent .CopyAlternatives() method.
         """
-        env_ops_file = Path("flexlibs2/code/Grammar/EnvironmentOperations.py")
+        env_ops_file = Path("flexicon/code/Grammar/EnvironmentOperations.py")
         content = env_ops_file.read_text(encoding="utf-8")
 
         # Check that the old broken method is not used on StringRepresentation
@@ -48,7 +48,7 @@ class TestITsStringFix:
         Verifies the code has comments explaining the difference between
         ITsString (single value) and MultiString (multiple alternatives).
         """
-        env_ops_file = Path("flexlibs2/code/Grammar/EnvironmentOperations.py")
+        env_ops_file = Path("flexicon/code/Grammar/EnvironmentOperations.py")
         content = env_ops_file.read_text(encoding="utf-8")
 
         # Check for documentation in DuplicateEnvironment
@@ -62,7 +62,7 @@ class TestITsStringFix:
 
         Verifies that getting StringRepresentation uses .Text to extract the text.
         """
-        env_ops_file = Path("flexlibs2/code/Grammar/EnvironmentOperations.py")
+        env_ops_file = Path("flexicon/code/Grammar/EnvironmentOperations.py")
         content = env_ops_file.read_text(encoding="utf-8")
 
         # Check GetStringRepresentation implementation
@@ -74,7 +74,7 @@ class TestITsStringFix:
 
         Verifies that setting StringRepresentation uses TsStringUtils.MakeString().
         """
-        env_ops_file = Path("flexlibs2/code/Grammar/EnvironmentOperations.py")
+        env_ops_file = Path("flexicon/code/Grammar/EnvironmentOperations.py")
         content = env_ops_file.read_text(encoding="utf-8")
 
         # Check SetStringRepresentation implementation

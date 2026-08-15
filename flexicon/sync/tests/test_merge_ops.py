@@ -9,7 +9,7 @@ Date: 2025-11-26
 
 import unittest
 from unittest.mock import Mock, MagicMock, patch, call
-from flexlibs2.sync.merge_ops import MergeOperations, SyncChange, SyncError
+from flexicon.sync.merge_ops import MergeOperations, SyncChange, SyncError
 
 
 class TestSyncChange(unittest.TestCase):
