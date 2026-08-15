@@ -3,7 +3,7 @@
 #
 #   Class: TestNormalizeMatchKey
 #          Unit tests for `normalize_match_key()` in
-#          flexlibs2.code.Shared.string_utils. The helper produces an
+#          flexicon.code.Shared.string_utils. The helper produces an
 #          NFD-(optionally casefolded)-key suitable for matching a
 #          Python-side string (typically NFC) against an FLEx-stored
 #          multilingual value (always NFD). It is the Phase 3 fix for
@@ -22,7 +22,7 @@ import unicodedata
 
 import pytest
 
-from flexlibs2.code.Shared.string_utils import (
+from flexicon.code.Shared.string_utils import (
     FLEX_NULL_MARKER,
     normalize_match_key,
 )

@@ -31,7 +31,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 def _try_open_writable_project():
     """Open one of the standard test projects in write mode, or None."""
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -154,7 +154,7 @@ class TestWfiAnalysisSetApprovalStatus:
         APPROVED for any non-empty EvaluationsRC. The full round-trip
         is now testable.
         """
-        from flexlibs2.code.TextsWords.WfiAnalysisOperations import (
+        from flexicon.code.TextsWords.WfiAnalysisOperations import (
             ApprovalStatusTypes,
         )
 
@@ -400,7 +400,7 @@ class TestWfiAnalysisAgentTypeDiscrimination:
         Verified by: setting APPROVED, then reading back the
         evaluation owner and checking it matches DefaultUserAgent.
         """
-        from flexlibs2.code.TextsWords.WfiAnalysisOperations import (
+        from flexicon.code.TextsWords.WfiAnalysisOperations import (
             ApprovalStatusTypes,
         )
 
@@ -516,7 +516,7 @@ class TestWfiAnalysisSetApprovalStatusErrorPaths:
         The previous implementation did not validate status and would
         silently pass an invalid value to LCM.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         # Find any wordform to attach a throw-away analysis to.
         candidate_wf = None
@@ -560,11 +560,11 @@ class TestWfiAnalysisSetApprovalStatusErrorPaths:
         that GetHumanAgents() returns an empty list for the duration of
         the call, without touching the actual project state.
         """
-        from flexlibs2.code.TextsWords.WfiAnalysisOperations import (
+        from flexicon.code.TextsWords.WfiAnalysisOperations import (
             ApprovalStatusTypes,
         )
-        from flexlibs2.code.FLExProject import FP_ParameterError
-        import flexlibs2.code.Lists.AgentOperations as agent_mod
+        from flexicon.code.FLExProject import FP_ParameterError
+        import flexicon.code.Lists.AgentOperations as agent_mod
 
         candidate_wf = None
         for wf in writable_project.Wordforms.GetAll():

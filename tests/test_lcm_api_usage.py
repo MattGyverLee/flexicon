@@ -1,7 +1,7 @@
 #
 # test_lcm_api_usage.py
 #
-# Test suite verifying that all LCM API methods used in flexlibs2 are correct
+# Test suite verifying that all LCM API methods used in flexicon are correct
 # and follow proper patterns. These tests verify code patterns without requiring
 # SIL.LCModel to be installed.
 #
@@ -17,7 +17,7 @@ import re
 
 
 class TestLCMAPIUsage:
-    """Verify all LCM API methods used in flexlibs2 are correct."""
+    """Verify all LCM API methods used in flexicon are correct."""
 
     def test_copyobject_usage(self):
         """

@@ -40,7 +40,7 @@ def _make_phase1_project(mark_return="mark-token-1"):
     # project.Transaction(label) is called by _NestingAwareTransaction.
     # We return a real _FLExTransaction wired to our mark/rollback doubles.
     def _make_flex_transaction(label="transaction"):
-        from flexlibs2.code.transaction import _FLExTransaction
+        from flexicon.code.transaction import _FLExTransaction
         return _FLExTransaction(project, label, mark_mock, rollback_mock)
 
     project.Transaction = Mock(side_effect=_make_flex_transaction)
@@ -58,7 +58,7 @@ def _make_phase1_project_no_mark():
     project, _, _ = _make_phase1_project()
 
     def _make_flex_transaction_no_mark(label="transaction"):
-        from flexlibs2.code.transaction import _FLExTransaction
+        from flexicon.code.transaction import _FLExTransaction
         return _FLExTransaction(project, label, None, None)
 
     project.Transaction = Mock(side_effect=_make_flex_transaction_no_mark)
@@ -95,7 +95,7 @@ class TestPhase1Rollback:
         Entering _TransactionCM (Phase 1) and raising inside the body
         must invoke RollbackToMark with the mark token returned by Mark().
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, mark_mock, rollback_mock = _make_phase1_project(
             mark_return="sentinel-mark"
@@ -112,7 +112,7 @@ class TestPhase1Rollback:
         When no exception is raised, RollbackToMark must NOT be called.
         This is the normal commit path.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, mark_mock, rollback_mock = _make_phase1_project()
 
@@ -126,7 +126,7 @@ class TestPhase1Rollback:
         __enter__ must call Mark() so a rollback point exists before
         any mutations run.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, mark_mock, rollback_mock = _make_phase1_project()
 
@@ -140,7 +140,7 @@ class TestPhase1Rollback:
         _FLExTransaction must not suppress the original exception even
         after a successful rollback.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, _, _ = _make_phase1_project()
 
@@ -174,7 +174,7 @@ class TestPhase1NoMarkAPI:
         With (None, None) mark API on a write-enabled project, entering the
         transaction must NOT raise; it degrades to no-rollback and runs the body.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase1_project_no_mark()
         body_ran = []
@@ -189,7 +189,7 @@ class TestPhase1NoMarkAPI:
         Even without a mark, a body exception must propagate (no silent
         swallow). This exercises the no-mark branch of __exit__.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase1_project_no_mark()
 
@@ -218,7 +218,7 @@ class TestPhase2Nesting:
         At depth 0 with _undoable=True, _NestingAwareTransaction must
         call project.UndoableOperation(), not project.Transaction().
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase2_project()
         assert project._transaction_depth == 0
@@ -234,7 +234,7 @@ class TestPhase2Nesting:
         A second _NestingAwareTransaction entered while one is already
         active (depth > 0) must NOT call UndoableOperation or Transaction.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase2_project()
 
@@ -251,7 +251,7 @@ class TestPhase2Nesting:
         """
         _transaction_depth must return to 0 after a clean exit.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase2_project()
 
@@ -265,7 +265,7 @@ class TestPhase2Nesting:
         _transaction_depth must return to 0 even when the body raises.
         The depth counter must not leak across calls.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase2_project()
 
@@ -280,7 +280,7 @@ class TestPhase2Nesting:
         When the inner (no-op) block raises, both outer and inner depth
         decrements must still fire, leaving depth at 0.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase2_project()
 
@@ -307,7 +307,7 @@ class TestPhase1Nesting:
         Entering two nested _NestingAwareTransaction blocks (Phase 1)
         increments depth to 2 then restores it to 0 on exit.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, mark_mock, rollback_mock = _make_phase1_project()
 
@@ -324,7 +324,7 @@ class TestPhase1Nesting:
         Two nested Phase 1 blocks each open their own _FLExTransaction,
         so Mark() is called twice (once per block).
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, mark_mock, rollback_mock = _make_phase1_project()
 

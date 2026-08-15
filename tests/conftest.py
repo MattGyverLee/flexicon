@@ -23,7 +23,7 @@ import sys
 import os
 import importlib
 
-# Add the package root to sys.path so flexlibs2 can be imported
+# Add the package root to sys.path so flexicon can be imported
 # This must be done BEFORE test collection
 _test_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.dirname(_test_dir)
@@ -40,7 +40,7 @@ def pytest_configure(config):
 
 # Mock-only test files that stub sys.modules["SIL"] = MagicMock() at module
 # scope. That stub poisons the real CLR namespace pythonnet would otherwise
-# populate, so importing flexlibs2 anywhere later in the same process fails
+# populate, so importing flexicon anywhere later in the same process fails
 # with "'SIL' is not a package". These tests never exercise real library
 # behavior (they just test mock orchestration), so skip collection and let
 # the live-DB suite carry the actual coverage. Replace with live tests if
@@ -59,12 +59,12 @@ collect_ignore = [
 @pytest.fixture(scope="session", autouse=True)
 def initialize_flex_for_tests():
     """
-    Initialize FieldWorks and flexlibs2 before running any tests.
+    Initialize FieldWorks and flexicon before running any tests.
 
     This fixture runs once per test session and ensures:
     1. FieldWorks DLLs are in sys.path
     2. FLEx services are initialized
-    3. flexlibs2 package is fully imported with all operations
+    3. flexicon package is fully imported with all operations
     4. Operations classes are available for tests
 
     Using autouse=True ensures this runs even if no test explicitly uses it.
@@ -130,90 +130,90 @@ def initialize_flex_for_tests():
 
         # Step 4: Initialize FLEx using FLExInitialize()
         print("[INFO] Running FLExInitialize()...")
-        from flexlibs2.code.FLExInit import FLExInitialize
+        from flexicon.code.FLExInit import FLExInitialize
 
         FLExInitialize()
         print("[OK] FLExInitialize() complete")
 
-        # Step 5: Import flexlibs2 package
-        print("[INFO] Importing flexlibs2 package...")
-        import flexlibs2
+        # Step 5: Import flexicon package
+        print("[INFO] Importing flexicon package...")
+        import flexicon
 
-        print("[OK] flexlibs2 imported successfully")
+        print("[OK] flexicon imported successfully")
 
-        # Step 6: Manually import and add operations to flexlibs2 namespace
+        # Step 6: Manually import and add operations to flexicon namespace
         # The __init__.py imports may not execute fully, so do it explicitly here
         print("[INFO] Loading operations modules...")
         operations_modules = [
             # Grammar
-            ("flexlibs2.code.Grammar.POSOperations", "POSOperations"),
-            ("flexlibs2.code.Grammar.PhonemeOperations", "PhonemeOperations"),
-            ("flexlibs2.code.Grammar.NaturalClassOperations", "NaturalClassOperations"),
-            ("flexlibs2.code.Grammar.EnvironmentOperations", "EnvironmentOperations"),
-            ("flexlibs2.code.Grammar.PhonologicalRuleOperations", "PhonologicalRuleOperations"),
-            ("flexlibs2.code.Grammar.MorphRuleOperations", "MorphRuleOperations"),
-            ("flexlibs2.code.Grammar.GramCatOperations", "GramCatOperations"),
-            ("flexlibs2.code.Grammar.InflectionFeatureOperations", "InflectionFeatureOperations"),
+            ("flexicon.code.Grammar.POSOperations", "POSOperations"),
+            ("flexicon.code.Grammar.PhonemeOperations", "PhonemeOperations"),
+            ("flexicon.code.Grammar.NaturalClassOperations", "NaturalClassOperations"),
+            ("flexicon.code.Grammar.EnvironmentOperations", "EnvironmentOperations"),
+            ("flexicon.code.Grammar.PhonologicalRuleOperations", "PhonologicalRuleOperations"),
+            ("flexicon.code.Grammar.MorphRuleOperations", "MorphRuleOperations"),
+            ("flexicon.code.Grammar.GramCatOperations", "GramCatOperations"),
+            ("flexicon.code.Grammar.InflectionFeatureOperations", "InflectionFeatureOperations"),
             # Lexicon
-            ("flexlibs2.code.Lexicon.LexEntryOperations", "LexEntryOperations"),
-            ("flexlibs2.code.Lexicon.LexSenseOperations", "LexSenseOperations"),
-            ("flexlibs2.code.Lexicon.ExampleOperations", "ExampleOperations"),
-            ("flexlibs2.code.Lexicon.LexReferenceOperations", "LexReferenceOperations"),
-            ("flexlibs2.code.Lexicon.VariantOperations", "VariantOperations"),
-            ("flexlibs2.code.Lexicon.PronunciationOperations", "PronunciationOperations"),
-            ("flexlibs2.code.Lexicon.SemanticDomainOperations", "SemanticDomainOperations"),
-            ("flexlibs2.code.Lexicon.EtymologyOperations", "EtymologyOperations"),
-            ("flexlibs2.code.Lexicon.AllomorphOperations", "AllomorphOperations"),
-            ("flexlibs2.code.Lexicon.MSAOperations", "MSAOperations"),
+            ("flexicon.code.Lexicon.LexEntryOperations", "LexEntryOperations"),
+            ("flexicon.code.Lexicon.LexSenseOperations", "LexSenseOperations"),
+            ("flexicon.code.Lexicon.ExampleOperations", "ExampleOperations"),
+            ("flexicon.code.Lexicon.LexReferenceOperations", "LexReferenceOperations"),
+            ("flexicon.code.Lexicon.VariantOperations", "VariantOperations"),
+            ("flexicon.code.Lexicon.PronunciationOperations", "PronunciationOperations"),
+            ("flexicon.code.Lexicon.SemanticDomainOperations", "SemanticDomainOperations"),
+            ("flexicon.code.Lexicon.EtymologyOperations", "EtymologyOperations"),
+            ("flexicon.code.Lexicon.AllomorphOperations", "AllomorphOperations"),
+            ("flexicon.code.Lexicon.MSAOperations", "MSAOperations"),
             # TextsWords
-            ("flexlibs2.code.TextsWords.TextOperations", "TextOperations"),
-            ("flexlibs2.code.TextsWords.WordformOperations", "WordformOperations"),
-            ("flexlibs2.code.TextsWords.WfiAnalysisOperations", "WfiAnalysisOperations"),
-            ("flexlibs2.code.TextsWords.ParagraphOperations", "ParagraphOperations"),
-            ("flexlibs2.code.TextsWords.SegmentOperations", "SegmentOperations"),
-            ("flexlibs2.code.TextsWords.WfiGlossOperations", "WfiGlossOperations"),
-            ("flexlibs2.code.TextsWords.WfiMorphBundleOperations", "WfiMorphBundleOperations"),
-            ("flexlibs2.code.TextsWords.DiscourseOperations", "DiscourseOperations"),
+            ("flexicon.code.TextsWords.TextOperations", "TextOperations"),
+            ("flexicon.code.TextsWords.WordformOperations", "WordformOperations"),
+            ("flexicon.code.TextsWords.WfiAnalysisOperations", "WfiAnalysisOperations"),
+            ("flexicon.code.TextsWords.ParagraphOperations", "ParagraphOperations"),
+            ("flexicon.code.TextsWords.SegmentOperations", "SegmentOperations"),
+            ("flexicon.code.TextsWords.WfiGlossOperations", "WfiGlossOperations"),
+            ("flexicon.code.TextsWords.WfiMorphBundleOperations", "WfiMorphBundleOperations"),
+            ("flexicon.code.TextsWords.DiscourseOperations", "DiscourseOperations"),
             # Notebook
-            ("flexlibs2.code.Notebook.NoteOperations", "NoteOperations"),
-            ("flexlibs2.code.Notebook.PersonOperations", "PersonOperations"),
-            ("flexlibs2.code.Notebook.LocationOperations", "LocationOperations"),
-            ("flexlibs2.code.Notebook.AnthropologyOperations", "AnthropologyOperations"),
-            ("flexlibs2.code.Notebook.DataNotebookOperations", "DataNotebookOperations"),
+            ("flexicon.code.Notebook.NoteOperations", "NoteOperations"),
+            ("flexicon.code.Notebook.PersonOperations", "PersonOperations"),
+            ("flexicon.code.Notebook.LocationOperations", "LocationOperations"),
+            ("flexicon.code.Notebook.AnthropologyOperations", "AnthropologyOperations"),
+            ("flexicon.code.Notebook.DataNotebookOperations", "DataNotebookOperations"),
             # Lists
-            ("flexlibs2.code.Lists.PublicationOperations", "PublicationOperations"),
-            ("flexlibs2.code.Lists.AgentOperations", "AgentOperations"),
-            ("flexlibs2.code.Lists.ConfidenceOperations", "ConfidenceOperations"),
-            ("flexlibs2.code.Lists.OverlayOperations", "OverlayOperations"),
-            ("flexlibs2.code.Lists.TranslationTypeOperations", "TranslationTypeOperations"),
-            ("flexlibs2.code.Lists.PossibilityListOperations", "PossibilityListOperations"),
+            ("flexicon.code.Lists.PublicationOperations", "PublicationOperations"),
+            ("flexicon.code.Lists.AgentOperations", "AgentOperations"),
+            ("flexicon.code.Lists.ConfidenceOperations", "ConfidenceOperations"),
+            ("flexicon.code.Lists.OverlayOperations", "OverlayOperations"),
+            ("flexicon.code.Lists.TranslationTypeOperations", "TranslationTypeOperations"),
+            ("flexicon.code.Lists.PossibilityListOperations", "PossibilityListOperations"),
             # System
-            ("flexlibs2.code.System.WritingSystemOperations", "WritingSystemOperations"),
-            ("flexlibs2.code.System.ProjectSettingsOperations", "ProjectSettingsOperations"),
-            ("flexlibs2.code.System.AnnotationDefOperations", "AnnotationDefOperations"),
-            ("flexlibs2.code.System.CheckOperations", "CheckOperations"),
-            ("flexlibs2.code.System.CustomFieldOperations", "CustomFieldOperations"),
+            ("flexicon.code.System.WritingSystemOperations", "WritingSystemOperations"),
+            ("flexicon.code.System.ProjectSettingsOperations", "ProjectSettingsOperations"),
+            ("flexicon.code.System.AnnotationDefOperations", "AnnotationDefOperations"),
+            ("flexicon.code.System.CheckOperations", "CheckOperations"),
+            ("flexicon.code.System.CustomFieldOperations", "CustomFieldOperations"),
             # Scripture
-            ("flexlibs2.code.Scripture.ScrBookOperations", "ScrBookOperations"),
-            ("flexlibs2.code.Scripture.ScrSectionOperations", "ScrSectionOperations"),
-            ("flexlibs2.code.Scripture.ScrTxtParaOperations", "ScrTxtParaOperations"),
-            ("flexlibs2.code.Scripture.ScrNoteOperations", "ScrNoteOperations"),
-            ("flexlibs2.code.Scripture.ScrAnnotationsOperations", "ScrAnnotationsOperations"),
-            ("flexlibs2.code.Scripture.ScrDraftOperations", "ScrDraftOperations"),
+            ("flexicon.code.Scripture.ScrBookOperations", "ScrBookOperations"),
+            ("flexicon.code.Scripture.ScrSectionOperations", "ScrSectionOperations"),
+            ("flexicon.code.Scripture.ScrTxtParaOperations", "ScrTxtParaOperations"),
+            ("flexicon.code.Scripture.ScrNoteOperations", "ScrNoteOperations"),
+            ("flexicon.code.Scripture.ScrAnnotationsOperations", "ScrAnnotationsOperations"),
+            ("flexicon.code.Scripture.ScrDraftOperations", "ScrDraftOperations"),
             # Reversal
-            ("flexlibs2.code.Reversal.ReversalIndexOperations", "ReversalIndexOperations"),
-            ("flexlibs2.code.Reversal.ReversalIndexEntryOperations", "ReversalIndexEntryOperations"),
+            ("flexicon.code.Reversal.ReversalIndexOperations", "ReversalIndexOperations"),
+            ("flexicon.code.Reversal.ReversalIndexEntryOperations", "ReversalIndexEntryOperations"),
             # Discourse
-            ("flexlibs2.code.Discourse.ConstChartOperations", "ConstChartOperations"),
-            ("flexlibs2.code.Discourse.ConstChartRowOperations", "ConstChartRowOperations"),
-            ("flexlibs2.code.Discourse.ConstChartMarkerOperations", "ConstChartMarkerOperations"),
-            ("flexlibs2.code.Discourse.ConstChartCellTagOperations", "ConstChartCellTagOperations"),
-            ("flexlibs2.code.Discourse.ConstChartClauseMarkerOperations", "ConstChartClauseMarkerOperations"),
-            ("flexlibs2.code.Discourse.ConstChartWordGroupOperations", "ConstChartWordGroupOperations"),
-            ("flexlibs2.code.Discourse.ConstChartMovedTextOperations", "ConstChartMovedTextOperations"),
+            ("flexicon.code.Discourse.ConstChartOperations", "ConstChartOperations"),
+            ("flexicon.code.Discourse.ConstChartRowOperations", "ConstChartRowOperations"),
+            ("flexicon.code.Discourse.ConstChartMarkerOperations", "ConstChartMarkerOperations"),
+            ("flexicon.code.Discourse.ConstChartCellTagOperations", "ConstChartCellTagOperations"),
+            ("flexicon.code.Discourse.ConstChartClauseMarkerOperations", "ConstChartClauseMarkerOperations"),
+            ("flexicon.code.Discourse.ConstChartWordGroupOperations", "ConstChartWordGroupOperations"),
+            ("flexicon.code.Discourse.ConstChartMovedTextOperations", "ConstChartMovedTextOperations"),
             # Shared
-            ("flexlibs2.code.Shared.MediaOperations", "MediaOperations"),
-            ("flexlibs2.code.Shared.FilterOperations", "FilterOperations"),
+            ("flexicon.code.Shared.MediaOperations", "MediaOperations"),
+            ("flexicon.code.Shared.FilterOperations", "FilterOperations"),
         ]
 
         loaded_count = 0
@@ -222,7 +222,7 @@ def initialize_flex_for_tests():
             try:
                 module = importlib.import_module(module_path)
                 ops_class = getattr(module, class_name)
-                setattr(flexlibs2, class_name, ops_class)
+                setattr(flexicon, class_name, ops_class)
                 loaded_count += 1
             except ImportError as e:
                 failed_modules.append((class_name, e))
@@ -243,8 +243,8 @@ def initialize_flex_for_tests():
         print(f"[OK] Loaded {loaded_count}/{total} operations classes")
 
         # Verify
-        ops_found = [x for x in dir(flexlibs2) if "Operations" in x]
-        print(f"[INFO] flexlibs2 now has {len(ops_found)} operations available")
+        ops_found = [x for x in dir(flexicon) if "Operations" in x]
+        print(f"[INFO] flexicon now has {len(ops_found)} operations available")
 
     except Exception as e:
         if os.environ.get("FLEXLIBS_REQUIRE_LIVE") == "1":
@@ -1288,7 +1288,7 @@ def sena3_sandbox():
         )
 
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception as exc:
         pytest.skip(f"Could not import FLExProject: {exc}")
 

@@ -49,13 +49,13 @@ class TestLexSenseOperationsImport:
 
     def test_import_lexsense_operations(self):
         """Test importing LexSenseOperations class."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         assert LexSenseOperations is not None
 
     def test_instantiate_with_mock_project(self, mock_flex_project):
         """Test instantiating LexSenseOperations with mock project."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert ops is not None
@@ -67,21 +67,21 @@ class TestLexSenseOperationsInheritance:
 
     def test_inherits_from_base_operations(self):
         """Test that LexSenseOperations inherits from BaseOperations."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
-        from flexlibs2.code.BaseOperations import BaseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.BaseOperations import BaseOperations
 
         assert issubclass(LexSenseOperations, BaseOperations)
 
     def test_has_all_reordering_methods(self, mock_flex_project):
         """Test that LexSenseOperations has all reordering methods."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert_has_reordering_methods(ops)
 
     def test_has_getsequence_implementation(self, mock_flex_project):
         """Test that _GetSequence is implemented for senses."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert hasattr(ops, "_GetSequence")
@@ -100,7 +100,7 @@ class TestLexSenseOperationsCRUDMethods:
 
     def test_has_create_method(self, mock_flex_project):
         """Test that Create method exists and is callable."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert hasattr(ops, "Create")
@@ -108,7 +108,7 @@ class TestLexSenseOperationsCRUDMethods:
 
     def test_has_delete_method(self, mock_flex_project):
         """Test that Delete method exists and is callable."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert hasattr(ops, "Delete")
@@ -116,7 +116,7 @@ class TestLexSenseOperationsCRUDMethods:
 
     def test_has_find_method(self, mock_flex_project):
         """Test that Find method exists and is callable."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert hasattr(ops, "Find")
@@ -128,7 +128,7 @@ class TestLexSenseOperationsPropertyGetters:
 
     def test_has_getgloss_method(self, mock_flex_project):
         """Test that GetGloss method exists."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert hasattr(ops, "GetGloss")
@@ -136,7 +136,7 @@ class TestLexSenseOperationsPropertyGetters:
 
     def test_has_getdefinition_method(self, mock_flex_project):
         """Test that GetDefinition method exists."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert hasattr(ops, "GetDefinition")
@@ -144,7 +144,7 @@ class TestLexSenseOperationsPropertyGetters:
 
     def test_has_getpartofspeech_method(self, mock_flex_project):
         """Test that GetPartOfSpeech method exists."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert hasattr(ops, "GetPartOfSpeech")
@@ -156,7 +156,7 @@ class TestLexSenseOperationsPropertySetters:
 
     def test_has_setgloss_method(self, mock_flex_project):
         """Test that SetGloss method exists."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert hasattr(ops, "SetGloss")
@@ -164,7 +164,7 @@ class TestLexSenseOperationsPropertySetters:
 
     def test_has_setdefinition_method(self, mock_flex_project):
         """Test that SetDefinition method exists."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert hasattr(ops, "SetDefinition")
@@ -172,7 +172,7 @@ class TestLexSenseOperationsPropertySetters:
 
     def test_has_setpartofspeech_method(self, mock_flex_project):
         """Test that SetPartOfSpeech method exists."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert hasattr(ops, "SetPartOfSpeech")
@@ -184,7 +184,7 @@ class TestLexSenseOperationsExampleMethods:
 
     def test_has_addexample_method(self, mock_flex_project):
         """Test that AddExample method exists."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         assert hasattr(ops, "AddExample")
@@ -192,7 +192,7 @@ class TestLexSenseOperationsExampleMethods:
 
     def test_has_getexamples_method(self, mock_flex_project):
         """Test that GetExamples or similar method exists."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
         # Check for GetExamples or GetExampleCount
@@ -204,7 +204,7 @@ class TestLexSenseOperationsReordering:
 
     def test_sort_senses_by_gloss(self, mock_flex_project, mock_lex_entry):
         """Test sorting senses by gloss (mock behavior)."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         # Generate test senses with different glosses
         senses = generate_test_senses(mock_lex_entry, count=3)
@@ -222,7 +222,7 @@ class TestLexSenseOperationsReordering:
 
     def test_moveup_sense(self, mock_flex_project, mock_lex_entry):
         """Test moving a sense up in the sequence."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         # Generate test senses
         senses = generate_test_senses(mock_lex_entry, count=3)
@@ -248,8 +248,8 @@ class TestLexSenseOperationsValidation:
 
     def test_create_requires_write_enabled(self, mock_flex_project, mock_lex_entry):
         """Test that Create raises error when project is read-only."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.FLExProject import FP_ReadOnlyError
 
         # Set project to read-only
         mock_flex_project.writeEnabled = False
@@ -284,9 +284,9 @@ class TestLexSenseOperationsIntegration:
         FLExInitialize() / FLExCleanup() here would tear down state
         shared with the rest of the live-DB suite.
         """
-        pytest.importorskip("flexlibs2")
+        pytest.importorskip("flexicon")
 
-        from flexlibs2 import FLExProject, AllProjectNames
+        from flexicon import FLExProject, AllProjectNames
 
         projects = AllProjectNames()
         if not projects:
@@ -353,7 +353,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 def _try_open_writable_project():
     """Open a candidate FLEx project in write-enabled mode, or None."""
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -467,7 +467,7 @@ class TestGetComplexFormsNotSubentries:
 
     def test_method_exists_on_operations_class(self):
         """GetComplexFormsNotSubentries must be defined on LexSenseOperations."""
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
         assert hasattr(LexSenseOperations, "GetComplexFormsNotSubentries")
 
     def test_uses_kclassid_not_type_for_ownerofclass(self):
@@ -484,7 +484,7 @@ class TestGetComplexFormsNotSubentries:
 
         src_path = os.path.join(
             os.path.dirname(__file__),
-            "..", "..", "flexlibs2", "code", "Lexicon", "LexSenseOperations.py"
+            "..", "..", "flexicon", "code", "Lexicon", "LexSenseOperations.py"
         )
         with open(os.path.normpath(src_path), encoding="utf-8") as fh:
             tree = ast.parse(fh.read())
@@ -526,7 +526,7 @@ class TestGetComplexFormsNotSubentries:
         When a sense's entry appears in PrimaryLexemesRS of a complex-form
         back-ref, that back-ref must be excluded from the result.
         """
-        from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+        from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
         ops = LexSenseOperations(mock_flex_project)
 

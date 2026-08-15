@@ -43,7 +43,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 def _try_open_writable_project():
     """Open one of the standard test projects in write mode, or None."""
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -372,13 +372,13 @@ class TestInflectionFeaturesCatalog:
         We verify here at the parser level (no live LCM required).
         """
         try:
-            from flexlibs2.code import FLExGlobals
-            from flexlibs2.code.Shared.catalog import (
+            from flexicon.code import FLExGlobals
+            from flexicon.code.Shared.catalog import (
                 find_catalog_file,
                 parse_etic_gloss_list,
             )
         except Exception:
-            pytest.skip("flexlibs2 catalog helpers unavailable")
+            pytest.skip("flexicon catalog helpers unavailable")
 
         if not FLExGlobals.FWCodeDir:
             pytest.skip("FWCodeDir not set (FieldWorks not detected)")
@@ -587,7 +587,7 @@ class TestInflectionFeaturesTypeFindCreate:
         TypeCreate must refuse to create a second type with the same
         name. Prevents callers from silently shadowing existing types.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         name = "qZ_TypeCreate_DuplicateGuard"
 
@@ -604,7 +604,7 @@ class TestInflectionFeaturesTypeFindCreate:
 
     def test_type_create_rejects_empty_name(self, writable_project):
         """Empty name / abbreviation are rejected with FP_ParameterError."""
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         with pytest.raises(FP_ParameterError):
             writable_project.InflectionFeatures.TypeCreate("", "abb")
@@ -721,7 +721,7 @@ def _patch_infl_ops_lcm(raw_features):
     ts_string_utils_stub = MagicMock()
     ts_string_utils_stub.MakeString = Mock(side_effect=_makestring)
 
-    target = "flexlibs2.code.Grammar.InflectionFeatureOperations"
+    target = "flexicon.code.Grammar.InflectionFeatureOperations"
     patches = [
         patch(f"{target}.IFsFeatDefn", side_effect=_ifsfeatdefn),
         patch(f"{target}.ITsString", side_effect=_itsstring),
@@ -741,7 +741,7 @@ class TestInflectionFeaturesMock:
     """
 
     def _get_ops(self, project):
-        from flexlibs2.code.Grammar.InflectionFeatureOperations import (
+        from flexicon.code.Grammar.InflectionFeatureOperations import (
             InflectionFeatureOperations,
         )
         return InflectionFeatureOperations(project)
@@ -862,7 +862,7 @@ class TestInflectionFeaturesMock:
 
         ops = self._get_ops(project)
 
-        target = "flexlibs2.code.Grammar.InflectionFeatureOperations"
+        target = "flexicon.code.Grammar.InflectionFeatureOperations"
         ts_string_utils_stub = MagicMock()
         ts_string_utils_stub.MakeString = Mock(side_effect=lambda t, ws: Mock(Text=t))
         with patch(f"{target}.IFsFeatDefn", side_effect=lambda r: r), \
@@ -877,7 +877,7 @@ class TestInflectionFeaturesMock:
 
     def test_create_raises_if_feature_exists(self):
         """Create raises FP_ParameterError when a feature with that name exists."""
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         project, fs, _ = _make_infl_project([("gender", 20)])
         ops = self._get_ops(project)
@@ -892,7 +892,7 @@ class TestInflectionFeaturesMock:
 
     def test_create_raises_on_empty_name(self):
         """Create raises FP_ParameterError for an empty name."""
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         project, _, _ = _make_infl_project([])
         ops = self._get_ops(project)
@@ -902,7 +902,7 @@ class TestInflectionFeaturesMock:
 
     def test_create_raises_on_empty_abbreviation(self):
         """Create raises FP_ParameterError for an empty abbreviation."""
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         project, fs, _ = _make_infl_project([])
         ops = self._get_ops(project)
@@ -917,7 +917,7 @@ class TestInflectionFeaturesMock:
 
     def test_create_raises_when_write_disabled(self):
         """Create raises FP_ReadOnlyError when project is read-only."""
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.FLExProject import FP_ReadOnlyError
 
         project, _, _ = _make_infl_project([], write_enabled=False)
         ops = self._get_ops(project)
@@ -953,7 +953,7 @@ class TestInflectionFeaturesMock:
 
         ops = self._get_ops(project)
 
-        target = "flexlibs2.code.Grammar.InflectionFeatureOperations"
+        target = "flexicon.code.Grammar.InflectionFeatureOperations"
         ts_string_utils_stub = MagicMock()
         ts_string_utils_stub.MakeString = Mock(side_effect=lambda t, ws: Mock(Text=t))
         with patch(f"{target}.IFsClosedFeature", side_effect=lambda r: r), \
@@ -967,7 +967,7 @@ class TestInflectionFeaturesMock:
 
     def test_create_value_raises_on_empty_name(self):
         """CreateValue raises FP_ParameterError for an empty value name."""
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
         from unittest.mock import Mock
 
         project, _, _ = _make_infl_project([])
@@ -979,7 +979,7 @@ class TestInflectionFeaturesMock:
 
     def test_create_value_raises_when_write_disabled(self):
         """CreateValue raises FP_ReadOnlyError when project is read-only."""
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.FLExProject import FP_ReadOnlyError
         from unittest.mock import Mock
 
         project, _, _ = _make_infl_project([], write_enabled=False)
@@ -990,7 +990,7 @@ class TestInflectionFeaturesMock:
 
     def test_create_value_raises_on_null_feature(self):
         """CreateValue raises FP_NullParameterError when feature is None."""
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         project, _, _ = _make_infl_project([])
         ops = self._get_ops(project)

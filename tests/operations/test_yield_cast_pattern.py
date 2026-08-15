@@ -79,7 +79,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 def _try_open_writable_project():
     """Open one of the standard test projects in write mode, or None."""
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -182,7 +182,7 @@ def _operation_source(import_path, attr_chain):
 _SITES = [
     (
         "InflectionFeatureOperations.InflectionClassGetAll",
-        "flexlibs2.code.Grammar.InflectionFeatureOperations",
+        "flexicon.code.Grammar.InflectionFeatureOperations",
         ("InflectionFeatureOperations", "InflectionClassGetAll"),
         "IMoInflClass",
         "IMoInflClass(",
@@ -190,7 +190,7 @@ _SITES = [
     ),
     (
         "SemanticDomainOperations.GetSubdomains",
-        "flexlibs2.code.Lexicon.SemanticDomainOperations",
+        "flexicon.code.Lexicon.SemanticDomainOperations",
         ("SemanticDomainOperations", "GetSubdomains"),
         "ICmSemanticDomain",
         "ICmSemanticDomain(",
@@ -198,7 +198,7 @@ _SITES = [
     ),
     (
         "LocationOperations.GetSublocations",
-        "flexlibs2.code.Notebook.LocationOperations",
+        "flexicon.code.Notebook.LocationOperations",
         ("LocationOperations", "GetSublocations"),
         "ICmLocation",
         "ICmLocation(",
@@ -241,7 +241,7 @@ class TestYieldCastStatic:
         signature for issue #220.
         """
         src = _operation_source(
-            "flexlibs2.code.Grammar.InflectionFeatureOperations",
+            "flexicon.code.Grammar.InflectionFeatureOperations",
             ("InflectionFeatureOperations", "InflectionClassGetAll"),
         )
         assert "yield ic\n" not in src, (
@@ -257,7 +257,7 @@ class TestYieldCastStatic:
         path) without casting. Both bare shapes are the bug signature.
         """
         src = _operation_source(
-            "flexlibs2.code.Lexicon.SemanticDomainOperations",
+            "flexicon.code.Lexicon.SemanticDomainOperations",
             ("SemanticDomainOperations", "GetSubdomains"),
         )
         assert "return list(domain.SubPossibilitiesOS)" not in src, (
@@ -279,7 +279,7 @@ class TestYieldCastStatic:
         raw loop variable directly (recursive path) without casting.
         """
         src = _operation_source(
-            "flexlibs2.code.Notebook.LocationOperations",
+            "flexicon.code.Notebook.LocationOperations",
             ("LocationOperations", "GetSublocations"),
         )
         assert "return list(location.SubPossibilitiesOS)" not in src, (
@@ -424,7 +424,7 @@ class TestProjectSettingsAccessorsStatic:
     to (or read directly from) the expected LCM-backed source."""
 
     def _method_source(self, name):
-        from flexlibs2.code.System.ProjectSettingsOperations import (
+        from flexicon.code.System.ProjectSettingsOperations import (
             ProjectSettingsOperations,
         )
 
@@ -433,7 +433,7 @@ class TestProjectSettingsAccessorsStatic:
             f"was added by 92762fa for issue #220."
         )
         return _operation_source(
-            "flexlibs2.code.System.ProjectSettingsOperations",
+            "flexicon.code.System.ProjectSettingsOperations",
             ("ProjectSettingsOperations", name),
         )
 

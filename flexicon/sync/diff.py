@@ -337,7 +337,7 @@ class DiffEngine:
     all changes (new, modified, deleted, conflicts).
 
     Usage:
-        >>> from flexlibs2.sync import DiffEngine, GuidMatchStrategy
+        >>> from flexicon.sync import DiffEngine, GuidMatchStrategy
         >>>
         >>> engine = DiffEngine()
         >>> result = engine.compare(

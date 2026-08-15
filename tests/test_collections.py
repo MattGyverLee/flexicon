@@ -39,7 +39,7 @@ _test_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.dirname(_test_dir)
 sys.path.insert(0, _project_root)
 
-from flexlibs2.code.Shared.smart_collection import SmartCollection
+from flexicon.code.Shared.smart_collection import SmartCollection
 
 
 # =============================================================================

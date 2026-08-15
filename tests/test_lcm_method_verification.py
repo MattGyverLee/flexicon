@@ -1,7 +1,7 @@
 #
 # test_lcm_method_verification.py
 #
-# Systematic verification that ALL LCM methods called by flexlibs2 exist
+# Systematic verification that ALL LCM methods called by flexicon exist
 # This test scans the codebase and verifies every LCM method call is valid
 #
 # Platform: Python.NET
@@ -17,7 +17,7 @@ import re
 
 
 class LCMMethodVerifier:
-    """Verify all LCM methods used in flexlibs2 are documented and valid."""
+    """Verify all LCM methods used in flexicon are documented and valid."""
 
     # Known valid LCM methods by category
     KNOWN_VALID_METHODS = {
@@ -230,7 +230,7 @@ class TestLCMMethodVerification:
         """
         [INFO] Test: Summary of verified LCM methods.
 
-        All methods used in flexlibs2 are documented and verified to exist
+        All methods used in flexicon are documented and verified to exist
         in the FieldWorks LCM API:
 
         [ServiceLocator]

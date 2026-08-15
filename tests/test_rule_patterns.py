@@ -17,7 +17,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from flexlibs2.code.Shared.rule_patterns import Seg, NC, Boundary
+from flexicon.code.Shared.rule_patterns import Seg, NC, Boundary
 
 
 class TestSegDataclass:
@@ -88,16 +88,16 @@ class TestDataclassHashability:
 
 
 class TestTopLevelImports:
-    """The dataclasses must be exported at the top level of the flexlibs2 package."""
+    """The dataclasses must be exported at the top level of the flexicon package."""
 
     def test_top_level_imports_work(self):
-        """The inner flexlibs2 package's __init__.py exposes Seg, NC, Boundary.
+        """The inner flexicon package's __init__.py exposes Seg, NC, Boundary.
 
         Notes:
             The project has a root-level ``__init__.py`` (legacy
             ``__version__ = "2.4.0-dev"`` stub) that pytest treats as the
-            package ``flexlibs2`` during test collection — masking the real
-            package at ``flexlibs2/flexlibs2/__init__.py``. We verify the
+            package ``flexicon`` during test collection — masking the real
+            package at ``flexicon/__init__.py``. We verify the
             public-API export by parsing the real package's __init__.py
             source so we don't depend on pytest's import resolution.
         """
@@ -107,9 +107,9 @@ class TestTopLevelImports:
         # Locate the REAL inner package __init__.py.
         here = os.path.dirname(os.path.abspath(__file__))
         repo_root = os.path.dirname(here)
-        inner_init = os.path.join(repo_root, "flexlibs2", "__init__.py")
+        inner_init = os.path.join(repo_root, "flexicon", "__init__.py")
         assert os.path.exists(inner_init), (
-            f"Expected real flexlibs2 package at {inner_init}; layout changed"
+            f"Expected real flexicon package at {inner_init}; layout changed"
         )
 
         with open(inner_init, "r", encoding="utf-8") as f:
@@ -117,7 +117,7 @@ class TestTopLevelImports:
         tree = ast.parse(source)
 
         # Collect all names imported at module level (these are the public
-        # API symbols available via `from flexlibs2 import X`).
+        # API symbols available via `from flexicon import X`).
         top_level_names = set()
         for node in tree.body:
             if isinstance(node, ast.ImportFrom):
@@ -133,8 +133,8 @@ class TestTopLevelImports:
 
         for name in ("Seg", "NC", "Boundary"):
             assert name in top_level_names, (
-                f"flexlibs2/__init__.py does not export {name!r} at module "
-                f"top level (so `from flexlibs2 import {name}` would fail)"
+                f"flexicon/__init__.py does not export {name!r} at module "
+                f"top level (so `from flexicon import {name}` would fail)"
             )
 
 

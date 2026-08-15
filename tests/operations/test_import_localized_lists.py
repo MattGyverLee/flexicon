@@ -40,7 +40,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 
 def _try_open_writable_project():
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
     project = FLExProject()
@@ -88,7 +88,7 @@ class TestLocalizedListsImportContract:
         a LocalizedListsOperations instance with Import and
         ImportForAllAnalysisWritingSystems methods.
         """
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
 
         assert "LocalizedLists" in dir(FLExProject), (
             "LocalizedLists property missing from FLExProject"
@@ -103,7 +103,7 @@ class TestLocalizedListsImportContract:
         LocalizedListsOperations.Import must be callable with the
         documented (language_code, progress=None) signature.
         """
-        from flexlibs2.code.Lists.LocalizedListsOperations import (
+        from flexicon.code.Lists.LocalizedListsOperations import (
             LocalizedListsOperations,
         )
 
@@ -128,7 +128,7 @@ class TestLocalizedListsImportContract:
         Import(None) must raise FP_NullParameterError before any FW
         filesystem access.
         """
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         with pytest.raises(FP_NullParameterError):
             writable_project.LocalizedLists.Import(None)
@@ -139,7 +139,7 @@ class TestLocalizedListsImportContract:
         FP_ParameterError -- this prevents the bogus ZIP filename
         ``LocalizedLists-.zip`` from being constructed.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         with pytest.raises(FP_ParameterError):
             writable_project.LocalizedLists.Import("")
@@ -154,7 +154,7 @@ class TestLocalizedListsImportContract:
         must raise FP_FileNotFoundError -- not a generic
         FileNotFoundError or AttributeError.
         """
-        from flexlibs2.code.FLExProject import FP_FileNotFoundError
+        from flexicon.code.FLExProject import FP_FileNotFoundError
 
         # "zz-XX" is the standard "unallocated" code; no LocalizedLists
         # ZIP should ever ship for it.
@@ -176,7 +176,7 @@ class TestImportForAllAnalysisWritingSystems:
         ImportForAllAnalysisWritingSystems must exist on
         LocalizedListsOperations and take only a progress= keyword.
         """
-        from flexlibs2.code.Lists.LocalizedListsOperations import (
+        from flexicon.code.Lists.LocalizedListsOperations import (
             LocalizedListsOperations,
         )
 
@@ -210,7 +210,7 @@ class TestImportForAllAnalysisWritingSystems:
           - .imported is a list[str]; .skipped is a list of
             SkippedWS(code, reason) entries.
         """
-        from flexlibs2.code.Lists.LocalizedListsOperations import (
+        from flexicon.code.Lists.LocalizedListsOperations import (
             ImportLocalizedListsResult,
             LocalizedListsOperations,
             SkippedWS,

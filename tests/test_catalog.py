@@ -3,7 +3,7 @@
 #
 #   Class: TestCatalog
 #          Phase 5a (issue #14) unit tests for the GOLDEtic catalog parser
-#          in flexlibs2.code.Shared.catalog. These exercise the pure-Python
+#          in flexicon.code.Shared.catalog. These exercise the pure-Python
 #          parsing path: file discovery, XML parsing, tree navigation. No
 #          live LCM/FieldWorks operations are required, but find_catalog_file
 #          needs FLExGlobals.FWCodeDir to be initialised (which happens via
@@ -39,7 +39,7 @@ def _fw_available():
     if "SIL.LCModel" not in sys.modules:
         return False
     try:
-        from flexlibs2.code import FLExGlobals
+        from flexicon.code import FLExGlobals
     except Exception:
         return False
     if not FLExGlobals.FWCodeDir:
@@ -56,7 +56,7 @@ def goldetic_entries():
     if not _fw_available():
         pytest.skip("FieldWorks (with Templates/GOLDEtic.xml) not available")
 
-    from flexlibs2.code.Shared.catalog import (
+    from flexicon.code.Shared.catalog import (
         find_catalog_file,
         parse_etic_catalog,
     )
@@ -73,7 +73,7 @@ def _phon_feats_available():
     """
     if not _fw_available():
         return False
-    from flexlibs2.code import FLExGlobals
+    from flexicon.code import FLExGlobals
 
     path = os.path.join(
         FLExGlobals.FWCodeDir,
@@ -98,7 +98,7 @@ def phon_feat_entries():
             "PhonFeatsEticGlossList.xml) not available"
         )
 
-    from flexlibs2.code.Shared.catalog import (
+    from flexicon.code.Shared.catalog import (
         find_catalog_file,
         parse_etic_gloss_list,
     )
@@ -130,7 +130,7 @@ class TestCatalog:
         if not _fw_available():
             pytest.skip("FieldWorks (with Templates/GOLDEtic.xml) not available")
 
-        from flexlibs2.code.Shared.catalog import find_catalog_file
+        from flexicon.code.Shared.catalog import find_catalog_file
 
         path = find_catalog_file("GOLDEtic.xml")
         assert os.path.isfile(path), (
@@ -151,7 +151,7 @@ class TestCatalog:
         if not _fw_available():
             pytest.skip("FieldWorks (with Templates/) not available")
 
-        from flexlibs2.code.Shared.catalog import find_catalog_file
+        from flexicon.code.Shared.catalog import find_catalog_file
 
         # Use a unique, almost-certainly-not-present filename.
         with pytest.raises(FileNotFoundError):
@@ -173,7 +173,7 @@ class TestCatalog:
         Walking nested children produces 58 entries total. Confirmed by
         Programmer's smoke test.
         """
-        from flexlibs2.code.Shared.catalog import count_catalog_entries
+        from flexicon.code.Shared.catalog import count_catalog_entries
 
         total = count_catalog_entries(goldetic_entries)
         assert total == 58, (
@@ -212,7 +212,7 @@ class TestCatalog:
         """
         find_catalog_entry must strip a 'GOLD:' prefix and find the entry.
         """
-        from flexlibs2.code.Shared.catalog import find_catalog_entry
+        from flexicon.code.Shared.catalog import find_catalog_entry
 
         entry = find_catalog_entry(goldetic_entries, "GOLD:Adjective")
         assert entry is not None, (
@@ -224,7 +224,7 @@ class TestCatalog:
         """
         find_catalog_entry must accept a bare id (no 'GOLD:' prefix).
         """
-        from flexlibs2.code.Shared.catalog import find_catalog_entry
+        from flexicon.code.Shared.catalog import find_catalog_entry
 
         entry = find_catalog_entry(goldetic_entries, "Adjective")
         assert entry is not None, (
@@ -237,7 +237,7 @@ class TestCatalog:
         """
         Unknown ids must return None (not raise).
         """
-        from flexlibs2.code.Shared.catalog import find_catalog_entry
+        from flexicon.code.Shared.catalog import find_catalog_entry
 
         result = find_catalog_entry(
             goldetic_entries, "Phase5aBogusCategory_NotInCatalog"
@@ -252,7 +252,7 @@ class TestCatalog:
         sub-category of 'Adposition' in GOLDEtic.xml, so a successful look-up
         proves the depth-first walk works.
         """
-        from flexlibs2.code.Shared.catalog import find_catalog_entry
+        from flexicon.code.Shared.catalog import find_catalog_entry
 
         # Sanity: Postposition is NOT a top-level id.
         top_ids = {e.id for e in goldetic_entries}
@@ -283,7 +283,7 @@ class TestCatalog:
                 "FieldWorks (with PhonFeatsEticGlossList.xml) not available"
             )
 
-        from flexlibs2.code.Shared.catalog import find_catalog_file
+        from flexicon.code.Shared.catalog import find_catalog_file
 
         path = find_catalog_file(
             "PhonFeatsEticGlossList.xml",
@@ -310,7 +310,7 @@ class TestCatalog:
         if not _fw_available():
             pytest.skip("FieldWorks (with Templates/GOLDEtic.xml) not available")
 
-        from flexlibs2.code.Shared.catalog import find_catalog_file
+        from flexicon.code.Shared.catalog import find_catalog_file
 
         # Call WITHOUT the subdir kwarg (Phase 5a call shape).
         path = find_catalog_file("GOLDEtic.xml")
@@ -433,7 +433,7 @@ class TestCatalog:
         silently skipped ``type="fsType"``, making catalog import of
         Bantu noun-agreement features impossible.
         """
-        from flexlibs2.code.Shared.catalog import parse_etic_gloss_list
+        from flexicon.code.Shared.catalog import parse_etic_gloss_list
 
         # Minimal EticGlossList-shape document with one fsType wrapper
         # around a single feature + value, mirroring the real
@@ -495,7 +495,7 @@ class TestCatalog:
         match on the prefix; bare ids pass through; unknown prefixes are
         preserved verbatim.
         """
-        from flexlibs2.code.Shared.catalog import _strip_catalog_prefix
+        from flexicon.code.Shared.catalog import _strip_catalog_prefix
 
         # GOLD prefix stripped (Phase 5a baseline).
         assert _strip_catalog_prefix("GOLD:Adjective") == "Adjective"
@@ -516,7 +516,7 @@ class TestCatalog:
         find_catalog_entry must find 'fPAConsonantal' against the
         PhonFeats catalog without any prefix.
         """
-        from flexlibs2.code.Shared.catalog import find_catalog_entry
+        from flexicon.code.Shared.catalog import find_catalog_entry
 
         entry = find_catalog_entry(phon_feat_entries, "fPAConsonantal")
         assert entry is not None, (
@@ -531,7 +531,7 @@ class TestCatalog:
         find_catalog_entry must accept 'PHON:fPAConsonantal' and return
         the same entry as the bare-id form.
         """
-        from flexlibs2.code.Shared.catalog import find_catalog_entry
+        from flexicon.code.Shared.catalog import find_catalog_entry
 
         bare = find_catalog_entry(phon_feat_entries, "fPAConsonantal")
         prefixed = find_catalog_entry(phon_feat_entries, "PHON:fPAConsonantal")
@@ -546,7 +546,7 @@ class TestCatalog:
         entry.children. Confirms the depth-first walk handles the
         eticGlossList tree shape, not just the GOLDEtic shape.
         """
-        from flexlibs2.code.Shared.catalog import find_catalog_entry
+        from flexicon.code.Shared.catalog import find_catalog_entry
 
         value = find_catalog_entry(phon_feat_entries, "vPAConsonantalPositive")
         assert value is not None, (
@@ -576,7 +576,7 @@ def basic_ipa_segments():
             "FieldWorks (with Templates/BasicIPAInfo.xml) not available"
         )
 
-    from flexlibs2.code.Shared.catalog import (
+    from flexicon.code.Shared.catalog import (
         find_catalog_file,
         parse_basic_ipa_info,
     )
@@ -700,7 +700,7 @@ class TestCodepointNormalization:
         ``code_point_id`` values, enabling the importer's dedup to
         catch them as the same segment.
         """
-        from flexlibs2.code.Shared.catalog import parse_basic_ipa_info
+        from flexicon.code.Shared.catalog import parse_basic_ipa_info
 
         xml = """<?xml version="1.0" encoding="utf-8"?>
 <SegmentDefinitions>
@@ -733,7 +733,7 @@ class TestCodepointNormalization:
 
     def test_normalize_codepoints_helper(self):
         """Unit coverage on the helper directly."""
-        from flexlibs2.code.Shared.catalog import _normalize_codepoints
+        from flexicon.code.Shared.catalog import _normalize_codepoints
 
         assert _normalize_codepoints("u0061") == "u0061"
         assert _normalize_codepoints("u0074 u0283") == "u0074 u0283"

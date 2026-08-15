@@ -2,7 +2,7 @@
 #   test_normalize_ws_handle.py
 #
 #   Regression tests for `normalize_ws_handle()` in
-#   flexlibs2.code.Shared.string_utils.
+#   flexicon.code.Shared.string_utils.
 #
 #   Fix: issues #170/#171 -- GetBaselineText called .get_String(ws) on an
 #   ITsString (single-WS) instead of reading .Text directly.  The ws
@@ -19,7 +19,7 @@
 #
 import pytest
 
-from flexlibs2.code.Shared.string_utils import normalize_ws_handle
+from flexicon.code.Shared.string_utils import normalize_ws_handle
 
 
 # ---------------------------------------------------------------------------

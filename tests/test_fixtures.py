@@ -1,5 +1,5 @@
 """
-Test fixtures and utilities for flexlibs2 operations testing.
+Test fixtures and utilities for flexicon operations testing.
 
 Provides mock implementations and factories for testing without requiring
 a full FieldWorks installation.

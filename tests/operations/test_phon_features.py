@@ -39,7 +39,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 def _try_open_writable_project():
     """Open one of the standard test projects in write mode, or None."""
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -391,7 +391,7 @@ class TestPhonFeatureOperations:
         rejects the case outright - explicit failures over silent
         partial functionality.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         with pytest.raises(FP_ParameterError):
             writable_project.PhonFeatures.MakeFeatStruc([])
@@ -415,7 +415,7 @@ class TestPhonFeatureOperations:
         pass empty specs.
         """
         from SIL.LCModel import IFsSymFeatVal
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         pre_existing = (
             _find_feature_by_guid(writable_project, CONSONANTAL_FEATURE_GUID)

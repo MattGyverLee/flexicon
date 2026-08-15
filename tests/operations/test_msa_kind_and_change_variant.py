@@ -25,7 +25,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 
 def _try_open_writable_project():
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
     project = FLExProject()
@@ -333,7 +333,7 @@ class TestSetPartOfSpeechMsaKind:
 
     def test_msa_kind_infl_on_stem_raises(self, writable_project):
         """msa_kind='infl' on a stem entry must raise FP_ParameterError."""
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         pos = _first_pos(writable_project)
         if pos is None:
@@ -351,7 +351,7 @@ class TestSetPartOfSpeechMsaKind:
 
     def test_msa_kind_deriv_on_stem_raises(self, writable_project):
         """msa_kind='deriv' on a stem entry must raise FP_ParameterError."""
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         pos = _first_pos(writable_project)
         if pos is None:
@@ -369,7 +369,7 @@ class TestSetPartOfSpeechMsaKind:
 
     def test_msa_kind_unclassified_on_stem_raises(self, writable_project):
         """msa_kind='unclassified' on a stem entry must raise FP_ParameterError."""
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         pos = _first_pos(writable_project)
         if pos is None:
@@ -387,7 +387,7 @@ class TestSetPartOfSpeechMsaKind:
 
     def test_invalid_msa_kind_raises(self, writable_project):
         """An unrecognised msa_kind string must raise FP_ParameterError."""
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         pos = _first_pos(writable_project)
         if pos is None:
@@ -745,7 +745,7 @@ class TestChangeAffixVariant:
 
     def test_stem_msa_raises_parameter_error(self, writable_project):
         """ChangeAffixVariant with a MoStemMsa must raise FP_ParameterError."""
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         pos = _first_pos(writable_project)
         if pos is None:
@@ -765,7 +765,7 @@ class TestChangeAffixVariant:
 
     def test_invalid_target_kind_raises(self, writable_project):
         """An unrecognised target_kind must raise FP_ParameterError."""
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         pos = _first_pos(writable_project)
         if pos is None:

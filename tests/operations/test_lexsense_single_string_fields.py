@@ -25,7 +25,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 
 def _try_open_writable_project():
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
     project = FLExProject()
@@ -231,15 +231,15 @@ class TestBaseOperationsTsStringHelpersPromoted:
         duplicated definitions the consolidation removed.
         """
         try:
-            from flexlibs2.code.BaseOperations import BaseOperations
-            from flexlibs2.code.Lexicon.LexSenseOperations import (
+            from flexicon.code.BaseOperations import BaseOperations
+            from flexicon.code.Lexicon.LexSenseOperations import (
                 LexSenseOperations,
             )
-            from flexlibs2.code.Lexicon.LexEntryOperations import (
+            from flexicon.code.Lexicon.LexEntryOperations import (
                 LexEntryOperations,
             )
         except Exception as exc:
-            pytest.skip(f"flexlibs2 imports unavailable: {exc}")
+            pytest.skip(f"flexicon imports unavailable: {exc}")
 
         # The helpers must exist on BaseOperations itself.
         assert "_MakeTsString" in vars(BaseOperations), (
@@ -287,15 +287,15 @@ class TestBaseOperationsTsStringHelpersPromoted:
         trigger Python name-mangling and break subclass access.
         """
         try:
-            from flexlibs2.code.BaseOperations import BaseOperations
-            from flexlibs2.code.Lexicon.LexSenseOperations import (
+            from flexicon.code.BaseOperations import BaseOperations
+            from flexicon.code.Lexicon.LexSenseOperations import (
                 LexSenseOperations,
             )
-            from flexlibs2.code.Lexicon.LexEntryOperations import (
+            from flexicon.code.Lexicon.LexEntryOperations import (
                 LexEntryOperations,
             )
         except Exception as exc:
-            pytest.skip(f"flexlibs2 imports unavailable: {exc}")
+            pytest.skip(f"flexicon imports unavailable: {exc}")
 
         for cls in (LexSenseOperations, LexEntryOperations):
             assert cls._MakeTsString is BaseOperations._MakeTsString, (
@@ -314,9 +314,9 @@ class TestBaseOperationsTsStringHelpersPromoted:
         is the most-load-bearing branch and is reachable without FLEx.
         """
         try:
-            from flexlibs2.code.BaseOperations import BaseOperations
+            from flexicon.code.BaseOperations import BaseOperations
         except Exception as exc:
-            pytest.skip(f"flexlibs2 imports unavailable: {exc}")
+            pytest.skip(f"flexicon imports unavailable: {exc}")
 
         # Build a minimal instance without going through __init__:
         # _ReadTsString only touches the argument and self._NormalizeMultiString.

@@ -48,13 +48,13 @@ class TestPOSOperationsImport:
 
     def test_import_pos_operations(self):
         """Test importing POSOperations class."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         assert POSOperations is not None
 
     def test_instantiate_with_mock_project(self, mock_flex_project):
         """Test instantiating POSOperations with mock project."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         assert ops is not None
@@ -66,21 +66,21 @@ class TestPOSOperationsInheritance:
 
     def test_inherits_from_base_operations(self):
         """Test that POSOperations inherits from BaseOperations."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
-        from flexlibs2.code.BaseOperations import BaseOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.BaseOperations import BaseOperations
 
         assert issubclass(POSOperations, BaseOperations)
 
     def test_has_all_reordering_methods(self, mock_flex_project):
         """Test that POSOperations has all reordering methods."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         assert_has_reordering_methods(ops)
 
     def test_has_getsequence_implementation(self, mock_flex_project):
         """Test that _GetSequence is implemented for POS."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         assert hasattr(ops, "_GetSequence")
@@ -99,7 +99,7 @@ class TestPOSOperationsCRUDMethods:
 
     def test_has_getall_method(self, mock_flex_project):
         """Test that GetAll method exists and is callable."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         assert hasattr(ops, "GetAll")
@@ -107,7 +107,7 @@ class TestPOSOperationsCRUDMethods:
 
     def test_has_create_method(self, mock_flex_project):
         """Test that Create method exists and is callable."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         assert hasattr(ops, "Create")
@@ -115,7 +115,7 @@ class TestPOSOperationsCRUDMethods:
 
     def test_has_delete_method(self, mock_flex_project):
         """Test that Delete method exists and is callable."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         assert hasattr(ops, "Delete")
@@ -123,7 +123,7 @@ class TestPOSOperationsCRUDMethods:
 
     def test_has_find_method(self, mock_flex_project):
         """Test that Find method exists and is callable."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         assert hasattr(ops, "Find")
@@ -135,7 +135,7 @@ class TestPOSOperationsPropertyGetters:
 
     def test_has_getname_method(self, mock_flex_project):
         """Test that GetName method exists."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         assert hasattr(ops, "GetName")
@@ -143,7 +143,7 @@ class TestPOSOperationsPropertyGetters:
 
     def test_has_getabbreviation_method(self, mock_flex_project):
         """Test that GetAbbreviation method exists."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         assert hasattr(ops, "GetAbbreviation")
@@ -155,7 +155,7 @@ class TestPOSOperationsPropertySetters:
 
     def test_has_setname_method(self, mock_flex_project):
         """Test that SetName method exists."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         assert hasattr(ops, "SetName")
@@ -163,7 +163,7 @@ class TestPOSOperationsPropertySetters:
 
     def test_has_setabbreviation_method(self, mock_flex_project):
         """Test that SetAbbreviation method exists."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         assert hasattr(ops, "SetAbbreviation")
@@ -175,7 +175,7 @@ class TestPOSOperationsHierarchy:
 
     def test_has_getsubcategories_method(self, mock_flex_project):
         """Test that GetSubcategories method exists."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(mock_flex_project)
         # Check for GetSubcategories or similar hierarchy method
@@ -187,7 +187,7 @@ class TestPOSOperationsReordering:
 
     def test_sort_subcategories(self, mock_flex_project):
         """Test sorting POS subcategories."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         # Create parent POS with subcategories
         parent_pos = MockLCMObject()
@@ -251,7 +251,7 @@ class TestGetEntryCount:
     """Mock-based unit tests for POSOperations.GetEntryCount (issue #105)."""
 
     def _import_ops(self):
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
         return POSOperations
 
     # ------------------------------------------------------------------
@@ -283,7 +283,7 @@ class TestGetEntryCount:
         ops = POSOperations(project)
 
         with patch(
-            "flexlibs2.code.Grammar.POSOperations.get_pos_from_msa",
+            "flexicon.code.Grammar.POSOperations.get_pos_from_msa",
             side_effect=lambda m: pos_map.get(id(m)),
         ):
             count = ops.GetEntryCount(noun_pos)
@@ -308,7 +308,7 @@ class TestGetEntryCount:
         ops = POSOperations(project)
 
         with patch(
-            "flexlibs2.code.Grammar.POSOperations.get_pos_from_msa",
+            "flexicon.code.Grammar.POSOperations.get_pos_from_msa",
             side_effect=lambda m: pos_map.get(id(m)),
         ):
             count = ops.GetEntryCount(rare_pos)
@@ -324,7 +324,7 @@ class TestGetEntryCount:
         ops = POSOperations(project)
 
         with patch(
-            "flexlibs2.code.Grammar.POSOperations.get_pos_from_msa",
+            "flexicon.code.Grammar.POSOperations.get_pos_from_msa",
             side_effect=lambda m: None,
         ):
             count = ops.GetEntryCount(noun_pos)
@@ -365,7 +365,7 @@ class TestGetEntryCount:
             ops, "GetSubcategories", return_value=[proper_noun_pos, common_noun_pos]
         ):
             with patch(
-                "flexlibs2.code.Grammar.POSOperations.get_pos_from_msa",
+                "flexicon.code.Grammar.POSOperations.get_pos_from_msa",
                 side_effect=lambda m: pos_map.get(id(m)),
             ):
                 count = ops.GetEntryCount(noun_pos, recursive=True)
@@ -394,7 +394,7 @@ class TestGetEntryCount:
 
         with patch.object(ops, "GetSubcategories", return_value=[proper_noun_pos]):
             with patch(
-                "flexlibs2.code.Grammar.POSOperations.get_pos_from_msa",
+                "flexicon.code.Grammar.POSOperations.get_pos_from_msa",
                 side_effect=lambda m: pos_map.get(id(m)),
             ):
                 direct_count = ops.GetEntryCount(noun_pos, recursive=False)
@@ -425,7 +425,7 @@ class TestGetEntryCount:
         ops = POSOperations(project)
 
         with patch(
-            "flexlibs2.code.Grammar.POSOperations.get_pos_from_msa",
+            "flexicon.code.Grammar.POSOperations.get_pos_from_msa",
             side_effect=lambda m: pos_map.get(id(m)),
         ):
             count = ops.GetEntryCount(noun_pos)
@@ -446,7 +446,7 @@ class TestGetEntryCount:
         project = _make_project_for_entry_count([])
         ops = POSOperations(project)
 
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         with pytest.raises(FP_NullParameterError):
             ops.GetEntryCount(None)
@@ -475,9 +475,9 @@ class TestPOSOperationsIntegration:
         FLExInitialize() / FLExCleanup() here would tear down state
         shared with the rest of the live-DB suite.
         """
-        pytest.importorskip("flexlibs2")
+        pytest.importorskip("flexicon")
 
-        from flexlibs2 import FLExProject, AllProjectNames
+        from flexicon import FLExProject, AllProjectNames
 
         projects = AllProjectNames()
         if not projects:
@@ -495,7 +495,7 @@ class TestPOSOperationsIntegration:
 
     def test_getall_returns_pos(self, flex_project):
         """Integration test: GetAll returns POS list."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(flex_project)
         pos_list = list(ops.GetAll())
@@ -505,7 +505,7 @@ class TestPOSOperationsIntegration:
 
     def test_find_pos_by_name(self, flex_project):
         """Integration test: Find POS by name."""
-        from flexlibs2.code.Grammar.POSOperations import POSOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
         ops = POSOperations(flex_project)
 
