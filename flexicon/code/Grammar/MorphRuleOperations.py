@@ -453,17 +453,23 @@ class MorphRuleOperations(BaseOperations):
 
         morph_data = self.project.lp.MorphologicalDataOA
 
+        # One bracket per branch, each inside its own guard: an unmatched
+        # class_name or a missing container must not open an empty named undo
+        # entry that Phase 2 would Rollback(0).
         if class_name in ("MoEndoCompound", "MoExoCompound"):
             if morph_data is not None:
-                morph_data.CompoundRulesOS.Remove(rule)
+                with self._TransactionCM("Delete compound rule"):
+                    morph_data.CompoundRulesOS.Remove(rule)
         elif class_name == "MoInflAffixTemplate":
             # Template is owned by a PartOfSpeech
             owner = self._GetObject(rule.Owner.Hvo)
             if hasattr(owner, "AffixTemplatesOS"):
-                owner.AffixTemplatesOS.Remove(rule)
+                with self._TransactionCM("Delete affix template"):
+                    owner.AffixTemplatesOS.Remove(rule)
         elif class_name in ("MoAdhocProhibGr", "MoAdhocProhibMorph", "MoAdhocProhibAllomorph"):
             if morph_data is not None:
-                morph_data.AdhocCoProhibitionsOC.Remove(rule)
+                with self._TransactionCM("Delete ad hoc prohibition"):
+                    morph_data.AdhocCoProhibitionsOC.Remove(rule)
 
     # ========== PROPERTIES ==========
 
@@ -530,7 +536,9 @@ class MorphRuleOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        rule.Name.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set rule name '{name}'"):
+            rule.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetDescription(self, rule_or_hvo, wsHandle=None):
@@ -591,7 +599,9 @@ class MorphRuleOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(description, wsHandle)
-        rule.Description.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set rule description"):
+            rule.Description.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetStratum(self, rule_or_hvo):
@@ -660,11 +670,13 @@ class MorphRuleOperations(BaseOperations):
         rule = self.__ResolveObject(rule_or_hvo)
 
         if hasattr(rule, "StratumRA"):
-            if stratum is None:
-                rule.StratumRA = None
-            else:
-                if isinstance(stratum, int):
-                    stratum = self.project.Object(stratum)
+            # Resolution hoisted out of both branches so an unresolvable HVO
+            # raises before the transaction opens (reference-setter decision,
+            # batch 8), collapsing the two assignments into one bracket.
+            if stratum is not None and isinstance(stratum, int):
+                stratum = self.project.Object(stratum)
+
+            with self._TransactionCM("Set rule stratum"):
                 rule.StratumRA = stratum
 
     @OperationsMethod
@@ -834,31 +846,40 @@ class MorphRuleOperations(BaseOperations):
         else:
             factory = self.project.project.ServiceLocator.GetService(IMoExoCompoundFactory)
 
-        duplicate = factory.Create()
-        morph_data = self.project.lp.MorphologicalDataOA
+        # Reached only from inside Duplicate's bracket, so this transaction
+        # joins that one (nesting-aware per B1). Stated anyway so the site is
+        # grep-auditable per D5.
+        with self._TransactionCM("Duplicate compound rule"):
+            duplicate = factory.Create()
+            morph_data = self.project.lp.MorphologicalDataOA
 
-        if insert_after:
-            idx = morph_data.CompoundRulesOS.IndexOf(source)
-            morph_data.CompoundRulesOS.Insert(idx + 1, duplicate)
-        else:
-            morph_data.CompoundRulesOS.Add(duplicate)
+            if insert_after:
+                idx = morph_data.CompoundRulesOS.IndexOf(source)
+                morph_data.CompoundRulesOS.Insert(idx + 1, duplicate)
+            else:
+                morph_data.CompoundRulesOS.Add(duplicate)
 
-        return duplicate
+            return duplicate
 
     def __DuplicateAffixTemplate(self, source, insert_after):
         """Create and insert a duplicate affix template on the same POS."""
         factory = self.project.project.ServiceLocator.GetService(IMoInflAffixTemplateFactory)
-        duplicate = factory.Create()
 
-        owner = self._GetObject(source.Owner.Hvo)
+        # Reached only from inside Duplicate's bracket, so this transaction
+        # joins that one (nesting-aware per B1). Stated anyway so the site is
+        # grep-auditable per D5.
+        with self._TransactionCM("Duplicate affix template"):
+            duplicate = factory.Create()
 
-        if insert_after:
-            idx = owner.AffixTemplatesOS.IndexOf(source)
-            owner.AffixTemplatesOS.Insert(idx + 1, duplicate)
-        else:
-            owner.AffixTemplatesOS.Add(duplicate)
+            owner = self._GetObject(source.Owner.Hvo)
 
-        return duplicate
+            if insert_after:
+                idx = owner.AffixTemplatesOS.IndexOf(source)
+                owner.AffixTemplatesOS.Insert(idx + 1, duplicate)
+            else:
+                owner.AffixTemplatesOS.Add(duplicate)
+
+            return duplicate
 
     # ========== SYNC INTEGRATION METHODS ==========
 

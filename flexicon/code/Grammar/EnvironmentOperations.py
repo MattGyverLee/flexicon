@@ -215,7 +215,9 @@ class EnvironmentOperations(BaseOperations):
 
         # Remove from the environments list
         phon_data = self.project.lp.PhonologicalDataOA
-        phon_data.EnvironmentsOS.Remove(env)
+
+        with self._TransactionCM("Delete environment"):
+            phon_data.EnvironmentsOS.Remove(env)
 
     @OperationsMethod
     def GetName(self, env_or_hvo, wsHandle=None):
@@ -297,7 +299,9 @@ class EnvironmentOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        env.Name.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set environment name '{name}'"):
+            env.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetStringRepresentation(self, env_or_hvo, wsHandle=None):
