@@ -143,6 +143,21 @@
       "warnings": [
         "stderr showed the legacy 'no LCM rollback API found' Transaction warning. That string does not exist in this checkout - it comes from the installed FLExProject instance the runner built before the sys.path swap. An artifact of the hybrid load, not a regression."
       ]
+    },
+    {
+      "what": "B2g ratchet guard after bracketing 59 Grammar sites; scanner and baseline both report 84, Grammar remaining 0",
+      "command": "python -m pytest tests/write_path_transactions/ tests/test_b1t_action_handler_double.py -m \"not requires_live_project\" -q",
+      "result": "34 passed"
+    },
+    {
+      "what": "Full offline gate unchanged by batch 10 (measured by stashing the batch and re-running the identical invocation)",
+      "command": "python -m pytest tests/ -m \"not requires_live_project\" -q",
+      "result": "35 failed, 1201 passed, 325 deselected -- byte-identical pre- and post-batch; the 35 are pre-existing (#240 rename path, sync engine)"
+    },
+    {
+      "what": "Live LCM verification of the Grammar brackets on the Target project",
+      "command": "$env:FLEXLIBS_REQUIRE_LIVE=\"1\"; python -m pytest tests/operations/test_grammar_brackets_live.py -m requires_live_project -q",
+      "result": "16 passed; tests/live_status.json run_mode=live; setters round-trip re-read from the LCM, Deletes detach, empty-input guards raise FP_ParameterError with the stored value unchanged"
     }
   ],
   "decisions": [
@@ -170,6 +185,26 @@
       "decision": "For try/except cast sites shaped `try: x = ICast(arg); coll.Add(x) except ...: raise FP_ParameterError`, keep the cast inside the try but move ONLY the mutation into the bracket",
       "why": "Preserves the existing FP_ParameterError mapping exactly while still ensuring an invalid argument raises before any transaction opens. Applied to Person AddPosition/AddResidence/AddLanguage and Anthropology AddText/AddResearcher plus their Remove pairs in batch 9",
       "rejected": "Hoisting the cast out of the try entirely, which would let cast failures propagate as raw AttributeError/InvalidCastException and change the documented exception contract"
+    },
+    {
+      "decision": "Bracket per branch inside each guard for polymorphic Delete dispatch (MorphRuleOperations.Delete's three ClassName branches)",
+      "why": "An unmatched ClassName or a missing container must not open an empty named undo entry that Phase 2 would Rollback(0); per-branch labels also keep FLEx undo-menu fidelity (P4)",
+      "rejected": "One bracket around the whole if/elif chain, which opens a transaction even when no branch matches"
+    },
+    {
+      "decision": "Keep the dispatch guard INSIDE the bracket where every branch mutates (PhonemeOperations.SetBasicIPASymbol MultiString-vs-scalar, _path_b_attach owner shape)",
+      "why": "There is no no-op path to protect, so hoisting the guard buys nothing and would split one logical write into two sites",
+      "rejected": "Mechanically applying guards-outside everywhere regardless of whether a no-op path exists"
+    },
+    {
+      "decision": "Treat __WireContext's multi-element path as a single unit of work rather than bracketing each mutation",
+      "why": "If IPhSequenceContextFactory is unavailable after members are already added to PhPhonData.ContextsOS, those additions must roll back with it rather than leak into the project-wide owner pool",
+      "rejected": "Per-mutation brackets, which would commit the member additions before the sequence create is attempted"
+    },
+    {
+      "decision": "Install pyflexicon editable against the working checkout",
+      "why": "FlexToolsMCP loaded flexicon from a copied site-packages install still carrying pre-B1 transaction.py (4 _transaction_depth hits, 0 UndoableUnitOfWorkHelper), so any verification routed through flextools_run_module would have exercised released code, not this branch",
+      "rejected": "Leaving the copied install and relying on cwd ordering, which only happens to work for pytest run from the repo root"
     }
   ],
   "concerns": [
@@ -194,5 +229,5 @@
       "step": "implement"
     }
   ],
-  "last_action": "B2 batch 9/11 (Notebook, 44 sites) committed e20252c; baseline ratcheted 187->143; verified offline (gate byte-identical) and live on Target; next batch 10/11 Grammar 59"
+  "last_action": "B2 batch 10/11 (Grammar, 59 sites) committed 1b2085b; baseline ratcheted 143->84; verified offline (full gate byte-identical, 35/1201/325 before and after) and live on Target (16 passed, run_mode live, evidence at specs/write-path-transactions/evidence/live-b2-batch10-grammar.md); next and final batch 11/11 Lexicon 84"
 }
