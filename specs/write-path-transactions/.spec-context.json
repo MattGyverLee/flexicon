@@ -158,6 +158,26 @@
       "what": "Live LCM verification of the Grammar brackets on the Target project",
       "command": "$env:FLEXLIBS_REQUIRE_LIVE=\"1\"; python -m pytest tests/operations/test_grammar_brackets_live.py -m requires_live_project -q",
       "result": "16 passed; tests/live_status.json run_mode=live; setters round-trip re-read from the LCM, Deletes detach, empty-input guards raise FP_ParameterError with the stored value unchanged"
+    },
+    {
+      "what": "B2 batch 11/11 (Lexicon, 84 sites) takes the sweep to completion: scanner 84 -> 0, zero unbracketed sites remain anywhere under flexicon/code/. Baseline diff is exactly the 84 removals plus the total (769 deletions, 2 insertions, no additions).",
+      "command": "python tests/write_path_transactions/scan_unbracketed_mutations.py",
+      "result": "Total unbracketed methods: 0; baseline ratcheted 84 -> 0"
+    },
+    {
+      "what": "B2g ratchet guard plus B1t action-handler-double suite after batch 11",
+      "command": "python -m pytest tests/write_path_transactions/ tests/test_b1t_action_handler_double.py -m \"not requires_live_project\" -q",
+      "result": "34 passed"
+    },
+    {
+      "what": "Full offline gate unchanged by batch 11 (measured by stashing the batch and re-running the identical invocation on a clean tree)",
+      "command": "python -m pytest tests/ -m \"not requires_live_project\" -q",
+      "result": "35 failed, 1201 passed -- byte-identical pre- and post-batch; the 35 are pre-existing (#240 rename path, sync engine). Deselected rose 341 -> 364 for the 23 new live tests."
+    },
+    {
+      "what": "Live LCM verification of the Lexicon brackets on the Target project. Setters round-trip re-read from the LCM (not the value passed in), Deletes detach from their owning collections, redundant Add/Remove on SemanticDomainsRC are true no-ops, and the empty-input guards on SetLexemeForm and Allomorph SetForm raise FP_ParameterError with the stored value unchanged -- proving validation sits outside the bracket. The 3 xfails are documented pre-existing bugs, all failing before the bracket is entered.",
+      "command": "$env:FLEXLIBS_REQUIRE_LIVE=\"1\"; python -m pytest tests/operations/test_lexicon_brackets_live.py -m requires_live_project -q",
+      "result": "20 passed, 3 xfailed; tests/live_status.json run_mode=live; evidence at specs/write-path-transactions/evidence/live-b2-batch11-lexicon.md"
     }
   ],
   "decisions": [
@@ -205,6 +225,21 @@
       "decision": "Install pyflexicon editable against the working checkout",
       "why": "FlexToolsMCP loaded flexicon from a copied site-packages install still carrying pre-B1 transaction.py (4 _transaction_depth hits, 0 UndoableUnitOfWorkHelper), so any verification routed through flextools_run_module would have exercised released code, not this branch",
       "rejected": "Leaving the copied install and relying on cwd ordering, which only happens to work for pytest run from the repo root"
+    },
+    {
+      "decision": "Bracket the deep-copy helpers (LexSenseOperations._deep_copy_sense_to, __copy_sense_content) as ONE unit of work each, not per-field",
+      "why": "A failure partway through must not leave the duplicate holding half the source content, or a created sense already in SensesOS with nothing in it. Extends decision 8 (multi-element wiring paths are one unit) from Grammar __WireContext to the Lexicon deep-copy chain",
+      "rejected": "Per-field brackets, which would commit each copied property independently and leave a half-populated duplicate behind on failure"
+    },
+    {
+      "decision": "Keep a filesystem side-effect OUTSIDE the bracket: LexSenseOperations.RemovePicture brackets only the PicturesOS.Remove, leaving the optional os.remove of the physical file outside it",
+      "why": "The LCM cannot roll back a filesystem unlink. Enclosing it in a named unit of work would imply a reversibility that does not exist, and under Phase 2 a Rollback would restore the LCM reference while the file stayed deleted",
+      "rejected": "Wrapping the whole method including the file deletion, which would make the undo entry a lie"
+    },
+    {
+      "decision": "With the ratchet baseline at 0, keep the three ratchet tests but replace the scanner sanity check: test_scanner_runs_and_finds_entries (len(scan()) > 0) becomes test_scanner_is_functional",
+      "why": "The old assertion would now fail precisely BECAUSE the sweep succeeded. A zero-violation scan no longer proves the scanner works, so the replacement pins the two properties it no longer demonstrates on its own: the scanner walks a tree containing real source, and its detection logic still flags an unbracketed mutation while not flagging a bracketed one. The ratchet itself inverts from a countdown into a permanent guard",
+      "rejected": "Deleting the ratchet tests as the old docstring suggested, which would remove the very guard that keeps 0 at 0; or silencing the assertion, which the docstring explicitly forbade"
     }
   ],
   "concerns": [
@@ -227,7 +262,15 @@
     {
       "note": "CONCURRENCY: another session was writing to this repo during batch 9 (tests/conftest.py and scripts/restore_sena3.py modified, scripts/fw_restore.py and scripts/restore_target.py added, all timestamped mid-session, plus three batch-8 LIVE entries appended to this file's verified[]). Those changes were left unstaged and are NOT part of commit e20252c, which contains only the 5 Notebook modules, the ratchet baseline and tasks.md. Later batches should re-read spec files before editing and stage explicitly by path rather than using git add -A.",
       "step": "implement"
+    },
+    {
+      "note": "Live testing on Target surfaced THREE pre-existing Lexicon bugs that are NOT caused by B2 bracketing and were deliberately left unfixed to keep batch 11 mechanical (same call as batch 9). All fail BEFORE the bracket is entered, so those three sites brackets could only be verified statically and by the scanner: (1) ExampleOperations.SetLiteralTranslation/GetLiteralTranslation call self.__WSHandleAnalysis(), which does not exist on that class (only __WSHandle/__WSHandleVern) -- AttributeError on any live project, present at HEAD lines 1491/1520; (2) EtymologyOperations.SetSource/GetSource -- ILexEtymology has no Source attribute at all, CLAUDE.md Category 8 territory since Source is ITsString on ILexSense; (3) EtymologyOperations.SetLanguage is the worst because it does NOT raise -- ILexEtymology has no LanguageRA, but pythonnet accepts the assignment as a plain Python attribute on the wrapper, so hasattr flips False->True on that handle while a freshly-fetched LCM handle for the same Hvo still has no such field. Silent data loss. All three are xfail(strict=True) in tests/operations/test_lexicon_brackets_live.py; #3 asserts the CORRECT behaviour so it XPASSes the moment the bug is fixed.",
+      "step": "implement"
+    },
+    {
+      "note": "The B2g ratchet has changed character now that the baseline is 0: it is no longer a shrinking countdown but a permanent zero-tolerance guard. Anyone adding a new LCM mutator anywhere under flexicon/code/ will now fail test_no_new_unbracketed_mutations, which is the intended steady state -- these tests are not scaffolding to remove once the feature closes. The module docstring and the replaced scanner sanity check both say so explicitly.",
+      "step": "implement"
     }
   ],
-  "last_action": "B2 batch 10/11 (Grammar, 59 sites) committed 1b2085b; baseline ratcheted 143->84; verified offline (full gate byte-identical, 35/1201/325 before and after) and live on Target (16 passed, run_mode live, evidence at specs/write-path-transactions/evidence/live-b2-batch10-grammar.md); next and final batch 11/11 Lexicon 84"
+  "last_action": "B2 batch 11/11 (Lexicon, 84 sites) committed 28d495d; baseline ratcheted 84->0 and the B2 sweep is COMPLETE (295->0 across 11 batches). Verified offline (full gate byte-identical, 35/1201 before and after; ratchet+B1t 34 passed) and live on Target (20 passed / 3 documented-pre-existing xfails, run_mode live, evidence at specs/write-path-transactions/evidence/live-b2-batch11-lexicon.md). Next unchecked: B4 (CAPABILITIES token, now unblocked by B2 complete), then B2t / CO1 / A3 / DEF -- B2t and DEF are needs_human gates."
 }
