@@ -41,7 +41,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.System.context_collection import ContextCollection
+    from flexicon.code.System.context_collection import ContextCollection
 
     # Rule's input contexts now wrapped in ContextCollection
     contexts = rule.input_contexts  # Returns ContextCollection

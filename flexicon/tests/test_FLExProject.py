@@ -7,9 +7,9 @@ Author: FlexTools Development Team
 import unittest
 import logging
 
-logging.basicConfig(filename="flexlibs2.log", filemode="w", level=logging.DEBUG)
+logging.basicConfig(filename="flexicon.log", filemode="w", level=logging.DEBUG)
 
-from flexlibs2 import FLExProject, AllProjectNames
+from flexicon import FLExProject, AllProjectNames
 
 
 class TestFLExProject(unittest.TestCase):

@@ -10,7 +10,7 @@ Date: 2025-11-27
 import unittest
 from unittest.mock import Mock
 
-from flexlibs2.sync.dependency_graph import DependencyGraph, DependencyType, DependencyNode, CircularDependencyError
+from flexicon.sync.dependency_graph import DependencyGraph, DependencyType, DependencyNode, CircularDependencyError
 
 
 class TestDependencyNode(unittest.TestCase):

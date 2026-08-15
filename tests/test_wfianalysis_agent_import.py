@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 def test_wfianalysis_approval_imports_agent_operations_from_lists_package():
-    source = Path("flexlibs2/code/TextsWords/WfiAnalysisOperations.py").read_text()
+    source = Path("flexicon/code/TextsWords/WfiAnalysisOperations.py").read_text()
     tree = ast.parse(source)
 
     imports = [

@@ -3,7 +3,7 @@
 Generate demonstration files for Operations classes.
 
 This script creates demonstration files showing how to use various
-Operations classes in flexlibs2. It analyzes the methods available
+Operations classes in flexicon. It analyzes the methods available
 in each Operations class and generates example code.
 """
 
@@ -16,18 +16,18 @@ script_dir = Path(__file__).parent
 flexlibs_root = script_dir.parent
 sys.path.insert(0, str(flexlibs_root))
 
-from flexlibs2.code.Grammar.NaturalClassOperations import NaturalClassOperations
-from flexlibs2.code.Grammar.EnvironmentOperations import EnvironmentOperations
-from flexlibs2.code.Grammar.PhonologicalRuleOperations import PhonologicalRuleOperations
-from flexlibs2.code.Grammar.InflectionFeatureOperations import InflectionFeatureOperations
-from flexlibs2.code.Grammar.GramCatOperations import GramCatOperations
-from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
-from flexlibs2.code.Lexicon.ExampleOperations import ExampleOperations
-from flexlibs2.code.Lexicon.PronunciationOperations import PronunciationOperations
-from flexlibs2.code.Lexicon.VariantOperations import VariantOperations
-from flexlibs2.code.Lexicon.AllomorphOperations import AllomorphOperations
-from flexlibs2.code.Lexicon.EtymologyOperations import EtymologyOperations
-from flexlibs2.code.Lexicon.LexReferenceOperations import LexReferenceOperations
+from flexicon.code.Grammar.NaturalClassOperations import NaturalClassOperations
+from flexicon.code.Grammar.EnvironmentOperations import EnvironmentOperations
+from flexicon.code.Grammar.PhonologicalRuleOperations import PhonologicalRuleOperations
+from flexicon.code.Grammar.InflectionFeatureOperations import InflectionFeatureOperations
+from flexicon.code.Grammar.GramCatOperations import GramCatOperations
+from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
+from flexicon.code.Lexicon.ExampleOperations import ExampleOperations
+from flexicon.code.Lexicon.PronunciationOperations import PronunciationOperations
+from flexicon.code.Lexicon.VariantOperations import VariantOperations
+from flexicon.code.Lexicon.AllomorphOperations import AllomorphOperations
+from flexicon.code.Lexicon.EtymologyOperations import EtymologyOperations
+from flexicon.code.Lexicon.LexReferenceOperations import LexReferenceOperations
 
 
 def get_public_methods(cls):
@@ -77,7 +77,7 @@ This script demonstrates the comprehensive {ops_class.__name__} class
 for managing {display_name.lower()} in a FLEx project.
 """
 
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
 def demo_{domain.lower()}_operations():
     """Demonstrate {ops_class.__name__} functionality."""

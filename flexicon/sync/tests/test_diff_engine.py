@@ -18,8 +18,8 @@ class MockGuid:
         return self.value
 
 
-from flexlibs2.sync.diff import DiffEngine, DiffResult, ChangeType, Change
-from flexlibs2.sync.match_strategies import GuidMatchStrategy
+from flexicon.sync.diff import DiffEngine, DiffResult, ChangeType, Change
+from flexicon.sync.match_strategies import GuidMatchStrategy
 
 
 class TestDiffResult(unittest.TestCase):

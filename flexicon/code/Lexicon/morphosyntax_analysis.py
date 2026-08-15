@@ -42,7 +42,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
+    from flexicon.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
 
     # Wrap an MSA from entry.MorphoSyntaxAnalysesOC
     msa = entry.MorphoSyntaxAnalysesOC[0]

@@ -54,7 +54,7 @@ class PhonologicalRuleOperations(BaseOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject, PhonologicalRuleOperations
+        from flexicon import FLExProject, PhonologicalRuleOperations
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)
@@ -74,7 +74,7 @@ class PhonologicalRuleOperations(BaseOperations):
         # Wire the rule via WireRule (the supported composer).
         # SetLeftContext / SetRightContext are refused with
         # NotImplementedError (they wrote to the wrong owner -- see #142).
-        from flexlibs2 import Seg, NC
+        from flexicon import Seg, NC
         phonRuleOps.WireRule(rule,
             input_pattern=[Seg(phoneme_t)],
             output_change=[Seg(phoneme_d)],
@@ -890,7 +890,7 @@ class PhonologicalRuleOperations(BaseOperations):
 
         Example:
             >>> # Turkish vowel harmony fragment: I -> [+back] / V[+back] _
-            >>> from flexlibs2 import Seg, NC, Boundary
+            >>> from flexicon import Seg, NC, Boundary
             >>> feat_back = project.PhonFeatures.Find("back")
             >>> alpha_back = project.PhonRules.MakeConstraint(feat_back)
             >>> rule = project.PhonRules.Create("Back harmony")

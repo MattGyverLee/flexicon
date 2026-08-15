@@ -2,7 +2,7 @@
 #   lcm_constants.py
 #
 #   LCM API constants and property type definitions.
-#   Centralizes constants used across the flexlibs2 codebase.
+#   Centralizes constants used across the flexicon codebase.
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+

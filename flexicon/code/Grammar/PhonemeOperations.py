@@ -70,7 +70,7 @@ class PhonemeOperations(BaseOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject, PhonemeOperations
+        from flexicon import FLExProject, PhonemeOperations
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)

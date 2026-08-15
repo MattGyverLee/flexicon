@@ -21,7 +21,7 @@ class MockGuid:
         return str(self) == str(other)
 
 
-from flexlibs2.sync.match_strategies import (
+from flexicon.sync.match_strategies import (
     GuidMatchStrategy,
     FieldMatchStrategy,
     HybridMatchStrategy,

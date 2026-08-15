@@ -1,7 +1,7 @@
 #
 # test_lcm_method_verification.py
 #
-# Systematic verification that ALL LCM methods called by flexlibs2 exist
+# Systematic verification that ALL LCM methods called by flexicon exist
 # This test scans the codebase and verifies every LCM method call is valid
 #
 # Platform: Python.NET
@@ -17,7 +17,7 @@ import re
 
 
 class LCMMethodVerifier:
-    """Verify all LCM methods used in flexlibs2 are documented and valid."""
+    """Verify all LCM methods used in flexicon are documented and valid."""
 
     # Known valid LCM methods by category
     KNOWN_VALID_METHODS = {
@@ -94,7 +94,7 @@ class TestLCMMethodVerification:
         - ServiceLocator.GetInstance("ICmObjectRepository")
         - With hasattr check before use
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
 
@@ -116,7 +116,7 @@ class TestLCMMethodVerification:
                         Abbreviation, Source, Bibliography, etc.
         Invalid: StringRepresentation (is ITsString)
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         invalid_properties = {"StringRepresentation"}
 
@@ -134,7 +134,7 @@ class TestLCMMethodVerification:
 
         Must import: from SIL.LCModel.Core.Text import TsStringUtils
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
@@ -152,7 +152,7 @@ class TestLCMMethodVerification:
             factory = ServiceLocator.GetService(IxxxFactory)
             new_obj = factory.Create()
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
@@ -185,7 +185,7 @@ class TestLCMMethodVerification:
             "MoveTo",  # LCM collection methods
         }
 
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
@@ -211,7 +211,7 @@ class TestLCMMethodVerification:
             text = source.StringRepresentation.Text
             new_ts = TsStringUtils.MakeString(text, wsHandle)
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
@@ -230,7 +230,7 @@ class TestLCMMethodVerification:
         """
         [INFO] Test: Summary of verified LCM methods.
 
-        All methods used in flexlibs2 are documented and verified to exist
+        All methods used in flexicon are documented and verified to exist
         in the FieldWorks LCM API:
 
         [ServiceLocator]
@@ -287,7 +287,7 @@ class TestLCMAPICompleteness:
 
         Every LCM type used must be imported from SIL.LCModel hierarchy.
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
         found_imports = set()
 
         for py_file in ops_dir.rglob("*Operations.py"):
@@ -314,7 +314,7 @@ class TestLCMAPICompleteness:
         5. Collection (OS/OC) pattern for managing items
         6. Write access checking pattern
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
         patterns_found = {
             "ServiceLocator": False,
             "Factory": False,

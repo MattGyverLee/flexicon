@@ -33,7 +33,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 def _try_open_writable_project():
     """Open one of the standard test projects in write mode, or None."""
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -514,9 +514,9 @@ class TestPhonRulesAlphaAndWireRule:
         STOP signal: if this fails, __ResolveLcmObject is not
         identity-preserving and there's a real source bug.
         """
-        from flexlibs2.code.Shared.rule_patterns import NC as ShNC
+        from flexicon.code.Shared.rule_patterns import NC as ShNC
 
-        # The top-level `from flexlibs2 import NC` is masked in this
+        # The top-level `from flexicon import NC` is masked in this
         # pytest collection layout (see test_rule_patterns.py for
         # details). We import the dataclass via its real package path.
 
@@ -598,7 +598,7 @@ class TestPhonRulesAlphaAndWireRule:
 
     def test_wire_rule_input_pattern_single_nc(self, writable_project):
         """Basic NC input wires to rule.StrucDescOS (Count == 1)."""
-        from flexlibs2.code.Shared.rule_patterns import NC as ShNC
+        from flexicon.code.Shared.rule_patterns import NC as ShNC
 
         rule_name = "Phase5e_WireRule_InputSingleNC"
         nc_v, nc_created = self._ensure_natural_class(
@@ -630,7 +630,7 @@ class TestPhonRulesAlphaAndWireRule:
         description before writing the new pattern; wiring twice with
         single-element input still yields StrucDescOS.Count == 1.
         """
-        from flexlibs2.code.Shared.rule_patterns import NC as ShNC
+        from flexicon.code.Shared.rule_patterns import NC as ShNC
 
         rule_name = "Phase5e_WireRule_ReplaceSemantics"
         nc_v, nc_created = self._ensure_natural_class(
@@ -712,7 +712,7 @@ class TestPhonRulesAlphaAndWireRule:
                 "PhonemeSetsOS[0].BoundaryMarkersOC (live FW projects vary)"
             )
 
-        from flexlibs2.code.Shared.rule_patterns import Boundary as ShBoundary
+        from flexicon.code.Shared.rule_patterns import Boundary as ShBoundary
 
         rule_name = "Phase5e_WireRule_BoundaryResolves"
 
@@ -772,8 +772,8 @@ class TestPhonRulesAlphaAndWireRule:
         Unknown boundary marker -> FP_ParameterError listing the available
         markers (so the caller can see what's actually in the project).
         """
-        from flexlibs2.code.Shared.rule_patterns import Boundary as ShBoundary
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.Shared.rule_patterns import Boundary as ShBoundary
+        from flexicon.code.FLExProject import FP_ParameterError
 
         rule_name = "Phase5e_WireRule_UnknownBoundary"
 
@@ -806,7 +806,7 @@ class TestPhonRulesAlphaAndWireRule:
         WireRule(input_pattern=[Seg(phoneme)]) creates an
         IPhSimpleContextSeg with FeatureStructureRA pointing at the phoneme.
         """
-        from flexlibs2.code.Shared.rule_patterns import Seg as ShSeg
+        from flexicon.code.Shared.rule_patterns import Seg as ShSeg
 
         # Pick or create a phoneme. Reuse if possible - phoneme inventory
         # is per-project and we shouldn't pollute it on every test run.

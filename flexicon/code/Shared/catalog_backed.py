@@ -728,7 +728,7 @@ class _LCMNativeCatalogImportMixin:
         # LOCAL import: XmlList is the only FieldWorks-dependent symbol
         # used here, and SIL.LCModel.Application.ApplicationServices is
         # only available when FieldWorks is installed. find_catalog_file
-        # (pure flexlibs2) and FP_FileNotFoundError (pure flexlibs2) are
+        # (pure flexicon) and FP_FileNotFoundError (pure flexicon) are
         # hoisted to module top -- they don't need deferred loading.
         # (issue #119 item 2)
         from SIL.LCModel.Application.ApplicationServices import XmlList

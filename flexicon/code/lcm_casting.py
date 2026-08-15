@@ -44,7 +44,7 @@ Why This Happens:
 
 Usage::
 
-    from flexlibs2.code.lcm_casting import cast_to_concrete, get_pos_from_msa
+    from flexicon.code.lcm_casting import cast_to_concrete, get_pos_from_msa
 
     # Cast any LCM object to its concrete interface
     for msa in entry.MorphoSyntaxAnalysesOC:
@@ -150,7 +150,7 @@ def _ensure_interfaces() -> None:
         IMoEndoCompound = IMoExoCompound = None
 
     # Morphosyntactic prohibition interfaces - LCM names diverge from the
-    # POS-flavored shorthand flexlibs2 historically used:
+    # POS-flavored shorthand flexicon historically used:
     #   - MoAdhocProhibGr   : Grammatical feature prohibitions       (class 110)
     #   - MoMorphAdhocProhib: Morpheme co-occurrence prohibitions    (class 102)
     #   - MoAlloAdhocProhib : Allomorph co-occurrence prohibitions   (class 101)
@@ -469,7 +469,7 @@ def clone_properties(source_obj, dest_obj, project=None):
 
     Example::
 
-        from flexlibs2.code.lcm_casting import clone_properties
+        from flexicon.code.lcm_casting import clone_properties
 
         # Clone a rule
         source_rule = phonRuleOps.GetAll()[0]
@@ -606,7 +606,7 @@ def cast_phonological_rule(rule_obj):
 
     Example::
 
-        from flexlibs2.code.lcm_casting import cast_phonological_rule
+        from flexicon.code.lcm_casting import cast_phonological_rule
 
         # Get rules and cast them
         for rule in phonRuleOps.GetAll():
@@ -655,7 +655,7 @@ def validate_merge_compatibility(survivor_obj, victim_obj):
 
     Example::
 
-        from flexlibs2.code.lcm_casting import validate_merge_compatibility
+        from flexicon.code.lcm_casting import validate_merge_compatibility
 
         # Validate before merging
         is_ok, msg = validate_merge_compatibility(entry1, entry2)
@@ -766,7 +766,7 @@ def get_common_properties(objects):
 
     Example::
 
-        from flexlibs2.code.lcm_casting import get_common_properties
+        from flexicon.code.lcm_casting import get_common_properties
 
         # Find properties available on all rule types
         rules = phonRuleOps.GetAll()
@@ -843,7 +843,7 @@ def get_concrete_type_properties(lcm_obj):
 
     Example::
 
-        from flexlibs2.code.lcm_casting import get_concrete_type_properties
+        from flexicon.code.lcm_casting import get_concrete_type_properties
 
         # Get type-specific properties for a rule
         rule = phonRuleOps.GetAll()[0]

@@ -22,10 +22,10 @@ Requirements:
 import sys
 import os
 
-# Add parent directory to path to import flexlibs2
+# Add parent directory to path to import flexicon
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 
 def demo_scripture_books(project):
@@ -179,7 +179,7 @@ def demo_scripture_paragraphs(project):
     if project.writeEnabled and section:
         print(f"\n3. Creating a new paragraph:")
         try:
-            new_para = project.ScrTxtParas.Create(section, "This is a demo paragraph created by flexlibs2.", "Normal")
+            new_para = project.ScrTxtParas.Create(section, "This is a demo paragraph created by flexicon.", "Normal")
             text = project.ScrTxtParas.GetText(new_para)
             print(f"   Created: {text}")
         except Exception as e:

@@ -40,7 +40,7 @@ class GramCatOperations(BaseOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject, GramCatOperations
+        from flexicon import FLExProject, GramCatOperations
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)

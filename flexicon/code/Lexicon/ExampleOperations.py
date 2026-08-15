@@ -48,7 +48,7 @@ class ExampleOperations(BaseOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject, ExampleOperations
+        from flexicon import FLExProject, ExampleOperations
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)

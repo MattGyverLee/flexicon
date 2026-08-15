@@ -10,7 +10,7 @@ Date: 2026-02-28
 Version: 2.3.0
 """
 
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
 
 def demo_paragraph_crud():

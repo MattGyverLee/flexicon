@@ -56,7 +56,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 def _try_open_writable_project():
     """Open one of the standard test projects in write mode, or None."""
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -162,61 +162,61 @@ def _operation_source(import_path, attr_chain):
 _SITES = [
     (
         "AllomorphOperations.Delete",
-        "flexlibs2.code.Lexicon.AllomorphOperations",
+        "flexicon.code.Lexicon.AllomorphOperations",
         ("AllomorphOperations", "Delete"),
         "AlternateFormsOS",
     ),
     (
         "AllomorphOperations.Duplicate",
-        "flexlibs2.code.Lexicon.AllomorphOperations",
+        "flexicon.code.Lexicon.AllomorphOperations",
         ("AllomorphOperations", "Duplicate"),
         "AlternateFormsOS",
     ),
     (
         "EtymologyOperations.Delete",
-        "flexlibs2.code.Lexicon.EtymologyOperations",
+        "flexicon.code.Lexicon.EtymologyOperations",
         ("EtymologyOperations", "Delete"),
         "EtymologyOS",
     ),
     (
         "EtymologyOperations.Duplicate",
-        "flexlibs2.code.Lexicon.EtymologyOperations",
+        "flexicon.code.Lexicon.EtymologyOperations",
         ("EtymologyOperations", "Duplicate"),
         "EtymologyOS",
     ),
     (
         "VariantOperations.Delete",
-        "flexlibs2.code.Lexicon.VariantOperations",
+        "flexicon.code.Lexicon.VariantOperations",
         ("VariantOperations", "Delete"),
         "EntryRefsOS",
     ),
     (
         "VariantOperations.Duplicate",
-        "flexlibs2.code.Lexicon.VariantOperations",
+        "flexicon.code.Lexicon.VariantOperations",
         ("VariantOperations", "Duplicate"),
         "EntryRefsOS",
     ),
     (
         "NoteOperations.Delete",
-        "flexlibs2.code.Notebook.NoteOperations",
+        "flexicon.code.Notebook.NoteOperations",
         ("NoteOperations", "Delete"),
         "AnnotationsOC",
     ),
     (
         "NoteOperations.Duplicate",
-        "flexlibs2.code.Notebook.NoteOperations",
+        "flexicon.code.Notebook.NoteOperations",
         ("NoteOperations", "Duplicate"),
         "AnnotationsOC",
     ),
     (
         "AnthropologyOperations.Delete",
-        "flexlibs2.code.Notebook.AnthropologyOperations",
+        "flexicon.code.Notebook.AnthropologyOperations",
         ("AnthropologyOperations", "Delete"),
         "SubPossibilitiesOS",
     ),
     (
         "ConstChartRowOperations.MoveTo",
-        "flexlibs2.code.Discourse.ConstChartRowOperations",
+        "flexicon.code.Discourse.ConstChartRowOperations",
         ("ConstChartRowOperations", "MoveTo"),
         "RowsOS",
     ),
@@ -300,7 +300,7 @@ class TestBaseOperationsHelper:
     """Lock the shared _GetTypedOwner helper's surface."""
 
     def test_helper_exists_on_base(self):
-        from flexlibs2.code.BaseOperations import BaseOperations
+        from flexicon.code.BaseOperations import BaseOperations
         assert hasattr(BaseOperations, "_GetTypedOwner"), (
             "BaseOperations._GetTypedOwner was extracted to centralise "
             "the .Owner -> concrete-interface cast across Lexicon, "
@@ -309,7 +309,7 @@ class TestBaseOperationsHelper:
         )
 
     def test_helper_uses_cast_to_concrete(self):
-        from flexlibs2.code.BaseOperations import BaseOperations
+        from flexicon.code.BaseOperations import BaseOperations
         src = inspect.getsource(BaseOperations._GetTypedOwner)
         assert "cast_to_concrete" in src, (
             "_GetTypedOwner must route through cast_to_concrete so the "
@@ -319,7 +319,7 @@ class TestBaseOperationsHelper:
 
     def test_helper_handles_none(self):
         """Pure-Python branch: None obj and None Owner both return None."""
-        from flexlibs2.code.BaseOperations import BaseOperations
+        from flexicon.code.BaseOperations import BaseOperations
 
         class _Stub:
             def __init__(self, owner):
@@ -343,7 +343,7 @@ class TestAnthropologyExceptRemoved:
 
     def test_no_broad_except_swallow(self):
         src = _operation_source(
-            "flexlibs2.code.Notebook.AnthropologyOperations",
+            "flexicon.code.Notebook.AnthropologyOperations",
             ("AnthropologyOperations", "Delete"),
         )
         # The previous shape was: `except Exception:` on its own line
@@ -472,7 +472,7 @@ class TestOwnerCastLive:
         if disc is None or disc.ChartsOC.Count == 0:
             pytest.skip("No charts to exercise ConstChartRowOperations.MoveTo against")
 
-        from flexlibs2.code.lcm_casting import cast_to_concrete
+        from flexicon.code.lcm_casting import cast_to_concrete
 
         # Find any chart with at least one row.
         target_chart = None

@@ -11,10 +11,10 @@ import unittest
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
 
-from flexlibs2.sync.selective_import import SelectiveImport
-from flexlibs2.sync.validation import ValidationResult, ValidationIssue, ValidationSeverity
-from flexlibs2.sync.engine import SyncResult
-from flexlibs2.sync.merge_ops import SyncChange, SyncError
+from flexicon.sync.selective_import import SelectiveImport
+from flexicon.sync.validation import ValidationResult, ValidationIssue, ValidationSeverity
+from flexicon.sync.engine import SyncResult
+from flexicon.sync.merge_ops import SyncChange, SyncError
 
 
 class TestSelectiveImportInitialization(unittest.TestCase):
@@ -187,7 +187,7 @@ class TestImportNewObjects(unittest.TestCase):
         self.importer.validator.validate_before_create = Mock(return_value=mock_validation)
 
         # Should raise ValidationError (NOT in dry_run mode)
-        from flexlibs2.sync.validation import ValidationError
+        from flexicon.sync.validation import ValidationError
 
         with self.assertRaises(ValidationError):
             result = self.importer.import_new_objects(

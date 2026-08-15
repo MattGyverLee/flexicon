@@ -24,7 +24,7 @@ class TestEnsureWriteEnabledFix:
         Verifies that the method correctly checks the FLExProject.writeEnabled
         property instead of calling a non-existent CanModify() method.
         """
-        from flexlibs2.code.BaseOperations import BaseOperations
+        from flexicon.code.BaseOperations import BaseOperations
 
         # Create a mock project with writeEnabled property
         mock_project = Mock()
@@ -50,7 +50,7 @@ class TestEnsureWriteEnabledFix:
         # Test the logic directly by inspecting the source code
         from pathlib import Path
 
-        ops_file = Path("flexlibs2/code/BaseOperations.py")
+        ops_file = Path("flexicon/code/BaseOperations.py")
         content = ops_file.read_text(encoding="utf-8")
 
         # Verify the method checks writeEnabled and raises on False
@@ -72,7 +72,7 @@ class TestEnsureWriteEnabledFix:
         """
         from pathlib import Path
 
-        ops_file = Path("flexlibs2/code/BaseOperations.py")
+        ops_file = Path("flexicon/code/BaseOperations.py")
         content = ops_file.read_text(encoding="utf-8")
 
         # Check that the fixed property is used
@@ -89,7 +89,7 @@ class TestEnsureWriteEnabledFix:
         """
         from pathlib import Path
 
-        ops_file = Path("flexlibs2/code/BaseOperations.py")
+        ops_file = Path("flexicon/code/BaseOperations.py")
         content = ops_file.read_text(encoding="utf-8")
 
         # Check that documentation is updated
@@ -107,7 +107,7 @@ class TestFLExProjectWriteEnabled:
         """
         from pathlib import Path
 
-        project_file = Path("flexlibs2/code/FLExProject.py")
+        project_file = Path("flexicon/code/FLExProject.py")
         content = project_file.read_text(encoding="utf-8")
 
         # Check that writeEnabled is set in OpenProject

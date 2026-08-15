@@ -76,7 +76,7 @@ class TestAgentOperationsExceptionHandling:
         # Mock the project and agent operations
         mock_project = Mock()
 
-        # Import would be from flexlibs2.code.Lists.AgentOperations
+        # Import would be from flexicon.code.Lists.AgentOperations
         # For testing, we'll verify the expected behavior
 
         # Simulate AgentOperations behavior with invalid parameter

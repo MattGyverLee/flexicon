@@ -173,7 +173,7 @@ class TestLCMTypeHierarchy:
 
 
 class TestLCMAPICorrectness:
-    """Verify that all API usage in flexlibs2 is correct."""
+    """Verify that all API usage in flexicon is correct."""
 
     def test_all_copy_methods_correct(self):
         """

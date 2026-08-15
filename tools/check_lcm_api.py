@@ -69,7 +69,7 @@ def main():
     print("=" * 70)
 
     # Import the initialization code
-    from flexlibs2.code import FLExGlobals
+    from flexicon.code import FLExGlobals
 
     FLExGlobals.InitialiseFWGlobals()
 

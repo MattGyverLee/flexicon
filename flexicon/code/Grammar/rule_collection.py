@@ -39,7 +39,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Grammar.rule_collection import RuleCollection
+    from flexicon.code.Grammar.rule_collection import RuleCollection
 
     # GetAll() now returns RuleCollection
     rules = phonRuleOps.GetAll()

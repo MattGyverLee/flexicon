@@ -50,13 +50,13 @@ class TestLexEntryOperationsImport:
 
     def test_import_lexentry_operations(self):
         """Test importing LexEntryOperations class."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         assert LexEntryOperations is not None
 
     def test_instantiate_with_mock_project(self, mock_flex_project):
         """Test instantiating LexEntryOperations with mock project."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert ops is not None
@@ -68,14 +68,14 @@ class TestLexEntryOperationsInheritance:
 
     def test_inherits_from_base_operations(self):
         """Test that LexEntryOperations inherits from BaseOperations."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
-        from flexlibs2.code.BaseOperations import BaseOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.BaseOperations import BaseOperations
 
         assert issubclass(LexEntryOperations, BaseOperations)
 
     def test_has_all_reordering_methods(self, mock_flex_project):
         """Test that LexEntryOperations has all reordering methods."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert_has_reordering_methods(ops)
@@ -86,7 +86,7 @@ class TestLexEntryOperationsCRUDMethods:
 
     def test_has_getall_method(self, mock_flex_project):
         """Test that GetAll method exists and is callable."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert hasattr(ops, "GetAll")
@@ -94,7 +94,7 @@ class TestLexEntryOperationsCRUDMethods:
 
     def test_has_create_method(self, mock_flex_project):
         """Test that Create method exists and is callable."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert hasattr(ops, "Create")
@@ -102,7 +102,7 @@ class TestLexEntryOperationsCRUDMethods:
 
     def test_has_delete_method(self, mock_flex_project):
         """Test that Delete method exists and is callable."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert hasattr(ops, "Delete")
@@ -110,7 +110,7 @@ class TestLexEntryOperationsCRUDMethods:
 
     def test_has_find_method(self, mock_flex_project):
         """Test that Find method exists and is callable."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert hasattr(ops, "Find")
@@ -122,7 +122,7 @@ class TestLexEntryOperationsPropertyGetters:
 
     def test_has_getheadword_method(self, mock_flex_project):
         """Test that GetHeadword method exists."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert hasattr(ops, "GetHeadword")
@@ -130,7 +130,7 @@ class TestLexEntryOperationsPropertyGetters:
 
     def test_has_getcitationform_method(self, mock_flex_project):
         """Test that GetCitationForm method exists."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert hasattr(ops, "GetCitationForm")
@@ -138,7 +138,7 @@ class TestLexEntryOperationsPropertyGetters:
 
     def test_has_getlexemeform_method(self, mock_flex_project):
         """Test that GetLexemeForm method exists."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert hasattr(ops, "GetLexemeForm")
@@ -146,7 +146,7 @@ class TestLexEntryOperationsPropertyGetters:
 
     def test_has_getsensecount_method(self, mock_flex_project):
         """Test that GetSenseCount method exists."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert hasattr(ops, "GetSenseCount")
@@ -158,7 +158,7 @@ class TestLexEntryOperationsPropertySetters:
 
     def test_has_setcitationform_method(self, mock_flex_project):
         """Test that SetCitationForm method exists."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert hasattr(ops, "SetCitationForm")
@@ -166,7 +166,7 @@ class TestLexEntryOperationsPropertySetters:
 
     def test_has_setlexemeform_method(self, mock_flex_project):
         """Test that SetLexemeForm method exists."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert hasattr(ops, "SetLexemeForm")
@@ -178,7 +178,7 @@ class TestLexEntryOperationsSenseMethods:
 
     def test_has_addsense_method(self, mock_flex_project):
         """Test that AddSense method exists."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         assert hasattr(ops, "AddSense")
@@ -186,7 +186,7 @@ class TestLexEntryOperationsSenseMethods:
 
     def test_has_getsenses_method(self, mock_flex_project):
         """Test that GetSenses method exists."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         ops = LexEntryOperations(mock_flex_project)
         # Check for either GetSenses or direct access to SensesOS
@@ -199,7 +199,7 @@ class TestLexEntryOperationsMockBehavior:
 
     def test_getall_with_mock_repository(self, mock_flex_project):
         """Test GetAll returns iterator from mock repository."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         # Setup mock to return test entries
         mock_entries = [MockLCMObject(hvo=i) for i in range(3)]
@@ -222,7 +222,7 @@ class TestLexEntryOperationsMockBehavior:
         `self.project.ObjectsIn(...)` (via `iter(repo.AllInstances())`),
         which raised `TypeError` on both operations.
         """
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         mock_entries = [MockLCMObject(hvo=i) for i in range(3)]
 
@@ -240,7 +240,7 @@ class TestLexEntryOperationsMockBehavior:
 
     def test_getsensecount_with_mock_entry(self, mock_flex_project, mock_lex_entry):
         """Test GetSenseCount with mock entry."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
         # Add mock senses to entry
         for i in range(3):
@@ -260,8 +260,8 @@ class TestLexEntryOperationsExceptionHandling:
 
     def test_create_requires_write_enabled(self, mock_flex_project):
         """Test that Create raises error when project is read-only."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.FLExProject import FP_ReadOnlyError
 
         # Set project to read-only
         mock_flex_project.writeEnabled = False
@@ -274,8 +274,8 @@ class TestLexEntryOperationsExceptionHandling:
 
     def test_create_validates_lexeme_form(self, mock_flex_project):
         """Test that Create validates lexeme form parameter."""
-        from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
-        from flexlibs2.code.FLExProject import FP_NullParameterError, FP_ParameterError
+        from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
+        from flexicon.code.FLExProject import FP_NullParameterError, FP_ParameterError
 
         # Set project to write-enabled
         mock_flex_project.writeEnabled = True
@@ -319,9 +319,9 @@ class TestLexEntryOperationsIntegration:
         FLExInitialize() / FLExCleanup() here would tear down state
         shared with the rest of the live-DB suite.
         """
-        pytest.importorskip("flexlibs2")
+        pytest.importorskip("flexicon")
 
-        from flexlibs2 import FLExProject, AllProjectNames
+        from flexicon import FLExProject, AllProjectNames
 
         projects = AllProjectNames()
         if not projects:

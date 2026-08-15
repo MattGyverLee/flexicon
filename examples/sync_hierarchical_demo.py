@@ -12,8 +12,8 @@ Author: FlexTools Development Team
 Date: 2025-11-27
 """
 
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
-from flexlibs2.sync import HierarchicalImporter, DependencyConfig, CircularDependencyError, ValidationError
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
+from flexicon.sync import HierarchicalImporter, DependencyConfig, CircularDependencyError, ValidationError
 from datetime import datetime
 
 
@@ -447,7 +447,7 @@ def demo_dependency_graph_analysis():
 
         # Build dependency graph
         print("\n2. Building dependency graph...")
-        from flexlibs2.sync import DependencyResolver, DependencyConfig
+        from flexicon.sync import DependencyResolver, DependencyConfig
 
         resolver = DependencyResolver(source, target)
 

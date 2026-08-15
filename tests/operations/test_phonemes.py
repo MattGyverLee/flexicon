@@ -49,7 +49,7 @@ def _try_open_project(write_enabled):
     project is reachable. Caller is responsible for CloseProject().
     """
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -462,7 +462,7 @@ class TestPhonemeIPAOperations:
         on the phoneme must raise FP_ParameterError (not silently
         AddCode the new value).
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         representation = "qZ_replacecode_missing"
 

@@ -87,7 +87,7 @@ class InflectionFeatureOperations(BaseOperations, CatalogBackedMixin):
 
     Usage::
 
-        from flexlibs2 import FLExProject, InflectionFeatureOperations
+        from flexicon import FLExProject, InflectionFeatureOperations
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)

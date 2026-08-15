@@ -1,7 +1,7 @@
 #
 # test_lcm_api_usage.py
 #
-# Test suite verifying that all LCM API methods used in flexlibs2 are correct
+# Test suite verifying that all LCM API methods used in flexicon are correct
 # and follow proper patterns. These tests verify code patterns without requiring
 # SIL.LCModel to be installed.
 #
@@ -17,7 +17,7 @@ import re
 
 
 class TestLCMAPIUsage:
-    """Verify all LCM API methods used in flexlibs2 are correct."""
+    """Verify all LCM API methods used in flexicon are correct."""
 
     def test_copyobject_usage(self):
         """
@@ -29,7 +29,7 @@ class TestLCMAPIUsage:
         - Cache is checked before use
         """
         # Search all operation files
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
@@ -59,7 +59,7 @@ class TestLCMAPIUsage:
         - Abbreviation, Version, Source, Bibliography
         - NOT on ITsString (which uses .Text + TsStringUtils.MakeString)
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         # Properties that are MultiString/IMultiUnicode (correct for CopyAlternatives)
         correct_multistring_properties = {
@@ -122,7 +122,7 @@ class TestLCMAPIUsage:
         - It's used to create ITsString values
         - It's used with proper parameters (notation/text, wsHandle)
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
@@ -142,7 +142,7 @@ class TestLCMAPIUsage:
         - Factories are obtained via ServiceLocator.GetService()
         - New objects are added to collections with .Add() or .Insert()
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
@@ -162,7 +162,7 @@ class TestLCMAPIUsage:
         - Cache.CopyObject is used for deep copy
         - Or objects are checked before copying
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
@@ -186,7 +186,7 @@ class TestLCMAPIUsage:
         - ServiceLocator.GetInstance() is used to get singleton services
         - Proper service types are requested
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
@@ -211,7 +211,7 @@ class TestLCMAPIUsage:
         - hasattr() is used for optional properties
         - If source is None, copy is skipped
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
@@ -232,7 +232,7 @@ class TestLCMAPIUsage:
         - Uses correct property: self.project.writeEnabled
         - Not using non-existent CanModify() method
         """
-        ops_dir = Path("flexlibs2/code")
+        ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")

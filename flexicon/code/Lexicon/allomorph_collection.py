@@ -38,7 +38,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+    from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
     # GetAll() now returns AllomorphCollection
     allomorphs = allomorphOps.GetAll(entry)

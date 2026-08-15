@@ -58,7 +58,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 def _try_open_writable_project():
     """Open one of the standard test projects in write mode, or None."""
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -135,7 +135,7 @@ class TestSemanticDomainsCatalog:
         duplicate hierarchy. The shared test project is known to be
         non-empty here.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         sd_list = writable_project.lp.SemanticDomainListOA
         assert sd_list is not None, "SemanticDomainListOA is None"
@@ -166,7 +166,7 @@ class TestSemanticDomainsCatalog:
         NullReferenceException or TypeError from the progress path. This
         confirms the guard runs BEFORE any IProgress wiring.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         with pytest.raises(FP_ParameterError):
             writable_project.SemanticDomains.ImportCatalog(progress=None)
@@ -182,7 +182,7 @@ class TestSemanticDomainsCatalog:
         descriptor, so we reach through .func to inspect the real
         signature.
         """
-        from flexlibs2.code.Lexicon.SemanticDomainOperations import (
+        from flexicon.code.Lexicon.SemanticDomainOperations import (
             SemanticDomainOperations,
         )
 

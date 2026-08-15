@@ -28,7 +28,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 
 def _try_open_writable_project():
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
     project = FLExProject()
@@ -112,7 +112,7 @@ class TestConstChartMarkerCRUD:
         """
         import inspect
 
-        from flexlibs2.code.Discourse.ConstChartMarkerOperations import (
+        from flexicon.code.Discourse.ConstChartMarkerOperations import (
             ConstChartMarkerOperations,
         )
 
@@ -255,7 +255,7 @@ class TestConstChartMarkerMigrationFromTag:
 
     def test_old_module_is_gone(self):
         with pytest.raises(ImportError):
-            from flexlibs2.code.Discourse.ConstChartTagOperations import (  # noqa: F401
+            from flexicon.code.Discourse.ConstChartTagOperations import (  # noqa: F401
                 ConstChartTagOperations,
             )
 

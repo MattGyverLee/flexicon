@@ -29,10 +29,10 @@ import unittest
 from unittest.mock import Mock, MagicMock
 from datetime import datetime
 
-# Try the real flexlibs2 first (works when FieldWorks is installed). Only
+# Try the real flexicon first (works when FieldWorks is installed). Only
 # fall back to mocking SIL.* if that fails (CI / no-FW environment).
 try:
-    import flexlibs2  # noqa: F401
+    import flexicon  # noqa: F401
 except Exception:
     sys.modules["SIL"] = MagicMock()
     sys.modules["SIL.LCModel"] = MagicMock()
@@ -87,7 +87,7 @@ class DateTime:
         return f"{self.dt.year}-{self.dt.month:02d}-{self.dt.day:02d}"
 
 
-from flexlibs2.code.Notebook.annotation_collection import AnnotationCollection
+from flexicon.code.Notebook.annotation_collection import AnnotationCollection
 
 
 class MockAnnotation:

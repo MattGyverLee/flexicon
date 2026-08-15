@@ -333,7 +333,7 @@ def assert_inherits_base_operations(ops_class):
     Raises:
         AssertionError: If class doesn't inherit from BaseOperations
     """
-    from flexlibs2.code.BaseOperations import BaseOperations
+    from flexicon.code.BaseOperations import BaseOperations
 
     assert issubclass(ops_class, BaseOperations), f"{ops_class.__name__} does not inherit from BaseOperations"
 
@@ -398,7 +398,7 @@ def skip_without_flex():
     Use this for integration tests that can't run with mocks.
     """
     try:
-        from flexlibs2 import FLExInitialize
+        from flexicon import FLExInitialize
 
         return lambda func: func
     except ImportError:
@@ -418,7 +418,7 @@ def requires_flex_project(project_name="Sena 3"):
 
     def decorator(func):
         try:
-            from flexlibs2 import FLExProject, AllProjectNames
+            from flexicon import FLExProject, AllProjectNames
 
             if project_name not in AllProjectNames():
                 return pytest.mark.skip(reason=f"FLEx project '{project_name}' not available")(func)

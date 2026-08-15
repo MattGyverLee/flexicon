@@ -42,7 +42,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Grammar.compound_rule import CompoundRule
+    from flexicon.code.Grammar.compound_rule import CompoundRule
 
     # Wrap a rule from GetAll()
     rule = morphRuleOps.GetAll()[0]  # Typed as IMoCompoundRule

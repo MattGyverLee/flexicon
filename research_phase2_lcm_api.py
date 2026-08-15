@@ -9,13 +9,13 @@
 #
 # Prerequisites:
 #   - FieldWorks installed and a test project available
-#   - flexlibs2 installed or in development mode
+#   - flexicon installed or in development mode
 #
 
 import sys
 import os
 
-# Ensure flexlibs2 is importable
+# Ensure flexicon is importable
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -27,9 +27,9 @@ def research_lcm_apis():
     print("=" * 60)
 
     try:
-        from flexlibs2 import FLExProject, FLExInitialize
+        from flexicon import FLExProject, FLExInitialize
     except ImportError as e:
-        print(f"[ERROR] Cannot import flexlibs2: {e}")
+        print(f"[ERROR] Cannot import flexicon: {e}")
         return False
 
     try:
@@ -44,7 +44,7 @@ def research_lcm_apis():
         print("\n[STEP 1] Opening test project...")
         # Try to open any available project
         try:
-            from flexlibs2 import AllProjectNames
+            from flexicon import AllProjectNames
 
             projects = AllProjectNames()
             if not projects:

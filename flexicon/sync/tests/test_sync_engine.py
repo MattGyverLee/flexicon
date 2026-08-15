@@ -17,10 +17,10 @@ class MockGuid:
         return self.value
 
 
-from flexlibs2.sync.engine import SyncEngine, SyncMode, SyncResult
-from flexlibs2.sync.match_strategies import GuidMatchStrategy, FieldMatchStrategy
-from flexlibs2.sync.conflict_resolvers import SourceWinsResolver
-from flexlibs2.sync.merge_ops import SyncChange
+from flexicon.sync.engine import SyncEngine, SyncMode, SyncResult
+from flexicon.sync.match_strategies import GuidMatchStrategy, FieldMatchStrategy
+from flexicon.sync.conflict_resolvers import SourceWinsResolver
+from flexicon.sync.merge_ops import SyncChange
 
 
 class TestSyncEngine(unittest.TestCase):
@@ -312,7 +312,7 @@ class TestSyncEnginePhase2Execution(unittest.TestCase):
         self.assertTrue(result.success)
         self.assertEqual(result.object_type, "Allomorph")
 
-    @patch("flexlibs2.sync.merge_ops.MergeOperations")
+    @patch("flexicon.sync.merge_ops.MergeOperations")
     def test_sync_create_new_objects(self, mock_merger_class):
         """Test sync creates new objects"""
         engine = SyncEngine(self.source_project, self.target_project)
@@ -341,7 +341,7 @@ class TestSyncEnginePhase2Execution(unittest.TestCase):
         self.assertEqual(result.total, 1)
         mock_merger.create_object.assert_called_once()
 
-    @patch("flexlibs2.sync.merge_ops.MergeOperations")
+    @patch("flexicon.sync.merge_ops.MergeOperations")
     def test_sync_update_modified_objects(self, mock_merger_class):
         """Test sync updates modified objects"""
         engine = SyncEngine(self.source_project, self.target_project)
@@ -393,7 +393,7 @@ class TestSyncEnginePhase2Execution(unittest.TestCase):
         self.assertEqual(result.num_skipped, 1)
         self.target_ops.Delete.assert_not_called()
 
-    @patch("flexlibs2.sync.merge_ops.MergeOperations")
+    @patch("flexicon.sync.merge_ops.MergeOperations")
     def test_sync_with_progress_callback(self, mock_merger_class):
         """Test sync calls progress callback"""
         engine = SyncEngine(self.source_project, self.target_project)
@@ -411,7 +411,7 @@ class TestSyncEnginePhase2Execution(unittest.TestCase):
         # Should have received progress messages
         self.assertGreater(len(messages), 0)
 
-    @patch("flexlibs2.sync.merge_ops.MergeOperations")
+    @patch("flexicon.sync.merge_ops.MergeOperations")
     def test_sync_dry_run_doesnt_modify(self, mock_merger_class):
         """Test dry run doesn't actually create/update objects"""
         engine = SyncEngine(self.source_project, self.target_project)
@@ -474,7 +474,7 @@ class TestSyncEnginePhase2Execution(unittest.TestCase):
 
         self.assertIsInstance(result, SyncResult)
 
-    @patch("flexlibs2.sync.merge_ops.MergeOperations")
+    @patch("flexicon.sync.merge_ops.MergeOperations")
     def test_sync_handles_create_error(self, mock_merger_class):
         """Test sync handles errors during create"""
         engine = SyncEngine(self.source_project, self.target_project)
@@ -498,7 +498,7 @@ class TestSyncEnginePhase2Execution(unittest.TestCase):
         self.assertEqual(result.num_errors, 1)
         self.assertFalse(result.success)
 
-    @patch("flexlibs2.sync.merge_ops.MergeOperations")
+    @patch("flexicon.sync.merge_ops.MergeOperations")
     def test_sync_handles_update_error(self, mock_merger_class):
         """Test sync handles errors during update"""
         engine = SyncEngine(self.source_project, self.target_project)

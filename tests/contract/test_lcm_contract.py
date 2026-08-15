@@ -1,7 +1,7 @@
 #
 #   test_lcm_contract.py
 #
-#   Pytest-based contract tests for flexlibs2 <-> liblcm compatibility.
+#   Pytest-based contract tests for flexicon <-> liblcm compatibility.
 #
 #   These tests operate in two modes:
 #
@@ -9,7 +9,7 @@
 #     - Extracts the expected contract from source via AST
 #     - Validates contract structure and consistency
 #     - Compares against a checked-in baseline snapshot
-#     - Detects when flexlibs2 code changes introduce new LCM deps
+#     - Detects when flexicon code changes introduce new LCM deps
 #
 #   Mode 2 (requires FieldWorks + pythonnet):
 #     - Introspects installed liblcm assemblies
@@ -106,7 +106,7 @@ requires_liblcm = pytest.mark.skipif(
 
 @pytest.fixture(scope="session")
 def expected_contract():
-    """Extract the expected LCM contract from flexlibs2 source."""
+    """Extract the expected LCM contract from flexicon source."""
     return extract_contract()
 
 
@@ -200,7 +200,7 @@ class TestContractStability:
     def test_no_new_type_dependencies(self, expected_contract, baseline_contract):
         """
         New LCM type imports should be deliberate.
-        Fails if flexlibs2 code now imports types not in the baseline.
+        Fails if flexicon code now imports types not in the baseline.
         """
         current_names = set()
         for names in expected_contract["imports"].values():
@@ -275,7 +275,7 @@ class TestLiveContractVerification:
         return generate_snapshot(expected_contract)
 
     def test_all_types_found(self, liblcm_snapshot):
-        """Every type flexlibs2 imports should exist in liblcm."""
+        """Every type flexicon imports should exist in liblcm."""
         missing = liblcm_snapshot.get("missing_types", [])
         if missing:
             lines = [f"  - {t}" for t in missing]
@@ -283,7 +283,7 @@ class TestLiveContractVerification:
 
     def test_no_missing_members(self, expected_contract, liblcm_snapshot):
         """
-        Every property/method flexlibs2 uses should exist on the type.
+        Every property/method flexicon uses should exist on the type.
         """
         from tests.contract.compare_contracts import compare
 

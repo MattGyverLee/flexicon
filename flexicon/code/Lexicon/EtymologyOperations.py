@@ -46,14 +46,14 @@ class EtymologyOperations(BaseOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject
+        from flexicon import FLExProject
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)
 
         # Access via FLExProject.Etymology property (if configured)
         # Or create directly:
-        from flexlibs2.code.EtymologyOperations import EtymologyOperations
+        from flexicon.code.EtymologyOperations import EtymologyOperations
         etymOps = EtymologyOperations(project)
 
         # Get an entry
