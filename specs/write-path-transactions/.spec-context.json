@@ -112,6 +112,11 @@
       "decision": "Keep hasattr capability checks and membership tests outside the transaction in AddDependentClause and the two lazy-init guards",
       "why": "A redundant add or an already-initialised slot stays a true no-op instead of opening an empty named undo entry that Phase 2 would also Rollback(0)",
       "rejected": "Wrapping the whole conditional including the guard"
+    },
+    {
+      "decision": "For reference setters shaped `if x is None: obj.XRA = None else: x = resolve(...); obj.XRA = x`, hoist the resolution out of both branches so it runs before the transaction opens, leaving a single assignment inside one bracket",
+      "why": "Resolution can raise; hoisting it means an unresolvable reference raises without opening an empty named undo entry that Phase 2 would Rollback(0). Also collapses two bracket sites into one per method. Applied to the five WfiMorphBundle setters in batch 8; the same shape recurs in Notebook/Grammar/Lexicon",
+      "rejected": "Bracketing each assignment separately in its own branch, which opens a transaction after the raising resolve call"
     }
   ],
   "concerns": [
