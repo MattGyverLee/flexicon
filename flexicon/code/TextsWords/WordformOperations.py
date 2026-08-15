@@ -214,7 +214,8 @@ class WordformOperations(BaseOperations):
             wordform = wordform_or_hvo
 
         # LCM Delete() removes the object from the repository
-        wordform.Delete()
+        with self._TransactionCM("Delete wordform"):
+            wordform.Delete()
 
     @OperationsMethod
     def Exists(self, form, wsHandle=None):
@@ -374,8 +375,9 @@ class WordformOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         # Set the form string
-        mkstr = TsStringUtils.MakeString(form, wsHandle)
-        wordform.Form.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set wordform form '{form}'"):
+            mkstr = TsStringUtils.MakeString(form, wsHandle)
+            wordform.Form.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetSpellingStatus(self, wordform_or_hvo):

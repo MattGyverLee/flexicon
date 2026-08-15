@@ -439,8 +439,9 @@ class SegmentOperations(BaseOperations):
         segment_obj = self.__GetSegmentObject(segment_or_hvo)
         ws = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(text, ws)
-        segment_obj.FreeTranslation.set_String(ws, mkstr)
+        with self._TransactionCM("Set free translation"):
+            mkstr = TsStringUtils.MakeString(text, ws)
+            segment_obj.FreeTranslation.set_String(ws, mkstr)
 
     @OperationsMethod
     def GetLiteralTranslation(self, segment_or_hvo, wsHandle=None):
@@ -503,8 +504,9 @@ class SegmentOperations(BaseOperations):
         segment_obj = self.__GetSegmentObject(segment_or_hvo)
         ws = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(text, ws)
-        segment_obj.LiteralTranslation.set_String(ws, mkstr)
+        with self._TransactionCM("Set literal translation"):
+            mkstr = TsStringUtils.MakeString(text, ws)
+            segment_obj.LiteralTranslation.set_String(ws, mkstr)
 
     @OperationsMethod
     def GetNotes(self, segment_or_hvo):
@@ -665,7 +667,8 @@ class SegmentOperations(BaseOperations):
         owner = self._GetTypedOwner(segment_obj)
         if owner is None:
             raise FP_ParameterError("Segment has no owning paragraph")
-        owner.SegmentsOS.Remove(segment_obj)
+        with self._TransactionCM("Delete segment"):
+            owner.SegmentsOS.Remove(segment_obj)
 
     @OperationsMethod
     def SetAnalysis(self, segment_or_hvo, index, analysis_or_hvo):
@@ -1105,33 +1108,40 @@ class SegmentOperations(BaseOperations):
                         _ts, ws = ms.GetStringFromIndex(i)
                         ws_set.add(ws)
 
-        for ws in ws_set:
-            # FreeTranslation
-            if seg1.FreeTranslation and seg2.FreeTranslation:
-                t1 = ITsString(seg1.FreeTranslation.get_String(ws)).Text or ""
-                t2 = ITsString(seg2.FreeTranslation.get_String(ws)).Text or ""
-                if t2:
-                    merged_text = (t1 + " / " + t2) if t1 else t2
-                    mkstr = TsStringUtils.MakeString(merged_text, ws)
-                    seg1.FreeTranslation.set_String(ws, mkstr)
+        # The only caller (MergeSegments) already holds a "Merge segments"
+        # transaction when it calls this helper, so at runtime this bracket
+        # simply joins that one -- _TransactionCM is nesting-aware, so no
+        # second undo entry is opened. It is stated here anyway so the
+        # mutations below are bracketed at the site per D5, and so a future
+        # caller cannot reach them unbracketed.
+        with self._TransactionCM("Migrate segment translations"):
+            for ws in ws_set:
+                # FreeTranslation
+                if seg1.FreeTranslation and seg2.FreeTranslation:
+                    t1 = ITsString(seg1.FreeTranslation.get_String(ws)).Text or ""
+                    t2 = ITsString(seg2.FreeTranslation.get_String(ws)).Text or ""
+                    if t2:
+                        merged_text = (t1 + " / " + t2) if t1 else t2
+                        mkstr = TsStringUtils.MakeString(merged_text, ws)
+                        seg1.FreeTranslation.set_String(ws, mkstr)
 
-            # LiteralTranslation
-            if seg1.LiteralTranslation and seg2.LiteralTranslation:
-                t1 = ITsString(seg1.LiteralTranslation.get_String(ws)).Text or ""
-                t2 = ITsString(seg2.LiteralTranslation.get_String(ws)).Text or ""
-                if t2:
-                    merged_text = (t1 + " / " + t2) if t1 else t2
-                    mkstr = TsStringUtils.MakeString(merged_text, ws)
-                    seg1.LiteralTranslation.set_String(ws, mkstr)
+                # LiteralTranslation
+                if seg1.LiteralTranslation and seg2.LiteralTranslation:
+                    t1 = ITsString(seg1.LiteralTranslation.get_String(ws)).Text or ""
+                    t2 = ITsString(seg2.LiteralTranslation.get_String(ws)).Text or ""
+                    if t2:
+                        merged_text = (t1 + " / " + t2) if t1 else t2
+                        mkstr = TsStringUtils.MakeString(merged_text, ws)
+                        seg1.LiteralTranslation.set_String(ws, mkstr)
 
-        # Notes: move all ICmBaseAnnotation objects from seg2.NotesOS to seg1.NotesOS.
-        # ILcmOwningSequence.MoveTo(srcStart, srcEnd, dest, destStart) re-parents
-        # ownership without creating new objects.
-        if hasattr(seg2, "NotesOS") and hasattr(seg1, "NotesOS"):
-            notes2 = list(seg2.NotesOS)
-            if notes2:
-                dest_index = seg1.NotesOS.Count
-                seg2.NotesOS.MoveTo(0, len(notes2) - 1, seg1.NotesOS, dest_index)
+            # Notes: move all ICmBaseAnnotation objects from seg2.NotesOS to seg1.NotesOS.
+            # ILcmOwningSequence.MoveTo(srcStart, srcEnd, dest, destStart) re-parents
+            # ownership without creating new objects.
+            if hasattr(seg2, "NotesOS") and hasattr(seg1, "NotesOS"):
+                notes2 = list(seg2.NotesOS)
+                if notes2:
+                    dest_index = seg1.NotesOS.Count
+                    seg2.NotesOS.MoveTo(0, len(notes2) - 1, seg1.NotesOS, dest_index)
 
     @OperationsMethod
     def ReparseParagraph(self, paragraph_or_hvo):

@@ -454,7 +454,8 @@ class WfiAnalysisOperations(BaseOperations):
         # returns analysis.Owner as the base ICmObject, which has no
         # AnalysesOC; cast to IWfiWordform first (issue #32).
         wordform = IWfiWordform(analysis.Owner)
-        wordform.AnalysesOC.Remove(analysis)
+        with self._TransactionCM("Delete analysis"):
+            wordform.AnalysesOC.Remove(analysis)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=False, deep=False):
@@ -1376,9 +1377,12 @@ class WfiAnalysisOperations(BaseOperations):
         if not isinstance(category, IPartOfSpeech):
             raise FP_ParameterError("Category must be an IPartOfSpeech object")
 
-        # Set the category
+        # Set the category. The capability check stays OUTSIDE the transaction
+        # so an analysis without CategoryRA raises without opening an empty
+        # undo task.
         if hasattr(analysis, "CategoryRA"):
-            analysis.CategoryRA = category
+            with self._TransactionCM("Set analysis category"):
+                analysis.CategoryRA = category
         else:
             raise FP_ParameterError("Analysis does not support CategoryRA property")
 

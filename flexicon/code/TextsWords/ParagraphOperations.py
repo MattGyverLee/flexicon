@@ -239,7 +239,8 @@ class ParagraphOperations(BaseOperations):
         owner = self._GetTypedOwner(para_obj)
         if owner is None:
             raise FP_ParameterError("Paragraph has no valid owner or cannot be removed")
-        owner.ParagraphsOS.Remove(para_obj)
+        with self._TransactionCM("Delete paragraph"):
+            owner.ParagraphsOS.Remove(para_obj)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):

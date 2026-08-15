@@ -75,18 +75,25 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
 
 - [x] **B2s** Sweep inventory complete: `reviews/cycle1-explore-b2sweep.md` (294 methods).
 - [ ] **B2** Bracket all 295 per **D5**. Batched by domain, one commit per batch, guard
-      baseline ratcheted down each time. **7/11 batches landed; baseline 295 -> 211.**
+      baseline ratcheted down each time. **8/11 batches landed; baseline 295 -> 187.**
       - [x] 1/11 Reversal 6 (`4d3add6`)      - [x] 2/11 Shared 9 (`5880d8d`)
       - [x] 3/11 Scripture 9 (`e9f31e2`)     - [x] 4/11 System 11 (`6144970`)
       - [x] 5/11 Lists 14 (`fff961f`)        - [x] 6/11 code-root 14 (`e24cffa`, `db1dff7`)
       - [x] 7/11 Discourse 21 (`d2dfdfe`)
-      - [ ] 8/11 TextsWords 24   - [ ] 9/11 Notebook 44   - [ ] 10/11 Grammar 59
+      - [x] 8/11 TextsWords 24
+      - [ ] 9/11 Notebook 44   - [ ] 10/11 Grammar 59
       - [ ] 11/11 Lexicon 84
       Includes the 17 residual hand sites (8 catalog-chain private helpers, 6
       `FLExProject` methods, 3 undecorated `CatalogBackedMixin` publics) that no scheme
       covers mechanically. Batch 7 absorbed two of the catalog-chain helpers
       (`__GetOrCreateChartMarkers`, `__GetOrCreateDiscourse`) — both run *before* their
       `Create`'s own bracket is entered, so the bracket goes in the helper.
+      Batch 8's one private helper is the mirror image: `SegmentOperations.
+      __MigrateTranslations` is called from *inside* `MergeSegments`' existing
+      "Merge segments" bracket, so its mutations were already covered at runtime and
+      the added bracket merely joins that transaction (nesting-aware per B1). It is
+      stated anyway so the site is `grep`-auditable per D5 and no future caller can
+      reach it unbracketed.
       Count is 295, not the 294 of the cycle-1 table: the B2g scanner reconciled one
       site the sweep missed (`FLExProject.SetAudioPath`, code-root 13 -> 14).
 - [ ] **B4** `flexicon.CAPABILITIES` frozenset, shipping the `per-operation-uow` token.
