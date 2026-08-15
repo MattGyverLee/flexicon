@@ -15,7 +15,7 @@ Date: 2025-11-27
 """
 
 from datetime import datetime
-from flexlibs2.sync import SelectiveImport, ValidationSeverity
+from flexicon.sync import SelectiveImport, ValidationSeverity
 
 
 def demo_linguist_workflow():
@@ -61,7 +61,7 @@ def demo_linguist_workflow():
     print("-" * 60)
     print(
         """
-    from flexlibs2.sync import SelectiveImport
+    from flexicon.sync import SelectiveImport
     from datetime import datetime
 
     # Initialize importer
@@ -121,7 +121,7 @@ def demo_filtered_import():
     print("-" * 60)
     print(
         """
-    from flexlibs2.sync import SelectiveImport
+    from flexicon.sync import SelectiveImport
 
     importer = SelectiveImport(source_project, target_project)
 
@@ -250,7 +250,7 @@ def demo_what_not_to_do():
     print(
         """
     # DON'T DO THIS for linguistic data!
-    from flexlibs2.sync import SyncEngine
+    from flexicon.sync import SyncEngine
 
     sync = SyncEngine(test_project, stable_project)
     result = sync.sync(
@@ -272,7 +272,7 @@ def demo_what_not_to_do():
     print(
         """
     # DO THIS instead!
-    from flexlibs2.sync import SelectiveImport
+    from flexicon.sync import SelectiveImport
     from datetime import datetime
 
     importer = SelectiveImport(test_project, stable_project)

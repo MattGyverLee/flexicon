@@ -9,7 +9,7 @@ import os
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
 # Initialize FLEx
 FLExInitialize()
@@ -19,7 +19,7 @@ try:
     project = FLExProject()
     project.OpenProject("Test", writeEnabled=False)
 
-    from flexlibs2.code.Grammar.PhonologicalRuleOperations import PhonologicalRuleOperations
+    from flexicon.code.Grammar.PhonologicalRuleOperations import PhonologicalRuleOperations
 
     phonRuleOps = PhonologicalRuleOperations(project)
     rule = phonRuleOps.Find("a neutralization")

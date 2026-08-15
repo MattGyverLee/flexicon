@@ -10,8 +10,8 @@ Author: FlexTools Development Team
 Date: 2025-11-26
 """
 
-from flexlibs2 import FLExProject
-from flexlibs2.sync import (
+from flexicon import FLExProject
+from flexicon.sync import (
     SyncEngine,
     GuidMatchStrategy,
     SourceWinsResolver,
@@ -188,7 +188,7 @@ def demo_sync_with_conflict_resolution():
         print("  - Only add new items from source")
         print()
 
-        from flexlibs2.sync import TargetWinsResolver
+        from flexicon.sync import TargetWinsResolver
 
         result2 = sync.sync(object_type="Allomorph", conflict_resolver=TargetWinsResolver(), dry_run=True)
 
