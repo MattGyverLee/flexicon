@@ -362,22 +362,28 @@ class NoteOperations(BaseOperations):
 
     def _DuplicateReplyInto(self, source_reply, parent_note, deep=True):
         """Duplicate a reply note into the specified parent note's RepliesOS."""
-        factory = self.project.project.ServiceLocator.GetService(ICmBaseAnnotationFactory)
-        dup_reply = factory.Create()
-        parent_note.RepliesOS.Add(dup_reply)
+        # Every caller reaches this helper from inside Duplicate's own
+        # "Duplicate note" bracket, so these mutations are already covered at
+        # runtime and this bracket merely joins that transaction (nesting-aware
+        # per B1). It is stated anyway so the site is grep-auditable per D5 and
+        # no future caller can reach it unbracketed.
+        with self._TransactionCM("Duplicate note reply"):
+            factory = self.project.project.ServiceLocator.GetService(ICmBaseAnnotationFactory)
+            dup_reply = factory.Create()
+            parent_note.RepliesOS.Add(dup_reply)
 
-        # Copy properties
-        dup_reply.Comment.CopyAlternatives(source_reply.Comment)
-        dup_reply.Source.CopyAlternatives(source_reply.Source)
-        if hasattr(source_reply, "AnnotationTypeRA"):
-            dup_reply.AnnotationTypeRA = source_reply.AnnotationTypeRA
-        if hasattr(source_reply, "BeginObjectRA"):
-            dup_reply.BeginObjectRA = source_reply.BeginObjectRA
+            # Copy properties
+            dup_reply.Comment.CopyAlternatives(source_reply.Comment)
+            dup_reply.Source.CopyAlternatives(source_reply.Source)
+            if hasattr(source_reply, "AnnotationTypeRA"):
+                dup_reply.AnnotationTypeRA = source_reply.AnnotationTypeRA
+            if hasattr(source_reply, "BeginObjectRA"):
+                dup_reply.BeginObjectRA = source_reply.BeginObjectRA
 
-        # Recurse into nested replies
-        if deep and hasattr(source_reply, "RepliesOS"):
-            for nested_reply in source_reply.RepliesOS:
-                self._DuplicateReplyInto(nested_reply, dup_reply, deep=True)
+            # Recurse into nested replies
+            if deep and hasattr(source_reply, "RepliesOS"):
+                for nested_reply in source_reply.RepliesOS:
+                    self._DuplicateReplyInto(nested_reply, dup_reply, deep=True)
 
     # ========== SYNC INTEGRATION METHODS ==========
 
@@ -650,7 +656,8 @@ class NoteOperations(BaseOperations):
                 raise FP_ParameterError(f"Note type '{note_type}' not found")
             note_type = anno_defn
 
-        note.AnnotationTypeRA = note_type
+        with self._TransactionCM("Set note type"):
+            note.AnnotationTypeRA = note_type
 
     # --- Metadata Operations ---
 
@@ -819,7 +826,8 @@ class NoteOperations(BaseOperations):
         if hasattr(note, "Source"):
             ws = self.project.project.DefaultAnalWs
             mkstr = TsStringUtils.MakeString(author_name, ws)
-            note.Source.set_String(ws, mkstr)
+            with self._TransactionCM("Set note author"):
+                note.Source.set_String(ws, mkstr)
 
     # --- Discussion/Threading Operations ---
 

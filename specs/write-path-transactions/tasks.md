@@ -75,19 +75,26 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
 
 - [x] **B2s** Sweep inventory complete: `reviews/cycle1-explore-b2sweep.md` (294 methods).
 - [ ] **B2** Bracket all 295 per **D5**. Batched by domain, one commit per batch, guard
-      baseline ratcheted down each time. **8/11 batches landed; baseline 295 -> 187.**
+      baseline ratcheted down each time. **9/11 batches landed; baseline 295 -> 143.**
       - [x] 1/11 Reversal 6 (`4d3add6`)      - [x] 2/11 Shared 9 (`5880d8d`)
       - [x] 3/11 Scripture 9 (`e9f31e2`)     - [x] 4/11 System 11 (`6144970`)
       - [x] 5/11 Lists 14 (`fff961f`)        - [x] 6/11 code-root 14 (`e24cffa`, `db1dff7`)
       - [x] 7/11 Discourse 21 (`d2dfdfe`)
-      - [x] 8/11 TextsWords 24
-      - [ ] 9/11 Notebook 44   - [ ] 10/11 Grammar 59
-      - [ ] 11/11 Lexicon 84
+      - [x] 8/11 TextsWords 24               - [x] 9/11 Notebook 44
+      - [ ] 10/11 Grammar 59   - [ ] 11/11 Lexicon 84
       Includes the 17 residual hand sites (8 catalog-chain private helpers, 6
       `FLExProject` methods, 3 undecorated `CatalogBackedMixin` publics) that no scheme
       covers mechanically. Batch 7 absorbed two of the catalog-chain helpers
       (`__GetOrCreateChartMarkers`, `__GetOrCreateDiscourse`) — both run *before* their
       `Create`'s own bracket is entered, so the bracket goes in the helper.
+      Batch 9 absorbed three more mirror-image private helpers
+      (`NoteOperations._DuplicateReplyInto`,
+      `LocationOperations._DuplicateSublocationInto`,
+      `AnthropologyOperations._DuplicateSubitemInto`,
+      `DataNotebookOperations._DuplicateSubRecordInto`) plus one genuinely
+      unbracketed mutation that no batch had covered:
+      `AnthropologyOperations.Create` left its `AnthroListOA` list creation
+      outside *any* transaction. See **D6**.
       Batch 8's one private helper is the mirror image: `SegmentOperations.
       __MigrateTranslations` is called from *inside* `MergeSegments`' existing
       "Merge segments" bracket, so its mutations were already covered at runtime and
@@ -123,6 +130,18 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
       **needs_human** — public API default change.
 
 ---
+
+- **D6 — A mutation deliberately hoisted *out* of a transaction still needs a
+  transaction of its own. RESOLVED (batch 9).** `AnthropologyOperations.Create`
+  resolved `AnthroListOA` before opening its per-item bracket, with a comment
+  explaining that a missing list must not leave an orphaned `ICmAnthroItem`. That
+  reasoning is right about *ordering* and wrong about *coverage*: it left
+  `list_factory.Create()` and the `AnthroListOA` assignment inside no unit of work
+  at all, which `undoable=True` rejects outright. Resolution: keep the hoist, give
+  the hoisted work its own named bracket ("Create anthropology list"), and leave
+  the `is None` guard outside both so an already-initialised list stays a true
+  no-op. Generalises to any future "resolve before the transaction" hoist —
+  *before* must mean *in an earlier transaction*, never *in none*.
 
 ## Resolved open questions
 

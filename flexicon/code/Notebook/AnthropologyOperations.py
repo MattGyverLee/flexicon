@@ -271,13 +271,18 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         # Ensure anthropology list exists. List creation/assignment is project-state
         # setup; resolve it before opening the per-item transaction so a missing
-        # list never leaves an orphaned ICmAnthroItem.
+        # list never leaves an orphaned ICmAnthroItem. It still needs a bracket of
+        # its own -- under undoable=True every mutation must sit in some UoW -- so
+        # it gets a separate named transaction rather than joining the item's.
+        # The `is None` guard stays outside: an already-initialised list must be a
+        # true no-op, not an empty named undo entry.
         if self.project.lp.AnthroListOA is None:
             from SIL.LCModel import ICmPossibilityListFactory
 
             list_factory = self.project.project.ServiceLocator.GetService(ICmPossibilityListFactory)
-            anthro_list = list_factory.Create()
-            self.project.lp.AnthroListOA = anthro_list
+            with self._TransactionCM("Create anthropology list"):
+                anthro_list = list_factory.Create()
+                self.project.lp.AnthroListOA = anthro_list
         else:
             anthro_list = self.project.lp.AnthroListOA
 
@@ -440,7 +445,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         if anthro_list is not None:
             # Check if it's a top-level item
             if anthro_list.PossibilitiesOS.Contains(item):
-                anthro_list.PossibilitiesOS.Remove(item)
+                with self._TransactionCM("Delete anthropology item"):
+                    anthro_list.PossibilitiesOS.Remove(item)
             else:
                 # It's a subitem, remove from parent. item.Owner is
                 # typed as ICmObject; cast to the concrete possibility
@@ -457,7 +463,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
                         "Anthropology subitem has no resolvable owner"
                     )
                 if hasattr(parent, "SubPossibilitiesOS"):
-                    parent.SubPossibilitiesOS.Remove(item)
+                    with self._TransactionCM("Delete anthropology item"):
+                        parent.SubPossibilitiesOS.Remove(item)
 
     @OperationsMethod
     def Exists(self, name):
@@ -762,7 +769,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        item.Name.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set anthropology item name '{name}'"):
+            item.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetAbbreviation(self, item_or_hvo, wsHandle=None):
@@ -852,7 +860,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(abbreviation, wsHandle)
-        item.Abbreviation.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set anthropology item abbreviation"):
+            item.Abbreviation.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetDescription(self, item_or_hvo, wsHandle=None):
@@ -947,7 +956,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(description, wsHandle)
-        item.Description.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set anthropology item description"):
+            item.Description.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetAnthroCode(self, item_or_hvo):
@@ -1119,14 +1129,19 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         item = self.__GetItemObject(item_or_hvo)
 
+        # Resolve before the transaction opens (D3 reference-setter hoist): an
+        # unresolvable category must raise without opening an empty named undo
+        # entry, and both branches then collapse to one bracketed assignment.
         if category is None:
-            item.CategoryRA = None
+            cat_poss = None
         else:
             try:
                 cat_poss = ICmPossibility(category)
-                item.CategoryRA = cat_poss
             except Exception:
                 raise FP_ParameterError("category must be a valid ICmPossibility object")
+
+        with self._TransactionCM("Set anthropology item category"):
+            item.CategoryRA = cat_poss
 
     # --- Hierarchy Operations ---
 
@@ -1347,7 +1362,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         # Add the text to the item's collection
         if hasattr(item, "TextsRC"):
-            item.TextsRC.Add(text_obj)
+            with self._TransactionCM("Link text to anthropology item"):
+                item.TextsRC.Add(text_obj)
 
     @OperationsMethod
     def RemoveText(self, item_or_hvo, text):
@@ -1404,7 +1420,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         # Remove the text from the item's collection
         if hasattr(item, "TextsRC"):
-            item.TextsRC.Remove(text_obj)
+            with self._TransactionCM("Unlink text from anthropology item"):
+                item.TextsRC.Remove(text_obj)
 
     @OperationsMethod
     def GetTextCount(self, item_or_hvo):
@@ -1610,7 +1627,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         # Add the person to the item's collection
         if hasattr(item, "ResearchersRC"):
-            item.ResearchersRC.Add(person_obj)
+            with self._TransactionCM("Link researcher to anthropology item"):
+                item.ResearchersRC.Add(person_obj)
 
     @OperationsMethod
     def RemoveResearcher(self, item_or_hvo, person):
@@ -1667,7 +1685,8 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         # Remove the person from the item's collection
         if hasattr(item, "ResearchersRC"):
-            item.ResearchersRC.Remove(person_obj)
+            with self._TransactionCM("Unlink researcher from anthropology item"):
+                item.ResearchersRC.Remove(person_obj)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
@@ -1774,24 +1793,30 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
     def _DuplicateSubitemInto(self, source_item, parent_dup, deep=True):
         """Duplicate an anthropology subitem into the specified parent's SubPossibilitiesOS."""
-        factory = self.project.project.ServiceLocator.GetService(ICmAnthroItemFactory)
-        dup_item = factory.Create()
-        parent_dup.SubPossibilitiesOS.Add(dup_item)
+        # Every caller reaches this helper from inside Duplicate's own
+        # "Duplicate Anthropology Item" bracket, so these mutations are already
+        # covered at runtime and this bracket merely joins that transaction
+        # (nesting-aware per B1). It is stated anyway so the site is
+        # grep-auditable per D5 and no future caller can reach it unbracketed.
+        with self._TransactionCM("Duplicate anthropology subitem"):
+            factory = self.project.project.ServiceLocator.GetService(ICmAnthroItemFactory)
+            dup_item = factory.Create()
+            parent_dup.SubPossibilitiesOS.Add(dup_item)
 
-        # Copy properties
-        dup_item.Name.CopyAlternatives(source_item.Name)
-        dup_item.Abbreviation.CopyAlternatives(source_item.Abbreviation)
-        dup_item.Description.CopyAlternatives(source_item.Description)
+            # Copy properties
+            dup_item.Name.CopyAlternatives(source_item.Name)
+            dup_item.Abbreviation.CopyAlternatives(source_item.Abbreviation)
+            dup_item.Description.CopyAlternatives(source_item.Description)
 
-        if hasattr(source_item, "AnthroCode") and source_item.AnthroCode:
-            dup_item.AnthroCode = source_item.AnthroCode
-        if hasattr(source_item, "CategoryRA") and source_item.CategoryRA:
-            dup_item.CategoryRA = source_item.CategoryRA
+            if hasattr(source_item, "AnthroCode") and source_item.AnthroCode:
+                dup_item.AnthroCode = source_item.AnthroCode
+            if hasattr(source_item, "CategoryRA") and source_item.CategoryRA:
+                dup_item.CategoryRA = source_item.CategoryRA
 
-        # Recurse into nested subitems
-        if deep and hasattr(source_item, "SubPossibilitiesOS"):
-            for nested_item in source_item.SubPossibilitiesOS:
-                self._DuplicateSubitemInto(nested_item, dup_item, deep=True)
+            # Recurse into nested subitems
+            if deep and hasattr(source_item, "SubPossibilitiesOS"):
+                for nested_item in source_item.SubPossibilitiesOS:
+                    self._DuplicateSubitemInto(nested_item, dup_item, deep=True)
 
     # ========== CATALOG IMPORT METHODS ==========
     #

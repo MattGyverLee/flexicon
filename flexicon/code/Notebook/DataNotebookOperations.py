@@ -581,7 +581,8 @@ class DataNotebookOperations(BaseOperations):
 
         mkstr = TsStringUtils.MakeString(title, wsHandle)
 
-        record.Title.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set notebook record title '{title}'"):
+            record.Title.set_String(wsHandle, mkstr)
 
     # --- Property Operations: Content ---
 
@@ -682,7 +683,8 @@ class DataNotebookOperations(BaseOperations):
 
         mkstr = TsStringUtils.MakeString(content, wsHandle)
 
-        record.Text.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set notebook record content"):
+            record.Text.set_String(wsHandle, mkstr)
 
     # --- Record Type Operations ---
 
@@ -1341,7 +1343,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "Researchers"):
             if person not in record.Researchers:
-                record.Researchers.Add(person)
+                with self._TransactionCM("Add researcher to notebook record"):
+                    record.Researchers.Add(person)
 
     @OperationsMethod
     def RemoveResearcher(self, record_or_hvo, person):
@@ -1380,7 +1383,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "Researchers"):
             if person in record.Researchers:
-                record.Researchers.Remove(person)
+                with self._TransactionCM("Remove researcher from notebook record"):
+                    record.Researchers.Remove(person)
 
     # --- Linking Operations: Participants ---
 
@@ -1476,7 +1480,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "Participants"):
             if person not in record.Participants:
-                record.Participants.Add(person)
+                with self._TransactionCM("Add participant to notebook record"):
+                    record.Participants.Add(person)
 
     @OperationsMethod
     def RemoveParticipant(self, record_or_hvo, person):
@@ -1515,7 +1520,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "Participants"):
             if person in record.Participants:
-                record.Participants.Remove(person)
+                with self._TransactionCM("Remove participant from notebook record"):
+                    record.Participants.Remove(person)
 
     # --- Linking Operations: Locations ---
 
@@ -1618,7 +1624,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "LocationsRC"):
             if location not in record.LocationsRC:
-                record.LocationsRC.Add(location)
+                with self._TransactionCM("Add location to notebook record"):
+                    record.LocationsRC.Add(location)
 
     @OperationsMethod
     def RemoveLocation(self, record_or_hvo, location):
@@ -1657,7 +1664,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "LocationsRC"):
             if location in record.LocationsRC:
-                record.LocationsRC.Remove(location)
+                with self._TransactionCM("Remove location from notebook record"):
+                    record.LocationsRC.Remove(location)
 
     # --- Linking Operations: Sources ---
 
@@ -1760,7 +1768,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "SourcesRC"):
             if source not in record.SourcesRC:
-                record.SourcesRC.Add(source)
+                with self._TransactionCM("Add source to notebook record"):
+                    record.SourcesRC.Add(source)
 
     @OperationsMethod
     def RemoveSource(self, record_or_hvo, source):
@@ -1799,7 +1808,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "SourcesRC"):
             if source in record.SourcesRC:
-                record.SourcesRC.Remove(source)
+                with self._TransactionCM("Remove source from notebook record"):
+                    record.SourcesRC.Remove(source)
 
     # --- Text Linking Operations ---
 
@@ -1895,7 +1905,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "TextsRC"):
             if text not in record.TextsRC:
-                record.TextsRC.Add(text)
+                with self._TransactionCM("Link text to notebook record"):
+                    record.TextsRC.Add(text)
 
     @OperationsMethod
     def UnlinkFromText(self, record_or_hvo, text):
@@ -1935,7 +1946,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "TextsRC"):
             if text in record.TextsRC:
-                record.TextsRC.Remove(text)
+                with self._TransactionCM("Unlink text from notebook record"):
+                    record.TextsRC.Remove(text)
 
     # --- Media File Operations ---
 
@@ -2033,7 +2045,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "MediaFilesOS"):
             if media_file not in record.MediaFilesOS:
-                record.MediaFilesOS.Add(media_file)
+                with self._TransactionCM("Add media file to notebook record"):
+                    record.MediaFilesOS.Add(media_file)
 
     @OperationsMethod
     def RemoveMediaFile(self, record_or_hvo, media_file):
@@ -2073,7 +2086,8 @@ class DataNotebookOperations(BaseOperations):
 
         if hasattr(record, "MediaFilesOS"):
             if media_file in record.MediaFilesOS:
-                record.MediaFilesOS.Remove(media_file)
+                with self._TransactionCM("Remove media file from notebook record"):
+                    record.MediaFilesOS.Remove(media_file)
 
     # --- Status Operations ---
 
@@ -2487,74 +2501,81 @@ class DataNotebookOperations(BaseOperations):
         owner = source.Owner
 
         # Create new record using factory (auto-generates new GUID)
-        factory = self.project.project.ServiceLocator.GetService(IRnGenericRecFactory)
-        duplicate = factory.Create()
+        with self._TransactionCM("Duplicate notebook record"):
+            factory = self.project.project.ServiceLocator.GetService(IRnGenericRecFactory)
+            duplicate = factory.Create()
 
-        # Determine insertion position and add to parent FIRST
-        if isinstance(owner, IRnGenericRec):
-            # Parent is another notebook record (sub-record)
-            parent_record = IRnGenericRec(owner)
-            if insert_after:
-                source_index = parent_record.SubRecordsOS.IndexOf(source)
-                parent_record.SubRecordsOS.Insert(source_index + 1, duplicate)
+            # Determine insertion position and add to parent FIRST
+            if isinstance(owner, IRnGenericRec):
+                # Parent is another notebook record (sub-record)
+                parent_record = IRnGenericRec(owner)
+                if insert_after:
+                    source_index = parent_record.SubRecordsOS.IndexOf(source)
+                    parent_record.SubRecordsOS.Insert(source_index + 1, duplicate)
+                else:
+                    parent_record.SubRecordsOS.Add(duplicate)
             else:
-                parent_record.SubRecordsOS.Add(duplicate)
-        else:
-            # Parent is the top-level repository. RecordsOC is an unordered
-            # ILcmOwningCollection; insert_after has no semantic meaning here
-            # and is ignored -- the duplicate is always appended via Add().
-            repos = self.project.project.ServiceLocator.GetService(IRnResearchNbkRepository)
-            repos.RecordsOC.Add(duplicate)
+                # Parent is the top-level repository. RecordsOC is an unordered
+                # ILcmOwningCollection; insert_after has no semantic meaning here
+                # and is ignored -- the duplicate is always appended via Add().
+                repos = self.project.project.ServiceLocator.GetService(IRnResearchNbkRepository)
+                repos.RecordsOC.Add(duplicate)
 
-        # Copy simple MultiString properties
-        duplicate.Title.CopyAlternatives(source.Title)
-        duplicate.Text.CopyAlternatives(source.Text)
+            # Copy simple MultiString properties
+            duplicate.Title.CopyAlternatives(source.Title)
+            duplicate.Text.CopyAlternatives(source.Text)
 
-        # Copy Reference Atomic (RA) properties
-        if hasattr(source, "Type") and source.Type:
-            duplicate.Type = source.Type
-        if hasattr(source, "Status") and source.Status:
-            duplicate.Status = source.Status
-        if hasattr(source, "Confidence") and source.Confidence:
-            duplicate.Confidence = source.Confidence
+            # Copy Reference Atomic (RA) properties
+            if hasattr(source, "Type") and source.Type:
+                duplicate.Type = source.Type
+            if hasattr(source, "Status") and source.Status:
+                duplicate.Status = source.Status
+            if hasattr(source, "Confidence") and source.Confidence:
+                duplicate.Confidence = source.Confidence
 
-        # Copy DateTime properties
-        if hasattr(source, "DateOfEvent") and source.DateOfEvent:
-            duplicate.DateOfEvent = source.DateOfEvent
+            # Copy DateTime properties
+            if hasattr(source, "DateOfEvent") and source.DateOfEvent:
+                duplicate.DateOfEvent = source.DateOfEvent
 
-        # Handle owned objects if deep=True
-        if deep:
-            # Duplicate sub-records into the NEW duplicate (not the original's parent)
-            if hasattr(source, "SubRecordsOS"):
-                for subrecord in source.SubRecordsOS:
-                    self._DuplicateSubRecordInto(subrecord, duplicate, deep=True)
+            # Handle owned objects if deep=True
+            if deep:
+                # Duplicate sub-records into the NEW duplicate (not the original's parent)
+                if hasattr(source, "SubRecordsOS"):
+                    for subrecord in source.SubRecordsOS:
+                        self._DuplicateSubRecordInto(subrecord, duplicate, deep=True)
 
-        return duplicate
+            return duplicate
 
     def _DuplicateSubRecordInto(self, source_rec, parent_dup, deep=True):
         """Duplicate a sub-record into the specified parent's SubRecordsOS."""
-        factory = self.project.project.ServiceLocator.GetService(IRnGenericRecFactory)
-        dup_rec = factory.Create()
-        parent_dup.SubRecordsOS.Add(dup_rec)
+        # Every caller reaches this helper from inside Duplicate's own
+        # "Duplicate notebook record" bracket, so these mutations are already
+        # covered at runtime and this bracket merely joins that transaction
+        # (nesting-aware per B1). It is stated anyway so the site is
+        # grep-auditable per D5 and no future caller can reach it unbracketed.
+        with self._TransactionCM("Duplicate notebook sub-record"):
+            factory = self.project.project.ServiceLocator.GetService(IRnGenericRecFactory)
+            dup_rec = factory.Create()
+            parent_dup.SubRecordsOS.Add(dup_rec)
 
-        # Copy properties
-        dup_rec.Title.CopyAlternatives(source_rec.Title)
-        dup_rec.Text.CopyAlternatives(source_rec.Text)
+            # Copy properties
+            dup_rec.Title.CopyAlternatives(source_rec.Title)
+            dup_rec.Text.CopyAlternatives(source_rec.Text)
 
-        if hasattr(source_rec, "Type") and source_rec.Type:
-            dup_rec.Type = source_rec.Type
-        if hasattr(source_rec, "Status") and source_rec.Status:
-            dup_rec.Status = source_rec.Status
-        if hasattr(source_rec, "Confidence") and source_rec.Confidence:
-            dup_rec.Confidence = source_rec.Confidence
+            if hasattr(source_rec, "Type") and source_rec.Type:
+                dup_rec.Type = source_rec.Type
+            if hasattr(source_rec, "Status") and source_rec.Status:
+                dup_rec.Status = source_rec.Status
+            if hasattr(source_rec, "Confidence") and source_rec.Confidence:
+                dup_rec.Confidence = source_rec.Confidence
 
-        if hasattr(source_rec, "DateOfEvent") and source_rec.DateOfEvent:
-            dup_rec.DateOfEvent = source_rec.DateOfEvent
+            if hasattr(source_rec, "DateOfEvent") and source_rec.DateOfEvent:
+                dup_rec.DateOfEvent = source_rec.DateOfEvent
 
-        # Recurse into nested sub-records
-        if deep and hasattr(source_rec, "SubRecordsOS"):
-            for nested_rec in source_rec.SubRecordsOS:
-                self._DuplicateSubRecordInto(nested_rec, dup_rec, deep=True)
+            # Recurse into nested sub-records
+            if deep and hasattr(source_rec, "SubRecordsOS"):
+                for nested_rec in source_rec.SubRecordsOS:
+                    self._DuplicateSubRecordInto(nested_rec, dup_rec, deep=True)
 
     # ========== SYNC INTEGRATION METHODS ==========
 

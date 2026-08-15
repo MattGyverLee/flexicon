@@ -224,7 +224,8 @@ class PersonOperations(BaseOperations):
         person = self.__ResolveObject(person_or_hvo)
 
         # Remove from people collection
-        self.project.lp.PeopleOA.PossibilitiesOS.Remove(person)
+        with self._TransactionCM("Delete person"):
+            self.project.lp.PeopleOA.PossibilitiesOS.Remove(person)
 
     @OperationsMethod
     def Exists(self, name, wsHandle=None):
@@ -404,7 +405,8 @@ class PersonOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        person.Name.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set person name '{name}'"):
+            person.Name.set_String(wsHandle, mkstr)
 
     # --- Gender ---
 
@@ -483,7 +485,8 @@ class PersonOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(gender, wsHandle)
-        person.Gender.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set person gender"):
+            person.Gender.set_String(wsHandle, mkstr)
 
     # --- Date of Birth ---
 
@@ -644,7 +647,8 @@ class PersonOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(email, wsHandle)
-        person.Email.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set person email"):
+            person.Email.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetPhone(self, person_or_hvo, wsHandle=None):
@@ -725,7 +729,8 @@ class PersonOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(phone, wsHandle)
-        person.PlaceOfBirth.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set person phone"):
+            person.PlaceOfBirth.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetAddress(self, person_or_hvo, wsHandle=None):
@@ -804,7 +809,8 @@ class PersonOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(address, wsHandle)
-        person.Abbreviation.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set person address"):
+            person.Abbreviation.set_String(wsHandle, mkstr)
 
     # --- Academic Information ---
 
@@ -885,7 +891,8 @@ class PersonOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(education, wsHandle)
-        person.Description.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set person education"):
+            person.Description.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetPositions(self, person_or_hvo):
@@ -963,8 +970,11 @@ class PersonOperations(BaseOperations):
         person = self.__ResolveObject(person_or_hvo)
 
         try:
+            # Cast outside the transaction: an invalid position must raise
+            # without opening an empty named undo entry.
             position_poss = ICmPossibility(position)
-            person.PositionsRC.Add(position_poss)
+            with self._TransactionCM("Add position to person"):
+                person.PositionsRC.Add(position_poss)
         except (AttributeError, System.InvalidCastException) as e:
             raise FP_ParameterError("position must be a valid ICmPossibility object")
 
@@ -1351,8 +1361,11 @@ class PersonOperations(BaseOperations):
         person = self.__ResolveObject(person_or_hvo)
 
         try:
+            # Cast outside the transaction: an invalid location must raise
+            # without opening an empty named undo entry.
             location_obj = ICmLocation(location)
-            person.PlacesOfResidenceRC.Add(location_obj)
+            with self._TransactionCM("Add residence to person"):
+                person.PlacesOfResidenceRC.Add(location_obj)
         except (AttributeError, System.InvalidCastException) as e:
             raise FP_ParameterError("location must be a valid ICmLocation object")
 
@@ -1432,8 +1445,11 @@ class PersonOperations(BaseOperations):
         person = self.__ResolveObject(person_or_hvo)
 
         try:
+            # Cast outside the transaction: an invalid language must raise
+            # without opening an empty named undo entry.
             language_poss = ICmPossibility(language)
-            person.LanguagesRC.Add(language_poss)
+            with self._TransactionCM("Add language to person"):
+                person.LanguagesRC.Add(language_poss)
         except (AttributeError, System.InvalidCastException) as e:
             raise FP_ParameterError("language must be a valid ICmPossibility object")
 
@@ -1528,7 +1544,8 @@ class PersonOperations(BaseOperations):
             new_notes = note
 
         mkstr = TsStringUtils.MakeString(new_notes, wsHandle)
-        person.Comment.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Add note to person"):
+            person.Comment.set_String(wsHandle, mkstr)
 
     # --- Private Helper Methods ---
 
