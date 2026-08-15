@@ -74,14 +74,15 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
 ### Checkpoint 2b..2n — the sweep (later spurts, batched by domain)
 
 - [x] **B2s** Sweep inventory complete: `reviews/cycle1-explore-b2sweep.md` (294 methods).
-- [ ] **B2** Bracket all 295 per **D5**. Batched by domain, one commit per batch, guard
-      baseline ratcheted down each time. **10/11 batches landed; baseline 295 -> 84.**
+- [x] **B2** Bracket all 295 per **D5**. Batched by domain, one commit per batch, guard
+      baseline ratcheted down each time. **COMPLETE: 11/11 batches landed; baseline
+      295 -> 0.**
       - [x] 1/11 Reversal 6 (`4d3add6`)      - [x] 2/11 Shared 9 (`5880d8d`)
       - [x] 3/11 Scripture 9 (`e9f31e2`)     - [x] 4/11 System 11 (`6144970`)
       - [x] 5/11 Lists 14 (`fff961f`)        - [x] 6/11 code-root 14 (`e24cffa`, `db1dff7`)
       - [x] 7/11 Discourse 21 (`d2dfdfe`)
       - [x] 8/11 TextsWords 24               - [x] 9/11 Notebook 44
-      - [x] 10/11 Grammar 59   - [ ] 11/11 Lexicon 84
+      - [x] 10/11 Grammar 59   - [x] 11/11 Lexicon 84
       Includes the 17 residual hand sites (8 catalog-chain private helpers, 6
       `FLExProject` methods, 3 undecorated `CatalogBackedMixin` publics) that no scheme
       covers mechanically. Batch 7 absorbed two of the catalog-chain helpers
@@ -115,6 +116,21 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
       helper genuinely running outside any transaction — it gets real brackets.
       Count is 295, not the 294 of the cycle-1 table: the B2g scanner reconciled one
       site the sweep missed (`FLExProject.SetAudioPath`, code-root 13 -> 14).
+      Batch 11 (final) covered the Lexicon domain: 29 LexSense, 16 LexEntry, 7 Example,
+      7 Etymology, 6 LexReference, 5 Pronunciation, 4 Variant, 4 Allomorph,
+      3 SemanticDomain, 3 MSA. Three shapes worth noting: the deep-copy pair
+      (`LexSenseOperations._deep_copy_sense_to` / `__copy_sense_content`) is bracketed
+      as ONE unit each rather than per-field, so a failure partway through cannot leave
+      a half-populated duplicate; `MSAOperations.ChangeAffixVariant` takes three
+      separate brackets after `__CreateAndAttach`'s own has committed (D6);
+      and `LexSenseOperations.RemovePicture` keeps the optional physical-file
+      deletion OUTSIDE the bracket, since the LCM cannot roll back a filesystem
+      unlink and a bracket around it would imply otherwise.
+      With the baseline at 0, the B2g ratchet inverts meaning: it is no longer a
+      countdown but a permanent guard, and `test_scanner_runs_and_finds_entries` was
+      replaced by `test_scanner_is_functional` (a zero result is now the correct
+      answer, so the old `len(scan()) > 0` assertion would fail *because* the sweep
+      succeeded). The three ratchet tests themselves are kept, not deleted.
 - [ ] **B4** `flexicon.CAPABILITIES` frozenset, shipping the `per-operation-uow` token.
       Gated on B2 complete — contract §3 marks it PLANNED and the token must not appear
       before the capability is real.

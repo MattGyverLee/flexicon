@@ -255,7 +255,8 @@ class ExampleOperations(BaseOperations):
         # (issue #162)
         sense = self._GetTypedOwner(example)
         if sense is not None and hasattr(sense, "ExamplesOS"):
-            sense.ExamplesOS.Remove(example)
+            with self._TransactionCM("Delete example"):
+                sense.ExamplesOS.Remove(example)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
@@ -734,7 +735,9 @@ class ExampleOperations(BaseOperations):
         wsHandle = self.__WSHandleVern(wsHandle)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        example.Example.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set example text"):
+            example.Example.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetTranslations(self, example_or_hvo):
@@ -974,11 +977,15 @@ class ExampleOperations(BaseOperations):
         example = self.__GetExampleObject(example_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        # Find and clear translation for this WS
+        # Find and clear translation for this WS. The search and the
+        # emptiness test stay outside the bracket so an example with no
+        # translation in this WS is a true no-op rather than an empty
+        # named undo entry (D5).
         for translation in example.TranslationsOC:
             text = ITsString(translation.Translation.get_String(wsHandle)).Text
             if text:
-                translation.Translation.set_String(wsHandle, None)
+                with self._TransactionCM("Remove example translation"):
+                    translation.Translation.set_String(wsHandle, None)
                 break
 
     @OperationsMethod
@@ -1277,7 +1284,8 @@ class ExampleOperations(BaseOperations):
 
         # Remove from collection
         if hasattr(example, "MediaFilesOS"):
-            example.MediaFilesOS.Remove(media)
+            with self._TransactionCM("Remove example media file"):
+                example.MediaFilesOS.Remove(media)
 
     @OperationsMethod
     def MoveMediaFile(self, media, from_example_or_hvo, to_example_or_hvo):
@@ -1520,7 +1528,9 @@ class ExampleOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        example.LiteralTranslation.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set literal translation"):
+            example.LiteralTranslation.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetDoNotPublishIn(self, example_or_hvo):
@@ -1578,7 +1588,8 @@ class ExampleOperations(BaseOperations):
             publication = pub_obj
 
         if publication not in example.DoNotPublishInRC:
-            example.DoNotPublishInRC.Add(publication)
+            with self._TransactionCM("Add example publication exclusion"):
+                example.DoNotPublishInRC.Add(publication)
 
     @OperationsMethod
     def RemoveDoNotPublishIn(self, example_or_hvo, publication):
@@ -1608,7 +1619,8 @@ class ExampleOperations(BaseOperations):
             publication = pub_obj
 
         if publication in example.DoNotPublishInRC:
-            example.DoNotPublishInRC.Remove(publication)
+            with self._TransactionCM("Remove example publication exclusion"):
+                example.DoNotPublishInRC.Remove(publication)
 
     # --- Private Helper Methods ---
 

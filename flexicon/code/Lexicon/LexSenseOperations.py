@@ -276,7 +276,9 @@ class LexSenseOperations(BaseOperations):
         owner = self._GetTypedOwner(sense)
         if owner is None:
             raise FP_ParameterError("Sense has no owning entry or parent sense")
-        owner.SensesOS.Remove(sense)
+
+        with self._TransactionCM("Delete sense"):
+            owner.SensesOS.Remove(sense)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
@@ -386,11 +388,21 @@ class LexSenseOperations(BaseOperations):
         Returns:
             ILexSense: The newly created deep copy sense.
         """
-        factory = self.project.project.ServiceLocator.GetService(ILexSenseFactory)
-        duplicate = factory.Create()
-        target_parent.SensesOS.Add(duplicate)
-        self.__copy_sense_content(source, duplicate, deep=True)
-        return duplicate
+        # Both callers (LexSenseOperations.Duplicate and
+        # LexEntryOperations.Duplicate) reach this helper from inside their
+        # own bracket, so this transaction joins theirs (nesting-aware per
+        # B1). Stated anyway so the site is grep-auditable per D5 and no
+        # future caller can reach it unbracketed.
+        #
+        # The create/attach/copy path is deliberately ONE unit of work: if
+        # the content copy fails after the sense is already in SensesOS, the
+        # half-populated sense must roll back with it rather than leak.
+        with self._TransactionCM("Deep copy sense"):
+            factory = self.project.project.ServiceLocator.GetService(ILexSenseFactory)
+            duplicate = factory.Create()
+            target_parent.SensesOS.Add(duplicate)
+            self.__copy_sense_content(source, duplicate, deep=True)
+            return duplicate
 
     def __copy_sense_content(self, source, duplicate, deep=False):
         """
@@ -401,71 +413,80 @@ class LexSenseOperations(BaseOperations):
             duplicate: The target ILexSense to copy into.
             deep (bool): If True, also copy owned objects (examples, subsenses, pictures).
         """
-        # Copy simple MultiString properties
-        duplicate.Gloss.CopyAlternatives(source.Gloss)
-        duplicate.Definition.CopyAlternatives(source.Definition)
-        duplicate.Bibliography.CopyAlternatives(source.Bibliography)
-        duplicate.DiscourseNote.CopyAlternatives(source.DiscourseNote)
-        duplicate.EncyclopedicInfo.CopyAlternatives(source.EncyclopedicInfo)
-        duplicate.GeneralNote.CopyAlternatives(source.GeneralNote)
-        duplicate.GrammarNote.CopyAlternatives(source.GrammarNote)
-        duplicate.PhonologyNote.CopyAlternatives(source.PhonologyNote)
-        duplicate.Restrictions.CopyAlternatives(source.Restrictions)
-        duplicate.SemanticsNote.CopyAlternatives(source.SemanticsNote)
-        duplicate.SocioLinguisticsNote.CopyAlternatives(source.SocioLinguisticsNote)
-        # Source / ScientificName / ImportResidue are ITsString
-        # (single-string), not IMultiString -- they have no
-        # CopyAlternatives. Reference-share the immutable ITsString
-        # instance instead. (issues #31, #93)
-        duplicate.Source = source.Source
-        duplicate.ScientificName = source.ScientificName
-        duplicate.ImportResidue = source.ImportResidue
+        # Every caller reaches this helper from inside an existing bracket
+        # (_deep_copy_sense_to's, or Duplicate's), so this transaction joins
+        # theirs (nesting-aware per B1). Stated anyway so the site is
+        # grep-auditable per D5.
+        #
+        # The whole copy is deliberately ONE unit of work rather than a
+        # bracket per field: a failure partway through must not leave the
+        # duplicate holding half the source's content.
+        with self._TransactionCM("Copy sense content"):
+            # Copy simple MultiString properties
+            duplicate.Gloss.CopyAlternatives(source.Gloss)
+            duplicate.Definition.CopyAlternatives(source.Definition)
+            duplicate.Bibliography.CopyAlternatives(source.Bibliography)
+            duplicate.DiscourseNote.CopyAlternatives(source.DiscourseNote)
+            duplicate.EncyclopedicInfo.CopyAlternatives(source.EncyclopedicInfo)
+            duplicate.GeneralNote.CopyAlternatives(source.GeneralNote)
+            duplicate.GrammarNote.CopyAlternatives(source.GrammarNote)
+            duplicate.PhonologyNote.CopyAlternatives(source.PhonologyNote)
+            duplicate.Restrictions.CopyAlternatives(source.Restrictions)
+            duplicate.SemanticsNote.CopyAlternatives(source.SemanticsNote)
+            duplicate.SocioLinguisticsNote.CopyAlternatives(source.SocioLinguisticsNote)
+            # Source / ScientificName / ImportResidue are ITsString
+            # (single-string), not IMultiString -- they have no
+            # CopyAlternatives. Reference-share the immutable ITsString
+            # instance instead. (issues #31, #93)
+            duplicate.Source = source.Source
+            duplicate.ScientificName = source.ScientificName
+            duplicate.ImportResidue = source.ImportResidue
 
-        # Copy Reference Atomic (RA) properties
-        duplicate.MorphoSyntaxAnalysisRA = source.MorphoSyntaxAnalysisRA
-        duplicate.StatusRA = source.StatusRA
-        duplicate.SenseTypeRA = source.SenseTypeRA
+            # Copy Reference Atomic (RA) properties
+            duplicate.MorphoSyntaxAnalysisRA = source.MorphoSyntaxAnalysisRA
+            duplicate.StatusRA = source.StatusRA
+            duplicate.SenseTypeRA = source.SenseTypeRA
 
-        # Copy Reference Collection (RC) properties
-        for domain in source.SemanticDomainsRC:
-            duplicate.SemanticDomainsRC.Add(domain)
-        for anthro in source.AnthroCodesRC:
-            duplicate.AnthroCodesRC.Add(anthro)
-        for domain_q in source.DomainTypesRC:
-            duplicate.DomainTypesRC.Add(domain_q)
-        for usage in source.UsageTypesRC:
-            duplicate.UsageTypesRC.Add(usage)
+            # Copy Reference Collection (RC) properties
+            for domain in source.SemanticDomainsRC:
+                duplicate.SemanticDomainsRC.Add(domain)
+            for anthro in source.AnthroCodesRC:
+                duplicate.AnthroCodesRC.Add(anthro)
+            for domain_q in source.DomainTypesRC:
+                duplicate.DomainTypesRC.Add(domain_q)
+            for usage in source.UsageTypesRC:
+                duplicate.UsageTypesRC.Add(usage)
 
-        # Handle owned objects if deep=True
-        if deep:
-            # Deep copy examples — targeting the duplicate sense, not source's parent
-            for example in source.ExamplesOS:
-                ex_factory = self.project.project.ServiceLocator.GetService(ILexExampleSentenceFactory)
-                new_example = ex_factory.Create()
-                duplicate.ExamplesOS.Add(new_example)
-                new_example.Example.CopyAlternatives(example.Example)
-                new_example.Reference.CopyAlternatives(example.Reference)
-                # Deep copy translations
-                for translation in example.TranslationsOC:
-                    trans_factory = self.project.project.ServiceLocator.GetService(ICmTranslationFactory)
-                    new_trans = trans_factory.Create()
-                    new_example.TranslationsOC.Add(new_trans)
-                    new_trans.Translation.CopyAlternatives(translation.Translation)
-                    new_trans.TypeRA = translation.TypeRA
+            # Handle owned objects if deep=True
+            if deep:
+                # Deep copy examples — targeting the duplicate sense, not source's parent
+                for example in source.ExamplesOS:
+                    ex_factory = self.project.project.ServiceLocator.GetService(ILexExampleSentenceFactory)
+                    new_example = ex_factory.Create()
+                    duplicate.ExamplesOS.Add(new_example)
+                    new_example.Example.CopyAlternatives(example.Example)
+                    new_example.Reference.CopyAlternatives(example.Reference)
+                    # Deep copy translations
+                    for translation in example.TranslationsOC:
+                        trans_factory = self.project.project.ServiceLocator.GetService(ICmTranslationFactory)
+                        new_trans = trans_factory.Create()
+                        new_example.TranslationsOC.Add(new_trans)
+                        new_trans.Translation.CopyAlternatives(translation.Translation)
+                        new_trans.TypeRA = translation.TypeRA
 
-            # Deep copy subsenses — recursively targeting the duplicate sense
-            for subsense in source.SensesOS:
-                self._deep_copy_sense_to(subsense, duplicate)
+                # Deep copy subsenses — recursively targeting the duplicate sense
+                for subsense in source.SensesOS:
+                    self._deep_copy_sense_to(subsense, duplicate)
 
-            # Deep copy pictures
-            for picture in source.PicturesOS:
-                pic_factory = self.project.project.ServiceLocator.GetService(ICmPictureFactory)
-                new_pic = pic_factory.Create()
-                duplicate.PicturesOS.Add(new_pic)
-                new_pic.Caption.CopyAlternatives(picture.Caption)
-                new_pic.PictureFileRA = picture.PictureFileRA
-                new_pic.LayoutPos = picture.LayoutPos
-                new_pic.ScaleFactor = picture.ScaleFactor
+                # Deep copy pictures
+                for picture in source.PicturesOS:
+                    pic_factory = self.project.project.ServiceLocator.GetService(ICmPictureFactory)
+                    new_pic = pic_factory.Create()
+                    duplicate.PicturesOS.Add(new_pic)
+                    new_pic.Caption.CopyAlternatives(picture.Caption)
+                    new_pic.PictureFileRA = picture.PictureFileRA
+                    new_pic.LayoutPos = picture.LayoutPos
+                    new_pic.ScaleFactor = picture.ScaleFactor
 
     # ========== SYNC INTEGRATION METHODS ==========
 
@@ -964,7 +985,8 @@ class LexSenseOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         # set_String handles building a tss for us
-        sense.Gloss.set_String(wsHandle, text)
+        with self._TransactionCM("Set sense gloss"):
+            sense.Gloss.set_String(wsHandle, text)
 
     @OperationsMethod
     def GetDefinition(self, sense_or_hvo, wsHandle=None):
@@ -1049,7 +1071,8 @@ class LexSenseOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         # Definition is a MultiString - set_String handles building tss
-        sense.Definition.set_String(wsHandle, text)
+        with self._TransactionCM("Set sense definition"):
+            sense.Definition.set_String(wsHandle, text)
 
     @OperationsMethod
     def GetDefinitionOrGloss(self, sense_or_hvo, wsHandle=None):
@@ -1564,7 +1587,9 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(sense_or_hvo, "sense_or_hvo")
 
         sense = self.__GetSenseObject(sense_or_hvo)
-        sense.MorphoSyntaxAnalysisRA = msa
+
+        with self._TransactionCM("Set sense grammatical info"):
+            sense.MorphoSyntaxAnalysisRA = msa
 
     # --- Semantic Domain Operations ---
 
@@ -1647,7 +1672,8 @@ class LexSenseOperations(BaseOperations):
         domain = self.__GetSemanticDomainObject(domain_or_hvo)
 
         if domain not in sense.SemanticDomainsRC:
-            sense.SemanticDomainsRC.Add(domain)
+            with self._TransactionCM("Add semantic domain"):
+                sense.SemanticDomainsRC.Add(domain)
 
     @OperationsMethod
     def RemoveSemanticDomain(self, sense_or_hvo, domain_or_hvo):
@@ -1688,7 +1714,8 @@ class LexSenseOperations(BaseOperations):
 
         # Only remove if it's actually in the collection
         if domain in sense.SemanticDomainsRC:
-            sense.SemanticDomainsRC.Remove(domain)
+            with self._TransactionCM("Remove semantic domain"):
+                sense.SemanticDomainsRC.Remove(domain)
 
     # --- Example Sentence Operations ---
 
@@ -2055,7 +2082,9 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(sense_or_hvo, "sense_or_hvo")
 
         sense = self.__GetSenseObject(sense_or_hvo)
-        sense.StatusRA = status
+
+        with self._TransactionCM("Set sense status"):
+            sense.StatusRA = status
 
     @OperationsMethod
     def GetSenseType(self, sense_or_hvo):
@@ -2132,7 +2161,9 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(sense_or_hvo, "sense_or_hvo")
 
         sense = self.__GetSenseObject(sense_or_hvo)
-        sense.SenseTypeRA = sense_type
+
+        with self._TransactionCM("Set sense type"):
+            sense.SenseTypeRA = sense_type
 
     # --- Reversal Entry Operations ---
 
@@ -2447,8 +2478,12 @@ class LexSenseOperations(BaseOperations):
         if delete_file and hasattr(picture, "PictureFileRA") and picture.PictureFileRA:
             file_path = self.project.Media.GetExternalPath(picture.PictureFileRA)
 
-        # Remove from collection
-        sense.PicturesOS.Remove(picture)
+        # Remove from collection. The optional file deletion below is a
+        # filesystem side-effect the LCM cannot roll back, so it stays
+        # outside the bracket rather than inside a unit of work that
+        # implies it is reversible.
+        with self._TransactionCM("Remove picture from sense"):
+            sense.PicturesOS.Remove(picture)
 
         # Delete physical file if requested
         if delete_file and file_path and os.path.exists(file_path):
@@ -2595,7 +2630,9 @@ class LexSenseOperations(BaseOperations):
 
         wsHandle = self.__WSHandleVernacular(wsHandle)
         mkstr = TsStringUtils.MakeString(caption, wsHandle)
-        picture.Caption.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set picture caption"):
+            picture.Caption.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetCaption(self, picture, wsHandle=None):
@@ -2917,7 +2954,9 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        sense.Bibliography.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set sense bibliography"):
+            sense.Bibliography.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetGeneralNote(self, sense_or_hvo, wsHandle=None):
@@ -2936,7 +2975,9 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        sense.GeneralNote.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set sense general note"):
+            sense.GeneralNote.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetDiscourseNote(self, sense_or_hvo, wsHandle=None):
@@ -2955,7 +2996,9 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        sense.DiscourseNote.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set sense discourse note"):
+            sense.DiscourseNote.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetEncyclopedicInfo(self, sense_or_hvo, wsHandle=None):
@@ -2974,7 +3017,9 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        sense.EncyclopedicInfo.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set sense encyclopedic info"):
+            sense.EncyclopedicInfo.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetGrammarNote(self, sense_or_hvo, wsHandle=None):
@@ -2993,7 +3038,9 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        sense.GrammarNote.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set sense grammar note"):
+            sense.GrammarNote.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetPhonologyNote(self, sense_or_hvo, wsHandle=None):
@@ -3012,7 +3059,9 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        sense.PhonologyNote.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set sense phonology note"):
+            sense.PhonologyNote.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetSemanticsNote(self, sense_or_hvo, wsHandle=None):
@@ -3031,7 +3080,9 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        sense.SemanticsNote.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set sense semantics note"):
+            sense.SemanticsNote.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetSocioLinguisticsNote(self, sense_or_hvo, wsHandle=None):
@@ -3050,7 +3101,9 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        sense.SocioLinguisticsNote.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set sense sociolinguistics note"):
+            sense.SocioLinguisticsNote.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetAnthroNote(self, sense_or_hvo, wsHandle=None):
@@ -3069,7 +3122,9 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        sense.AnthroNote.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set sense anthropology note"):
+            sense.AnthroNote.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetRestrictions(self, sense_or_hvo, wsHandle=None):
@@ -3088,7 +3143,9 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         wsHandle = self.__WSHandleAnalysis(wsHandle)
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        sense.Restrictions.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set sense restrictions"):
+            sense.Restrictions.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetSource(self, sense_or_hvo):
@@ -3240,7 +3297,8 @@ class LexSenseOperations(BaseOperations):
                 raise FP_ParameterError(f"Usage type '{usage_type_name}' not found")
 
         if usage_type not in sense.UsageTypesRC:
-            sense.UsageTypesRC.Add(usage_type)
+            with self._TransactionCM("Add usage type"):
+                sense.UsageTypesRC.Add(usage_type)
 
     @OperationsMethod
     def RemoveUsageType(self, sense_or_hvo, usage_type):
@@ -3250,7 +3308,8 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(usage_type, "usage_type")
         sense = self.__GetSenseObject(sense_or_hvo)
         if usage_type in sense.UsageTypesRC:
-            sense.UsageTypesRC.Remove(usage_type)
+            with self._TransactionCM("Remove usage type"):
+                sense.UsageTypesRC.Remove(usage_type)
 
     @OperationsMethod
     def GetDomainTypes(self, sense_or_hvo):
@@ -3279,7 +3338,8 @@ class LexSenseOperations(BaseOperations):
                 raise FP_ParameterError(f"Domain type '{domain_type_name}' not found")
 
         if domain_type not in sense.DomainTypesRC:
-            sense.DomainTypesRC.Add(domain_type)
+            with self._TransactionCM("Add domain type"):
+                sense.DomainTypesRC.Add(domain_type)
 
     @OperationsMethod
     def RemoveDomainType(self, sense_or_hvo, domain_type):
@@ -3289,7 +3349,8 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(domain_type, "domain_type")
         sense = self.__GetSenseObject(sense_or_hvo)
         if domain_type in sense.DomainTypesRC:
-            sense.DomainTypesRC.Remove(domain_type)
+            with self._TransactionCM("Remove domain type"):
+                sense.DomainTypesRC.Remove(domain_type)
 
     @OperationsMethod
     def GetAnthroCodes(self, sense_or_hvo):
@@ -3318,7 +3379,8 @@ class LexSenseOperations(BaseOperations):
                 raise FP_ParameterError(f"Anthropology code '{anthro_code_name}' not found")
 
         if anthro_code not in sense.AnthroCodesRC:
-            sense.AnthroCodesRC.Add(anthro_code)
+            with self._TransactionCM("Add anthropology code"):
+                sense.AnthroCodesRC.Add(anthro_code)
 
     @OperationsMethod
     def RemoveAnthroCode(self, sense_or_hvo, anthro_code):
@@ -3328,7 +3390,8 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(anthro_code, "anthro_code")
         sense = self.__GetSenseObject(sense_or_hvo)
         if anthro_code in sense.AnthroCodesRC:
-            sense.AnthroCodesRC.Remove(anthro_code)
+            with self._TransactionCM("Remove anthropology code"):
+                sense.AnthroCodesRC.Remove(anthro_code)
 
     # --- Private Helper Methods ---
 
@@ -3803,7 +3866,8 @@ class LexSenseOperations(BaseOperations):
                             f"keeping master (HVO: {master.Hvo})"
                         )
                         # Simply remove the duplicate (don't merge content since they're identical)
-                        dupe.OwningList.Remove(dupe)
+                        with self._TransactionCM("Remove duplicate example"):
+                            dupe.OwningList.Remove(dupe)
                         merged_count += 1
                     except Exception as e:
                         logger.warning(f"Could not remove duplicate example (HVO: {dupe.Hvo}): {e}")

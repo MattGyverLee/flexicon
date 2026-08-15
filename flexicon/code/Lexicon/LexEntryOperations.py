@@ -289,7 +289,8 @@ class LexEntryOperations(BaseOperations):
         entry = self.__ResolveObject(entry_or_hvo)
 
         # Delete the entry (LCM handles removal from repository)
-        entry.Delete()
+        with self._TransactionCM("Delete lexical entry"):
+            entry.Delete()
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, deep=True):
@@ -978,7 +979,9 @@ class LexEntryOperations(BaseOperations):
             raise FP_ParameterError("Entry has no lexeme form object")
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        entry.LexemeFormOA.Form.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set lexeme form"):
+            entry.LexemeFormOA.Form.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetCitationForm(self, entry_or_hvo, wsHandle=None):
@@ -1070,7 +1073,9 @@ class LexEntryOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        entry.CitationForm.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set citation form"):
+            entry.CitationForm.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetBestVernacularAlternative(self, entry_or_hvo):
@@ -1530,7 +1535,8 @@ class LexEntryOperations(BaseOperations):
         else:
             morph_type = morph_type_or_name
 
-        entry.LexemeFormOA.MorphTypeRA = morph_type
+        with self._TransactionCM("Set entry morph type"):
+            entry.LexemeFormOA.MorphTypeRA = morph_type
 
     @OperationsMethod
     def GetAvailableMorphTypes(self, recursive=True, **kwargs):
@@ -2021,7 +2027,9 @@ class LexEntryOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        entry.Bibliography.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set entry bibliography"):
+            entry.Bibliography.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetComment(self, entry_or_hvo, wsHandle=None):
@@ -2060,7 +2068,9 @@ class LexEntryOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        entry.Comment.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set entry comment"):
+            entry.Comment.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetLiteralMeaning(self, entry_or_hvo, wsHandle=None):
@@ -2099,7 +2109,9 @@ class LexEntryOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        entry.LiteralMeaning.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set entry literal meaning"):
+            entry.LiteralMeaning.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetRestrictions(self, entry_or_hvo, wsHandle=None):
@@ -2138,7 +2150,9 @@ class LexEntryOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        entry.Restrictions.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set entry restrictions"):
+            entry.Restrictions.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetSummaryDefinition(self, entry_or_hvo, wsHandle=None):
@@ -2177,7 +2191,9 @@ class LexEntryOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        entry.SummaryDefinition.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set entry summary definition"):
+            entry.SummaryDefinition.set_String(wsHandle, mkstr)
 
     # --- Boolean Properties ---
 
@@ -2297,7 +2313,8 @@ class LexEntryOperations(BaseOperations):
             publication = pub_obj
 
         if publication not in entry.DoNotPublishInRC:
-            entry.DoNotPublishInRC.Add(publication)
+            with self._TransactionCM("Add entry publication exclusion"):
+                entry.DoNotPublishInRC.Add(publication)
 
     @OperationsMethod
     def RemoveDoNotPublishIn(self, entry_or_hvo, publication):
@@ -2322,7 +2339,8 @@ class LexEntryOperations(BaseOperations):
             publication = pub_obj
 
         if publication in entry.DoNotPublishInRC:
-            entry.DoNotPublishInRC.Remove(publication)
+            with self._TransactionCM("Remove entry publication exclusion"):
+                entry.DoNotPublishInRC.Remove(publication)
 
     @OperationsMethod
     def GetDoNotShowMainEntryIn(self, entry_or_hvo):
@@ -2368,7 +2386,8 @@ class LexEntryOperations(BaseOperations):
             publication = pub_obj
 
         if publication not in entry.DoNotShowMainEntryInRC:
-            entry.DoNotShowMainEntryInRC.Add(publication)
+            with self._TransactionCM("Add main-entry display exclusion"):
+                entry.DoNotShowMainEntryInRC.Add(publication)
 
     @OperationsMethod
     def RemoveDoNotShowMainEntryIn(self, entry_or_hvo, publication):
@@ -2393,7 +2412,8 @@ class LexEntryOperations(BaseOperations):
             publication = pub_obj
 
         if publication in entry.DoNotShowMainEntryInRC:
-            entry.DoNotShowMainEntryInRC.Remove(publication)
+            with self._TransactionCM("Remove main-entry display exclusion"):
+                entry.DoNotShowMainEntryInRC.Remove(publication)
 
     # --- Private Helper Methods ---
 
@@ -2974,7 +2994,14 @@ class LexEntryOperations(BaseOperations):
                                 f"Auto-merging duplicate sense in entry (HVO: {dupe.Hvo}) "
                                 f"into master sense (HVO: {master.Hvo})"
                             )
-                            sense_ops.MergeObject(master, dupe, fLoseNoStringData=True)
+                            # LexSenseOperations.MergeObject opens its own
+                            # "Merge sense" bracket, so this one joins it
+                            # (nesting-aware per B1). Stated anyway so the
+                            # site is grep-auditable per D5 -- the scanner
+                            # counts it because the receiver is a local
+                            # alias, not a direct self.<Cap> delegation.
+                            with self._TransactionCM("Merge duplicate sense"):
+                                sense_ops.MergeObject(master, dupe, fLoseNoStringData=True)
                             merged_count += 1
                         except Exception as e:
                             logger.warning(f"Could not auto-merge duplicate sense (HVO: {dupe.Hvo}): {e}")
@@ -3038,7 +3065,8 @@ class LexEntryOperations(BaseOperations):
                                 f"Auto-removing duplicate pronunciation in entry (HVO: {dupe.Hvo}) "
                                 f"keeping master (HVO: {prons[0].Hvo})"
                             )
-                            dupe.OwningList.Remove(dupe)
+                            with self._TransactionCM("Remove duplicate pronunciation"):
+                                dupe.OwningList.Remove(dupe)
                             removed_count += 1
                         except Exception as e:
                             logger.warning(f"Could not remove duplicate pronunciation (HVO: {dupe.Hvo}): {e}")
@@ -3108,7 +3136,8 @@ class LexEntryOperations(BaseOperations):
                                 f"Auto-removing duplicate allomorph in entry (HVO: {dupe.Hvo}) "
                                 f"keeping master (HVO: {allomorphs[0].Hvo})"
                             )
-                            dupe.OwningList.Remove(dupe)
+                            with self._TransactionCM("Remove duplicate allomorph"):
+                                dupe.OwningList.Remove(dupe)
                             removed_count += 1
                         except Exception as e:
                             logger.warning(f"Could not remove duplicate allomorph (HVO: {dupe.Hvo}): {e}")

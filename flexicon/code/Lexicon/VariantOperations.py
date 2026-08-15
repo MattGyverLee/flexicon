@@ -480,7 +480,9 @@ class VariantOperations(BaseOperations):
         owner = self._GetTypedOwner(variant)
         if owner is None:
             raise FP_ParameterError("Variant ref has no owning entry")
-        owner.EntryRefsOS.Remove(variant)
+
+        with self._TransactionCM("Delete variant reference"):
+            owner.EntryRefsOS.Remove(variant)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True):
@@ -748,7 +750,9 @@ class VariantOperations(BaseOperations):
             raise FP_ParameterError("Entry has no lexeme form object")
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        owner.LexemeFormOA.Form.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set variant form"):
+            owner.LexemeFormOA.Form.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetType(self, variant_or_hvo):
@@ -945,7 +949,8 @@ class VariantOperations(BaseOperations):
         entry = self.__GetEntryObject(entry_or_hvo)
 
         # Add the entry as a component
-        variant.ComponentLexemesRS.Add(entry)
+        with self._TransactionCM("Add component lexeme"):
+            variant.ComponentLexemesRS.Add(entry)
 
     @OperationsMethod
     def RemoveComponentLexeme(self, variant_or_hvo, entry_or_hvo):
@@ -991,7 +996,8 @@ class VariantOperations(BaseOperations):
 
         # Remove if present
         if entry in variant.ComponentLexemesRS:
-            variant.ComponentLexemesRS.Remove(entry)
+            with self._TransactionCM("Remove component lexeme"):
+                variant.ComponentLexemesRS.Remove(entry)
 
     # --- Utilities ---
 

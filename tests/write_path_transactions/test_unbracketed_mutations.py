@@ -37,14 +37,26 @@ Two failure modes, by design:
 Net effect: the number in the baseline can only go down, and only by
 someone deliberately re-running the scanner and re-freezing it -- see
 ``regenerate_baseline()`` docstring below.
+
+**Status: the countdown is finished.** B2 batch 11/11 (Lexicon) took the
+baseline to 0, so failure mode 2 can no longer fire and failure mode 1 is
+now the permanent guard: with an empty baseline, *any* unbracketed LCM
+mutator anywhere under ``flexicon/code/`` is a new violation and fails CI.
+That is the steady state -- these tests are not scaffolding to remove.
 """
 
+import ast
 import json
 from pathlib import Path
 
 import pytest
 
-from tests.write_path_transactions.scan_unbracketed_mutations import scan
+from tests.write_path_transactions.scan_unbracketed_mutations import (
+    CODE_ROOT,
+    _iter_source_files,
+    _scan_method,
+    scan,
+)
 
 BASELINE_PATH = Path(__file__).parent / "snapshots" / "unbracketed_baseline.json"
 
@@ -77,17 +89,52 @@ def _how_to_fix(entry):
 
 
 class TestUnbracketedMutationRatchet:
-    def test_scanner_runs_and_finds_entries(self):
-        """Sanity check: the scanner itself must produce output. An empty
-        result almost certainly means the scanner is broken (e.g. walking
-        the wrong directory), not that flexicon/code is fully bracketed --
-        that would be B2's completion, tracked separately in tasks.md."""
-        findings = scan()
-        assert len(findings) > 0, (
-            "Scanner found zero unbracketed methods -- expected the B2 "
-            "sweep baseline count. If B2 is genuinely complete, delete "
-            "this test file's ratchet tests per tasks.md, don't silence "
-            "this assertion."
+    def test_scanner_is_functional(self):
+        """Sanity check that the scanner still WORKS, now that a zero result
+        is the correct answer.
+
+        Until B2 landed, this test asserted ``len(scan()) > 0`` -- an empty
+        result then meant the scanner was broken (walking the wrong
+        directory), because real violations were known to exist. B2 batch
+        11/11 took the count to zero, so that assertion inverted: it would
+        now fail precisely because the sweep succeeded.
+
+        The ratchet tests below are NOT deleted -- with a zero baseline they
+        become the permanent guard against any new unbracketed mutator. But
+        they would also pass vacuously if the scanner silently stopped
+        detecting anything, so this test pins the two properties that a
+        zero-violation `scan()` no longer proves on its own:
+
+          1. the scanner walks a real tree that actually contains source; and
+          2. its detection logic still flags an unbracketed mutation, and
+             still does NOT flag a bracketed one.
+        """
+        source_files = list(_iter_source_files())
+        assert len(source_files) > 50, (
+            f"Scanner walked {CODE_ROOT} and found only {len(source_files)} "
+            "source file(s) -- it is almost certainly pointed at the wrong "
+            "directory. A zero-violation result from this tree proves nothing."
+        )
+
+        unbracketed = ast.parse(
+            "class C:\n"
+            "    def m(self):\n"
+            "        self.thing.OwningList.Remove(x)\n"
+        ).body[0].body[0]
+        assert _scan_method(unbracketed) == {".Remove"}, (
+            "Scanner failed to flag a plainly unbracketed .Remove() -- its "
+            "detection logic is broken, so the zero baseline is meaningless."
+        )
+
+        bracketed = ast.parse(
+            "class C:\n"
+            "    def m(self):\n"
+            '        with self._TransactionCM("label"):\n'
+            "            self.thing.OwningList.Remove(x)\n"
+        ).body[0].body[0]
+        assert _scan_method(bracketed) == set(), (
+            "Scanner flagged a correctly bracketed mutation -- it would "
+            "report false violations against a fully swept tree."
         )
 
     def test_no_new_unbracketed_mutations(self):
