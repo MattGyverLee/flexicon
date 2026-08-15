@@ -100,6 +100,21 @@
       "what": "Full offline gate after batch 8; byte-identical to the batch-7 baseline, so zero regressions",
       "command": "python -m pytest -m \"not requires_live_project\" -q",
       "result": "117 failed, 1424 passed, 11 skipped, 322 deselected, 17 errors"
+    },
+    {
+      "what": "LIVE on FLEx project 'Target' (human-authorised, FLEx closed, backed up). Batch-8 bracketed WfiGloss.SetForm write persisted across CloseProject -> reopen: wordform 'nnyo' hvo=147, analysis 8c07178d, gloss 'snake' -> sentinel -> reopen reads sentinel -> restored to 'snake' -> reopen reads 'snake'. This is the #237 persistence behaviour B2t asks for, but NOT a discharge of B2t: the MCP harness controls the OpenProject flags, so undoable=True could not be set explicitly.",
+      "command": "flextools_run_module against Target (write) then re-run read-only",
+      "result": "[PASS] persisted across close/reopen; [PASS] restored; 124 wordforms unchanged"
+    },
+    {
+      "what": "LIVE undo-accounting evidence for D5 'validators outside the bracket'. Both mutating runs reported lcm_undoable_action_count exactly 1 while ALSO executing a rejected call in the same run: SetForm(gloss, None) raised FP_NullParameterError, and SetSense(bundle, 999999999) raised KeyNotFoundException. Neither rejection contributed an undoable action, which is precisely the property the per-site bracket shape exists to preserve.",
+      "command": "flextools_run_module against Target, write_enabled=True",
+      "result": "lcm_undoable_action_count: 1 on both write runs (the single intended mutation only)"
+    },
+    {
+      "what": "LIVE confirmation of the batch-8 reference-setter resolution hoist. WfiMorphBundle.SetSense with an unresolvable hvo raised BEFORE the transaction opened and left both morph bundles on analysis 8c07178d untouched (sense=None both before and after).",
+      "command": "flextools_run_module against Target, write_enabled=True",
+      "result": "KeyNotFoundException raised; bundles unchanged; zero undoable actions from the failed call"
     }
   ],
   "decisions": [
