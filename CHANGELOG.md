@@ -11,6 +11,86 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+> Targets **4.4.0**. Contains a public-API default change; read the first
+> entry before upgrading.
+
+### Changed
+- **BREAKING (behavioural): `OpenProject(..., undoable=...)` now defaults to
+  `True`.** Task DEF of `specs/write-path-transactions`, gated on decision D3.
+  Previously every write-enabled session ran inside a single session-long
+  `BeginNonUndoableTask()` envelope in which nothing rolled back: an exception
+  raised mid-operation left every mutation applied before the failure sitting
+  in the cache, to be written to disk by the next
+  `SaveChanges()`/`CloseProject()` (#236). Under the new default each write
+  runs inside its own named, nesting-aware LCM unit of work, so an exception
+  escaping an operation reverts that operation, and the operation appears in
+  FLEx's Ctrl+Z menu under its own label.
+
+  No signature or call-site change is required. What changes underneath a
+  caller who passes only `writeEnabled=True`:
+
+  - Failed operations no longer leave partial writes behind.
+  - Writes appear individually on the FLEx undo stack rather than not at all.
+  - `AbortSession()` becomes a near-no-op: it returns `False` between
+    operations and raises `FP_TransactionError` inside one (decision D8),
+    because per-operation rollback covers the same ground. Callers relying on
+    it to discard a whole partial batch must now pass `undoable=False`
+    explicitly, or restructure around per-operation rollback.
+  - `CustomFieldOperations.CreateField()` still always raises
+    `FP_TransactionError`, but now for the other of its two reasons. Its
+    `CurrentDepth > 0` guard no longer fires (the old session envelope held
+    that depth at 1 all session; between operations it is now 0), so calls
+    fall through to the unimplemented-no-UoW-path raise instead. Callers
+    matching on the message text will see a different one; the behaviour
+    (no custom field is created) is unchanged.
+  - Nested blocks **join** the enclosing unit of work rather than opening an
+    independent one. Catching an exception from an inner block while still
+    inside the outer block therefore commits the inner block's partial
+    writes -- see `docs/EXCEPTION_HANDLING.md`.
+
+  To keep the previous behaviour, pass `undoable=False` explicitly. That path
+  is retained, still warns once per `OpenProject()` call, and must not be used
+  when the project may be open in FLEx or another process (D3).
+
+  If your own code writes through the LCM **directly** rather than through a
+  wrapper method (`agent.SetEvaluation(...)`, `sense.Source = ...`), it now
+  needs its own `with project.UndoableOperation("..."):` block. Those writes
+  used to be covered for free by the session envelope; under the new default
+  nothing is open between operations and an unbracketed raw write raises
+  `InvalidOperationException: Not in the right state to register a change.`
+
+### Fixed
+- **47 mutation sites that were running outside any unit of work are now
+  bracketed.** Found by the DEF default flip, which turned a latent gap into a
+  visible failure. They were missed by the original 295-site sweep because its
+  scanner recognised a mutation only as a call from a hardcoded name list or an
+  assignment to a property ending `RA`/`OA`/`OS`/`RS`. Three classes fell
+  outside both:
+
+  - **43 unsuffixed scalar property writes** across 22 files — `Senses.SetSource`,
+    `SetScientificName`, `SetImportResidue`, `LexEntry.SetHomographNumber`,
+    `SetDoNotUseForParsing`, `SetExcludeAsHeadword`, `WritingSystems.SetFontName`
+    / `SetFontSize` / `SetRightToLeft`, `Wordforms.SetSpellingStatus`,
+    `Segments.SetBaselineText` / `ReparseParagraph` / `SetIsLabel`,
+    `Texts.SetIsTranslated`, and others. ITsString, Unicode, bool, int and
+    GenDate properties carry no ownership suffix, so none of them ever counted.
+  - **3 `ISilDataAccess` scalar setters** — `FLExProject.LexiconSetFieldInteger`,
+    `LexiconSetListFieldSingle`, `LexiconClearListFieldSingle`
+    (`SetInt` / `SetObjProp`).
+  - **1 LCM domain mutator** — `WfiAnalyses.SetApprovalStatus`, which reaches
+    `ICmAgent.SetEvaluation`.
+
+  Under `undoable=False` these were invisible (the session envelope covered
+  them); under the new default each raised
+  `InvalidOperationException: Not in the right state to register a change.`
+  The mutation scanner now recognises all three shapes, so the guard measures
+  the codebase rather than its own name list.
+
+- **`BaseOperations.ApplySyncableProperties` now runs inside a unit of work.**
+  Its writes live in a module-level helper, so no per-method sweep reached
+  them. The whole property loop is bracketed as one unit, so a sync that fails
+  partway cannot leave the target item half-updated.
+
 ### Fixed
 - **`project.Senses.GetPartOfSpeechObject()` no longer returns `None` for every
   sense.** The method read `getattr(msa, "PartOfSpeechRA", None)` off the base

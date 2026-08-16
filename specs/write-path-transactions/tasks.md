@@ -169,14 +169,21 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
 - [x] ~~**B3**~~ Duplicate of the Checkpoint 2a entry (stale line numbers); B3 landed
       in `1dfc464`. Residual close-out work: record the **in-process-only** scope
       caveat on #235 — tracked under **CO1** below.
-- [ ] **CO1** Close #235 with the in-process-only scope caveat recorded on the issue
+- [x] **CO1** Close #235 with the in-process-only scope caveat recorded on the issue
       (`Undo()`/`Redo()` drive the live `ActionHandlerAccessor`; they do not reverse
-      changes already committed to disk by a prior session). **needs_human** — closing
-      a GitHub issue is an outward-facing write. The caveat now has live evidence to
-      cite: `test_undoable_mode_live.py::TestPersistenceAcrossReopen::
+      changes already committed to disk by a prior session). **DONE.** The
+      `needs_human` gate on the outward-facing write was lifted by the maintainer
+      ("finish the tasks this time"). Comment posted and issue closed as completed:
+      MattGyverLee/flexicon#235 (`issuecomment-5307881281`). The comment records the
+      `ActionHandlerAccessor` + `CanUndo()`/`CanRedo()` fix, states the caveat, and
+      cites the live evidence: `test_undoable_mode_live.py::TestPersistenceAcrossReopen::
       test_undo_stack_does_not_survive_reopen` shows a committed write persisting while
       `CanUndo()` reads False on the reopened project, and
-      `TestUndoRedoLive` covers the in-session Undo/Redo round trip.
+      `TestUndoRedoLive` covers the in-session Undo/Redo round trip. Before posting,
+      the fix's three public claims were re-verified against the source: no
+      `self.project.UndoStack` reference survives anywhere in `FLExProject.py` (the 12
+      remaining `UndoStack` hits are `IUndoStackManager` or C# citations in comments),
+      and both methods gate on `CanUndo()`/`CanRedo()` with the dead branches deleted.
 - [x] **A3** `FLExProject.AbortSession()` -> `IActionHandler.Rollback(0)`. Demoted below
       Track B. Must document the **O2 catch**: `Rollback` leaves the FSM in
       `ReadyForBeginTask`, so in `undoable=False` it terminates the session envelope and
@@ -191,17 +198,37 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
       Evidence: `evidence/live-a3-abort-session.md`.
       **A3's live run also found and fixed a critical pre-existing B1 defect — see D9 —
       and found a second pre-existing defect in `SaveChanges()`, recorded not fixed.**
-- [ ] **DEF** Flip the default to `undoable=True` (D3). Gated on Checkpoint 2 green.
-      **needs_human** — public API default change. **Coverage blocker CLEARED** by
-      **DEF-COV** + **B2t**: the `undoable=True` path now has live coverage that a
-      reintroduced D9 turns red. What remains is genuinely the human decision, not a
-      missing test. Two things to weigh before flipping, both surfaced by DEF-COV:
+- [x] **DEF** Flip the default to `undoable=True` (D3). Gated on Checkpoint 2 green.
+      **DONE.** The `needs_human` gate was lifted by the maintainer ("finish the tasks
+      this time"); the coverage blocker had already been cleared by **DEF-COV** + **B2t**.
+      `FLExProject.OpenProject(..., undoable=True, ...)` is now the signature default;
+      the legacy mode requires an explicit `undoable=False`, which still emits the
+      one-shot A2d warning (reworded — it now names the caller's opt-out rather than
+      describing an unavoidable limitation). Evidence:
+      `evidence/live-def-default-flip.md`. The two caveats recorded here before the
+      flip both survive it and are now documented at the `OpenProject` docstring, in
+      `docs/EXCEPTION_HANDLING.md`, and in the CHANGELOG entry:
       (a) nested blocks JOIN, so an inner block has no independent rollback — callers
       who catch an inner exception inside an outer block get the inner's partial writes
-      committed (documented in `docs/EXCEPTION_HANDLING.md`, pinned by
+      committed (pinned by
       `test_inner_exception_caught_inside_the_outer_block_still_commits`);
       (b) `AbortSession()` becomes a near-no-op for anyone who was relying on it, since
       it refuses inside a block and returns `False` outside one (D8).
+
+      **Two things the flip changed that this entry did not predict, both found by
+      running the live suite unpinned before deciding anything — see D11 and D12:**
+      - **D11** — it exposed a genuine unbracketed mutation site that B2's 295-site
+        sweep had missed, `BaseOperations.ApplySyncableProperties` (writes live in the
+        module-level helper `_apply_props_loop`, which no per-*method* scheme reached).
+        Latent under `undoable=False`, a hard `InvalidOperationException: Not in the
+        right state to register a change.` under the new default. Fixed here with a
+        bracket; a sweep for the same shape across `flexicon/code/` found exactly one
+        other module-level writer, `lcm_casting.clone_properties`, and confirmed all
+        seven of its call sites are already inside a caller's bracket.
+      - **D12** — three conftest fixtures (`target_project`, `target_sandbox`,
+        `sena3_sandbox`) opened with the *implicit* default, so the flip silently
+        converted them to `undoable=True` and collapsed the mode distinction the suite
+        is built on. Pinned to `undoable=False` explicitly.
 
 ---
 
@@ -395,3 +422,139 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
   silent-failure bug should be stated as "reintroducing the bug turns N tests red",
   not as "N tests pass" — the second is true of the suite that missed D9 in the
   first place.
+
+- **D11 — A per-*method* mutation sweep cannot see writes that live in module-level
+  helpers. RESOLVED (DEF).** B2 bracketed 295 sites and B2g ratcheted the baseline to
+  0, which read as "every mutation is now inside a unit of work". It was not.
+  `BaseOperations.ApplySyncableProperties` validates and then delegates every one of
+  its writes to `_apply_props_loop`, a **module-level function** — so the site the
+  sweep enumerated (the method) contained no mutation, and the code that mutates was
+  not a method at all. Under `undoable=False` this was invisible, because the session
+  envelope covered it. The moment DEF made `undoable=True` the default it became a
+  hard failure: `MultiUnicodeAccessor.set_String` raises
+  `InvalidOperationException: Not in the right state to register a change.`
+
+  Fixed by bracketing the call as one unit rather than per property — a partial sync
+  that failed halfway would otherwise leave the target item with some fields updated
+  and some stale, a state its callers cannot detect.
+
+  *Swept, not assumed:* an AST pass over every module-level function in
+  `flexicon/code/` looking for write-shaped calls outside a `_TransactionCM` found
+  exactly two: this one and `lcm_casting.clone_properties`. All seven
+  `clone_properties` call sites were checked individually and every one is already
+  inside a caller's bracket ("Duplicate environment", "Duplicate phoneme",
+  "Duplicate phonological rule", plus two internal recursions reached from those), so
+  it joins rather than opens and needs no change. Two module-level writers, one gap,
+  one fixed.
+
+  *Generalises:* B2g's ratchet is a guard against *regression*, not a proof of
+  *coverage* — it can only count sites its scanner's shape can see. Any future claim
+  of the form "all N mutation sites are bracketed" should state the enumeration's
+  blind spot. This one's was "writes reached through a non-method callee".
+
+- **D12 — Flipping a library default silently reinterprets every fixture that relied
+  on it. RESOLVED (DEF).** Three conftest fixtures — `target_project`,
+  `target_sandbox`, `sena3_sandbox` — called `OpenProject(..., writeEnabled=True)`
+  with no `undoable=`, so DEF converted them to `undoable=True` without a single
+  line of test code changing. That collapsed them into `target_sandbox_undoable`,
+  whose own docstring exists to say the two modes are different LCM state machines
+  and that "a `undoable=False` fixture cannot stand in" — the converse holds just as
+  hard, and the collapse broke every `AbortSession` / `CurrentDepth` / undo-stack
+  assertion in the suite (12 failures in `test_abort_session_live.py` alone, all
+  green again once pinned).
+
+  Resolution: pin all three to `undoable=False` explicitly, with a comment saying
+  the pin is deliberate. A fixture whose *identity* is a mode must name that mode.
+
+  *Deliberate consequence, recorded so it is not mistaken for an oversight:* the
+  broad live suite therefore keeps exercising `undoable=False`, and coverage of the
+  new default rests on `test_undoable_mode_live.py` (33 tests, `target_sandbox_undoable`).
+  That is a real coverage asymmetry and the honest follow-up from this task — but it
+  is the *pre-existing* asymmetry, unchanged by DEF, and closing it means re-verifying
+  ~400 tests against different atomicity semantics, which is its own task and not a
+  default flip.
+
+  *Method worth reusing:* the blast radius was measured by running the whole live
+  suite **unpinned** first — deliberately letting the flip reinterpret the fixtures —
+  and only then deciding what to pin. Pinning first would have produced a green suite
+  that proved nothing, and D11 would have shipped undetected.
+
+- **D13 — B2's "295/295, baseline 0" was a measurement of the scanner, not of the
+  codebase. RESOLVED (DEF).** D11 found one module-level gap; pulling that thread
+  found the general case. `scan_unbracketed_mutations.py` recognised a mutation in
+  exactly two shapes: a call whose attribute is in a hardcoded `MUTATION_CALL_ATTRS`
+  set, or an assignment to a property whose name ends `RA`/`OA`/`OS`/`RS`. Three
+  whole classes of LCM write fell outside both:
+
+  1. **Unsuffixed scalar property assignment** — `sense.ScientificName = ...`,
+     `entry.HomographNumber = ...`, `ws.RightToLeftScript = ...`. ITsString,
+     Unicode, bool, int and GenDate properties carry no ownership suffix, so none
+     of them ever counted. **43 sites across 22 files.**
+  2. **ISilDataAccess scalar setters** — `DomainDataByFlid.SetInt` / `SetObjProp`.
+     Calls, so the property rule cannot see them; not in the call set either. Left
+     `FLExProject.LexiconSetFieldInteger`, `LexiconSetListFieldSingle` and
+     `LexiconClearListFieldSingle` unbracketed *beside* three siblings B2 did
+     bracket, which is the tell that the sweep was name-driven rather than
+     effect-driven.
+  3. **LCM domain mutators that read as ordinary setters** —
+     `ICmAgent.SetEvaluation`, which creates and rewires owned evaluation objects.
+
+  All three are now bracketed, and all three shapes were added to the scanner, so
+  the ratchet measures them from here. *Mutation-checked, per D10:* the extended
+  scanner reports **39 unbracketed methods against the pre-DEF tree and 0 against
+  the fixed one** — the guard fails when the bug is reintroduced, which the old one
+  did not. `test_scanner_is_functional` grew assertions pinning the unsuffixed rule
+  in both directions (flags unbracketed, ignores bracketed) plus a negative case for
+  `self.Attr = ...`, which is Python wrapper state and must never count.
+
+  *The generalisation, and it is the real lesson of this feature:* a mutation
+  scanner built from a **list of names** measures the list. B2g's zero was true of
+  its own definition and false of the codebase, and it stayed green through 295
+  correct edits *and* 47 missing ones. An effect-driven check — does this method
+  reach the LCM outside a unit of work — is what the ratchet was believed to be. The
+  live `undoable=True` suite is the only thing that actually tests that property,
+  which is why DEF found this and no offline gate ever could.
+
+- **D14 — Tests that write raw LCM need their own unit of work, and a bare
+  `except: pass` turns that into a mystery. RESOLVED (DEF).** ~20 live tests set up
+  or tore down fixtures by writing through the LCM directly rather than through the
+  wrapper — `parser_agent.SetEvaluation(...)`, `fs.FeaturesOC.Remove(feat)`,
+  `DomainDataByFlid.DeleteObj(hvo)`, `possibilities.MoveTo(...)`,
+  `entry.LexemeFormOA.Form.set_String(...)` — often deliberately, to stay independent
+  of whatever the test was not testing. Under `undoable=False` the session envelope
+  covered them for free; under the new default they raise. Each now takes an explicit
+  `UndoableOperation("test: ...")`. Full site list in
+  `evidence/live-def-default-flip.md` §4.4.
+
+  This is a harness fix, not a library defect — the failing writes bypass the public
+  API by design. It is recorded because the same hazard applies to **user** scripts
+  that reach through to raw LCM, which is why the CHANGELOG entry and the
+  `OpenProject` docstring both call it out.
+
+  **The part worth remembering is how badly this misled the diagnosis.** Nearly every
+  one of these sites sits inside `except Exception: pass`. The write raises, the
+  except swallows it, and the failure resurfaces later in a *different* test as
+  "a text with the name 'zz_split_test' already exists" or a canonical-GUID
+  collision. And the swallowed write is **half-applied**: `LcmSet.Remove` takes the
+  object out of the collection and *then* raises while registering the undo action,
+  so the object is gone from `FeaturesOC` yet still live in the object repository
+  with its GUID held. `_find_by_guid` returning `None` while `factory.Create(guid)`
+  reports "identical GUIDs" looks like a contradiction, and it is really just the two
+  halves of one interrupted write.
+
+  That appearance produced a **wrong hypothesis, recorded here because it was
+  believed and acted on**: that `undoable=True` keeps deleted objects on the undo
+  stack and therefore reserves their GUIDs for the session — a design blocker with no
+  cheap fix. A direct live probe (create → delete → inspect
+  `ICmObjectRepository.TryGetObject` → recreate) refuted it in one run: the delete
+  releases the GUID and the recreate succeeds. Re-running the probe with the *test's*
+  raw removal instead of the wrapper's reproduced the failure exactly. Rule:
+  **never theorise about LCM semantics from a symptom observed downstream of a
+  swallowed exception — probe the write itself.**
+
+  *Also found, and not a DEF regression at all:* 19 residual failures were `zz_*`
+  objects left in **Sena 3** by earlier runs in this very session.
+  `test_segment_operations.py` and the catalog suites open `Sena 3` through their own
+  module `writable_project` fixture, not the Target, so `scripts/restore_target.py`
+  never cleaned them. Any paired live measurement in this repo has to restore **both**
+  projects, or it measures its own history.

@@ -30,7 +30,9 @@ version = "4.3.1"
 #:
 #: IMPORTANT -- a token here means "this build implements the capability", NOT
 #: "the capability is active in your session". Two of the four are
-#: mode-dependent and deliver nothing under the default ``undoable=False``:
+#: mode-dependent: they are active under ``undoable=True``, which is the
+#: default since 4.4.0, and deliver nothing if a caller opts out with
+#: ``undoable=False``:
 #:
 #:   ``"ui-injection"``        Always active. ``OpenProject(..., ui=...)``
 #:                             accepts an ``ILcmUI``; defaults to ``FwLcmUI``.
@@ -38,11 +40,13 @@ version = "4.3.1"
 #:                             wraps ``IUndoStackManager.Refresh()``; needed in
 #:                             BOTH modes, since one foreign FLEx save otherwise
 #:                             wedges auto-save for the rest of the session.
-#:   ``"per-operation-uow"``   Requires ``undoable=True``. Every LCM mutation
-#:                             runs inside a named, nesting-aware unit of work.
-#:                             Under ``undoable=False`` the atomicity unit is
+#:   ``"per-operation-uow"``   Requires ``undoable=True`` (the default). Every
+#:                             LCM mutation runs inside a named, nesting-aware
+#:                             unit of work. If a caller opts out with
+#:                             ``undoable=False`` the atomicity unit is
 #:                             the whole SESSION, not the operation.
-#:   ``"transaction-rollback"``Requires ``undoable=True``. An exception escaping
+#:   ``"transaction-rollback"``Requires ``undoable=True`` (the default). An
+#:                             exception escaping
 #:                             a transaction reverts that operation's mutations
 #:                             via ``UndoableUnitOfWorkHelper``'s ``Rollback(0)``.
 #:                             Under ``undoable=False`` there is NO rollback --
@@ -51,9 +55,9 @@ version = "4.3.1"
 #:                             before a failure are still written to disk by
 #:                             ``CloseProject()``.
 #:
-#: ``OpenProject()`` already warns once per call when ``writeEnabled=True`` and
-#: ``undoable=False``, so the mode dependence is surfaced at the boundary where
-#: the mode is chosen as well as here.
+#: ``OpenProject()`` already warns once per call when ``writeEnabled=True`` is
+#: combined with an explicit ``undoable=False``, so the mode dependence is
+#: surfaced at the boundary where the mode is chosen as well as here.
 CAPABILITIES = frozenset({
     "ui-injection",
     "refresh-from-disk",

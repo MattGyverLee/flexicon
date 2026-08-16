@@ -161,7 +161,7 @@ class FLExProject(object):
 
     """
 
-    def OpenProject(self, projectName, writeEnabled=False, undoable=False, ui=None):
+    def OpenProject(self, projectName, writeEnabled=False, undoable=True, ui=None):
         """
         Open a project. The project must be closed with `CloseProject()` to
         save any changes, and release the lock.
@@ -177,15 +177,35 @@ class FLExProject(object):
             opening the project in this mode.
 
         undoable:
-            Enable full undo stack integration with FLEx Ctrl+Z.
-            When True, operations wrapped in UndoableOperation() will appear
-            in FLEx's Undo menu. When False (default), uses rollback-only
-            transactions via Transaction().
+            **Default since 4.4.0: True.** Each write runs inside its own
+            named, nesting-aware LCM unit of work, so an exception escaping
+            an operation rolls that operation's mutations back, and the
+            operation appears in FLEx's Ctrl+Z menu under its own label.
+            This is the mode the write path is designed for (decision D3 in
+            `specs/write-path-transactions/tasks.md`).
 
-            Only valid when writeEnabled=True. Ignored if False.
+            Only meaningful when writeEnabled=True; ignored otherwise.
 
-            Phase 2 feature: requires LCM BeginUndoTask/EndUndoTask support.
-            See docs/internal/RESEARCH_NEEDED.md for details.
+            Passing ``undoable=False`` opts back into the legacy Phase 1
+            behaviour: one session-long ``BeginNonUndoableTask()`` envelope,
+            in which ``Transaction()`` is a labelling/nesting construct only
+            and **nothing rolls back** -- the atomicity unit becomes the
+            whole session (issue #236). It is retained for callers that
+            depend on the old semantics, and it warns once per
+            ``OpenProject()`` call. Do not use it when the project may be
+            open in FLEx or another process (D3).
+
+            Two consequences of the default worth knowing before you rely on
+            per-operation rollback:
+
+            * Nested blocks **join** the outer unit of work rather than
+              opening an independent one, so catching an exception from an
+              inner block while still inside the outer block commits that
+              inner block's partial writes. See `docs/EXCEPTION_HANDLING.md`.
+            * ``AbortSession()`` is an ``undoable=False`` primitive. Under
+              this default it returns False between operations and raises
+              ``FP_TransactionError`` inside one (D8) -- per-operation
+              rollback covers that ground instead.
 
         ui:
             Optional `ILcmUI` implementation, passed through to
@@ -265,16 +285,23 @@ class FLExProject(object):
             # cannot train callers to tune it out. See A2 in
             # specs/write-path-transactions/spec.md and
             # docs/EXCEPTION_HANDLING.md.
+            #
+            # Since 4.4.0 (task DEF) this is the OPT-OUT path, not the
+            # default -- reaching it means the caller passed undoable=False
+            # explicitly, so the warning names that choice rather than
+            # describing an unavoidable limitation.
             logging.getLogger(__name__).warning(
-                "OpenProject: writeEnabled=True, undoable=False. In this "
+                "OpenProject: writeEnabled=True with an explicit "
+                "undoable=False. This opts OUT of per-operation units of "
+                "work, which is the default since 4.4.0. In this legacy "
                 "mode Transaction() is a labelling/nesting construct only -- "
                 "liblcm exposes no reachable rollback-to-mark API in this "
                 "mode (issue #236). The atomicity unit for this whole "
                 "session is the SESSION, not the operation: if code raises "
                 "mid-operation, every mutation applied before the failure "
                 "remains in the in-memory cache and will be written to disk "
-                "by CloseProject()/SaveChanges(). See "
-                "docs/EXCEPTION_HANDLING.md."
+                "by CloseProject()/SaveChanges(). Drop the argument to get "
+                "rollback back. See docs/EXCEPTION_HANDLING.md."
             )
             # Phase 1 behavior: whole session is non-undoable (rollback transactions only)
             try:
@@ -461,7 +488,8 @@ class FLExProject(object):
 
         Mode-dependent semantics (read this before relying on it for safety):
 
-        * ``undoable=False`` (the default mode): **there is no rollback.**
+        * ``undoable=False`` (the legacy opt-out mode; the default is
+          ``undoable=True`` since 4.4.0): **there is no rollback.**
           liblcm exposes no reachable "roll back to a mark" primitive in
           this mode (issue #236; confirmed by reflection over
           `SIL.LCModel.dll` -- see `specs/write-path-transactions/spec.md`
@@ -635,7 +663,8 @@ class FLExProject(object):
 
         Mode-dependent behavior (read this before relying on it):
 
-        * ``undoable=False`` (default): this is the intended mode. The
+        * ``undoable=False`` (the legacy opt-out; you must ask for it
+          explicitly since 4.4.0): this is the intended mode. The
           session-long ``BeginNonUndoableTask()`` opened at ``OpenProject()``
           is the open unit of work, so this rolls the session back to its
           state at open (or at the last commit) and then **reopens the
@@ -696,7 +725,10 @@ class FLExProject(object):
 
         Example::
 
-            project.OpenProject("MyProject", writeEnabled=True)
+            # NOTE the explicit undoable=False. Under the 4.4.0 default this
+            # method has nothing session-wide to abort -- see the mode table
+            # above -- and each Create() rolls itself back instead.
+            project.OpenProject("MyProject", writeEnabled=True, undoable=False)
             try:
                 for word, gloss in messy_input:
                     entry = project.LexEntry.Create(word, "stem")

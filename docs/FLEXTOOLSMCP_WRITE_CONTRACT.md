@@ -541,14 +541,18 @@ enforcement work — recommend filing one alongside **DEF** in
    `tests/operations/test_undoable_mode_live.py::TestPersistenceAcrossReopen`,
    together with the rest of the live `undoable=True` coverage DEF was
    gated on (33 live tests). #237 is closed by it.
-4. Only then does **DEF** (flipping the default to `undoable=True`) become
-   viable, and it is itself a separate `needs_human`-gated public-API
-   default change per `tasks.md` Checkpoint 3.
+4. **DEF** — flip the default to `undoable=True`. **LANDED, not released**
+   (targets 4.4.0). The maintainer took the `needs_human` decision once
+   DEF-COV and B2t had cleared its coverage blocker;
+   `FLExProject.OpenProject()` now carries `undoable=True` as its default and
+   the legacy mode is reached only by passing `undoable=False` explicitly.
 
-Steps 1-3 have landed (unreleased). Until **DEF** lands *and a release
-cuts*, FlexToolsMCP should pass `undoable=True` explicitly rather than rely
-on a future default flip — a version-pinned 4.3.0 install still has the
-broken behavior #237 reported, and still defaults to `undoable=False`.
+Steps 1-4 have landed (unreleased). Until a release **cuts**, FlexToolsMCP
+should still pass `undoable=True` explicitly rather than rely on the flipped
+default — a version-pinned 4.3.0 install has neither the fix nor the new
+default, still has the broken behavior #237 reported, and still defaults to
+`undoable=False`. Passing it explicitly is correct against both, so it stays
+the right call until the floor moves.
 
 One caveat worth reading before switching: nested blocks **join** the
 enclosing unit of work, so an inner block has no independent rollback. If
@@ -630,9 +634,9 @@ outer one, the inner block's partial writes commit with the outer. See
 | B2g | Ratchet guard against new unbracketed mutations | Landed — now a permanent zero-tolerance guard, not a countdown |
 | B2t | End-to-end persistence test, `needs_human` (scratch project) | **LANDED, not released** — `tests/operations/test_undoable_mode_live.py::TestPersistenceAcrossReopen`; closes #237. Runs on a tempdir copy of the Target `.fwbackup`, never the real project |
 | DEF-COV | Live `undoable=True` coverage (the DEF blocker) | **LANDED, not released** — `tests/operations/test_undoable_mode_live.py`, 33 live tests. Reintroducing D9 turns 19 of them red, on observed data loss across a `CloseProject()` boundary rather than on call-shape assertions |
-| B3 | Fix `Undo()`/`Redo()` | Landed. Recording the in-process-only scope caveat on #235 is still open (task CO1) |
+| B3 | Fix `Undo()`/`Redo()` | Landed; #235 closed with the in-process-only scope caveat recorded on it (task CO1) |
 | A3 | `AbortSession()` (`Rollback(0)`) | **LANDED, not released** — `undoable=False` primitive; returns `False`/raises under `undoable=True` (D8) |
-| DEF | Flip default to `undoable=True` | PLANNED, `needs_human` — public-API default change. Its **coverage** blocker is cleared (DEF-COV/B2t above); what remains is the human decision itself |
+| DEF | Flip default to `undoable=True` | **LANDED, not released** (targets 4.4.0) — `needs_human` decision taken by the maintainer once DEF-COV/B2t cleared the coverage blocker. `OpenProject()` now defaults `undoable=True`; the legacy mode needs an explicit `undoable=False` |
 | B4 | `flexicon.CAPABILITIES` frozenset | Landed — all four tokens; two are mode-dependent (see §3) |
 | (unfiled) | Enforce D3 (block `undoable=False` in shared mode) as a precondition | PLANNED, **no task ID assigned yet** — recommend filing alongside DEF |
 | (separate from B1/B2) | Implement `CreateField`'s actual schema mutation | PLANNED, **no task ID assigned** — tracked only in the issue draft, not in `tasks.md` |

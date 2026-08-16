@@ -509,10 +509,12 @@ def add_allomorph(entry, form_text):
 ## Atomicity Under `undoable=False`: the Session Is the Unit
 
 **This section states the actual, verified atomicity guarantee for the
-default write mode (`undoable=False`). Read it before relying on
-`Transaction()` or `_TransactionCM` for rollback.**
+legacy opt-out write mode (`undoable=False`). Since 4.4.0 the default is
+`undoable=True` (task DEF) and the section below it applies instead; you
+reach this mode only by passing `undoable=False` explicitly. Read this
+before relying on `Transaction()` or `_TransactionCM` for rollback.**
 
-`OpenProject(..., writeEnabled=True)` with the default `undoable=False`
+`OpenProject(..., writeEnabled=True, undoable=False)`
 opens exactly one LCM `NonUndoableUnitOfWork` for the entire session
 (`BeginNonUndoableTask()` at open, `EndNonUndoableTask()` at close). There is
 no per-operation or per-`Transaction()` rollback boundary inside that
@@ -531,7 +533,7 @@ Those mutations will be written to disk on the next `SaveChanges()` or
 `CloseProject()` call, exception or no exception.
 
 ```python
-project.OpenProject("MyProject", writeEnabled=True)  # undoable=False (default)
+project.OpenProject("MyProject", writeEnabled=True, undoable=False)  # explicit opt-out
 
 with project.Transaction("import batch"):
     project.LexEntry.Create("run", "stem")     # (1) applied
@@ -567,20 +569,23 @@ project.CloseProject()  # (1) and (2) are saved to disk, despite the exception.
   back the open bundle on the way out, discarding uncommitted work.
   `CloseProject()` is the supported way to persist, and is unaffected (it
   ends the envelope before saving).
-- If you need real per-operation rollback, `undoable=True` is the destination
-  mode, and the Track B rewrite of `flexicon/code/transaction.py` onto
-  liblcm's `UndoableUnitOfWorkHelper` has landed -- an exception inside a
-  block now genuinely rolls that block back. See
+- If you need real per-operation rollback, simply **stop passing
+  `undoable=False`** -- `undoable=True` is the default since 4.4.0 and is the
+  destination mode decision D3 designates. The Track B rewrite of
+  `flexicon/code/transaction.py` onto liblcm's `UndoableUnitOfWorkHelper` has
+  landed, so an exception inside a block genuinely rolls that block back. See
   `specs/write-path-transactions/spec.md` D2/D3/B1. Note `AbortSession()`
   deliberately refuses in that mode (per-operation rollback is already
   automatic there); see tasks.md D8.
 
 ---
 
-## Atomicity Under `undoable=True`: the Block Is the Unit
+## Atomicity Under `undoable=True` (the default): the Block Is the Unit
 
-This is the mode `undoable=False`'s caveats point at, and the destination
-decision D3 designates. Everything below is verified against a live LCM in
+This is the mode `undoable=False`'s caveats point at, the destination
+decision D3 designates, and **since 4.4.0 the default** -- it is what you get
+from a plain `OpenProject(..., writeEnabled=True)` (task DEF). Everything
+below is verified against a live LCM in
 `tests/operations/test_undoable_mode_live.py`; see
 `specs/write-path-transactions/evidence/live-def-undoable-coverage.md`.
 
@@ -591,7 +596,7 @@ reverted, and the rollback is durable -- a rolled-back object does not
 reappear when the project is reopened.
 
 ```python
-project.OpenProject("MyProject", writeEnabled=True, undoable=True)
+project.OpenProject("MyProject", writeEnabled=True)   # undoable=True (default)
 
 with project.UndoableOperation("import batch"):
     project.LexEntry.Create("run", "stem")     # (1)

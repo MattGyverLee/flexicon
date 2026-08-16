@@ -280,9 +280,14 @@ class CustomFieldOperations(BaseOperations):
             raise FP_ParameterError(f"Invalid field type '{field_type}'. " f"Valid types: {', '.join(valid_types)}")
 
         # Refuse if an open UnitOfWork would make the schema mutation
-        # unsafe. In Phase 1 mode (the default), OpenProject() opens a
+        # unsafe. Under `undoable=False`, OpenProject() opens a
         # non-undoable envelope at BeginNonUndoableTask that remains open
         # until CloseProject(), so this check effectively always fires.
+        # Under `undoable=True` (the default since 4.4.0, task DEF) there is
+        # no session envelope, so between operations CurrentDepth is 0 and
+        # this guard does NOT fire -- execution reaches the unconditional
+        # raise below instead. Either way CreateField still refuses; only
+        # which of the two errors you get changes.
         #
         # The LCM contract forbids schema mutation inside a data UoW
         # (AddCustomField + an active task -> InvalidOperationException at
@@ -317,7 +322,9 @@ class CustomFieldOperations(BaseOperations):
                 "See docs/CUSTOM_FIELDS.md."
             )
 
-        # Unreachable in Phase 1 mode; placeholder for Phase 2 work.
+        # Reachable under `undoable=True` (the default since 4.4.0), where
+        # CurrentDepth is 0 between operations and the guard above passes.
+        # Still a placeholder: the safe schema-mutation path is uncharacterized.
         raise FP_TransactionError(
             "CreateField is not yet implemented for the no-UoW path. "
             "Pending Phase 2 transaction mode (see FLExProject.UndoableOperation). "
