@@ -166,7 +166,9 @@ def _delete_msfeat_by_guid(project, guid_str):
             return
         fs = project.lp.MsFeatureSystemOA
         if fs is not None:
-            fs.FeaturesOC.Remove(feat)
+            # Raw LCM write -> own unit of work (tasks.md D14).
+            with project.UndoableOperation("test cleanup: delete ms feature"):
+                fs.FeaturesOC.Remove(feat)
     except Exception:
         # Cleanup must never raise; if it failed, leave traces.
         pass

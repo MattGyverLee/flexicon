@@ -720,7 +720,10 @@ class TestChangeAffixVariant:
 
             # Create a second sense and point it at the same old MSA manually.
             sense2 = writable_project.Senses.Create(entry, "sense2")
-            sense2.MorphoSyntaxAnalysisRA = old_msa
+            # Raw LCM property write from the test -- needs its own UoW
+            # (see D14); free under the old session envelope.
+            with writable_project.UndoableOperation("test: repoint sense2 MSA"):
+                sense2.MorphoSyntaxAnalysisRA = old_msa
             assert sense2.MorphoSyntaxAnalysisRA.Hvo == old_hvo
 
             new_msa = writable_project.MSA.ChangeAffixVariant(old_msa, "deriv")

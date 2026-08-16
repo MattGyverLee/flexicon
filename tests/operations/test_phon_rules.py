@@ -321,7 +321,9 @@ class TestPhonRulesAlphaAndWireRule:
                     victim = feat
                     break
             if victim is not None:
-                fs.FeaturesOC.Remove(victim)
+                # Raw LCM write -> own unit of work (tasks.md D14).
+                with project.UndoableOperation("test cleanup: delete phon feature"):
+                    fs.FeaturesOC.Remove(victim)
         except Exception:
             pass
 

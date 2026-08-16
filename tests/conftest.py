@@ -1313,7 +1313,8 @@ def sena3_sandbox():
     project = FLExProject()
     try:
         try:
-            project.OpenProject(str(fwdata_path), writeEnabled=True)
+            # undoable=False pinned deliberately -- see the note on target_sandbox.
+            project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=False)
         except Exception as exc:
             sandbox.__exit__(None, None, None)
             pytest.skip(
@@ -1394,7 +1395,10 @@ def target_project():
 
     project = FLExProject()
     try:
-        project.OpenProject(_TARGET_PROJECT_NAME, writeEnabled=True)
+        # undoable=False pinned deliberately -- see the note on target_sandbox.
+        # These module-scoped in-place tests were authored against the
+        # session-envelope semantics and clean up in their own finally: blocks.
+        project.OpenProject(_TARGET_PROJECT_NAME, writeEnabled=True, undoable=False)
     except Exception as exc:
         _unavailable(
             f"Could not open {_TARGET_PROJECT_NAME!r} write-enabled: {exc}"
@@ -1454,7 +1458,15 @@ def target_sandbox():
     project = FLExProject()
     try:
         try:
-            project.OpenProject(str(fwdata_path), writeEnabled=True)
+            # undoable=False is PINNED, not inherited. Task DEF flipped the
+            # library default to undoable=True; this fixture's whole identity
+            # is "the undoable=False one" (see target_sandbox_undoable's
+            # docstring, which says a undoable=False fixture cannot stand in
+            # for it -- the converse holds too). Letting it follow the default
+            # would silently merge the two fixtures and delete the mode
+            # distinction every AbortSession / CurrentDepth / undo-stack test
+            # depends on.
+            project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=False)
         except Exception as exc:
             sandbox.__exit__(None, None, None)
             _unavailable(f"OpenProject rejected sandbox path {fwdata_path}: {exc}")

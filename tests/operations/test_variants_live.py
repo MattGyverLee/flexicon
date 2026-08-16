@@ -260,7 +260,14 @@ class TestVariantsPhaseBAdd:
             writable_project.Variants.Delete(variant_ref)
             # Restore the entry's original lexeme form text.
             restored = TsStringUtils.MakeString(original_form_text, ws)
-            entry.LexemeFormOA.Form.set_String(ws, restored)
+            # Raw LCM write -> own unit of work (tasks.md D14). This one also
+            # fires LexEntry.MLHeadwordChanged side effects, which register
+            # their own undo actions -- so the bracket has to span the setter
+            # and its cascade, not just the assignment.
+            with writable_project.UndoableOperation(
+                "test cleanup: restore lexeme form"
+            ):
+                entry.LexemeFormOA.Form.set_String(ws, restored)
 
         assert entry.EntryRefsOS.Count == refs_before
         assert writable_project.Variants.GetVariantCount(entry) == count_before
@@ -333,7 +340,14 @@ class TestVariantsPhaseCReorder:
                 except Exception:
                     pass
             restored = TsStringUtils.MakeString(original_form_text, ws)
-            entry.LexemeFormOA.Form.set_String(ws, restored)
+            # Raw LCM write -> own unit of work (tasks.md D14). This one also
+            # fires LexEntry.MLHeadwordChanged side effects, which register
+            # their own undo actions -- so the bracket has to span the setter
+            # and its cascade, not just the assignment.
+            with writable_project.UndoableOperation(
+                "test cleanup: restore lexeme form"
+            ):
+                entry.LexemeFormOA.Form.set_String(ws, restored)
 
 
 # ---------------------------------------------------------------------------
@@ -394,7 +408,14 @@ class TestVariantsPhaseDModify:
             except Exception:
                 pass
             restored = TsStringUtils.MakeString(original_form_text, ws)
-            entry.LexemeFormOA.Form.set_String(ws, restored)
+            # Raw LCM write -> own unit of work (tasks.md D14). This one also
+            # fires LexEntry.MLHeadwordChanged side effects, which register
+            # their own undo actions -- so the bracket has to span the setter
+            # and its cascade, not just the assignment.
+            with writable_project.UndoableOperation(
+                "test cleanup: restore lexeme form"
+            ):
+                entry.LexemeFormOA.Form.set_String(ws, restored)
 
 
 # ---------------------------------------------------------------------------
