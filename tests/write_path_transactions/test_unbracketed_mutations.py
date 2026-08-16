@@ -137,6 +137,50 @@ class TestUnbracketedMutationRatchet:
             "report false violations against a fully swept tree."
         )
 
+        # --- The DEF blind spot (tasks.md D13) ---
+        #
+        # Until DEF, a property assignment only counted as a mutation when the
+        # attribute name ended in an LCM ownership suffix (RA/OA/OS/RS). Plain
+        # scalar properties -- ITsString, Unicode, bool, int, GenDate -- were
+        # invisible, so the scanner reported a baseline of 0 while 43 real
+        # sites raised "Not in the right state to register a change." the
+        # moment `undoable=True` became the default. These two assertions are
+        # what stop that from silently recurring; without the unsuffixed rule
+        # the first one returns an empty set and passes vacuously.
+        unsuffixed = ast.parse(
+            "class C:\n"
+            "    def m(self):\n"
+            "        sense.ScientificName = x\n"
+        ).body[0].body[0]
+        assert _scan_method(unsuffixed) == {"prop assign (ScientificName)"}, (
+            "Scanner failed to flag an unbracketed assignment to an UNSUFFIXED "
+            "LCM property. This is exactly the gap that let DEF ship 43 broken "
+            "call sites past a green ratchet -- see tasks.md D13."
+        )
+
+        unsuffixed_bracketed = ast.parse(
+            "class C:\n"
+            "    def m(self):\n"
+            '        with self._TransactionCM("label"):\n'
+            "            sense.ScientificName = x\n"
+        ).body[0].body[0]
+        assert _scan_method(unsuffixed_bracketed) == set(), (
+            "Scanner flagged a correctly bracketed unsuffixed property "
+            "assignment."
+        )
+
+        # `self.Foo = ...` is wrapper state, not an LCM write, and must stay
+        # out of the rule or every Operations class trips it in __init__.
+        self_attr = ast.parse(
+            "class C:\n"
+            "    def m(self):\n"
+            "        self.SomeState = x\n"
+        ).body[0].body[0]
+        assert _scan_method(self_attr) == set(), (
+            "Scanner flagged `self.Attr = ...`, which is Python wrapper state "
+            "rather than an LCM property write."
+        )
+
     def test_no_new_unbracketed_mutations(self):
         """
         FAILS if any currently-unbracketed method is NOT in the frozen

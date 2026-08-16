@@ -1050,9 +1050,11 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         item = self.__GetItemObject(item_or_hvo)
 
-        # Note: AnthroCode may not exist on CmAnthroItem
+        # Note: AnthroCode may not exist on CmAnthroItem. hasattr guard stays
+        # outside the bracket -- its absence is a true no-op.
         if hasattr(item, "AnthroCode"):
-            item.AnthroCode = anthro_code
+            with self._TransactionCM("Set anthropology code"):
+                item.AnthroCode = anthro_code
 
     @OperationsMethod
     def GetCategory(self, item_or_hvo):

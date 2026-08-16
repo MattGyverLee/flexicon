@@ -564,7 +564,8 @@ class PersonOperations(BaseOperations):
         person = self.__ResolveObject(person_or_hvo)
 
         # DateOfBirth is a GenDate field - set as string
-        person.DateOfBirth = date_str
+        with self._TransactionCM("Set person date of birth"):
+            person.DateOfBirth = date_str
 
     # --- Contact Information ---
 

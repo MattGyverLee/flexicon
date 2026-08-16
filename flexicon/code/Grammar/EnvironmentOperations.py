@@ -424,7 +424,8 @@ class EnvironmentOperations(BaseOperations):
 
         # Note: StringRepresentation is ITsString, assign directly (not set_String)
         mkstr = TsStringUtils.MakeString(notation, wsHandle)
-        env.StringRepresentation = mkstr
+        with self._TransactionCM("Set environment notation"):
+            env.StringRepresentation = mkstr
 
     @OperationsMethod
     def GetLeftContextPattern(self, env_or_hvo):

@@ -757,7 +757,8 @@ class MediaOperations(BaseOperations):
         else:
             media = media_or_hvo
 
-        media.InternalPath = path.strip()
+        with self._TransactionCM("Set media internal path"):
+            media.InternalPath = path.strip()
 
     @OperationsMethod
     def RenameMediaFile(self, media_or_hvo, new_filename):

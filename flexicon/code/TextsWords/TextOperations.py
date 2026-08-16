@@ -1041,4 +1041,5 @@ class TextOperations(BaseOperations):
             raise FP_ParameterError("value must be a boolean (True or False)")
 
         text_obj = self.__GetTextObject(text_or_hvo)
-        text_obj.IsTranslated = value
+        with self._TransactionCM("Set text is-translated flag"):
+            text_obj.IsTranslated = value

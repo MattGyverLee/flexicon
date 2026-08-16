@@ -779,7 +779,8 @@ class DataNotebookOperations(BaseOperations):
 
         record = self.__GetRecordObject(record_or_hvo)
 
-        record.Type = record_type
+        with self._TransactionCM("Set record type"):
+            record.Type = record_type
 
     @OperationsMethod
     def GetAllRecordTypes(self):
@@ -1048,7 +1049,10 @@ class DataNotebookOperations(BaseOperations):
             except (System.FormatException, ValueError, TypeError) as e:
                 raise FP_ParameterError(f"Invalid date format: {date}. Use 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS' - {e}")
 
-        record.DateOfEvent = date
+        # Parse above stays outside the bracket: a malformed date must raise
+        # before any undo task opens (D5/P3).
+        with self._TransactionCM("Set record date of event"):
+            record.DateOfEvent = date
 
     # --- Hierarchy Operations ---
 
@@ -2190,7 +2194,10 @@ class DataNotebookOperations(BaseOperations):
                 raise FP_ParameterError(f"Status not found: {status}")
             status = status_obj
 
-        record.Status = status
+        # Lookup above stays outside the bracket: an unknown status name must
+        # raise before any undo task opens (D5/P3).
+        with self._TransactionCM("Set record status"):
+            record.Status = status
 
     @OperationsMethod
     def GetAllStatuses(self):

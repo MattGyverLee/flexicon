@@ -743,8 +743,11 @@ class MorphRuleOperations(BaseOperations):
 
         rule = self.__ResolveObject(rule_or_hvo)
 
+        # hasattr guard stays OUTSIDE the bracket: a rule type without the
+        # property is a genuine no-op and must not open an empty unit of work.
         if hasattr(rule, "Disabled"):
-            rule.Disabled = bool(disabled)
+            with self._TransactionCM("Set morphological rule disabled flag"):
+                rule.Disabled = bool(disabled)
 
     # ========== DUPLICATION ==========
 

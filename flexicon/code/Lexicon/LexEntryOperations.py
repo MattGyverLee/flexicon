@@ -1345,7 +1345,8 @@ class LexEntryOperations(BaseOperations):
 
         entry = self.__ResolveObject(entry_or_hvo)
 
-        entry.HomographNumber = number
+        with self._TransactionCM(f"Set homograph number to {number}"):
+            entry.HomographNumber = number
 
     @OperationsMethod
     def GetDateCreated(self, entry_or_hvo):
@@ -1980,7 +1981,8 @@ class LexEntryOperations(BaseOperations):
         # ILexEntry.ImportResidue is ITsString (single-string); assigning a
         # raw Python str raises TypeError at the pythonnet boundary. Wrap
         # via _MakeTsString. (Issue #39.)
-        entry.ImportResidue = self._MakeTsString(residue)
+        with self._TransactionCM("Set entry import residue"):
+            entry.ImportResidue = self._MakeTsString(residue)
 
     # --- MultiString/MultiUnicode Properties ---
 
@@ -2227,7 +2229,8 @@ class LexEntryOperations(BaseOperations):
         self._ValidateParam(value, "value")
 
         entry = self.__ResolveObject(entry_or_hvo)
-        entry.DoNotUseForParsing = bool(value)
+        with self._TransactionCM("Set entry do-not-use-for-parsing flag"):
+            entry.DoNotUseForParsing = bool(value)
 
     @OperationsMethod
     def GetExcludeAsHeadword(self, entry_or_hvo):
@@ -2259,7 +2262,8 @@ class LexEntryOperations(BaseOperations):
         self._ValidateParam(value, "value")
 
         entry = self.__ResolveObject(entry_or_hvo)
-        entry.ExcludeAsHeadword = bool(value)
+        with self._TransactionCM("Set entry exclude-as-headword flag"):
+            entry.ExcludeAsHeadword = bool(value)
 
     # --- Collection Properties ---
 

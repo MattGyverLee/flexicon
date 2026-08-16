@@ -460,7 +460,8 @@ class WordformOperations(BaseOperations):
         else:
             wordform = wordform_or_hvo
 
-        wordform.SpellingStatus = status
+        with self._TransactionCM("Set wordform spelling status"):
+            wordform.SpellingStatus = status
 
     @OperationsMethod
     def GetAnalyses(self, wordform_or_hvo):
@@ -733,7 +734,8 @@ class WordformOperations(BaseOperations):
         else:
             wordform = wordform_or_hvo
 
-        wordform.SpellingStatus = SpellingStatusStates.CORRECT
+        with self._TransactionCM("Approve wordform spelling"):
+            wordform.SpellingStatus = SpellingStatusStates.CORRECT
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, deep=False):

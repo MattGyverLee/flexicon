@@ -523,8 +523,10 @@ class ScrNoteOperations(BaseOperations):
         # Note: The exact property for resolution may vary
         # For now, we set a simple flag approach
         # A full implementation would use note.ResolutionStatus
+        # hasattr guard outside the bracket -- its absence is a true no-op.
         if hasattr(note, "ResolutionStatus"):
-            note.ResolutionStatus = 1  # Resolved
+            with self._TransactionCM("Resolve scripture note"):
+                note.ResolutionStatus = 1  # Resolved
 
     @OperationsMethod
     def IsResolved(self, note_or_hvo):

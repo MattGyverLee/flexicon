@@ -3745,9 +3745,12 @@ class FLExProject(object):
         if CellarPropertyType(mdc.GetFieldType(fieldID)) != CellarPropertyType.Integer:
             raise FP_ParameterError("LexiconSetFieldInteger: field is not Integer type")
 
+        # The equality guard stays OUTSIDE the bracket so an unchanged value
+        # stays a true no-op that opens no unit of work.
         if self.project.DomainDataByFlid.get_IntProp(hvo, fieldID) != integer:
             try:
-                self.project.DomainDataByFlid.SetInt(hvo, fieldID, integer)
+                with self._TransactionCM("Set field integer"):
+                    self.project.DomainDataByFlid.SetInt(hvo, fieldID, integer)
             except LcmInvalidFieldException as msg:
                 # This exception indicates that the project is not in write mode
                 raise FP_ReadOnlyError()
@@ -3857,7 +3860,9 @@ class FLExProject(object):
             except AttributeError:
                 raise FP_ParameterError("possibilityOrString must be a string or CmPossibility")
 
-        self.project.DomainDataByFlid.SetObjProp(hvo, fieldID, possibility.Hvo)
+        # Resolution/validation above stays outside the bracket (D5/P3).
+        with self._TransactionCM("Set list field"):
+            self.project.DomainDataByFlid.SetObjProp(hvo, fieldID, possibility.Hvo)
 
     def LexiconClearListFieldSingle(self, senseOrEntry, fieldID):
         """
@@ -3869,7 +3874,8 @@ class FLExProject(object):
 
         hvo = self.__ValidatedHvo(senseOrEntry, fieldID)
 
-        self.project.DomainDataByFlid.SetObjProp(hvo, fieldID, 0)
+        with self._TransactionCM("Clear list field"):
+            self.project.DomainDataByFlid.SetObjProp(hvo, fieldID, 0)
 
     def LexiconSetListFieldMultiple(self, senseOrEntry, fieldID, listOfValues):
         """

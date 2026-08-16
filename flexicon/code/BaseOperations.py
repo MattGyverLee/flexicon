@@ -1307,10 +1307,23 @@ class BaseOperations:
             ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()
         }
 
-        _apply_props_loop(item, props, target_ws_by_id, fill_gaps,
-                          ws_map=ws_map,
-                          _default_ws_getter=self.project.GetDefaultAnalysisWSHandle,
-                          _ts_string_utils=TsStringUtils)
+        # B2/D5 bracket. This one was missed by the original 295-site sweep
+        # because the sweep enumerated Operations *methods* and the writes
+        # actually live in `_apply_props_loop`, a module-level helper -- so no
+        # per-method scheme reached them. It was latent under `undoable=False`
+        # (the session envelope covered every write) and became a hard failure
+        # the moment DEF made `undoable=True` the default: with no envelope
+        # open, `MultiUnicodeAccessor.set_String` raises
+        # `InvalidOperationException: Not in the right state to register a
+        # change.` One bracket for the whole loop, not per property: a partial
+        # sync that failed halfway would otherwise leave the target item with
+        # some fields updated and some stale, which is precisely the
+        # half-applied state this method's callers cannot detect.
+        with self._TransactionCM("Apply syncable properties"):
+            _apply_props_loop(item, props, target_ws_by_id, fill_gaps,
+                              ws_map=ws_map,
+                              _default_ws_getter=self.project.GetDefaultAnalysisWSHandle,
+                              _ts_string_utils=TsStringUtils)
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):

@@ -582,7 +582,8 @@ class ParagraphOperations(BaseOperations):
 
         # Set the content
         mkstr = TsStringUtils.MakeString(content_str, wsHandle)
-        para_obj.Contents = mkstr
+        with self._TransactionCM("Set paragraph text"):
+            para_obj.Contents = mkstr
 
     @OperationsMethod
     def GetSegments(self, paragraph_or_hvo):

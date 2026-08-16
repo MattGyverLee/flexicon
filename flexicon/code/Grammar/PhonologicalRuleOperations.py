@@ -625,8 +625,11 @@ class PhonologicalRuleOperations(BaseOperations):
 
         rule = self.__ResolveObject(rule_or_hvo)
 
+        # hasattr guard stays OUTSIDE the bracket (see MorphRuleOperations
+        # .SetDisabled): a rule type without the property is a true no-op.
         if hasattr(rule, "Direction"):
-            rule.Direction = direction
+            with self._TransactionCM("Set phonological rule direction"):
+                rule.Direction = direction
 
     @OperationsMethod
     def SetLeftContext(self, rule_or_hvo, context_item):

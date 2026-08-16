@@ -320,7 +320,8 @@ class ConstChartMovedTextOperations(BaseOperations):
 
         marker = self.__ResolveObject(marker_or_hvo)
 
-        marker.Preposed = bool(value)
+        with self._TransactionCM("Set moved-text preposed flag"):
+            marker.Preposed = bool(value)
 
     @OperationsMethod
     def GetWordGroup(self, marker_or_hvo):

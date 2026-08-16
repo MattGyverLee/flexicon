@@ -578,11 +578,15 @@ class ProjectSettingsOperations(BaseOperations):
         if not ws:
             raise FP_WritingSystemError(str(ws_handle_or_tag))
 
-        # Set default font name
+        # Set default font name. The hasattr dispatch stays OUTSIDE the
+        # brackets so the "neither property exists" fall-through remains a
+        # true no-op that opens no unit of work.
         if hasattr(ws, "DefaultFontName"):
-            ws.DefaultFontName = font_name
+            with self._TransactionCM(f"Set default font '{font_name}'"):
+                ws.DefaultFontName = font_name
         elif hasattr(ws, "DefaultFont"):
-            ws.DefaultFont = font_name
+            with self._TransactionCM(f"Set default font '{font_name}'"):
+                ws.DefaultFont = font_name
 
     @OperationsMethod
     def GetDefaultFontSize(self, ws_handle_or_tag):
@@ -667,9 +671,11 @@ class ProjectSettingsOperations(BaseOperations):
         if not ws:
             raise FP_WritingSystemError(str(ws_handle_or_tag))
 
-        # Set default font size
+        # Set default font size. hasattr guard outside the bracket -- a WS
+        # without the property is a true no-op.
         if hasattr(ws, "DefaultFontSize"):
-            ws.DefaultFontSize = float(size)
+            with self._TransactionCM(f"Set default font size to {size}"):
+                ws.DefaultFontSize = float(size)
 
     # --- Advanced Settings ---
 

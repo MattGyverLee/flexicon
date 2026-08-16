@@ -701,8 +701,10 @@ class AnnotationDefOperations(BaseOperations):
         self._ValidateParam(anno_def, "anno_def")
         self._ValidateParam(can_create, "can_create")
 
+        # hasattr guard outside the bracket -- its absence is a true no-op.
         if hasattr(anno_def, "UserCanCreate"):
-            anno_def.UserCanCreate = bool(can_create)
+            with self._TransactionCM("Set annotation user-can-create flag"):
+                anno_def.UserCanCreate = bool(can_create)
 
     @OperationsMethod
     def GetMultiple(self, anno_def):
@@ -780,8 +782,10 @@ class AnnotationDefOperations(BaseOperations):
         self._ValidateParam(anno_def, "anno_def")
         self._ValidateParam(allow_multiple, "allow_multiple")
 
+        # hasattr guard outside the bracket -- its absence is a true no-op.
         if hasattr(anno_def, "AllowsMultiple"):
-            anno_def.AllowsMultiple = bool(allow_multiple)
+            with self._TransactionCM("Set annotation allows-multiple flag"):
+                anno_def.AllowsMultiple = bool(allow_multiple)
 
     # --- Prompt and Copy/Paste Settings ---
 

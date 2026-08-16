@@ -1073,7 +1073,8 @@ class ExampleOperations(BaseOperations):
         wsHandle = self.project.project.DefaultAnalWs
 
         mkstr = TsStringUtils.MakeString(reference_text, wsHandle)
-        example.Reference = mkstr
+        with self._TransactionCM("Set example reference"):
+            example.Reference = mkstr
 
     @OperationsMethod
     def GetMediaFiles(self, example_or_hvo):

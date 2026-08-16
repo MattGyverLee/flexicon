@@ -2765,8 +2765,15 @@ class LexSenseOperations(BaseOperations):
             else:
                 raise FP_ParameterError(f"File not found: {old_external_path}")
 
-        # Update the ICmFile internal path
-        file_obj.InternalPath = new_internal_path
+        # Update the ICmFile internal path. The bracket covers ONLY the LCM
+        # write; the os.rename above stays outside it deliberately, on the
+        # same reasoning as RemovePicture's physical unlink (B2 batch 11) --
+        # the LCM cannot roll back a filesystem rename, and wrapping it would
+        # imply an atomicity that does not exist. A failure here therefore
+        # leaves the file renamed on disk and the reference unchanged, which
+        # is recoverable by re-running; the reverse order would not be.
+        with self._TransactionCM("Rename picture file reference"):
+            file_obj.InternalPath = new_internal_path
 
         logger.info(f"Updated picture reference to: {new_internal_path}")
 
@@ -3171,7 +3178,8 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(sense_or_hvo, "sense_or_hvo")
         self._ValidateParam(text, "text")
         sense = self.__GetSenseObject(sense_or_hvo)
-        sense.Source = self._MakeTsString(text, wsHandle)
+        with self._TransactionCM("Set sense source"):
+            sense.Source = self._MakeTsString(text, wsHandle)
 
     @OperationsMethod
     def GetScientificName(self, sense_or_hvo):
@@ -3207,7 +3215,8 @@ class LexSenseOperations(BaseOperations):
         sense = self.__GetSenseObject(sense_or_hvo)
         if wsHandle is None:
             wsHandle = self.project.project.DefaultVernWs
-        sense.ScientificName = self._MakeTsString(text, wsHandle)
+        with self._TransactionCM("Set sense scientific name"):
+            sense.ScientificName = self._MakeTsString(text, wsHandle)
 
     @OperationsMethod
     def GetImportResidue(self, sense_or_hvo):
@@ -3233,7 +3242,8 @@ class LexSenseOperations(BaseOperations):
         self._ValidateParam(sense_or_hvo, "sense_or_hvo")
         self._ValidateParam(text, "text")
         sense = self.__GetSenseObject(sense_or_hvo)
-        sense.ImportResidue = self._MakeTsString(text, wsHandle)
+        with self._TransactionCM("Set sense import residue"):
+            sense.ImportResidue = self._MakeTsString(text, wsHandle)
 
     # --- Reference Collection Properties ---
 

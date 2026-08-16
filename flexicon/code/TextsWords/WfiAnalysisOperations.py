@@ -795,7 +795,13 @@ class WfiAnalysisOperations(BaseOperations):
             ApprovalStatusTypes.DISAPPROVED: Opinions.disapproves,
             ApprovalStatusTypes.UNAPPROVED: Opinions.noopinion,
         }
-        agent.SetEvaluation(analysis, opinion_map[normalized])
+        # SetEvaluation is an LCM mutator method (it creates/removes the
+        # evaluation object and rewires the agent's opinion collections), so
+        # it needs a unit of work like any other write. The status coercion
+        # and map lookup stay outside: an invalid status must raise before an
+        # undo task opens (D5/P3).
+        with self._TransactionCM("Set analysis approval status"):
+            agent.SetEvaluation(analysis, opinion_map[normalized])
 
     @OperationsMethod
     def IsHumanApproved(self, analysis_or_hvo):

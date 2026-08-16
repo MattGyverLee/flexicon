@@ -271,9 +271,11 @@ class OverlayOperations(PossibilityItemOperations):
 
         overlay = self._PossibilityItemOperations__ResolveObject(overlay_or_hvo)
 
-        # Set display order
+        # Set display order. hasattr guard outside the bracket -- an overlay
+        # without SortSpec is a true no-op and must not open a unit of work.
         if hasattr(overlay, "SortSpec"):
-            overlay.SortSpec = int(order)
+            with self._TransactionCM("Set overlay display order"):
+                overlay.SortSpec = int(order)
 
     # --- Element Operations ---
 

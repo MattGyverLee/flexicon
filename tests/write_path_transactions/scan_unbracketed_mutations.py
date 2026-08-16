@@ -112,6 +112,22 @@ MUTATION_CALL_ATTRS = {
     "SetString",
     "set_String",
     "MergeObject",
+    # ISilDataAccess / DomainDataByFlid scalar setters. Added by DEF: these
+    # are real writes that the RA/OA/OS/RS property rule cannot see (they are
+    # calls, not assignments) and that no other name in this set matched, so
+    # FLExProject.LexiconSetFieldInteger / LexiconSetListFieldSingle /
+    # LexiconClearListFieldSingle sat unbracketed behind a green ratchet.
+    "SetInt",
+    "SetObjProp",
+    "SetUnicode",
+    "SetGuid",
+    "SetTime",
+    "SetBoolean",
+    # LCM domain mutator methods that read as ordinary setters but create and
+    # rewire owned objects -- WfiAnalysisOperations.SetApprovalStatus reaches
+    # ICmAgent.SetEvaluation, which was the last live failure DEF surfaced.
+    "SetEvaluation",
+    "SetAgentOpinion",
 }
 
 # LCM ownership-encoding suffixes for owning/reference atomic/sequence props.
@@ -302,7 +318,28 @@ class _MethodScanner:
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
             if not protected:
                 for target in targets:
-                    if not (isinstance(target, ast.Attribute) and target.attr.endswith(PROPERTY_SUFFIXES)):
+                    if not isinstance(target, ast.Attribute):
+                        continue
+                    # Two shapes count as a property mutation:
+                    #
+                    #  (a) an LCM ownership/reference suffix (RA/OA/OS/RS);
+                    #  (b) ANY other PascalCase attribute on a non-`self`
+                    #      base -- the unsuffixed scalar properties
+                    #      (ITsString, Unicode, bool, int, GenDate...) such as
+                    #      `sense.Source`, `entry.HomographNumber`,
+                    #      `ws.RightToLeftScript`.
+                    #
+                    # (b) was missing until DEF and is the reason this
+                    # scanner's baseline read 0 while `undoable=True` failed
+                    # live with "Not in the right state to register a change."
+                    # 43 real sites were invisible to it. See tasks.md D13.
+                    suffixed = target.attr.endswith(PROPERTY_SUFFIXES)
+                    unsuffixed = (
+                        target.attr[:1].isupper()
+                        and isinstance(target.value, ast.Name)
+                        and target.value.id != "self"
+                    )
+                    if not (suffixed or unsuffixed):
                         continue
                     base = target.value
                     if isinstance(base, ast.Name) and base.id in self.non_lcm_vars:

@@ -363,7 +363,8 @@ class AgentOperations(PossibilityItemOperations):
 
         agent = self._PossibilityItemOperations__ResolveObject(agent_or_hvo)
 
-        agent.Version = version
+        with self._TransactionCM("Set agent version"):
+            agent.Version = version
 
     # --- Agent Type Operations ---
 
@@ -538,14 +539,20 @@ class AgentOperations(PossibilityItemOperations):
 
         agent = self._PossibilityItemOperations__ResolveObject(agent_or_hvo)
 
+        # Resolve/validate the cast BEFORE opening the unit of work: a bad
+        # `person` must raise without ever opening (and immediately rolling
+        # back) an undo task. Both branches then mutate, so the bracket has
+        # no no-op path to protect. (D5/P3 validate-then-mutate.)
         if person is None:
-            agent.Human = None
+            person_obj = None
         else:
             try:
                 person_obj = ICmPerson(person)
-                agent.Human = person_obj
             except (TypeError, System.InvalidCastException, AttributeError) as e:
                 raise FP_ParameterError(f"person must be a valid ICmPerson object: {e}")
+
+        with self._TransactionCM("Set agent human analyst"):
+            agent.Human = person_obj
 
     # --- Evaluations ---
 

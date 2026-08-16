@@ -373,10 +373,16 @@ class SegmentOperations(BaseOperations):
             raise FP_ParameterError("Segment has no owning paragraph; cannot write BaselineText")
         begin = segment_obj.BeginOffset
         end = segment_obj.EndOffset
+        # The builder work is pure in-memory string assembly on a TsStrBldr;
+        # only the Contents assignment touches the LCM, so that is what the
+        # bracket covers. Reassigning Contents fires ContentsSideEffects ->
+        # AnalysisAdjuster, which re-derives the paragraph's segments, so the
+        # unit of work has to span that cascade rather than just the setter.
         bldr = para.Contents.GetBldr()
         new_run = TsStringUtils.MakeString(text, ws)
         bldr.ReplaceTsString(begin, end, new_run)
-        para.Contents = bldr.GetString()
+        with self._TransactionCM("Set segment baseline text"):
+            para.Contents = bldr.GetString()
 
     @OperationsMethod
     def GetFreeTranslation(self, segment_or_hvo, wsHandle=None):
@@ -1194,7 +1200,8 @@ class SegmentOperations(BaseOperations):
         # ContentsSideEffects -> AnalysisAdjuster which re-derives SegmentsOS
         # entirely from the punctuation pattern in the text.
         snapshot = para.Contents
-        para.Contents = snapshot
+        with self._TransactionCM("Reparse paragraph segments"):
+            para.Contents = snapshot
 
         return para.SegmentsOS
 
@@ -1352,8 +1359,10 @@ class SegmentOperations(BaseOperations):
 
         segment_obj = self.__GetSegmentObject(segment_or_hvo)
 
+        # hasattr guard outside the bracket -- its absence is a true no-op.
         if hasattr(segment_obj, "IsLabel"):
-            segment_obj.IsLabel = bool(is_label)
+            with self._TransactionCM("Set segment label flag"):
+                segment_obj.IsLabel = bool(is_label)
 
     @OperationsMethod
     def ValidateSegments(self, paragraph_or_hvo):
