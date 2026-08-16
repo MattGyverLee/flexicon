@@ -537,16 +537,24 @@ enforcement work — recommend filing one alongside **DEF** in
    determines what "bracket" means at each site.
 3. Pass **B2t**, the end-to-end persistence test from #237
    (`undoable=True` → `SetGloss` → `CloseProject` → reopen → assert
-   persisted) — this is a `needs_human` gate requiring a scratch project.
+   persisted). **LANDED** as
+   `tests/operations/test_undoable_mode_live.py::TestPersistenceAcrossReopen`,
+   together with the rest of the live `undoable=True` coverage DEF was
+   gated on (33 live tests). #237 is closed by it.
 4. Only then does **DEF** (flipping the default to `undoable=True`) become
    viable, and it is itself a separate `needs_human`-gated public-API
    default change per `tasks.md` Checkpoint 3.
 
-Until all four land, FlexToolsMCP should pass `undoable=True` explicitly
-(not rely on a future default flip) for any deployment mode where shared-mode
-safety matters, and should not treat `undoable=True` today as safe — see the
-per-mode atomicity table in §5: `undoable=True` in 4.3.0 has **no** working
-per-operation envelope yet (#237 open).
+Steps 1-3 have landed (unreleased). Until **DEF** lands *and a release
+cuts*, FlexToolsMCP should pass `undoable=True` explicitly rather than rely
+on a future default flip — a version-pinned 4.3.0 install still has the
+broken behavior #237 reported, and still defaults to `undoable=False`.
+
+One caveat worth reading before switching: nested blocks **join** the
+enclosing unit of work, so an inner block has no independent rollback. If
+your generated code catches an exception from an inner block inside an
+outer one, the inner block's partial writes commit with the outer. See
+`docs/EXCEPTION_HANDLING.md`, "Atomicity Under `undoable=True`".
 
 ---
 
@@ -616,14 +624,15 @@ per-operation envelope yet (#237 open).
 | CB | Contract-baseline extension (`UndoableUnitOfWorkHelper`, `NonUndoableUnitOfWorkHelper`, `IActionHandler`, `ILcmUI`) | Landed and independently verified: `reviews/cycle2-verification.md` confirms 22 passed / 0 failed and that `TestTransactionLayerContract` runs in Mode 1 (checked-in baseline fixture, no live liblcm required) |
 | MCP | This document | Delivered by this pass |
 | B1 | `transaction.py` rewrite on `UndoableUnitOfWorkHelper` | Landed |
-| B1t | Rollback/nesting regression tests for B1 | Landed (`tests/test_b1t_action_handler_double.py`, action-handler double; no live LCM write) |
+| B1t | Rollback/nesting regression tests for B1 | Landed (`tests/test_b1t_action_handler_double.py`, action-handler double; no live LCM write). **Superseded for coverage purposes** by `tests/operations/test_undoable_mode_live.py`, which re-proves the same claims against the real liblcm FSM — the doubles had encoded D9 |
 | B2s | Sweep: full inventory of unbracketed mutators | Landed (`reviews/cycle1-explore-b2sweep.md`; 294, reconciled to 295 by B2g) |
 | B2 | Per-operation brackets | Landed — shape RESOLVED **per-site** (decision D5); 11/11 domain batches, B2g ratchet baseline 295 -> 0 |
 | B2g | Ratchet guard against new unbracketed mutations | Landed — now a permanent zero-tolerance guard, not a countdown |
-| B2t | End-to-end persistence test, `needs_human` (scratch project) | PLANNED |
+| B2t | End-to-end persistence test, `needs_human` (scratch project) | **LANDED, not released** — `tests/operations/test_undoable_mode_live.py::TestPersistenceAcrossReopen`; closes #237. Runs on a tempdir copy of the Target `.fwbackup`, never the real project |
+| DEF-COV | Live `undoable=True` coverage (the DEF blocker) | **LANDED, not released** — `tests/operations/test_undoable_mode_live.py`, 33 live tests. Reintroducing D9 turns 19 of them red, on observed data loss across a `CloseProject()` boundary rather than on call-shape assertions |
 | B3 | Fix `Undo()`/`Redo()` | Landed. Recording the in-process-only scope caveat on #235 is still open (task CO1) |
 | A3 | `AbortSession()` (`Rollback(0)`) | **LANDED, not released** — `undoable=False` primitive; returns `False`/raises under `undoable=True` (D8) |
-| DEF | Flip default to `undoable=True` | PLANNED, `needs_human`, gated on Checkpoint 2 |
+| DEF | Flip default to `undoable=True` | PLANNED, `needs_human` — public-API default change. Its **coverage** blocker is cleared (DEF-COV/B2t above); what remains is the human decision itself |
 | B4 | `flexicon.CAPABILITIES` frozenset | Landed — all four tokens; two are mode-dependent (see §3) |
 | (unfiled) | Enforce D3 (block `undoable=False` in shared mode) as a precondition | PLANNED, **no task ID assigned yet** — recommend filing alongside DEF |
 | (separate from B1/B2) | Implement `CreateField`'s actual schema mutation | PLANNED, **no task ID assigned** — tracked only in the issue draft, not in `tasks.md` |

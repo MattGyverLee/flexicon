@@ -577,6 +577,83 @@ project.CloseProject()  # (1) and (2) are saved to disk, despite the exception.
 
 ---
 
+## Atomicity Under `undoable=True`: the Block Is the Unit
+
+This is the mode `undoable=False`'s caveats point at, and the destination
+decision D3 designates. Everything below is verified against a live LCM in
+`tests/operations/test_undoable_mode_live.py`; see
+`specs/write-path-transactions/evidence/live-def-undoable-coverage.md`.
+
+**The guarantee:** an exception inside a `with project.UndoableOperation(...)`
+block rolls that block's mutations back, for real, via liblcm's
+`UndoableUnitOfWorkHelper`. Creates, field writes and deletes are all
+reverted, and the rollback is durable -- a rolled-back object does not
+reappear when the project is reopened.
+
+```python
+project.OpenProject("MyProject", writeEnabled=True, undoable=True)
+
+with project.UndoableOperation("import batch"):
+    project.LexEntry.Create("run", "stem")     # (1)
+    project.LexEntry.Create("walk", "stem")    # (2)
+    raise RuntimeError("network timeout mid-import")
+    # (1) and (2) ARE rolled back. Neither reaches disk.
+```
+
+**Every operation is its own unit of work.** A bare Operations call with no
+block around it opens, commits and closes its own `UnitOfWork` -- that is the
+`per-operation-uow` capability, and it holds end to end (the write survives
+`CloseProject()`). Each such call is one entry in the FLEx Ctrl+Z menu,
+labelled from the call's own arguments (`Create part of speech 'Noun'`), not
+from the method name.
+
+**A rejected input costs nothing.** Validation runs outside the bracket, so a
+call that raises `FP_ParameterError` adds no undo entry and opens no unit of
+work. Callers get no empty entries on a linguist's undo stack.
+
+### Nesting joins -- an inner block has no independent rollback
+
+Nested blocks **join** the enclosing unit of work rather than opening a second
+one. This is not a style choice: liblcm's `UndoStack` responds to a second
+`BeginUndoTask` by rolling the *already-open* unit back and then throwing, so
+joining is what keeps an inner block from destroying the outer block's work.
+
+The consequence callers must know:
+
+```python
+with project.UndoableOperation("outer"):
+    try:
+        with project.UndoableOperation("inner"):
+            project.LexEntry.Create("partial", "stem")
+            raise RuntimeError("boom")
+    except RuntimeError:
+        pass          # <-- swallowing the inner exception here
+# "partial" IS COMMITTED. The inner block joined the outer unit of work,
+# so it had no rollback of its own; only the OUTERMOST block's exit decides.
+```
+
+If you need the inner step to be independently revertible, it must not be
+nested -- run it as its own top-level block, or let the exception propagate
+out of the outer block so the whole unit rolls back together.
+
+### Other mode-specific behaviors
+
+- **`AbortSession()` refuses inside a block** (`FP_TransactionError`) and
+  returns `False` between operations. It is in practice an `undoable=False`
+  primitive; per-operation rollback already covers this mode. See tasks.md D8.
+- **`Undo()`/`Redo()` are in-process only** (issue #235). They drive the live
+  `ActionHandlerAccessor`, whose stack lives in RAM and is never serialized
+  into `.fwdata`. A reopened project always starts with `CanUndo()` False, so
+  work committed by a previous session is past undoing.
+- **Never write `helper.RollBack = ...`.** `RollBack` is `{private get; set;}`
+  and pythonnet synthesizes no property for it, so the assignment silently
+  lands on the Python wrapper and leaves the real field at its default of
+  `True` -- rolling back every clean unit of work. Use `set_RollBack(...)`.
+  This is decision D9, and it is why a pythonnet write must always be verified
+  by reading the effect back through the LCM.
+
+---
+
 ## Testing Exception Handlers
 
 ### Unit Testing Pattern

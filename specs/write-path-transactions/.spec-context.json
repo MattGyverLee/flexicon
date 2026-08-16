@@ -211,6 +211,22 @@
       "what": "Full offline gate after A3 plus the B1 fix and the two updated doubles",
       "command": "python -m pytest tests/ -m \"not requires_live_project\" -q",
       "result": "35 failed, 1223 passed - same 35 pre-existing failures (#240 rename path, sync engine); passed 1201 -> 1207 (B4) -> 1221 (A3 offline) -> 1223 (B1 regression guards). Zero regressions."
+    },
+    {
+      "what": "DEF-COV + B2t: live undoable=True coverage (33 tests) incl. persistence across CloseProject/reopen; validated by mutation (reintroducing D9 turns 19 of 33 red)",
+      "command": "$env:FLEXLIBS_REQUIRE_LIVE='1'; python -m pytest tests/operations/test_undoable_mode_live.py -m requires_live_project -q",
+      "result": "33 passed; tests/live_status.json run_mode=live",
+      "warnings": [
+        "flexlibs2->flexicon rename DeprecationWarning from tests/conftest.py:140 - benign, pre-existing"
+      ]
+    },
+    {
+      "what": "No regression in the targeted live suites after the conftest target_sandbox_path addition",
+      "command": "per-file: test_abort_session_live, test_grammar_brackets_live, test_lexicon_brackets_live, test_{allomorphs,etymologies,examples}_live, test_{locations,persons,pronunciations,variants}_live",
+      "result": "12 / 16 / 20+3xfail / 18 / 27+3skip passed",
+      "warnings": [
+        "the 3 xfails are the recorded pre-existing Lexicon bugs, unchanged"
+      ]
     }
   ],
   "decisions": [
@@ -293,6 +309,10 @@
       "decision": "Describe B4 (and B1) in the contract as LANDED, NOT RELEASED rather than SHIPPED",
       "why": "Contract section 2 line 98 already told FlexToolsMCP to 'treat B1 as PLANNED for integration purposes until it ships in a release'. B4 is on the same branch, and the contract's audience pins pyflexicon>=4.3.0,<5 - a version-pinned install cannot see CAPABILITIES until a release cuts, so calling it shipped would overstate exactly to the reader who most depends on the distinction.",
       "rejected": "Saying 'SHIPPED', which contradicts the framing section 2 already uses for B1 on the same branch"
+    },
+    {
+      "decision": "D10 - a test suite that only asserts the FAILURE path cannot detect a roll-back-everything bug; the commit branch needs the stronger test, and at least one test must survive CloseProject()",
+      "why": "Reintroducing D9 turns 19 of DEF-COV's 33 live tests red; the 14 survivors are largely the ones asserting that a rollback happened, which a build that rolls back EVERYTHING satisfies perfectly. That is the shape B1t was mostly built out of. Under undoable=True the commit path carries a silent total-data-loss mode - a discarded write raises nothing and every in-session read still returns the cached value - so an in-memory assertion cannot distinguish 'written' from 'written and then discarded'. Corrected mid-task: the offline suite was expected to stay green under the same mutation and does not (14 fail), because D9's fix had also hardened the doubles; the surviving distinction is that offline guards pin HOW the code calls pythonnet while the live tests observe DATA LOSS."
     }
   ],
   "concerns": [
@@ -339,11 +359,17 @@
     {
       "note": "B4 updated five stale rows in the contract's task-status table (B1, B1t, B2s, B2, B3) and two prose rows that still called B1 PLANNED, because section 3 now cites B1+B2 as landed and the document would otherwise contradict itself. Those edits are honesty fixes forced by B4, not B4 scope creep - but it means the contract's status table has been drifting behind tasks.md and should be re-checked whenever a task closes. B2t/A3/DEF and the two unfiled items remain correctly PLANNED.",
       "step": "implement"
+    },
+    {
+      "note": "NOT A BLOCKER, but file it: `pytest tests/operations/ -m requires_live_project` stalls indefinitely and must not be used as a gate. ~25 files in that directory (e.g. test_pos_operations.py:487, TestPOSOperationsIntegration.flex_project) define their own fixture calling AllProjectNames()[0] and opening the FIRST REAL PROJECT ON THE MACHINE in place, write-enabled. That is the exact hazard CLAUDE.md warns about. The *_live.py files all use tempdir sandboxes and pass per-file in seconds; the stall is entirely in the older non-sandbox files. Recommended follow-up: migrate those fixtures to target_sandbox. Until then the supported live gate is per-file, never the directory."
+    },
+    {
+      "note": "DEF's remaining risk is now behavioral, not coverage. Two semantics DEF-COV pinned that callers will hit the moment the default flips: (1) nested blocks JOIN, so an inner block has no independent rollback - catching an inner exception inside an outer block commits the inner's partial writes (test_inner_exception_caught_inside_the_outer_block_still_commits); (2) AbortSession() becomes near-useless in the new default mode - it refuses inside a block (FP_TransactionError) and returns False outside one (D8), so any existing caller relying on it for recovery silently stops being protected. Both are documented in docs/EXCEPTION_HANDLING.md's new 'Atomicity Under undoable=True' section, but (2) in particular deserves a release-note callout, not just a docs section."
     }
   ],
   "last_action": {
     "step": "implement",
-    "task": "A3",
+    "task": "DEF-COV + B2t",
     "result": "complete"
   }
 }

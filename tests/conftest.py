@@ -1531,3 +1531,53 @@ def target_sandbox_undoable():
         except Exception:
             pass
         sandbox.__exit__(None, None, None)
+
+
+@pytest.fixture
+def target_sandbox_path():
+    """
+    Yield the `.fwdata` PATH of a fresh tempdir copy of the Target
+    `.fwbackup`, with no project opened.
+
+    Every other sandbox fixture opens the project for you and closes it at
+    teardown, which makes them unable to express the one question that
+    matters most for `undoable=True`: does a write SURVIVE `CloseProject()`?
+    Answering that needs a full open -> write -> close -> REOPEN -> read-back
+    cycle inside a single test, against the same file. So this fixture hands
+    over the path and lets the test own the project lifecycle; teardown only
+    deletes the tempdir.
+
+    This is issue #237 / task B2t. Always a tempdir copy -- the user's real
+    Target project is never touched, in either mode.
+    """
+    import pathlib
+
+    require_live = os.environ.get("FLEXLIBS_REQUIRE_LIVE") == "1"
+
+    def _unavailable(reason):
+        if require_live:
+            pytest.fail(
+                f"FLEXLIBS_REQUIRE_LIVE=1 but the Target sandbox path is "
+                f"unavailable: {reason}. Refusing to skip a live "
+                f"write-path verification."
+            )
+        pytest.skip(reason)
+
+    if "SIL.LCModel" not in sys.modules:
+        _unavailable("Requires SIL.LCModel (FieldWorks installed)")
+
+    repo_root = pathlib.Path(__file__).resolve().parent.parent
+    fixtures_dir = repo_root / "tests" / "fixtures"
+    backups = sorted(fixtures_dir.glob("Target*.fwbackup"))
+    if not backups:
+        _unavailable(
+            f"No Target .fwbackup found in {fixtures_dir}; copy the golden "
+            "backup in (see tests/LIVE_TESTING.md)."
+        )
+
+    sandbox = _FwBackupSandbox(backups[-1], prefix="target_sandbox_path_")
+    fwdata_path = sandbox.__enter__()
+    try:
+        yield str(fwdata_path)
+    finally:
+        sandbox.__exit__(None, None, None)

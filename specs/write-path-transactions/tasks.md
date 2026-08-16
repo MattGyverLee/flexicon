@@ -140,11 +140,27 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
       plus the stale B1/B1t/B2s/B2/B3 rows in its status table and the two `undoable=True`
       rows that still called B1 PLANNED. Guard test:
       `tests/write_path_transactions/test_capabilities.py` (6 tests). See **D7**.
-- [ ] **B2t** End-to-end persistence test from #237: `undoable=True` -> `SetGloss` ->
-      `CloseProject` -> reopen -> assert persisted. **Requires a live LCM write to a
-      scratch project; needs_human gate. No agent may execute this.**
+- [x] **B2t** End-to-end persistence test from #237: `undoable=True` -> `SetGloss` ->
+      `CloseProject` -> reopen -> assert persisted. **DONE.** The needs_human gate was
+      lifted explicitly by the maintainer ("make it so -- we can't release untested
+      software"), on the standing condition that no agent writes to a project that is
+      not a throwaway: the new `target_sandbox_path` fixture hands over a tempdir copy
+      of the Target `.fwbackup` and the test owns the open/close/reopen cycle, so the
+      real Target is never opened. Landed as
+      `tests/operations/test_undoable_mode_live.py::TestPersistenceAcrossReopen`
+      (4 tests) inside the wider **DEF-COV** suite below. Closes #237.
+- [x] **DEF-COV** Live `undoable=True` coverage -- the blocker D9 recorded against DEF.
+      **DONE.** `tests/operations/test_undoable_mode_live.py`, 33 live tests against a
+      tempdir Target sandbox, covering the eight claims the mode makes: clean-block
+      commit, real rollback, per-operation UoW, nesting-joins, Undo/Redo, the B2
+      brackets under *this* mode, persistence across reopen, and a live pin on D9's
+      pythonnet surface. Evidence: `evidence/live-def-undoable-coverage.md`.
+      The suite is validated by mutation, not just by passing: reintroducing D9
+      (`set_RollBack(...)` -> `helper.RollBack = ...`) turns **19 of 33 red**, and does
+      so on observed data loss rather than on call-shape assertions. See **D10**, which
+      also corrects an expectation that did not survive measurement.
 
-**Checkpoint:** Track B core green.
+**Checkpoint:** Track B core green -- COMPLETE.
 
 ---
 
@@ -155,7 +171,12 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
       caveat on #235 — tracked under **CO1** below.
 - [ ] **CO1** Close #235 with the in-process-only scope caveat recorded on the issue
       (`Undo()`/`Redo()` drive the live `ActionHandlerAccessor`; they do not reverse
-      changes already committed to disk by a prior session).
+      changes already committed to disk by a prior session). **needs_human** — closing
+      a GitHub issue is an outward-facing write. The caveat now has live evidence to
+      cite: `test_undoable_mode_live.py::TestPersistenceAcrossReopen::
+      test_undo_stack_does_not_survive_reopen` shows a committed write persisting while
+      `CanUndo()` reads False on the reopened project, and
+      `TestUndoRedoLive` covers the in-session Undo/Redo round trip.
 - [x] **A3** `FLExProject.AbortSession()` -> `IActionHandler.Rollback(0)`. Demoted below
       Track B. Must document the **O2 catch**: `Rollback` leaves the FSM in
       `ReadyForBeginTask`, so in `undoable=False` it terminates the session envelope and
@@ -171,7 +192,16 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
       **A3's live run also found and fixed a critical pre-existing B1 defect — see D9 —
       and found a second pre-existing defect in `SaveChanges()`, recorded not fixed.**
 - [ ] **DEF** Flip the default to `undoable=True` (D3). Gated on Checkpoint 2 green.
-      **needs_human** — public API default change.
+      **needs_human** — public API default change. **Coverage blocker CLEARED** by
+      **DEF-COV** + **B2t**: the `undoable=True` path now has live coverage that a
+      reintroduced D9 turns red. What remains is genuinely the human decision, not a
+      missing test. Two things to weigh before flipping, both surfaced by DEF-COV:
+      (a) nested blocks JOIN, so an inner block has no independent rollback — callers
+      who catch an inner exception inside an outer block get the inner's partial writes
+      committed (documented in `docs/EXCEPTION_HANDLING.md`, pinned by
+      `test_inner_exception_caught_inside_the_outer_block_still_commits`);
+      (b) `AbortSession()` becomes a near-no-op for anyone who was relying on it, since
+      it refuses inside a block and returns `False` outside one (D8).
 
 ---
 
@@ -332,3 +362,36 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
      offline-double evidence alone for the mode they exist to serve. Hence the new
      `target_sandbox_undoable` fixture — **DEF must not be attempted until the
      `undoable=True` path has live coverage comparable to `undoable=False`.**
+     *Discharged by DEF-COV* (`tests/operations/test_undoable_mode_live.py`).
+
+- **D10 — A test suite that only asserts the FAILURE path cannot detect a
+  roll-back-everything bug. RESOLVED (DEF-COV).** Reintroducing D9 turns 19 of
+  DEF-COV's 33 live tests red. The 14 that survive are the tell — they are largely
+  the ones asserting that a rollback *happened*, and a build that rolls back
+  everything satisfies those perfectly. B1t had been built mostly out of that shape,
+  because rollback was the interesting new behavior B1 introduced and the commit path
+  looked like the boring control case.
+
+  *Measured, not assumed:* the offline suite was expected to stay green under the
+  same mutation and does not — it fails 14. D9's fix had also hardened both doubles
+  to raise on the assignment form and added a source-level guard, so the suite that
+  missed D9 no longer exists. The distinction that survives is about *what* is being
+  asserted: the offline guards pin **how the code calls pythonnet**, which would not
+  catch a different mechanism with the same effect, while the live tests observe
+  **data loss**, including across a `CloseProject()` boundary that no double can
+  model. Both are worth having; only the second is coverage.
+
+  It was the opposite. Under `undoable=True` the commit path is the one carrying a
+  silent, total-data-loss failure mode: a discarded write raises nothing, and every
+  in-session read still returns the cached value, so the damage is invisible until
+  someone reopens the project. Generalised rule for this codebase: **for any
+  construct with a commit branch and a rollback branch, the commit branch needs the
+  stronger test, and at least one test must survive `CloseProject()`** — an
+  in-memory assertion cannot distinguish "written" from "written and then
+  discarded". That is what `TestPersistenceAcrossReopen` is for, and why B2t
+  belonged *inside* this coverage rather than queued after it.
+
+  *Method worth reusing:* the mutation check itself. A coverage claim for a
+  silent-failure bug should be stated as "reintroducing the bug turns N tests red",
+  not as "N tests pass" — the second is true of the suite that missed D9 in the
+  first place.
