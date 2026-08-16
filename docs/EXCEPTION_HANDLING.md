@@ -550,14 +550,30 @@ project.CloseProject()  # (1) and (2) are saved to disk, despite the exception.
   evidence that no partial state was written -- assume the opposite.
 - A single warning to this effect is logged once, at `OpenProject()` time
   (not once per transaction, which would train callers to ignore it).
-- `FLExProject.RefreshFromDisk()` and `FLExProject.AbortSession()` (planned)
-  operate at session granularity for the same reason: there is no finer
-  granularity available in `undoable=False`.
-- If you need real per-operation rollback, `undoable=True` is the
-  destination mode once the Track B rewrite of `flexicon/code/transaction.py`
-  (on liblcm's `UndoableUnitOfWorkHelper`) lands; see
-  `specs/write-path-transactions/spec.md` D2/D3/B1. Until then, `undoable=True`
-  has the same no-rollback limitation.
+- `FLExProject.RefreshFromDisk()` and `FLExProject.AbortSession()` operate at
+  session granularity for the same reason: there is no finer granularity
+  available in `undoable=False`.
+- **`AbortSession()` is the recovery tool for exactly the situation above.**
+  It calls liblcm's one real revert primitive, `IActionHandler.Rollback(0)`,
+  discarding everything the session has written but not yet committed -- so
+  in the example, calling it in the `except` block really does remove (1) and
+  (2). It then reopens the session envelope, so the abort is non-terminal and
+  the session stays usable. What it cannot revert is anything already on disk
+  when the session opened.
+- **Do not call `SaveChanges()` in this mode.** It cannot succeed: the
+  session envelope holds the FSM in `ProcessingDataChanges`, while
+  `SaveInternal()` requires `ReadyForBeginTask`. It raises a raw
+  `System.InvalidOperationException("Commit at wrong place.")` *and* rolls
+  back the open bundle on the way out, discarding uncommitted work.
+  `CloseProject()` is the supported way to persist, and is unaffected (it
+  ends the envelope before saving).
+- If you need real per-operation rollback, `undoable=True` is the destination
+  mode, and the Track B rewrite of `flexicon/code/transaction.py` onto
+  liblcm's `UndoableUnitOfWorkHelper` has landed -- an exception inside a
+  block now genuinely rolls that block back. See
+  `specs/write-path-transactions/spec.md` D2/D3/B1. Note `AbortSession()`
+  deliberately refuses in that mode (per-operation rollback is already
+  automatic there); see tasks.md D8.
 
 ---
 

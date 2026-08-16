@@ -131,9 +131,15 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
       replaced by `test_scanner_is_functional` (a zero result is now the correct
       answer, so the old `len(scan()) > 0` assertion would fail *because* the sweep
       succeeded). The three ratchet tests themselves are kept, not deleted.
-- [ ] **B4** `flexicon.CAPABILITIES` frozenset, shipping the `per-operation-uow` token.
+- [x] **B4** `flexicon.CAPABILITIES` frozenset, shipping the `per-operation-uow` token.
       Gated on B2 complete — contract §3 marks it PLANNED and the token must not appear
-      before the capability is real.
+      before the capability is real. **DONE.** Ships all four contract §3 tokens
+      (`ui-injection`, `refresh-from-disk`, `per-operation-uow`,
+      `transaction-rollback`), each backed by a landed capability: A1a-A1c, A4, B1+B2,
+      B1 respectively. Contract §3 rewritten from PLANNED to landed-but-unreleased,
+      plus the stale B1/B1t/B2s/B2/B3 rows in its status table and the two `undoable=True`
+      rows that still called B1 PLANNED. Guard test:
+      `tests/write_path_transactions/test_capabilities.py` (6 tests). See **D7**.
 - [ ] **B2t** End-to-end persistence test from #237: `undoable=True` -> `SetGloss` ->
       `CloseProject` -> reopen -> assert persisted. **Requires a live LCM write to a
       scratch project; needs_human gate. No agent may execute this.**
@@ -150,10 +156,20 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
 - [ ] **CO1** Close #235 with the in-process-only scope caveat recorded on the issue
       (`Undo()`/`Redo()` drive the live `ActionHandlerAccessor`; they do not reverse
       changes already committed to disk by a prior session).
-- [ ] **A3** `FLExProject.AbortSession()` -> `IActionHandler.Rollback(0)`. Demoted below
+- [x] **A3** `FLExProject.AbortSession()` -> `IActionHandler.Rollback(0)`. Demoted below
       Track B. Must document the **O2 catch**: `Rollback` leaves the FSM in
       `ReadyForBeginTask`, so in `undoable=False` it terminates the session envelope and
       must either reopen `BeginNonUndoableTask()` or be documented as terminal.
+      **DONE.** Takes the *reopen* branch (see **D8**), so the abort is non-terminal and
+      repeatable. Guards: read-only -> `FP_ReadOnlyError`; nothing open (`CurrentDepth == 0`,
+      the exact precondition `Rollback` checks) -> `False` rather than a raw
+      `InvalidOperationException`; `undoable=True` with a block open -> `FP_TransactionError`
+      rather than rolling back underneath the owning helper. Tests:
+      `tests/write_path_transactions/test_a3_abort_session.py` (14 offline) and
+      `tests/operations/test_abort_session_live.py` (12 live).
+      Evidence: `evidence/live-a3-abort-session.md`.
+      **A3's live run also found and fixed a critical pre-existing B1 defect — see D9 —
+      and found a second pre-existing defect in `SaveChanges()`, recorded not fixed.**
 - [ ] **DEF** Flip the default to `undoable=True` (D3). Gated on Checkpoint 2 green.
       **needs_human** — public API default change.
 
@@ -238,3 +254,81 @@ the 117 are pre-existing and unrelated (#240 rename path, sync engine).
   *Not adopted from the probe:* its hybrid recommendation. Adopted instead: its own
   stated fallback, which it correctly calls "more honest, fully auditable by grep, and
   preserves label fidelity everywhere."
+
+- **D7 — `CAPABILITIES` ships all four tokens and describes the BUILD, not the
+  session. RESOLVED (B4).** Contract §3's table said `transaction-rollback` is
+  "`undoable=True` only; `undoable=False` never sets this token" — which presumes a
+  mode-aware set. A module-level frozenset cannot vary by mode, and the same tension
+  applies to `per-operation-uow`, which tasks.md nonetheless mandates B4 ship.
+
+  Resolved by making the token mean *"this build implements the capability"* rather
+  than *"the capability is active in your session"*, and stating the mode dependence
+  in three places: the `flexicon/__init__.py` docstring, contract §3, and the existing
+  one-shot `OpenProject()` warning (**A2d**) at the boundary where the mode is chosen.
+  That is precisely the shape constitution V permits — "where a guarantee is
+  mode-dependent, state the mode dependence plainly at the call site's docstring and
+  warn once at the boundary where the mode is chosen" — so reporting a mode-dependent
+  token is honest, and withholding one the build genuinely implements would instead
+  make the probe under-report.
+
+  *Rejected:* (a) shipping only the two unconditional tokens, which would leave
+  FlexToolsMCP unable to detect B1+B2 at all — the entire point of B4; (b) adding a
+  mode-aware `FLExProject.capabilities` accessor, which honors §3's wording exactly
+  but is API surface beyond B4's scope. (b) remains the clean answer if a consumer
+  ever needs per-session granularity — see the concern recorded for **DEF**.
+
+  *Also settled:* B4 is **landed, not released**. The contract now says so, matching
+  the framing §2 already used for B1, because a version-pinned FlexToolsMCP install
+  cannot see either until a release cuts.
+
+- **D8 — `AbortSession()` reopens the envelope rather than being terminal, and
+  refuses under `undoable=True`. RESOLVED (A3).** The O2 catch left two options and
+  tasks.md permitted either. Reopening wins on evidence, not taste: `Rollback(0)`
+  sets the FSM to `ReadyForBeginTask` (`UndoStack.cs:724`), which *ends* the
+  session envelope, and `CloseProject()` unconditionally calls
+  `EndNonUndoableTask()`. Documenting the abort as terminal would therefore have
+  left every abort followed by a broken close, and would have made the one real
+  revert primitive a one-shot that costs you the rest of the session — a poor trade
+  for a method whose whole purpose is recovering from a bad batch. Reopening makes
+  it non-terminal, repeatable, and safe to call in an `except:` block.
+
+  The second half is the `undoable=True` refusal. There, an open unit is always
+  owned by an `UndoableUnitOfWorkHelper` (that mode opens no session envelope), so
+  rolling back underneath it would leave the helper's `Dispose()` acting on a FSM
+  already back in `ReadyForBeginTask` — raising a *second* exception out of the
+  `with` block's exit and masking whatever the caller was handling. `FP_TransactionError`
+  is the honest answer; the correct tool inside a block is to let the exception
+  propagate, which rolls that block back by design. Consequence worth stating
+  plainly: despite spec.md A3's "available in both modes", `AbortSession()` is in
+  practice an `undoable=False` primitive — under `undoable=True` it returns `False`
+  between operations and refuses inside them. That is the correct outcome, since
+  per-operation rollback already covers that mode.
+
+  *Rejected:* documenting the abort as terminal (breaks `CloseProject()`); rolling
+  back regardless of mode (corrupts the owning helper).
+
+- **D9 — pythonnet does not expose a `RollBack` property; `set_RollBack(...)` is the
+  only path to .NET. RESOLVED (found during A3 live verification).** `RollBack` is
+  `{private get; set;}`, and pythonnet synthesizes no property when the getter is
+  private — it surfaces only `set_RollBack`. Critically, `helper.RollBack = False`
+  does **not** raise: pythonnet accepts it as a plain Python attribute on the wrapper
+  while the real field keeps its constructor default of `True`, so `Dispose()` rolled
+  back **every** UnitOfWork, clean ones included. Under `undoable=True` every write
+  was silently discarded. Both call sites now call `set_RollBack(...)`.
+
+  This is the same failure shape already recorded in this feature's concerns for
+  `ILexEtymology.LanguageRA`, and it is now a third instance of the same class —
+  strong evidence it deserves a standing rule, not another one-off note: **a
+  pythonnet attribute assignment that silently succeeds proves nothing; a write to a
+  .NET object must be verified by reading the effect back through the LCM.**
+
+  Two process lessons, both structural rather than incidental:
+  1. **The offline doubles encoded the bug.** They modelled `RollBack` as assignable,
+     so 30 tests passed against code that destroyed all data live. Doubles for
+     pythonnet-wrapped types must model *pythonnet's* surface, not the C# source's.
+     Both doubles now raise on the assignment form, plus a source-level guard.
+  2. **Phase 2 had never been run against a live LCM.** Every landed live suite used
+     `target_sandbox`, which is `undoable=False`. B1/B2 were marked complete on
+     offline-double evidence alone for the mode they exist to serve. Hence the new
+     `target_sandbox_undoable` fixture — **DEF must not be attempted until the
+     `undoable=True` path has live coverage comparable to `undoable=False`.**

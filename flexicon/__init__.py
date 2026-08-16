@@ -14,6 +14,53 @@
 
 version = "4.3.1"
 
+#: Capabilities this *build* of flexicon implements, probed with ``in``.
+#:
+#: Consumers (notably FlexToolsMCP) must probe defensively, because releases
+#: at or below 4.3.0 do not define this name at all::
+#:
+#:     CAPS = getattr(flexicon, "CAPABILITIES", frozenset())
+#:     if "per-operation-uow" in CAPS:
+#:         ...          # post-Track-B surface
+#:     else:
+#:         ...          # 4.3.0 floor: session-envelope path
+#:
+#: Use the one-line ``getattr(..., frozenset())`` form, not a two-step
+#: ``hasattr()`` check. See ``docs/FLEXTOOLSMCP_WRITE_CONTRACT.md`` section 3.
+#:
+#: IMPORTANT -- a token here means "this build implements the capability", NOT
+#: "the capability is active in your session". Two of the four are
+#: mode-dependent and deliver nothing under the default ``undoable=False``:
+#:
+#:   ``"ui-injection"``        Always active. ``OpenProject(..., ui=...)``
+#:                             accepts an ``ILcmUI``; defaults to ``FwLcmUI``.
+#:   ``"refresh-from-disk"``   Always active. ``FLExProject.RefreshFromDisk()``
+#:                             wraps ``IUndoStackManager.Refresh()``; needed in
+#:                             BOTH modes, since one foreign FLEx save otherwise
+#:                             wedges auto-save for the rest of the session.
+#:   ``"per-operation-uow"``   Requires ``undoable=True``. Every LCM mutation
+#:                             runs inside a named, nesting-aware unit of work.
+#:                             Under ``undoable=False`` the atomicity unit is
+#:                             the whole SESSION, not the operation.
+#:   ``"transaction-rollback"``Requires ``undoable=True``. An exception escaping
+#:                             a transaction reverts that operation's mutations
+#:                             via ``UndoableUnitOfWorkHelper``'s ``Rollback(0)``.
+#:                             Under ``undoable=False`` there is NO rollback --
+#:                             liblcm exposes no reachable rollback-to-mark API
+#:                             in that mode (issue #236), and mutations applied
+#:                             before a failure are still written to disk by
+#:                             ``CloseProject()``.
+#:
+#: ``OpenProject()`` already warns once per call when ``writeEnabled=True`` and
+#: ``undoable=False``, so the mode dependence is surfaced at the boundary where
+#: the mode is chosen as well as here.
+CAPABILITIES = frozenset({
+    "ui-injection",
+    "refresh-from-disk",
+    "per-operation-uow",
+    "transaction-rollback",
+})
+
 # Define exported classes, etc. at the top level of the package
 
 from .code.FLExInit import (

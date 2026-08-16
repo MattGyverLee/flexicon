@@ -124,7 +124,7 @@ detect "am I nested two deep" — there is no such state to detect.
 
 | | 4.3.0 today | Post-Track-B |
 |---|---|---|
-| Does a raw-LCM script under `run_module` get any envelope at all? | Only incidentally: under the default `undoable=False`, `OpenProject()` already holds one session-long `BeginNonUndoableTask()` open (`FLExProject.py:257-280`), so raw LCM code the script runs joins that by construction — there is no `run_module`-specific bracket. | `run_module` opens one script-scoped UoW via `DoUsingNewOrCurrentUOW`; wrapper calls inside join it. **PLANNED**, task **B1** (rewrite `transaction.py` on the liblcm helper) is the prerequisite; `run_module`'s own bracket is FlexToolsMCP-side work, not tracked by a flexicon task ID here. |
+| Does a raw-LCM script under `run_module` get any envelope at all? | Only incidentally: under the default `undoable=False`, `OpenProject()` already holds one session-long `BeginNonUndoableTask()` open (`FLExProject.py:257-280`), so raw LCM code the script runs joins that by construction — there is no `run_module`-specific bracket. | `run_module` opens one script-scoped UoW via `DoUsingNewOrCurrentUOW`; wrapper calls inside join it. **PLANNED**; its flexicon-side prerequisite, task **B1** (rewrite `transaction.py` on the liblcm helper), has LANDED (unreleased), so this is now blocked only on `run_module`'s own bracket, which is FlexToolsMCP-side work not tracked by a flexicon task ID here. |
 | What happens if a wrapper method inside the script also opens `BeginUndoTask` naively? | N/A today — no wrapper opens `BeginUndoTask` in the default mode; `undoable=True` currently opens no per-operation envelope at all (#237, still open). | Must join via `CurrentDepth > 0`, never re-open. This is what B1 delivers. |
 
 ---
@@ -216,26 +216,38 @@ as two steps — the one-line `getattr(..., frozenset())` form is shorter and
 cannot race with a concurrent import in a way the two-step form could be
 misread to.
 
-**`CAPABILITIES` itself is PLANNED, not shipped.** It has no dedicated task ID
-in `specs/write-path-transactions/tasks.md` today — it is introduced as an
-agreed design in this contract-writing pass but has not yet been filed as a
-tracked task. **Gap, flagged for the crew:** add a task ID (recommend under
-Checkpoint 1, alongside **MCP**, since FlexToolsMCP's runtime probing depends
-on it) before implementation starts. Until it lands, the `getattr(...,
-frozenset())` fallback above is the only forward-compatible probe and
-correctly treats 4.3.0 as having *zero* capabilities from this set — which is
-accurate: none of `ui-injection`'s *discoverability-via-CAPABILITIES* (the
-feature itself, `ui=` param, is landed — see §5), `per-operation-uow`,
-`refresh-from-disk`'s *discoverability-via-CAPABILITIES* (the feature itself
-is landed — see below), or `transaction-rollback` are exposed via this
-mechanism in 4.3.0.
+**`CAPABILITIES` has LANDED, not yet RELEASED** (task **B4**,
+`flexicon/__init__.py`), carrying all four tokens. It is on the
+`write-path-transactions-b1-b3` branch; as with B1 (see §2), treat it as
+PLANNED for integration purposes until it ships in a release, since a
+version-pinned install will not see it before then. It was filed as B4 under
+Checkpoint 2 rather than Checkpoint 1 because the `per-operation-uow` token
+could not honestly be reported before B1+B2 made the capability real
+(constitution V).
 
-| Token | 4.3.0 today | Post-Track-B |
+The `getattr(..., frozenset())` probe above remains the **only** correct form,
+and is now load-bearing rather than merely forward-compatible: it is what lets
+one FlexToolsMCP build work against both a pinned 4.3.0 install (which resolves
+to an empty frozenset, correctly reporting zero capabilities) and a post-Track-B
+install (which reports all four).
+
+**A token means "this build implements the capability", not "the capability is
+active in your session."** `CAPABILITIES` is a module-level constant, so it
+cannot vary by mode, and two of the four tokens are mode-dependent. This is the
+one place in this contract where a token is *reported* in a mode that does not
+*deliver* it, so it is stated here, in the `flexicon/__init__.py` docstring, and
+at the boundary where the mode is chosen (`OpenProject()`'s one-shot warning,
+task A2d) — which is what constitution V requires of a mode-dependent guarantee.
+
+A consumer that needs to know whether rollback is live in *this* session must
+check the mode it passed to `OpenProject()`, not the token.
+
+| Token | 4.3.0 (pinned floor) | Post-Track-B build (landed, unreleased) |
 |---|---|---|
-| `"ui-injection"` | Feature exists (`ui=` param, #238), but `CAPABILITIES` does not exist to report it. | Reported, once `CAPABILITIES` ships. |
-| `"per-operation-uow"` | Not implemented (`undoable=True` opens no per-operation envelope; #237 open). | Reported once B1+B2 land. |
-| `"refresh-from-disk"` | Feature exists (`RefreshFromDisk()`, task A4), but `CAPABILITIES` does not exist to report it. | Reported, once `CAPABILITIES` ships. |
-| `"transaction-rollback"` | Not implemented (no reachable rollback in either mode today — see §5). | Reported once B1 lands (`undoable=True` only; `undoable=False` never sets this token — see D1). |
+| `"ui-injection"` | Feature exists (`ui=` param, #238), but `CAPABILITIES` does not exist to report it. | **Reported.** Active in both modes. |
+| `"per-operation-uow"` | Not implemented (`undoable=True` opens no per-operation envelope; #237 open). | **Reported** (B1+B2 landed; 295/295 mutation sites bracketed, B2g ratchet baseline at 0). Active **only under `undoable=True`** — under `undoable=False` the atomicity unit is the session. |
+| `"refresh-from-disk"` | Feature exists (`RefreshFromDisk()`, task A4), but `CAPABILITIES` does not exist to report it. | **Reported.** Active in both modes. |
+| `"transaction-rollback"` | Not implemented (no reachable rollback in either mode today — see §5). | **Reported** (B1 landed). Active **only under `undoable=True`**, via `UndoableUnitOfWorkHelper`'s `Rollback(0)` on `Dispose`. Under `undoable=False` there is still no rollback (#236) — the token is present, the guarantee is not. |
 
 ---
 
@@ -359,7 +371,7 @@ What atomicity *is* available, per mode, today:
 |---|---|---|
 | `undoable=False` (4.3.0 default) | The whole session (`OpenProject()`...`CloseProject()`). A mid-operation exception leaves every prior mutation applied — `docs/EXCEPTION_HANDLING.md`'s "Atomicity Under `undoable=False`" section states this plainly. | `IActionHandler.Rollback(0)` is valid mid-task (**F5(c)**, `UndoStack.cs:705-724`) and would discard the *entire session's* uncommitted changes — genuine, but session-granularity, all-or-nothing. Not currently exposed as a flexicon API; task **A3** (`AbortSession()`) is planned but demoted below Track B. |
 | `undoable=True` (4.3.0 today) | **None reliably** — no per-operation envelope exists yet (#237 open); a single unbracketed setter like `SetGloss` can be refused outright by LCM. | Same `Rollback(0)`, same session-wide caveat; `Transaction()`'s docstring is explicit today that neither mode is atomic (`UndoableOperation()` docstring, `FLExProject.py:632-642`). |
-| `undoable=True` (post-B1) | Per-operation, once `transaction.py` is rewritten on `UndoableUnitOfWorkHelper` (**PLANNED, task B1**). `RollBack=true` is the ctor default and `Dispose()` reverts via `Rollback(0)` when set (tasks.md "O1 RESOLVED"). | Genuine per-operation rollback — the first mode in which "rollback" means what the word implies. |
+| `undoable=True` (post-B1) | Per-operation, now that `transaction.py` is rewritten on `UndoableUnitOfWorkHelper` (**task B1 LANDED, unreleased**). `RollBack=true` is the ctor default and `Dispose()` reverts via `Rollback(0)` when set (tasks.md "O1 RESOLVED"). | Genuine per-operation rollback — the first mode in which "rollback" means what the word implies. |
 
 **Domain seat's guidance on `FP_ConflictingSaveError` (Q4), carried
 verbatim:** catching it means **full stop and re-open** — abandon the run
@@ -375,7 +387,7 @@ will fail again.
 | `ui=` injection | Landed (#238). | Unchanged. |
 | `FP_ConflictingSaveError` canonical import | `flexicon.code.exceptions` / `flexicon` package root. | Unchanged. |
 | `RollbackToMark` | Does not exist; never did. | Still does not exist — B1 uses `Rollback(0)` via `UndoableUnitOfWorkHelper.Dispose()`, not a mark-based API. |
-| Real revert primitive | `Rollback(0)`, session-wide, not yet exposed (`AbortSession()` PLANNED, task A3). | `Rollback(0)`, per-operation scope, exposed transparently via B1's `_TransactionCM.__exit__`. |
+| Real revert primitive | `Rollback(0)`, session-wide, exposed as `AbortSession()` (task A3, landed not released); reopens the envelope, so it is repeatable. | `Rollback(0)`, per-operation scope, exposed transparently via B1's `_TransactionCM.__exit__`. `AbortSession()` deliberately refuses here — see task A3 / D8. |
 
 ---
 
@@ -468,10 +480,18 @@ RUN).
 
 **Does not guarantee:**
 - Any rollback narrower than the whole session (§5 — no `RollbackToMark`
-  exists, and the one real primitive, `Rollback(0)`, is session-wide and not
-  yet exposed as an API — task A3, PLANNED).
+  exists, and the one real primitive, `Rollback(0)`, is session-wide). It is
+  now exposed as `FLExProject.AbortSession()` (task **A3**, landed but not
+  released), which discards the whole session's uncommitted work and reopens
+  the envelope so the session stays usable.
 - Any save before `CloseProject()` (§2 — the FSM never returns to
   `ReadyForBeginTask` mid-session, so `SaveOnIdle`'s gates never clear).
+  **Concretely: `SaveChanges()` cannot succeed in this mode.** It reaches
+  `CheckReadyForCommit("Commit at wrong place.")`, raises a raw
+  `System.InvalidOperationException`, and — per `UndoStack.cs:239-246` —
+  rolls back the open bundle on the way out, discarding the session's
+  uncommitted work. Verified live during A3. Do not call it under
+  `undoable=False`; use `CloseProject()`, which ends the envelope first.
 - Safety in shared mode (see below — D3).
 - Survival of a mid-run crash (§2 — total loss, nothing was ever committed).
 
@@ -595,14 +615,15 @@ per-operation envelope yet (#237 open).
 | A2a-A2e | Rollback-honesty pass (`Transaction()` docstrings, one-shot warning, `RollbackToMark` deletion, `EXCEPTION_HANDLING.md` atomicity section) | Landed |
 | CB | Contract-baseline extension (`UndoableUnitOfWorkHelper`, `NonUndoableUnitOfWorkHelper`, `IActionHandler`, `ILcmUI`) | Landed and independently verified: `reviews/cycle2-verification.md` confirms 22 passed / 0 failed and that `TestTransactionLayerContract` runs in Mode 1 (checked-in baseline fixture, no live liblcm required) |
 | MCP | This document | Delivered by this pass |
-| B1 | `transaction.py` rewrite on `UndoableUnitOfWorkHelper` | PLANNED |
-| B1t | Rollback/nesting regression tests for B1 | PLANNED |
-| B2s | Sweep: full inventory of unbracketed mutators | PLANNED |
-| B2 | Per-operation brackets | PLANNED — shape OPEN (see disagreement above) |
+| B1 | `transaction.py` rewrite on `UndoableUnitOfWorkHelper` | Landed |
+| B1t | Rollback/nesting regression tests for B1 | Landed (`tests/test_b1t_action_handler_double.py`, action-handler double; no live LCM write) |
+| B2s | Sweep: full inventory of unbracketed mutators | Landed (`reviews/cycle1-explore-b2sweep.md`; 294, reconciled to 295 by B2g) |
+| B2 | Per-operation brackets | Landed — shape RESOLVED **per-site** (decision D5); 11/11 domain batches, B2g ratchet baseline 295 -> 0 |
+| B2g | Ratchet guard against new unbracketed mutations | Landed — now a permanent zero-tolerance guard, not a countdown |
 | B2t | End-to-end persistence test, `needs_human` (scratch project) | PLANNED |
-| B3 | Fix `Undo()`/`Redo()`; close #235 as in-process-only | PLANNED |
-| A3 | `AbortSession()` (`Rollback(0)`) | PLANNED, demoted below Track B |
+| B3 | Fix `Undo()`/`Redo()` | Landed. Recording the in-process-only scope caveat on #235 is still open (task CO1) |
+| A3 | `AbortSession()` (`Rollback(0)`) | **LANDED, not released** — `undoable=False` primitive; returns `False`/raises under `undoable=True` (D8) |
 | DEF | Flip default to `undoable=True` | PLANNED, `needs_human`, gated on Checkpoint 2 |
-| (unfiled) | `flexicon.CAPABILITIES` frozenset | PLANNED, **no task ID assigned yet** — recommend filing |
+| B4 | `flexicon.CAPABILITIES` frozenset | Landed — all four tokens; two are mode-dependent (see §3) |
 | (unfiled) | Enforce D3 (block `undoable=False` in shared mode) as a precondition | PLANNED, **no task ID assigned yet** — recommend filing alongside DEF |
 | (separate from B1/B2) | Implement `CreateField`'s actual schema mutation | PLANNED, **no task ID assigned** — tracked only in the issue draft, not in `tasks.md` |

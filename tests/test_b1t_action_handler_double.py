@@ -148,10 +148,31 @@ class FaithfulUndoableUnitOfWorkHelper:
     silently absorbed by the double.
 
     Constructor ((IActionHandler, String, String)) and RollBack semantics
-    (defaults True per UnitOfWorkHelper.cs:31; write-only, no getter; commit
-    calls EndUndoTask, rollback calls Rollback(0)) match
+    (defaults True per UnitOfWorkHelper.cs:31; commit calls EndUndoTask,
+    rollback calls Rollback(0)) match
     tests/contract/snapshots/liblcm_baseline.json's UndoableUnitOfWorkHelper
     entry (constructors, reflected_properties.RollBack).
+
+    ROLLBACK ACCESS SHAPE (corrected after live verification, task A3).
+    `RollBack` is `{private get; set;}` in C#, and pythonnet does NOT
+    synthesize a Python property when the getter is private -- it exposes
+    only the raw `set_RollBack` accessor. Confirmed live on the Target
+    sandbox: `hasattr(helper, "RollBack")` is False and
+    `dir(UndoableUnitOfWorkHelper)` contains `set_RollBack`/`RollBackChanges`
+    but no `RollBack`.
+
+    The consequence is the whole reason this double was wrong before:
+    `helper.RollBack = False` does not raise on the real type either. It
+    silently lands as a plain Python attribute on the wrapper while the .NET
+    field keeps its constructor default of True -- so Dispose() rolled back
+    EVERY unit of work, clean ones included, and `undoable=True` mode lost
+    every write it made. The old double modelled `RollBack` assignment as
+    working, which is exactly why an offline suite of 30 tests passed against
+    code that destroyed all data on a live LCM.
+
+    This double therefore refuses the assignment form outright: production
+    code must call `set_RollBack(...)`. That makes the bug impossible to
+    reintroduce without turning this suite red.
     """
 
     instances = []
@@ -172,15 +193,23 @@ class FaithfulUndoableUnitOfWorkHelper:
         type(self).instances.append(self)
 
     def __setattr__(self, name, value):
-        # Enforce write-only RollBack: no public getter exists on the real
-        # type (reflected_properties.RollBack.can_read == false). Route the
-        # assignment to a private-named slot so a read attempt
-        # (`helper.RollBack`) raises AttributeError, exactly like the real
-        # write-only property would if code mistakenly tried to read it back.
+        # `helper.RollBack = x` must never be how production code sets this.
+        # On the real pythonnet wrapper that assignment silently does nothing
+        # to .NET (see class docstring); here it raises, which is the only
+        # way an offline suite can catch the mistake at all.
         if name == "RollBack":
-            object.__setattr__(self, "_rollback", value)
-            return
+            raise AttributeError(
+                "pythonnet exposes no settable `RollBack` property on "
+                "UndoableUnitOfWorkHelper (the C# getter is private, so only "
+                "`set_RollBack` is surfaced). Assigning it silently leaves "
+                "the real flag True and rolls back every clean UnitOfWork -- "
+                "call set_RollBack(...) instead."
+            )
         object.__setattr__(self, name, value)
+
+    def set_RollBack(self, value):
+        """The accessor pythonnet actually exposes (verified live, A3)."""
+        object.__setattr__(self, "_rollback", value)
 
     def Dispose(self):
         if self._disposed:
@@ -267,12 +296,60 @@ class TestDoubleFidelity:
         with pytest.raises(RuntimeError, match="not supported in the current state"):
             ah.Rollback(0)
 
-    def test_double_rollback_write_only_no_getter(self):
+    def test_double_rejects_rollback_property_assignment(self):
+        """
+        Regression guard for the A3 live finding. pythonnet surfaces no
+        `RollBack` property (private C# getter), so `helper.RollBack = False`
+        silently fails to reach .NET and leaves every clean UnitOfWork to be
+        rolled back on Dispose(). The double refuses the form so the mistake
+        cannot pass offline again.
+        """
         ah = FaithfulActionHandler()
         helper = FaithfulUndoableUnitOfWorkHelper(ah, "label", "label")
-        helper.RollBack = False
+
+        with pytest.raises(AttributeError, match="set_RollBack"):
+            helper.RollBack = False
+
+        # Reading is impossible too -- there is no getter of any kind.
         with pytest.raises(AttributeError):
-            _ = helper.RollBack  # no public getter, by construction
+            _ = helper.RollBack
+
+    def test_double_accepts_the_set_rollback_accessor(self):
+        """`set_RollBack` is the accessor pythonnet actually exposes."""
+        ah = FaithfulActionHandler()
+        helper = FaithfulUndoableUnitOfWorkHelper(ah, "label", "label")
+
+        helper.set_RollBack(False)
+        helper.Dispose()
+
+        assert ah.rollback_calls == []      # committed, not rolled back
+        assert ah.end_undo_calls == 1
+
+    def test_source_never_assigns_the_rollback_property(self):
+        """
+        Source-level sweep. Neither transaction.py nor undoable_operation.py
+        may contain a `.RollBack =` assignment: on a live LCM that form is a
+        silent no-op that discards the block's writes. Only `set_RollBack(`
+        reaches .NET.
+        """
+        import inspect
+        import re
+
+        from flexicon.code import transaction, undoable_operation
+
+        pattern = re.compile(r"^\s*[^#]*\.RollBack\s*=", re.MULTILINE)
+
+        for module in (transaction, undoable_operation):
+            source = inspect.getsource(module)
+            offenders = pattern.findall(source)
+            assert not offenders, (
+                f"{module.__name__} assigns .RollBack directly ({offenders!r}). "
+                "pythonnet ignores that assignment -- use set_RollBack(...)."
+            )
+            assert "set_RollBack(" in source, (
+                f"{module.__name__} never calls set_RollBack(), so its "
+                "UnitOfWork can never commit."
+            )
 
 
 # ---------------------------------------------------------------------------

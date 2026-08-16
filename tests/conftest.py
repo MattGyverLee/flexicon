@@ -1465,3 +1465,69 @@ def target_sandbox():
         except Exception:
             pass
         sandbox.__exit__(None, None, None)
+
+
+@pytest.fixture
+def target_sandbox_undoable():
+    """
+    Same as `target_sandbox`, but opened with `undoable=True`.
+
+    Exists because the two write modes are genuinely different LCM state
+    machines, not a flag: `undoable=False` holds one session-long
+    `BeginNonUndoableTask()` envelope open from OpenProject to CloseProject,
+    while `undoable=True` opens no envelope at all and lets each
+    `UndoableOperation()` / `_TransactionCM` block own its own UnitOfWork.
+    Any test asserting on `ActionHandlerAccessor.CurrentDepth`, on undo-stack
+    behavior, or on `AbortSession()` needs the mode it actually targets --
+    a `undoable=False` fixture cannot stand in.
+
+    Always a tempdir copy of the Target `.fwbackup`; the user's real Target
+    project is never touched.
+    """
+    import pathlib
+
+    require_live = os.environ.get("FLEXLIBS_REQUIRE_LIVE") == "1"
+
+    def _unavailable(reason):
+        if require_live:
+            pytest.fail(
+                f"FLEXLIBS_REQUIRE_LIVE=1 but the undoable Target sandbox is "
+                f"unavailable: {reason}. Refusing to skip a live "
+                f"write-path verification."
+            )
+        pytest.skip(reason)
+
+    if "SIL.LCModel" not in sys.modules:
+        _unavailable("Requires SIL.LCModel (FieldWorks installed)")
+
+    repo_root = pathlib.Path(__file__).resolve().parent.parent
+    fixtures_dir = repo_root / "tests" / "fixtures"
+    backups = sorted(fixtures_dir.glob("Target*.fwbackup"))
+    if not backups:
+        _unavailable(
+            f"No Target .fwbackup found in {fixtures_dir}; copy the golden "
+            "backup in (see tests/LIVE_TESTING.md)."
+        )
+
+    try:
+        from flexicon.code.FLExProject import FLExProject
+    except Exception as exc:
+        _unavailable(f"Could not import FLExProject: {exc}")
+
+    sandbox = _FwBackupSandbox(backups[-1], prefix="target_sandbox_undoable_")
+    fwdata_path = sandbox.__enter__()
+
+    project = FLExProject()
+    try:
+        try:
+            project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=True)
+        except Exception as exc:
+            sandbox.__exit__(None, None, None)
+            _unavailable(f"OpenProject rejected sandbox path {fwdata_path}: {exc}")
+        yield project
+    finally:
+        try:
+            project.CloseProject()
+        except Exception:
+            pass
+        sandbox.__exit__(None, None, None)

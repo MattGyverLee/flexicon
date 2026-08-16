@@ -112,10 +112,19 @@ class _FakeUndoableUnitOfWorkHelper:
         fake action handler's ``CurrentDepth`` to 1 so a nested
         ``_NestingAwareTransaction``/``_FLExUndoableOperation`` sees an
         already-open UnitOfWork and joins instead of opening a second one;
-      * ``RollBack`` defaults to True (``UnitOfWorkHelper.cs:31``) and
+      * the rollback flag defaults to True (``UnitOfWorkHelper.cs:31``) and
         ``Dispose()`` resets the depth back to 0 (approximating
         ``EndUndoTask``/``Rollback(0)``, both of which leave the FSM at
-        ``ReadyForBeginTask``).
+        ``ReadyForBeginTask``);
+      * the flag is reachable ONLY through ``set_RollBack(...)``. ``RollBack``
+        is ``{private get; set;}`` in C# and pythonnet does not synthesize a
+        property when the getter is private -- it exposes only the raw
+        ``set_RollBack`` accessor. Verified live on the Target sandbox during
+        task A3: ``hasattr(helper, "RollBack")`` is False, and assigning it
+        silently creates a Python-side attribute while the .NET flag stays
+        True, so every clean UnitOfWork was rolled back on Dispose(). This
+        double raises on the assignment form so that mistake cannot pass
+        offline again.
 
     ``instances`` is a class-level list of every instance constructed during
     a test; tests read and then clear it.
@@ -127,15 +136,28 @@ class _FakeUndoableUnitOfWorkHelper:
         self.action_handler = action_handler
         self.undo_text = undo_text
         self.redo_text = redo_text
-        self.RollBack = True  # ctor default (UnitOfWorkHelper.cs:31)
+        self._rollback = True  # ctor default (UnitOfWorkHelper.cs:31)
         self.disposed = False
         self.rollback_value_at_dispose = None
         type(self).instances.append(self)
         self.action_handler.CurrentDepth = 1
 
+    def __setattr__(self, name, value):
+        if name == "RollBack":
+            raise AttributeError(
+                "pythonnet exposes no settable `RollBack` property on "
+                "UndoableUnitOfWorkHelper -- call set_RollBack(...) instead. "
+                "The assignment form silently leaves the flag True and rolls "
+                "back every clean UnitOfWork."
+            )
+        object.__setattr__(self, name, value)
+
+    def set_RollBack(self, value):
+        object.__setattr__(self, "_rollback", value)
+
     def Dispose(self):
         self.disposed = True
-        self.rollback_value_at_dispose = self.RollBack
+        self.rollback_value_at_dispose = self._rollback
         self.action_handler.CurrentDepth = 0
 
 

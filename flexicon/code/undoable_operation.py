@@ -139,8 +139,14 @@ class _FLExUndoableOperation:
             return False  # Joined block, or never started: nothing to do.
 
         try:
-            # RollBack is write-only (no getter) -- only ever set it.
-            self._helper.RollBack = exc_type is not None
+            # MUST be `set_RollBack(...)`, never `helper.RollBack = ...` --
+            # pythonnet surfaces no `RollBack` property for a
+            # `{private get; set;}` member, so the assignment form silently
+            # lands as a Python attribute on the wrapper and leaves the real
+            # field at its constructor default of True, rolling back every
+            # clean block. See the full note in
+            # `transaction.py::_NestingAwareTransaction.__exit__`.
+            self._helper.set_RollBack(exc_type is not None)
             self._helper.Dispose()
             if exc_type is None:
                 logger.debug(f"UndoableOperation '{self._label}': committed")

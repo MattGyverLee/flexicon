@@ -606,6 +606,166 @@ class FLExProject(object):
         usm = self.ObjectRepository(IUndoStackManager)
         usm.Refresh()
 
+    def AbortSession(self):
+        """
+        Discard every uncommitted change in the currently open unit of work.
+
+        Wraps liblcm's one real revert primitive, ``IActionHandler.Rollback(0)``
+        (task A3, `specs/write-path-transactions/spec.md` section A3). It is
+        coarse -- it reverts the *whole* open unit of work, not a selected
+        subset -- but under ``undoable=False`` that unit is the entire session,
+        which is exactly the granularity that mode's atomicity story needs and
+        which was previously unreachable from flexicon.
+
+        What it does NOT do: it cannot revert anything already written to
+        disk -- data that was on disk when the session opened, or anything a
+        prior ``CloseProject()`` committed. "Uncommitted" here means "still
+        only in this process's cache".
+
+        Under ``undoable=False`` that window is unusually wide, and for two
+        reasons worth knowing. The session envelope holds the FSM in
+        ``ProcessingDataChanges``, which blocks the auto-save timer outright
+        (`UnitOfWorkService.cs:240`), so nothing is quietly committed behind
+        your back between operations. For the same reason ``SaveChanges()``
+        cannot be used to commit mid-session either: it reaches
+        ``CheckReadyForCommit("Commit at wrong place.")``
+        (`UnitOfWorkService.cs:304`), which requires ``ReadyForBeginTask``.
+        The practical consequence is that in this mode essentially the whole
+        session is abortable, right up to ``CloseProject()``.
+
+        Mode-dependent behavior (read this before relying on it):
+
+        * ``undoable=False`` (default): this is the intended mode. The
+          session-long ``BeginNonUndoableTask()`` opened at ``OpenProject()``
+          is the open unit of work, so this rolls the session back to its
+          state at open (or at the last commit) and then **reopens the
+          envelope**, so the session stays usable and ``CloseProject()``'s
+          matching ``EndNonUndoableTask()`` still has a task to end. See the
+          O2 catch below for why reopening is not optional.
+        * ``undoable=True``: rollback is already automatic and per-operation
+          (``UndoableOperation()`` / ``_TransactionCM`` roll back their own
+          block on exception), so there is no session-wide uncommitted state
+          for this method to abort. Between operations nothing is open and
+          this returns ``False``. Inside an open block it raises
+          ``FP_TransactionError`` rather than rolling back -- see below.
+
+        The O2 catch (`UndoStack.cs:705-724`, recorded in `spec.md` O2 and
+        `reviews/cycle2-explore-liblcm-facts.md` F5c):
+
+        1. ``Rollback(int nDepth)`` ignores ``nDepth`` entirely -- the
+           parameter is documented "[Not used.]" -- so it always reverts the
+           whole open unit. There is no partial rollback.
+        2. It requires ``CurrentProcessingState == ProcessingDataChanges`` and
+           otherwise throws ``InvalidOperationException("Rollback not
+           supported in the current state.")``. ``CurrentDepth`` is exactly
+           that state expressed as 1-or-0 (`UndoStack.cs:731-734`), so the
+           ``CurrentDepth == 0`` check below is the precondition test, not a
+           heuristic.
+        3. On success it leaves the FSM in ``ReadyForBeginTask`` -- i.e. it
+           **terminates** the open task rather than merely emptying it. In
+           ``undoable=False`` that would silently end the session envelope,
+           and ``CloseProject()`` would then call ``EndNonUndoableTask()``
+           against a state that has no task to end. This method therefore
+           reopens ``BeginNonUndoableTask()`` immediately, making the abort
+           non-terminal in that mode.
+
+        Why ``undoable=True`` refuses instead of rolling back: in that mode
+        an open unit of work is always owned by an ``UndoableUnitOfWorkHelper``
+        (there is no session envelope). Rolling back underneath it would leave
+        that helper's ``Dispose()`` to call ``Rollback``/``EndUndoTask``
+        against a FSM already back in ``ReadyForBeginTask``, raising a second
+        exception from the ``with`` block's exit and masking whatever the
+        caller was actually handling. Refusing loudly is the honest option;
+        the correct tool inside a block is to let the exception propagate,
+        which rolls that block back by design.
+
+        Returns:
+            bool: True if a unit of work was open and was rolled back.
+                False if nothing was open (nothing to abort) -- calling
+                ``Rollback`` in that state would raise, so it is not called.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not write-enabled.
+            FP_TransactionError: If ``undoable=True`` and a unit of work is
+                open (see above), or if the underlying LCM ``Rollback(0)``
+                call fails unexpectedly.
+            FP_ProjectError: If the ``undoable=False`` envelope could not be
+                reopened after a successful rollback. The rollback itself has
+                already taken effect at that point; the session is left
+                without an open task and should be closed.
+
+        Example::
+
+            project.OpenProject("MyProject", writeEnabled=True)
+            try:
+                for word, gloss in messy_input:
+                    entry = project.LexEntry.Create(word, "stem")
+                    project.Senses.Create(entry, gloss, "en")
+            except Exception:
+                project.AbortSession()   # discard the whole partial import
+                raise
+            else:
+                project.SaveChanges()
+
+        See Also:
+            Undo() - reverse one committed ``UndoableOperation``
+                (``undoable=True`` only, in-process only).
+            UndoableOperation() - per-operation rollback, the finer-grained
+                and preferred mechanism once ``undoable=True`` is in use.
+        """
+        if not self.writeEnabled:
+            raise FP_ReadOnlyError()
+
+        log = logging.getLogger(__name__)
+        action_handler = self.project.ActionHandlerAccessor
+
+        # CurrentDepth is 1 iff CurrentProcessingState == ProcessingDataChanges
+        # and 0 otherwise (UndoStack.cs:731-734) -- never 2+. It is therefore
+        # the exact precondition Rollback checks at UndoStack.cs:712-713, so
+        # this guard turns "would throw" into an honest False rather than
+        # letting a raw InvalidOperationException escape.
+        if action_handler.CurrentDepth == 0:
+            log.debug("AbortSession(): no unit of work is open, nothing to abort")
+            return False
+
+        if self._undoable:
+            # Depth > 0 in this mode means an UndoableUnitOfWorkHelper owns the
+            # open unit (there is no session envelope here). See docstring.
+            raise FP_TransactionError(
+                "AbortSession() cannot roll back a unit of work opened by "
+                "UndoableOperation()/_TransactionCM: rolling back underneath "
+                "the owning UndoableUnitOfWorkHelper would make its Dispose() "
+                "raise on exit and mask the original error. In undoable=True "
+                "mode let the exception propagate out of the block instead -- "
+                "that block rolls itself back."
+            )
+
+        try:
+            # nDepth is "[Not used.]" in liblcm (UndoStack.cs:700); 0 is what
+            # UnitOfWorkHelper.RollBackChanges() itself passes
+            # (UnitOfWorkHelper.cs:135-138).
+            action_handler.Rollback(0)
+        except Exception as e:
+            log.error(f"AbortSession() failed: {e}")
+            raise FP_TransactionError(f"AbortSession() rollback failed: {e}")
+
+        # The rollback left the FSM in ReadyForBeginTask (UndoStack.cs:724),
+        # i.e. the session envelope opened at OpenProject() is gone. Reopen it
+        # so this method is not terminal and CloseProject()'s matching
+        # EndNonUndoableTask() still has a task to end. See the O2 catch.
+        try:
+            self.project.MainCacheAccessor.BeginNonUndoableTask()
+        except System.InvalidOperationException as e:
+            raise FP_ProjectError(
+                "AbortSession(): the rollback succeeded but the non-undoable "
+                f"session envelope could not be reopened ({e}). Uncommitted "
+                "changes have been discarded and this session can no longer "
+                "write; close it without saving."
+            )
+
+        log.debug("AbortSession(): rolled back and reopened the session envelope")
+        return True
+
     def UndoableOperation(self, label):
         """
         Return a context manager for an undoable operation.

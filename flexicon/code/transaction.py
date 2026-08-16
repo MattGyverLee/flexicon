@@ -134,9 +134,24 @@ class _NestingAwareTransaction:
                 # the helper's constructor (UnitOfWorkHelper.cs:31);
                 # Dispose() rolls back when it is True, or calls
                 # EndUndoTask() when it is False (UnitOfWorkHelper.cs:115-118).
-                # RollBack is write-only (no getter) -- only ever set it,
-                # never read it back.
-                self._helper.RollBack = exc_type is not None
+                #
+                # MUST be `set_RollBack(...)`, never `helper.RollBack = ...`.
+                # `RollBack` is `{private get; set;}`, and pythonnet does not
+                # synthesize a Python property for a member whose getter is
+                # private -- it surfaces only the raw `set_RollBack` accessor
+                # (already noted in tests/contract/generate_lcm_snapshot.py
+                # and tests/contract/pending_contract_seeds.py). So
+                # `helper.RollBack = False` does NOT reach .NET: pythonnet
+                # accepts it as a plain Python attribute on the wrapper while
+                # the real field keeps its constructor default of True, and
+                # Dispose() then rolls back EVERY unit of work, clean ones
+                # included. Confirmed live on the Target sandbox:
+                # hasattr(helper, "RollBack") is False, a created POS
+                # vanished on clean exit (CanUndo() False,
+                # UndoableActionCount 0), while the same writes under a raw
+                # BeginUndoTask/EndUndoTask pair persisted. See
+                # specs/write-path-transactions/evidence/live-a3-abort-session.md.
+                self._helper.set_RollBack(exc_type is not None)
                 self._helper.Dispose()
                 if exc_type is None:
                     logger.debug(f"_TransactionCM '{self._label}': committed")
