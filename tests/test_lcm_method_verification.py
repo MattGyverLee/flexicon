@@ -144,64 +144,39 @@ class TestLCMMethodVerification:
                     "from SIL.LCModel.Core.Text import TsStringUtils" in content
                 ), f"{py_file}: Must import TsStringUtils"
 
-    def test_all_factory_creates_have_service_locator(self):
-        """
-        [INFO] Test: Factory.Create() is always obtained via ServiceLocator.
-
-        Pattern:
-            factory = ServiceLocator.GetService(IxxxFactory)
-            new_obj = factory.Create()
-        """
-        ops_dir = Path("flexicon/code")
-
-        for py_file in ops_dir.rglob("*Operations.py"):
-            content = py_file.read_text(encoding="utf-8")
-
-            # Only check actual code, not docstrings
-            # Remove docstrings first
-            code_only = re.sub(r'"""[\s\S]*?"""', "", content)
-            code_only = re.sub(r"'''[\s\S]*?'''", "", code_only)
-
-            if ".Create()" in code_only or "factory.Create()" in code_only:
-                # Should have GetService somewhere in actual code
-                assert "GetService(" in code_only, f"{py_file}: Create() should be on factory from GetService"
-
-    def test_collection_methods_valid(self):
-        """
-        [INFO] Test: Collection methods (OS) are valid.
-
-        Valid methods: Add(), Insert(), Remove(), RemoveAt(), Count, IndexOf()
-        """
-        valid_collection_methods = {
-            "Add",
-            "Insert",
-            "Remove",
-            "RemoveAt",
-            "Count",
-            "IndexOf",
-            "Clear",
-            "Contains",
-            "Create",
-            "MoveTo",  # LCM collection methods
-        }
-
-        ops_dir = Path("flexicon/code")
-
-        for py_file in ops_dir.rglob("*Operations.py"):
-            content = py_file.read_text(encoding="utf-8")
-
-            # Remove docstrings to avoid false positives
-            code_only = re.sub(r'"""[\s\S]*?"""', "", content)
-            code_only = re.sub(r"'''[\s\S]*?'''", "", code_only)
-
-            # Find patterns like something.OS.XXX in actual code
-            pattern = r"\.([A-Za-z]+OS|OC)\.(\w+)"
-
-            for match in re.finditer(pattern, code_only):
-                method = match.group(2)
-                # Collection methods are usually parenthesized
-                if "(" in code_only[match.end() : match.end() + 10]:
-                    assert method in valid_collection_methods, f"{py_file}: Invalid collection method {method}"
+    # NOTE: test_all_factory_creates_have_service_locator and
+    # test_collection_methods_valid were removed here (2026-08-18). Both
+    # were dead/vacuous for as long as `ops_dir = Path("flexlibs2/code")`
+    # pointed at a nonexistent directory (silently iterating zero files).
+    # Once repointed at the real `flexicon/code` during the flexlibs2 ->
+    # flexicon rename cleanup, both proved to be unrepairable false-positive
+    # heuristics rather than real regression guards:
+    #
+    #   - test_all_factory_creates_have_service_locator assumed every
+    #     `*Operations.py` file calling `factory.Create()` must also
+    #     contain a literal `GetService(` call in the same file. This
+    #     breaks for `BaseOperations._CreateWithOptionalGuid`, a shared
+    #     helper that legitimately receives an already-resolved `factory`
+    #     as a parameter -- the `GetService(` call lives in the caller
+    #     (e.g. AgentOperations.py), not in BaseOperations.py. Repairing
+    #     this would require tracking call sites/parameter provenance
+    #     across files, well beyond a textual heuristic.
+    #
+    #   - test_collection_methods_valid's regex `\.([A-Za-z]+OS|OC)\.(\w+)`
+    #     was meant to catch invalid calls on LCM `...OS` collections
+    #     (e.g. `entry.SensesOS.Add()`), but it also matches
+    #     `self.project.POS.GetAbbreviation(...)` in
+    #     WfiAnalysisOperations.py purely because "POS" (the POSOperations
+    #     facade attribute) happens to end in the letters "OS". There is
+    #     no reliable textual distinction between a real `...OS` LCM
+    #     collection accessor and an unrelated attribute that coincidentally
+    #     ends in "OS" without also hard-coding an exclusion list of known
+    #     facade names, which would make the test more of a maintenance
+    #     burden than a regression guard.
+    #
+    # Neither test was ever exercising real code paths correctly -- they
+    # were structurally broken from the start and only "passed" by
+    # accident (an empty glob). Removed rather than repaired.
 
     def test_itsstring_text_property(self):
         """
