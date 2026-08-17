@@ -342,7 +342,16 @@ class SelectiveImport:
         try:
             obj = self.target_project.Object(guid)
             return obj is not None
-        except (AttributeError, KeyError):
+        except Exception as e:
+            # Object() lookups go through pythonnet into the live LCM, which
+            # can raise a variety of exception types beyond AttributeError/
+            # KeyError (malformed GUID, backend errors, etc.). This is a
+            # simple existence check -- any lookup failure means we could
+            # not confirm the object exists, so treat it as "not found"
+            # rather than letting an unexpected exception type propagate
+            # and abort the caller's import/candidate scan. Matches the
+            # broad catch-and-log convention used elsewhere in this file.
+            logger.warning(f"Existence check failed for {guid}: {e}")
             return False
 
     def _get_project_name(self, project: Any) -> str:

@@ -183,12 +183,20 @@ class TestDiffEngine(unittest.TestCase):
         """Set up test fixtures"""
         self.engine = DiffEngine()
 
-        # Create mock operations
-        self.source_ops = Mock()
+        # Create mock operations. spec= restricts these doubles to the two
+        # methods this suite exercises (GetAll, GetForm) so hasattr() can't
+        # auto-vivify attributes a real operations class doesn't have. A
+        # bare Mock() auto-creates ANY attribute on access, so
+        # `hasattr(source_ops, "GetName")` was silently True even though
+        # AllomorphOperations has no GetName(); DiffEngine._compare_objects()
+        # then called GetName() on both sides and compared two unrelated
+        # auto-created Mock return values, which are never equal to each
+        # other -- reporting every unchanged object as MODIFIED.
+        self.source_ops = Mock(spec=["GetAll", "GetForm"])
         self.source_ops.__class__.__name__ = "AllomorphOperations"
         self.source_ops.GetForm = Mock(side_effect=lambda obj: obj.form)
 
-        self.target_ops = Mock()
+        self.target_ops = Mock(spec=["GetAll", "GetForm"])
         self.target_ops.__class__.__name__ = "AllomorphOperations"
         self.target_ops.GetForm = Mock(side_effect=lambda obj: obj.form)
 

@@ -35,13 +35,23 @@ class TestSyncEngine(unittest.TestCase):
         self.target_project = Mock()
         self.target_project.ProjectName = Mock(return_value="TargetProject")
 
-        # Mock operations
+        # Mock operations. Source and target need SEPARATE operations-class
+        # doubles: a real SyncEngine compares two independent FLExProject
+        # instances, so source_project.Allomorph and target_project.Allomorph
+        # are never the same object. Sharing one Mock here let a later
+        # test's re-assignment of `.GetAll` on one alias silently clobber
+        # the other's return value (both aliases pointed at the same Mock),
+        # which made compare() see an empty source list.
         self.mock_ops = Mock()
         self.mock_ops.__class__.__name__ = "AllomorphOperations"
         self.mock_ops.GetAll = Mock(return_value=[])
 
+        self.target_mock_ops = Mock()
+        self.target_mock_ops.__class__.__name__ = "AllomorphOperations"
+        self.target_mock_ops.GetAll = Mock(return_value=[])
+
         self.source_project.Allomorph = self.mock_ops
-        self.target_project.Allomorph = self.mock_ops
+        self.target_project.Allomorph = self.target_mock_ops
 
     def test_init_readonly_mode(self):
         """Test initialization in readonly mode"""
@@ -113,8 +123,16 @@ class TestSyncEngine(unittest.TestCase):
         """Test getting operations for invalid type"""
         engine = SyncEngine(self.source_project, self.target_project)
 
+        # A bare Mock() auto-vivifies any attribute, so hasattr(mock,
+        # "InvalidType") is always True and would never reproduce the real
+        # FLExProject behavior of raising AttributeError for an operations
+        # class that doesn't exist. Use spec= to restrict the double to the
+        # attributes a real FLExProject actually exposes.
+        project = Mock(spec=["Allomorph", "ProjectName", "writeEnabled"])
+        project.Allomorph = self.mock_ops
+
         with self.assertRaises(AttributeError) as cm:
-            engine._get_operations(self.source_project, "InvalidType")
+            engine._get_operations(project, "InvalidType")
 
         self.assertIn("InvalidType", str(cm.exception))
 
