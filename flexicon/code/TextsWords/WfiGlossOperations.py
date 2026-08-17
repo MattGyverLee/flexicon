@@ -382,7 +382,8 @@ class WfiGlossOperations(BaseOperations):
         analysis = IWfiAnalysis(gloss.Owner)
 
         # Remove from analysis's Meanings collection
-        analysis.MeaningsOC.Remove(gloss)
+        with self._TransactionCM("Delete gloss"):
+            analysis.MeaningsOC.Remove(gloss)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=False):
@@ -546,8 +547,9 @@ class WfiGlossOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         # Set the form string
-        mkstr = TsStringUtils.MakeString(text, wsHandle)
-        gloss.Form.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set gloss form '{text}'"):
+            mkstr = TsStringUtils.MakeString(text, wsHandle)
+            gloss.Form.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetAllForms(self, gloss_or_hvo):

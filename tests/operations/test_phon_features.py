@@ -127,7 +127,16 @@ def _delete_feature_by_guid(project, guid_str):
             return
         fs = project.lp.PhFeatureSystemOA
         if fs is not None:
-            fs.FeaturesOC.Remove(feat)
+            # Raw LCM write -> needs its own unit of work (tasks.md D14).
+            # Under undoable=True nothing is open between operations, so an
+            # unbracketed Remove raises AFTER the object has already left the
+            # in-memory collection but BEFORE the change is registered. The
+            # bare `except` below then hides it, leaving the feature absent
+            # from FeaturesOC but still live in the object repository with its
+            # GUID taken -- which is why the next CreateFromCatalog for the
+            # same canonical GUID failed with "identical GUIDs".
+            with project.UndoableOperation("test cleanup: delete phon feature"):
+                fs.FeaturesOC.Remove(feat)
     except Exception:
         pass
 
@@ -511,7 +520,14 @@ class TestPhonFeatureOperations:
             # (we borrowed a phoneme that may have pre-existed). Keep finally
             # here for those two items only.
             try:
-                phoneme.FeaturesOA = original_features
+                # Raw LCM write -> own unit of work (D14). Without it this
+                # raises under undoable=True and the bare except hides the
+                # failure, leaving the borrowed phoneme still pointing at the
+                # test's struct.
+                with writable_project.UndoableOperation(
+                    "test cleanup: restore phoneme FeaturesOA"
+                ):
+                    phoneme.FeaturesOA = original_features
             except Exception:
                 pass
             if not pre_existing:

@@ -122,7 +122,9 @@ def _delete_feature_by_guid(project, guid_str):
             return
         fs = project.lp.PhFeatureSystemOA
         if fs is not None:
-            fs.FeaturesOC.Remove(feat)
+            # Raw LCM write -> own unit of work (tasks.md D14).
+            with project.UndoableOperation("test cleanup: delete phon feature"):
+                fs.FeaturesOC.Remove(feat)
     except Exception:
         pass
 

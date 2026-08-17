@@ -180,8 +180,9 @@ class ConstChartWordGroupOperations(BaseOperations):
         # Resolve to word group object
         group = self.__ResolveObject(group_or_hvo)
 
-        # Delete the word group (LCM handles removal from repository)
-        group.Delete()
+        with self._TransactionCM("Delete chart word group"):
+            # Delete the word group (LCM handles removal from repository)
+            group.Delete()
 
     @OperationsMethod
     def Find(self, row_or_hvo, index):
@@ -329,7 +330,8 @@ class ConstChartWordGroupOperations(BaseOperations):
 
         group = self.__ResolveObject(group_or_hvo)
 
-        group.BeginSegmentRA = segment
+        with self._TransactionCM("Set word group begin segment"):
+            group.BeginSegmentRA = segment
 
     @OperationsMethod
     def GetEndSegment(self, group_or_hvo):
@@ -401,7 +403,8 @@ class ConstChartWordGroupOperations(BaseOperations):
 
         group = self.__ResolveObject(group_or_hvo)
 
-        group.EndSegmentRA = segment
+        with self._TransactionCM("Set word group end segment"):
+            group.EndSegmentRA = segment
 
     @OperationsMethod
     def GetColumn(self, group_or_hvo):
@@ -472,7 +475,8 @@ class ConstChartWordGroupOperations(BaseOperations):
 
         group = self.__ResolveObject(group_or_hvo)
 
-        group.ColumnRA = column
+        with self._TransactionCM("Set word group column"):
+            group.ColumnRA = column
 
     # --- Private Helper Methods ---
 

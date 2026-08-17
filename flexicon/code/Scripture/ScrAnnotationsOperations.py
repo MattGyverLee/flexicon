@@ -165,8 +165,9 @@ class ScrAnnotationsOperations(BaseOperations):
         # Resolve to annotations object
         annotations = self.__ResolveObject(annotations_or_hvo)
 
-        # Delete the annotations (LCM handles removal from repository)
-        annotations.Delete()
+        with self._TransactionCM("Delete scripture annotations"):
+            # Delete the annotations (LCM handles removal from repository)
+            annotations.Delete()
 
     @OperationsMethod
     def GetForBook(self, book_or_hvo):

@@ -5,6 +5,11 @@
 #   into the user's FieldWorks projects directory, overwriting any
 #   existing Sena 3 project.
 #
+#   Sena 3 is the *full* live-test project: a populated FLEx database
+#   used for read-path coverage and for modifying pre-existing data.
+#   For write-path work against a clean slate, use the blank scratch
+#   project instead -- see scripts/restore_target.py.
+#
 #   Run before a live-DB test session to guarantee a clean baseline.
 #   Re-run after any session to wipe accumulated test mutations.
 #
@@ -14,98 +19,26 @@
 #
 
 import argparse
-import os
-import shutil
 import sys
-import zipfile
 from pathlib import Path
 
+# Shared restore helpers live alongside this script.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from fw_restore import (  # noqa: E402
+    check_state,
+    find_fw_projects_dir,
+    find_fwbackup as _find_fwbackup,
+    restore_project,
+)
 
 _DEFAULT_TARGET = "Sena 3"
-_REGISTRY_KEY = r"SOFTWARE\SIL\FieldWorks\9"
+_BACKUP_PATTERN = "Sena 3*.fwbackup"
 
 
-def find_fw_projects_dir():
-    """Return the FieldWorks 9 projects directory as a Path, or None."""
-    try:
-        import winreg
-
-        for hive in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
-            try:
-                with winreg.OpenKey(hive, _REGISTRY_KEY) as key:
-                    value, _ = winreg.QueryValueEx(key, "ProjectsDir")
-                    if value and os.path.isdir(value):
-                        return Path(value)
-            except OSError:
-                continue
-    except ImportError:
-        pass
-
-    local = os.environ.get("LOCALAPPDATA")
-    if local:
-        candidate = Path(local) / "SIL" / "FieldWorks" / "9" / "Projects"
-        if candidate.exists():
-            return candidate
-
-    return None
-
-
-def find_fwbackup(fixtures_dir, pattern="Sena 3*.fwbackup"):
+def find_fwbackup(fixtures_dir, pattern=_BACKUP_PATTERN):
     """Locate the most recent matching .fwbackup in fixtures_dir."""
-    if not fixtures_dir.exists():
-        return None
-    matches = sorted(fixtures_dir.glob(pattern))
-    return matches[-1] if matches else None
-
-
-def restore_project(fwbackup_path, projects_dir, target_name=_DEFAULT_TARGET):
-    """
-    Unzip fwbackup_path and place its contents under projects_dir/target_name.
-    Removes any existing target_dir first. Returns the target_dir.
-    """
-    fwbackup_path = Path(fwbackup_path)
-    projects_dir = Path(projects_dir)
-    target_dir = projects_dir / target_name
-
-    if not fwbackup_path.exists():
-        raise FileNotFoundError(f"Backup not found: {fwbackup_path}")
-    if not projects_dir.exists():
-        raise FileNotFoundError(f"Projects directory not found: {projects_dir}")
-
-    if target_dir.exists():
-        print(f"[INFO] Removing existing {target_dir}")
-        shutil.rmtree(target_dir)
-
-    target_dir.mkdir(parents=True)
-    print(f"[INFO] Unzipping {fwbackup_path.name} -> {target_dir}")
-    with zipfile.ZipFile(fwbackup_path) as zf:
-        zf.extractall(target_dir)
-
-    fwdatas = list(target_dir.glob("*.fwdata"))
-    if not fwdatas:
-        raise RuntimeError(
-            f"No .fwdata found after extraction into {target_dir}; "
-            "backup file may be malformed."
-        )
-
-    print(f"[OK] Restored {target_name} -> {fwdatas[0]}")
-    return target_dir
-
-
-def check_state(projects_dir, target_name=_DEFAULT_TARGET):
-    """Report current state of target project. Returns True if present."""
-    target_dir = projects_dir / target_name
-    if not target_dir.exists():
-        print(f"[INFO] {target_name} not present in {projects_dir}")
-        return False
-
-    fwdatas = list(target_dir.glob("*.fwdata"))
-    if not fwdatas:
-        print(f"[WARN] {target_dir} exists but contains no .fwdata")
-        return False
-
-    print(f"[INFO] {target_name} present: {fwdatas[0]}")
-    return True
+    return _find_fwbackup(fixtures_dir, pattern)
 
 
 def main(argv=None):
@@ -166,7 +99,7 @@ def main(argv=None):
     fwbackup = find_fwbackup(fixtures_dir)
     if fwbackup is None:
         print(
-            f"[ERROR] No 'Sena 3*.fwbackup' found in {fixtures_dir}",
+            f"[ERROR] No {_BACKUP_PATTERN!r} found in {fixtures_dir}",
             file=sys.stderr,
         )
         return 2

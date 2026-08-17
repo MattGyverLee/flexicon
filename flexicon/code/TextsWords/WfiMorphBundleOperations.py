@@ -236,7 +236,8 @@ class WfiMorphBundleOperations(BaseOperations):
         owner = self._GetTypedOwner(bundle)
         if owner is None:
             raise FP_ParameterError("Morph bundle has no owning analysis")
-        owner.MorphBundlesOS.Remove(bundle)
+        with self._TransactionCM("Delete morph bundle"):
+            owner.MorphBundlesOS.Remove(bundle)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True):
@@ -581,8 +582,9 @@ class WfiMorphBundleOperations(BaseOperations):
         bundle = self.__GetBundleObject(bundle_or_hvo)
         wsHandle = self.__WSHandleVern(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(text, wsHandle)
-        bundle.Form.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set morph bundle form '{text}'"):
+            mkstr = TsStringUtils.MakeString(text, wsHandle)
+            bundle.Form.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetGloss(self, bundle_or_hvo, wsHandle=None):
@@ -771,10 +773,14 @@ class WfiMorphBundleOperations(BaseOperations):
 
         bundle = self.__GetBundleObject(bundle_or_hvo)
 
+        # Resolution stays OUTSIDE the transaction so an unresolvable
+        # reference raises without opening an empty undo task.
         if sense_or_hvo is None:
-            bundle.SenseRA = None
+            sense = None
         else:
             sense = self.__GetSenseObject(sense_or_hvo)
+
+        with self._TransactionCM("Set morph bundle sense"):
             bundle.SenseRA = sense
 
     @OperationsMethod
@@ -862,10 +868,14 @@ class WfiMorphBundleOperations(BaseOperations):
 
         bundle = self.__GetBundleObject(bundle_or_hvo)
 
+        # Resolution stays OUTSIDE the transaction so an unresolvable
+        # reference raises without opening an empty undo task.
         if morph_type_or_hvo is None:
-            bundle.MorphRA = None
+            morph_type = None
         else:
             morph_type = self.__GetMorphTypeObject(morph_type_or_hvo)
+
+        with self._TransactionCM("Set morph bundle morph type"):
             bundle.MorphRA = morph_type
 
     # ==================== MSA OPERATIONS ====================
@@ -953,10 +963,14 @@ class WfiMorphBundleOperations(BaseOperations):
 
         bundle = self.__GetBundleObject(bundle_or_hvo)
 
+        # Resolution stays OUTSIDE the transaction so an unresolvable
+        # reference raises without opening an empty undo task.
         if msa_or_hvo is None:
-            bundle.MsaRA = None
+            msa = None
         else:
             msa = self.__GetMSAObject(msa_or_hvo)
+
+        with self._TransactionCM("Set morph bundle MSA"):
             bundle.MsaRA = msa
 
     # ==================== INFLECTION OPERATIONS ====================
@@ -1045,14 +1059,18 @@ class WfiMorphBundleOperations(BaseOperations):
 
         bundle = self.__GetBundleObject(bundle_or_hvo)
 
+        # Resolution stays OUTSIDE the transaction so an unresolvable
+        # reference raises without opening an empty undo task.
         if infl_type_or_hvo is None:
-            bundle.InflTypeRA = None
+            infl_type = None
         else:
             # Resolve to ICmPossibility object
             if isinstance(infl_type_or_hvo, int):
                 infl_type = self.project.Object(infl_type_or_hvo)
             else:
                 infl_type = infl_type_or_hvo
+
+        with self._TransactionCM("Set morph bundle inflection type"):
             bundle.InflTypeRA = infl_type
 
     @OperationsMethod
@@ -1139,10 +1157,14 @@ class WfiMorphBundleOperations(BaseOperations):
 
         bundle = self.__GetBundleObject(bundle_or_hvo)
 
+        # Resolution stays OUTSIDE the transaction so an unresolvable
+        # reference raises without opening an empty undo task.
         if infl_class_or_hvo is None:
-            bundle.InflClassRA = None
+            infl_class = None
         else:
             infl_class = self.__GetInflectionClassObject(infl_class_or_hvo)
+
+        with self._TransactionCM("Set morph bundle inflection class"):
             bundle.InflClassRA = infl_class
 
     # ==================== UTILITY OPERATIONS ====================

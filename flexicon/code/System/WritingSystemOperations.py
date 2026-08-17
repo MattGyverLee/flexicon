@@ -426,11 +426,15 @@ class WritingSystemOperations(BaseOperations):
         if not ws_obj:
             raise FP_WritingSystemError(str(ws))
 
-        # Set default font name
+        # Set default font name. The hasattr dispatch stays OUTSIDE the
+        # brackets so the "neither property exists" fall-through remains a
+        # true no-op that opens no unit of work.
         if hasattr(ws_obj, "DefaultFontName"):
-            ws_obj.DefaultFontName = font_name
+            with self._TransactionCM(f"Set writing system font '{font_name}'"):
+                ws_obj.DefaultFontName = font_name
         elif hasattr(ws_obj, "DefaultFont"):
-            ws_obj.DefaultFont = font_name
+            with self._TransactionCM(f"Set writing system font '{font_name}'"):
+                ws_obj.DefaultFont = font_name
 
     @OperationsMethod
     def GetFontSize(self, ws):
@@ -510,9 +514,11 @@ class WritingSystemOperations(BaseOperations):
         if not ws_obj:
             raise FP_WritingSystemError(str(ws))
 
-        # Set default font size
+        # Set default font size. hasattr guard outside the bracket -- a WS
+        # without the property is a true no-op.
         if hasattr(ws_obj, "DefaultFontSize"):
-            ws_obj.DefaultFontSize = float(size)
+            with self._TransactionCM(f"Set writing system font size to {size}"):
+                ws_obj.DefaultFontSize = float(size)
 
     @OperationsMethod
     def GetRightToLeft(self, ws):
@@ -598,11 +604,14 @@ class WritingSystemOperations(BaseOperations):
         if not ws_obj:
             raise FP_WritingSystemError(str(ws))
 
-        # Set RTL setting
+        # Set RTL setting. The hasattr dispatch stays OUTSIDE the brackets so
+        # the "neither property exists" fall-through remains a true no-op.
         if hasattr(ws_obj, "RightToLeftScript"):
-            ws_obj.RightToLeftScript = bool(is_rtl)
+            with self._TransactionCM("Set writing system right-to-left flag"):
+                ws_obj.RightToLeftScript = bool(is_rtl)
         elif hasattr(ws_obj, "RightToLeft"):
-            ws_obj.RightToLeft = bool(is_rtl)
+            with self._TransactionCM("Set writing system right-to-left flag"):
+                ws_obj.RightToLeft = bool(is_rtl)
 
     # --- Default Settings ---
 

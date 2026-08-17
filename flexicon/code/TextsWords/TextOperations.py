@@ -214,7 +214,8 @@ class TextOperations(BaseOperations):
 
         # Remove from collection. See note in Create() about the LCM API
         # rename from TextsOC to Texts (issue #22).
-        self.project.lp.Texts.Remove(text_obj)
+        with self._TransactionCM("Delete text"):
+            self.project.lp.Texts.Remove(text_obj)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, deep=True):
@@ -607,8 +608,9 @@ class TextOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         # Set the name
-        mkstr = TsStringUtils.MakeString(name, wsHandle)
-        text_obj.Name.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set text name '{name}'"):
+            mkstr = TsStringUtils.MakeString(name, wsHandle)
+            text_obj.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetGenre(self, text_or_hvo):
@@ -1039,4 +1041,5 @@ class TextOperations(BaseOperations):
             raise FP_ParameterError("value must be a boolean (True or False)")
 
         text_obj = self.__GetTextObject(text_or_hvo)
-        text_obj.IsTranslated = value
+        with self._TransactionCM("Set text is-translated flag"):
+            text_obj.IsTranslated = value

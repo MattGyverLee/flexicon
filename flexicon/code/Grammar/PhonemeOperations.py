@@ -273,7 +273,8 @@ class PhonemeOperations(BaseOperations):
         phon_data = self.project.lp.PhonologicalDataOA
         if phon_data and phon_data.PhonemeSetsOS.Count > 0:
             phoneme_set = phon_data.PhonemeSetsOS[0]
-            phoneme_set.PhonemesOC.Remove(phoneme)
+            with self._TransactionCM("Delete phoneme"):
+                phoneme_set.PhonemesOC.Remove(phoneme)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
@@ -548,7 +549,9 @@ class PhonemeOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(representation, wsHandle)
-        phoneme.Name.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set phoneme representation '{representation}'"):
+            phoneme.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetDescription(self, phoneme_or_hvo, wsHandle=None):
@@ -652,7 +655,9 @@ class PhonemeOperations(BaseOperations):
             wsHandle = self.project._FLExProject__WSHandle(wsHandle, self.project.project.DefaultAnalWs)
 
         mkstr = TsStringUtils.MakeString(description, wsHandle)
-        phoneme.Description.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set phoneme description"):
+            phoneme.Description.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetFeatures(self, phoneme_or_hvo):
@@ -869,7 +874,8 @@ class PhonemeOperations(BaseOperations):
         if code not in phoneme.CodesOS:
             raise FP_ParameterError("Code not found in phoneme's code list")
 
-        phoneme.CodesOS.Remove(code)
+        with self._TransactionCM("Remove phoneme code"):
+            phoneme.CodesOS.Remove(code)
 
     @OperationsMethod
     def FindCode(self, phoneme_or_hvo, representation, wsHandle=None):
@@ -1095,15 +1101,19 @@ class PhonemeOperations(BaseOperations):
 
         tss = TsStringUtils.MakeString(ipa, ws)
         target = phoneme.BasicIPASymbol
-        if hasattr(target, "set_String"):
-            # MultiString shape: per-WS write. This matches the read
-            # pattern in GetBasicIPASymbol (which calls .get_String(ws)).
-            target.set_String(ws, tss)
-        else:
-            # Scalar ITsString shape: assign via the property setter on
-            # the interface view. Cast to IPhPhoneme to surface the
-            # explicit-interface setter if pythonnet hid it on the base.
-            IPhPhoneme(phoneme).set_BasicIPASymbol(tss)
+
+        # Both branches mutate, so the shape-dispatch guard sits inside the
+        # bracket: there is no no-op path that could open an empty entry.
+        with self._TransactionCM(f"Set basic IPA symbol '{ipa}'"):
+            if hasattr(target, "set_String"):
+                # MultiString shape: per-WS write. This matches the read
+                # pattern in GetBasicIPASymbol (which calls .get_String(ws)).
+                target.set_String(ws, tss)
+            else:
+                # Scalar ITsString shape: assign via the property setter on
+                # the interface view. Cast to IPhPhoneme to surface the
+                # explicit-interface setter if pythonnet hid it on the base.
+                IPhPhoneme(phoneme).set_BasicIPASymbol(tss)
 
     @OperationsMethod
     def IsVowel(self, phoneme_or_hvo):
@@ -1456,8 +1466,11 @@ class PhonemeOperations(BaseOperations):
             )
             # Ownership-first: attach to FeaturesOA before populating specs
             # (LCM accessors NPE on free-floating IFsFeatStruc objects).
-            new_struct = factory.Create()
-            phoneme.FeaturesOA = new_struct
+            # The `is None` guard stays outside so an already-initialised
+            # structure remains a true no-op.
+            with self._TransactionCM("Create phoneme feature structure"):
+                new_struct = factory.Create()
+                phoneme.FeaturesOA = new_struct
             struct = phoneme.FeaturesOA
         struct = IFsFeatStruc(struct)
 
@@ -1494,11 +1507,15 @@ class PhonemeOperations(BaseOperations):
                 # feature system must be synced before phonemes are rewired.
                 continue
 
-            closed_value = cv_factory.Create()
-            struct.FeatureSpecsOC.Add(closed_value)
-            cv = IFsClosedValue(closed_value)
-            cv.FeatureRA = feat_obj
-            cv.ValueRA = val_obj
+            # Every skip guard above stays outside: a spec that resolves to
+            # nothing must not open an empty named undo entry.
+            with self._TransactionCM("Add phoneme feature value"):
+                closed_value = cv_factory.Create()
+                struct.FeatureSpecsOC.Add(closed_value)
+                cv = IFsClosedValue(closed_value)
+                cv.FeatureRA = feat_obj
+                cv.ValueRA = val_obj
+
             existing_pairs.add((feat_guid.lower(), val_guid.lower()))
 
     def __ResolveByGuid(self, guid_str):

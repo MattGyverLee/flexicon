@@ -265,7 +265,8 @@ class PhonologicalRuleOperations(BaseOperations):
         phon_data = self.project.lp.PhonologicalDataOA
         if phon_data and hasattr(phon_data, "PhonRulesOS"):
             if rule in phon_data.PhonRulesOS:
-                phon_data.PhonRulesOS.Remove(rule)
+                with self._TransactionCM("Delete phonological rule"):
+                    phon_data.PhonRulesOS.Remove(rule)
 
     @OperationsMethod
     def Exists(self, name):
@@ -406,7 +407,9 @@ class PhonologicalRuleOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        rule.Name.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set rule name '{name}'"):
+            rule.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetDescription(self, rule_or_hvo, wsHandle=None):
@@ -473,7 +476,9 @@ class PhonologicalRuleOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(description, wsHandle)
-        rule.Description.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set rule description"):
+            rule.Description.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetStratum(self, rule_or_hvo):
@@ -545,11 +550,13 @@ class PhonologicalRuleOperations(BaseOperations):
         rule = self.__ResolveObject(rule_or_hvo)
 
         if hasattr(rule, "StratumRA"):
-            if stratum is None:
-                rule.StratumRA = None
-            else:
-                if isinstance(stratum, int):
-                    stratum = self.project.Object(stratum)
+            # Resolution hoisted out of both branches so an unresolvable HVO
+            # raises before the transaction opens (reference-setter decision,
+            # batch 8), collapsing the two assignments into one bracket.
+            if stratum is not None and isinstance(stratum, int):
+                stratum = self.project.Object(stratum)
+
+            with self._TransactionCM("Set rule stratum"):
                 rule.StratumRA = stratum
 
     @OperationsMethod
@@ -618,8 +625,11 @@ class PhonologicalRuleOperations(BaseOperations):
 
         rule = self.__ResolveObject(rule_or_hvo)
 
+        # hasattr guard stays OUTSIDE the bracket (see MorphRuleOperations
+        # .SetDisabled): a rule type without the property is a true no-op.
         if hasattr(rule, "Direction"):
-            rule.Direction = direction
+            with self._TransactionCM("Set phonological rule direction"):
+                rule.Direction = direction
 
     @OperationsMethod
     def SetLeftContext(self, rule_or_hvo, context_item):
@@ -792,7 +802,8 @@ class PhonologicalRuleOperations(BaseOperations):
                 "constraint is not present in "
                 "PhonologicalDataOA.FeatConstraintsOS"
             )
-        phon_data.FeatConstraintsOS.Remove(constraint)
+        with self._TransactionCM("Delete feature constraint"):
+            phon_data.FeatConstraintsOS.Remove(constraint)
 
     @OperationsMethod
     def GetConstraints(self):
@@ -1011,9 +1022,17 @@ class PhonologicalRuleOperations(BaseOperations):
 
     def __ClearSequence(self, seq):
         """Remove all elements from an owning sequence."""
-        # Walk by index from the end to avoid index drift during removal.
-        while seq.Count > 0:
-            seq.RemoveAt(seq.Count - 1)
+        # Reached only from inside the "Wire phonological rule" bracket, so
+        # this transaction joins that one (nesting-aware per B1). Stated
+        # anyway so the site is grep-auditable per D5. The Count guard stays
+        # outside: an already-empty sequence is a true no-op.
+        if seq.Count == 0:
+            return
+
+        with self._TransactionCM("Clear rule sequence"):
+            # Walk by index from the end to avoid index drift during removal.
+            while seq.Count > 0:
+                seq.RemoveAt(seq.Count - 1)
 
     def __CleanupSequenceContextMembers(self, ctx):
         """
@@ -1046,9 +1065,16 @@ class PhonologicalRuleOperations(BaseOperations):
         # detached. Copy refs out, then remove from ContextsOS.
         members_to_remove = list(seq_typed.MembersRS)
         contexts_pool = phon_data.ContextsOS
-        for member in members_to_remove:
-            if member is not None:
-                contexts_pool.Remove(member)
+        if not members_to_remove:
+            return
+
+        # Reached only from inside the "Wire phonological rule" bracket, so
+        # this transaction joins that one (nesting-aware per B1). Stated
+        # anyway so the site is grep-auditable per D5.
+        with self._TransactionCM("Clean up sequence context members"):
+            for member in members_to_remove:
+                if member is not None:
+                    contexts_pool.Remove(member)
 
     def __WireContext(self, elements, slot_name):
         """
@@ -1098,34 +1124,41 @@ class PhonologicalRuleOperations(BaseOperations):
             )
         contexts_pool = phon_data.ContextsOS
 
-        # Build and own each member context first.
-        members = []
-        for i, elem in enumerate(elements):
-            member_slot = f"{slot_name}[{i}]"
-            member = self.__BuildSimpleContext(elem, slot_name=member_slot)
-            # Phase 2 ownership-ordering: Add to the owner pool BEFORE
-            # populating so the validity-check via Owner passes.
-            contexts_pool.Add(member)
-            self.__PopulateSimpleContext(member, elem)
-            members.append(member)
+        # Reached only from inside the "Wire phonological rule" bracket, so
+        # this transaction joins that one (nesting-aware per B1). Stated
+        # anyway so the site is grep-auditable per D5. The whole multi-element
+        # build is one unit deliberately: if the sequence factory turns out to
+        # be unavailable after members are already in the owner pool, those
+        # member additions must roll back with it rather than leak.
+        with self._TransactionCM(f"Build {slot_name} context sequence"):
+            # Build and own each member context first.
+            members = []
+            for i, elem in enumerate(elements):
+                member_slot = f"{slot_name}[{i}]"
+                member = self.__BuildSimpleContext(elem, slot_name=member_slot)
+                # Phase 2 ownership-ordering: Add to the owner pool BEFORE
+                # populating so the validity-check via Owner passes.
+                contexts_pool.Add(member)
+                self.__PopulateSimpleContext(member, elem)
+                members.append(member)
 
-        # Create the sequence container. The sequence itself is unowned
-        # until the caller assigns it to rhs.LeftContextOA / RightContextOA;
-        # MembersRS is a reference list, so no ownership concerns for the
-        # member references.
-        seq_factory = self.project.project.ServiceLocator.GetService(
-            IPhSequenceContextFactory
-        )
-        if seq_factory is None:
-            raise FP_ParameterError(
-                "IPhSequenceContextFactory service is unavailable."
+            # Create the sequence container. The sequence itself is unowned
+            # until the caller assigns it to rhs.LeftContextOA / RightContextOA;
+            # MembersRS is a reference list, so no ownership concerns for the
+            # member references.
+            seq_factory = self.project.project.ServiceLocator.GetService(
+                IPhSequenceContextFactory
             )
-        seq = seq_factory.Create()
-        seq_typed = IPhSequenceContext(seq)
-        for member in members:
-            seq_typed.MembersRS.Add(member)
+            if seq_factory is None:
+                raise FP_ParameterError(
+                    "IPhSequenceContextFactory service is unavailable."
+                )
+            seq = seq_factory.Create()
+            seq_typed = IPhSequenceContext(seq)
+            for member in members:
+                seq_typed.MembersRS.Add(member)
 
-        return seq, None
+            return seq, None
 
     def __BuildSimpleContext(self, elem, slot_name):
         """Create the appropriate IPhSimpleContext* for a pattern element.
@@ -1145,7 +1178,11 @@ class PhonologicalRuleOperations(BaseOperations):
                 raise FP_ParameterError(
                     "IPhSimpleContextSegFactory service is unavailable."
                 )
-            return factory.Create()
+            # Type dispatch and service-availability checks stay outside the
+            # bracket; only the factory call is the unit of work. Callers
+            # reach this from inside their own bracket, so it joins (B1).
+            with self._TransactionCM("Create segment context"):
+                return factory.Create()
 
         if isinstance(elem, NC):
             factory = self.project.project.ServiceLocator.GetService(
@@ -1155,7 +1192,8 @@ class PhonologicalRuleOperations(BaseOperations):
                 raise FP_ParameterError(
                     "IPhSimpleContextNCFactory service is unavailable."
                 )
-            return factory.Create()
+            with self._TransactionCM("Create natural class context"):
+                return factory.Create()
 
         if isinstance(elem, Boundary):
             factory = self.project.project.ServiceLocator.GetService(
@@ -1165,7 +1203,8 @@ class PhonologicalRuleOperations(BaseOperations):
                 raise FP_ParameterError(
                     "IPhSimpleContextBdryFactory service is unavailable."
                 )
-            return factory.Create()
+            with self._TransactionCM("Create boundary context"):
+                return factory.Create()
 
         raise FP_ParameterError(
             f"{slot_name}: pattern element must be Seg, NC, or Boundary, "
@@ -1179,25 +1218,35 @@ class PhonologicalRuleOperations(BaseOperations):
             # call site if a caller tries to pass them). Alpha-feature
             # constraints on a single phoneme require a singleton NC --
             # see Seg's docstring.
+            # Resolution hoisted ahead of every bracket in this method
+            # (reference-setter decision, batch 8): an unresolvable reference
+            # raises before a transaction opens. Callers reach this from
+            # inside their own bracket, so these join (nesting-aware per B1).
             phoneme = self.__ResolveLcmObject(elem.phoneme)
-            ctx.FeatureStructureRA = phoneme
+
+            with self._TransactionCM("Populate segment context"):
+                ctx.FeatureStructureRA = phoneme
             return
 
         if isinstance(elem, NC):
             nc = self.__ResolveLcmObject(elem.natural_class)
-            ctx.FeatureStructureRA = nc
-            # Attach alpha-variable constraints (identity = sharing).
-            for c in elem.plus:
-                resolved = self.__ResolveLcmObject(c)
-                ctx.PlusConstrRS.Add(resolved)
-            for c in elem.minus:
-                resolved = self.__ResolveLcmObject(c)
-                ctx.MinusConstrRS.Add(resolved)
+            plus = [self.__ResolveLcmObject(c) for c in elem.plus]
+            minus = [self.__ResolveLcmObject(c) for c in elem.minus]
+
+            with self._TransactionCM("Populate natural class context"):
+                ctx.FeatureStructureRA = nc
+                # Attach alpha-variable constraints (identity = sharing).
+                for resolved in plus:
+                    ctx.PlusConstrRS.Add(resolved)
+                for resolved in minus:
+                    ctx.MinusConstrRS.Add(resolved)
             return
 
         if isinstance(elem, Boundary):
             marker = self.__ResolveBoundary(elem.marker)
-            ctx.FeatureStructureRA = marker
+
+            with self._TransactionCM("Populate boundary context"):
+                ctx.FeatureStructureRA = marker
             return
 
         raise FP_ParameterError(

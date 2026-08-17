@@ -11,6 +11,16 @@ written against that decision and prioritises accordingly.
 change to the `undoable=False` default in this cycle; no git commits until Track A
 passes verification.
 
+**Live verification is now REQUIRED, not deferred.** The do-not-list above bans writes
+against a *non-scratch* project — it has been misread as banning live verification
+altogether, and Track A tasks were reported "verified" off mock-only runs. The scratch
+project now exists: **Target**, restored via `python scripts/restore_target.py`, with
+`target_project` / `target_sandbox` fixtures in `tests/conftest.py`. Every Track A and
+Track B task that touches the write path must produce
+`specs/write-path-transactions/evidence/live-<task>.md` showing `run_mode: live` and
+pre/post field values read back from the LCM. See CLAUDE.md, "Live LCM Verification
+(REQUIRED)". Open questions O1–O3 in §6 are exactly the items this unblocks.
+
 ## 1. Problem statement
 
 flexicon hand-rolled a transaction layer (`flexicon/code/transaction.py`,
@@ -354,6 +364,60 @@ against a scratch project before code depends on it.
   history, and `Rollback` is the only true revert.
 
 ## 7. Test plan
+
+### 7.0 REQUIRED test invocations
+
+Every brief in this feature must state **both** commands explicitly. Do not rely on a
+prose instruction such as "no live writes" — it is not a control, and it failed
+twice in practice.
+
+**1. Regression pass (mock suite).** Supplementary. Never sufficient on its own for a
+write-path change:
+
+```
+python -m pytest -m "not requires_live_project" -q
+```
+
+**2. Live verification (Target scratch project).** Required for every task touching the
+write path:
+
+```
+$env:FLEXLIBS_REQUIRE_LIVE = "1"
+python -m pytest <live test file> -m requires_live_project -q
+```
+
+`FLEXLIBS_REQUIRE_LIVE=1` turns mock fallback, a locked Target, and a missing fixture
+into hard failures instead of silent skips. Confirm afterwards that
+`tests/live_status.json` reads `"run_mode": "live"` — if it reads `"mock"`, the run
+proved nothing and the verdict is `FAIL: unverified`.
+
+If FieldWorks holds a lock on Target, use the `target_sandbox` fixture (tempdir copy of
+the `.fwbackup`) rather than skipping. Template:
+`tests/operations/test_target_live_smoke.py`.
+
+Current measurement on that command: **1424 passed, 117 failed, 11 skipped, 322
+deselected, 17 errors.** Not green; the failures are pre-existing and unrelated
+(rename-path breakage — issue #240 — plus sync-engine failures).
+
+**Never use `pytest --ignore=tests/contract`.** It applies no `-m` filter, so it
+collects and EXECUTES the 322 `requires_live_project` tests. Per
+`tests/conftest.py:1221`, Phases A-D of those run **in-place against the real
+Sena 3 project**; only Phase E uses the isolated `sena3_sandbox` tempdir. That
+command therefore performs live LCM writes against a real FLEx project.
+
+This happened twice in this feature's history — once in the cycle-2 verification
+pass (undetected at the time, and the source of the 139/1638 figures quoted in
+commit `b3a5bb9` and in early revisions of the MCP contract), and once in cycle 3
+during a baseline-reconciliation run (self-disclosed). No corruption resulted in
+either case — the Phase A-D tests are self-restoring and the fixture backup is
+unmodified — but the gate was not held either time, and prose prohibitions are
+why.
+
+The two totals reconcile exactly by scope, so neither concealed a regression:
+`-m` pool 117+1394+11+17+322 = 1861; minus the 22 contract tests absent from the
+other pool = 1839 = 139+1663+20+17.
+
+### 7.1 Per-task coverage
 
 Track A:
 - Headless `ILcmUI`: unit-test each of the 12 members in isolation; assert

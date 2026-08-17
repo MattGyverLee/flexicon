@@ -254,7 +254,9 @@ class PronunciationOperations(BaseOperations):
         # hasattr(entry, "PronunciationsOS") returns False without a cast
         # and the Remove() silently never runs (issue #151).
         entry = ILexEntry(pronunciation.Owner)
-        entry.PronunciationsOS.Remove(pronunciation)
+
+        with self._TransactionCM("Delete pronunciation"):
+            entry.PronunciationsOS.Remove(pronunciation)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
@@ -575,7 +577,9 @@ class PronunciationOperations(BaseOperations):
 
         # MultiUnicodeAccessor
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        pronunciation.Form.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set pronunciation form"):
+            pronunciation.Form.set_String(wsHandle, mkstr)
 
     # --- Media Files ---
 
@@ -709,9 +713,12 @@ class PronunciationOperations(BaseOperations):
         # Copy file to project and get ICmFile reference
         media_file = self.project.Media.CopyToProject(file_path, internal_subdir="AudioVisual", label=label)
 
-        # Add to pronunciation's media collection
+        # Add to pronunciation's media collection. The capability check stays
+        # outside the bracket so the rejection path raises without opening an
+        # empty named undo entry (D5).
         if hasattr(pronunciation, "MediaFilesOS"):
-            pronunciation.MediaFilesOS.Add(media_file)
+            with self._TransactionCM("Add pronunciation media file"):
+                pronunciation.MediaFilesOS.Add(media_file)
         else:
             raise FP_ParameterError("Pronunciation does not support media files")
 
@@ -760,7 +767,8 @@ class PronunciationOperations(BaseOperations):
 
         # Remove from collection
         if hasattr(pronunciation, "MediaFilesOS"):
-            pronunciation.MediaFilesOS.Remove(media)
+            with self._TransactionCM("Remove pronunciation media file"):
+                pronunciation.MediaFilesOS.Remove(media)
 
     @OperationsMethod
     def MoveMediaFile(self, media, from_pronunciation_or_hvo, to_pronunciation_or_hvo):
@@ -929,7 +937,8 @@ class PronunciationOperations(BaseOperations):
         pronunciation = self.__GetPronunciationObject(pronunciation_or_hvo)
 
         if hasattr(pronunciation, "LocationRA"):
-            pronunciation.LocationRA = location
+            with self._TransactionCM("Set pronunciation location"):
+                pronunciation.LocationRA = location
 
     # --- Utilities ---
 

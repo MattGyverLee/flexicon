@@ -131,9 +131,82 @@ flexlibs2/
   patterns.
 
 ### Write Operations
-- Only perform write operations if `project.WriteEnabled` is True
+- Only perform write operations if `project.writeEnabled` is True
+  (lowercase `w` -- the attribute is `writeEnabled`, not `WriteEnabled`)
 - Check write permissions before attempting Create/Update/Delete operations
 - Use appropriate factories for object creation
+
+## Live LCM Verification (REQUIRED)
+
+**Any change written against the LCM must be verified against a live FLEx
+database before it is reported as done.** A mock-only pass is not
+verification and must never be presented as one. "No live LCM testing was
+performed" is a FAILED verification, not a safety feature -- report it as
+`FAIL: unverified`, never as a clean result.
+
+This applies to every change that touches an Operations class, a factory
+call, a property setter, `FLExProject`, or the transaction/write path. It
+does not apply to pure-docs, pure-typing, or pure-test-scaffolding changes.
+
+### The two live projects
+
+| Project | Contents | Use for | Restore |
+|---------|----------|---------|---------|
+| **Target** | Mostly blank scratch | **Write-path work**: create / modify / delete against a clean slate | `python scripts/restore_target.py` |
+| **Sena 3** | Fully populated example | Read-path coverage, modify-pre-existing-data | `python scripts/restore_sena3.py` |
+
+Default to **Target** for anything that writes. Reach for Sena 3 only when
+the test genuinely needs pre-existing data to read or modify.
+
+### Fixtures
+
+- `target_project` -- in-place, write-enabled, on the real Target.
+  Capture-and-restore in a `finally:`; prefix created objects `TEST_`.
+- `target_sandbox` -- write-enabled on a fresh tempdir copy of the Target
+  `.fwbackup`. Nothing can leak. Use for destructive tests, or whenever
+  the real Target is locked by an open FieldWorks.
+- `sena3_sandbox` -- same, for Sena 3.
+
+The canonical template is `tests/operations/test_target_live_smoke.py`.
+Copy its structure.
+
+### The required invocation
+
+Live verification runs with the fail-loud flag set:
+
+```
+$env:FLEXLIBS_REQUIRE_LIVE = "1"
+python -m pytest <your live test file> -m requires_live_project -q
+```
+
+`FLEXLIBS_REQUIRE_LIVE=1` converts every silent degradation into a hard
+failure: FLEx init falling back to mocks, a locked Target, a missing
+fixture. Without it, `tests/conftest.py` prints `[WARN] MOCK MODE` and the
+session still passes green -- which is exactly how unverified write-path
+changes have been reported as done.
+
+**Never run bare `pytest` or `pytest --ignore=tests/contract`.** Neither
+applies an `-m` filter, so both collect and EXECUTE the ~322
+`requires_live_project` tests in-place against real projects.
+
+### Evidence is mandatory
+
+A verification claim must cite machine-checkable evidence, not prose:
+
+1. `tests/live_status.json` must show `"run_mode": "live"`. If it says
+   `"mock"`, the run proved nothing.
+2. Write `specs/<feature>/evidence/live-<task>.md` containing the exact
+   command, the `run_mode` value, the pre-state and post-state values read
+   back from the LCM, and the pass/fail line.
+
+"Read back from the LCM" means re-querying the object after the write --
+asserting on the value you just passed in proves nothing.
+
+### When live verification is genuinely impossible
+
+Say so explicitly and stop; do not substitute a mock pass. Report the
+blocker (locked project, missing FieldWorks, needs a human decision) and
+escalate. Per the LEX crew protocol, that is a `needs_human` handoff.
 
 ## Documentation
 

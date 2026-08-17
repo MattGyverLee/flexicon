@@ -135,14 +135,15 @@ class MediaOperations(BaseOperations):
             return folder
 
         # Otherwise create and own a new folder.
-        folder_factory = self.project.project.ServiceLocator.GetService(ICmFolderFactory)
-        folder = folder_factory.Create()
-        owning_collection.Add(folder)
+        with self._TransactionCM(f"Create media folder '{folder_name}'"):
+            folder_factory = self.project.project.ServiceLocator.GetService(ICmFolderFactory)
+            folder = folder_factory.Create()
+            owning_collection.Add(folder)
 
-        wsHandle = self.project.project.DefaultAnalWs
-        folder.Name.set_String(wsHandle, TsStringUtils.MakeString(folder_name, wsHandle))
+            wsHandle = self.project.project.DefaultAnalWs
+            folder.Name.set_String(wsHandle, TsStringUtils.MakeString(folder_name, wsHandle))
 
-        return folder
+            return folder
 
     # --- Core CRUD Operations ---
 
@@ -233,26 +234,27 @@ class MediaOperations(BaseOperations):
 
         file_path = file_path.strip()
 
-        # Get the factory and create the media file
-        factory = self.project.project.ServiceLocator.GetService(ICmFileFactory)
-        new_media = factory.Create()
+        with self._TransactionCM(f"Create media file '{file_path}'"):
+            # Get the factory and create the media file
+            factory = self.project.project.ServiceLocator.GetService(ICmFileFactory)
+            new_media = factory.Create()
 
-        # An ICmFile must be owned by a CmFolder *before* InternalPath is set.
-        # CmFile.set_InternalPath resolves the path against its owning folder /
-        # LinkedFilesRootDir, so setting it on a freshly-created, unowned file
-        # dereferences null and throws a .NET NullReferenceException (issue #226).
-        folder = self.__GetOrCreateMediaFolder(file_path)
-        folder.FilesOC.Add(new_media)
+            # An ICmFile must be owned by a CmFolder *before* InternalPath is set.
+            # CmFile.set_InternalPath resolves the path against its owning folder /
+            # LinkedFilesRootDir, so setting it on a freshly-created, unowned file
+            # dereferences null and throws a .NET NullReferenceException (issue #226).
+            folder = self.__GetOrCreateMediaFolder(file_path)
+            folder.FilesOC.Add(new_media)
 
-        # Set the internal path (safe now that the file is owned)
-        new_media.InternalPath = file_path
+            # Set the internal path (safe now that the file is owned)
+            new_media.InternalPath = file_path
 
-        # Set label if provided
-        if label:
-            mkstr = TsStringUtils.MakeString(label, wsHandle)
-            new_media.Description.set_String(wsHandle, mkstr)
+            # Set label if provided
+            if label:
+                mkstr = TsStringUtils.MakeString(label, wsHandle)
+                new_media.Description.set_String(wsHandle, mkstr)
 
-        return new_media
+            return new_media
 
     @OperationsMethod
     def Delete(self, media_or_hvo):
@@ -413,15 +415,20 @@ class MediaOperations(BaseOperations):
                     # Continue with shallow copy if file copy fails
                     new_path = internal_path
 
-        # Create the new media reference
-        new_media = self.Create(new_path, label=new_label, wsHandle=wsHandle)
+        # LCM mutations start here. The physical file copy above stays OUTSIDE
+        # the transaction deliberately: shutil.copy2 is a filesystem side
+        # effect that no LCM rollback can revert, so including it would make
+        # the block's atomicity a promise the transaction cannot keep.
+        with self._TransactionCM(f"Duplicate media '{new_label}'"):
+            # Create the new media reference
+            new_media = self.Create(new_path, label=new_label, wsHandle=wsHandle)
 
-        # Copy full Description MultiString (all writing systems)
-        # Create() only sets a single-WS label; CopyAlternatives preserves all WS
-        if hasattr(source_media, "Description") and source_media.Description:
-            new_media.Description.CopyAlternatives(source_media.Description)
+            # Copy full Description MultiString (all writing systems)
+            # Create() only sets a single-WS label; CopyAlternatives preserves all WS
+            if hasattr(source_media, "Description") and source_media.Description:
+                new_media.Description.CopyAlternatives(source_media.Description)
 
-        return new_media
+            return new_media
 
     # ========== SYNC INTEGRATION METHODS ==========
 
@@ -750,7 +757,8 @@ class MediaOperations(BaseOperations):
         else:
             media = media_or_hvo
 
-        media.InternalPath = path.strip()
+        with self._TransactionCM("Set media internal path"):
+            media.InternalPath = path.strip()
 
     @OperationsMethod
     def RenameMediaFile(self, media_or_hvo, new_filename):
@@ -998,8 +1006,9 @@ class MediaOperations(BaseOperations):
 
         # Set the label/description string
         if hasattr(media, "Description"):
-            mkstr = TsStringUtils.MakeString(text, wsHandle)
-            media.Description.set_String(wsHandle, mkstr)
+            with self._TransactionCM(f"Set media label '{text}'"):
+                mkstr = TsStringUtils.MakeString(text, wsHandle)
+                media.Description.set_String(wsHandle, mkstr)
 
     # --- Media Type Detection ---
 
@@ -1342,7 +1351,8 @@ class MediaOperations(BaseOperations):
         if not linked_files_dir:
             # If LinkedFilesRootDir not available, create reference only
             logger.warning("LinkedFilesRootDir not available, creating reference without copying")
-            return self.Create(external_path, label, wsHandle)
+            with self._TransactionCM(f"Reference media file '{external_path}'"):
+                return self.Create(external_path, label, wsHandle)
 
         target_dir = os.path.join(linked_files_dir, internal_subdir)
 
@@ -1371,8 +1381,11 @@ class MediaOperations(BaseOperations):
         # the copied file rather than a doubled "LinkedFiles/LinkedFiles/..." path.
         internal_path = os.path.join(internal_subdir, filename)
 
-        # Create media reference
-        return self.Create(internal_path, label, wsHandle)
+        # Create media reference. The shutil.copy2 above stays outside the
+        # transaction: a rollback cannot delete the copied file, so the copy
+        # is intentionally not presented as part of the atomic unit.
+        with self._TransactionCM(f"Copy media file '{filename}' into project"):
+            return self.Create(internal_path, label, wsHandle)
 
     @OperationsMethod
     def IsValid(self, media_or_hvo):

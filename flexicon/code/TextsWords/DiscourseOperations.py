@@ -394,10 +394,13 @@ class DiscourseOperations(BaseOperations):
 
         chart_obj = self.__GetChartObject(chart_or_hvo)
 
-        # Get the owner and remove the chart
+        # Get the owner and remove the chart. The ownership capability check
+        # stays OUTSIDE the transaction so an unremovable chart raises without
+        # opening an empty undo task.
         owner = chart_obj.Owner
         if owner and hasattr(owner, "ChartsOC"):
-            owner.ChartsOC.Remove(chart_obj)
+            with self._TransactionCM("Delete chart"):
+                owner.ChartsOC.Remove(chart_obj)
         else:
             raise FP_ParameterError("Chart has no valid owner or cannot be removed")
 
@@ -481,10 +484,13 @@ class DiscourseOperations(BaseOperations):
         chart_obj = self.__GetChartObject(chart_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        # Set the chart name
+        # Set the chart name. The capability check stays OUTSIDE the
+        # transaction so a chart that cannot be named raises without opening
+        # an empty undo task.
         if hasattr(chart_obj, "Name"):
-            name_str = TsStringUtils.MakeString(name, wsHandle)
-            chart_obj.Name.set_String(wsHandle, name_str)
+            with self._TransactionCM(f"Set chart name '{name}'"):
+                name_str = TsStringUtils.MakeString(name, wsHandle)
+                chart_obj.Name.set_String(wsHandle, name_str)
         else:
             raise FP_ParameterError("Chart does not support name setting")
 
@@ -746,10 +752,13 @@ class DiscourseOperations(BaseOperations):
 
         row_obj = self.__GetRowObject(row_or_hvo)
 
-        # Get the owner (chart) and remove the row
+        # Get the owner (chart) and remove the row. The ownership capability
+        # check stays OUTSIDE the transaction so an unremovable row raises
+        # without opening an empty undo task.
         owner = row_obj.Owner
         if owner and hasattr(owner, "RowsOS"):
-            owner.RowsOS.Remove(row_obj)
+            with self._TransactionCM("Delete chart row"):
+                owner.RowsOS.Remove(row_obj)
         else:
             raise FP_ParameterError("Row has no valid owner or cannot be removed")
 
@@ -856,14 +865,18 @@ class DiscourseOperations(BaseOperations):
 
         # Check if cell has a content property that can be set
         # Different cell types have different properties
+        # Both capability checks stay OUTSIDE the transaction so a cell that
+        # supports neither property raises without opening an empty undo task.
         if hasattr(cell, "Label"):
             # Some cells have a Label property
-            content_str = TsStringUtils.MakeString(content, wsHandle)
-            cell.Label.set_String(wsHandle, content_str)
+            with self._TransactionCM("Set chart cell content"):
+                content_str = TsStringUtils.MakeString(content, wsHandle)
+                cell.Label.set_String(wsHandle, content_str)
         elif hasattr(cell, "Comment"):
             # Some cells have a Comment property
-            content_str = TsStringUtils.MakeString(content, wsHandle)
-            cell.Comment.set_String(wsHandle, content_str)
+            with self._TransactionCM("Set chart cell content"):
+                content_str = TsStringUtils.MakeString(content, wsHandle)
+                cell.Comment.set_String(wsHandle, content_str)
         else:
             raise FP_ParameterError("Cell does not support editable content (no Label or Comment property)")
 

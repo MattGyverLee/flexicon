@@ -278,7 +278,9 @@ class EtymologyOperations(BaseOperations):
         owner = self._GetTypedOwner(etymology)
         if owner is None:
             raise FP_ParameterError("Etymology has no owning entry")
-        owner.EtymologyOS.Remove(etymology)
+
+        with self._TransactionCM("Delete etymology"):
+            owner.EtymologyOS.Remove(etymology)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True):
@@ -704,7 +706,9 @@ class EtymologyOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(ws)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        etymology.Source.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set etymology source"):
+            etymology.Source.set_String(wsHandle, mkstr)
 
     # --- Form & Gloss Operations ---
 
@@ -793,7 +797,9 @@ class EtymologyOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(ws)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        etymology.Form.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set etymology form"):
+            etymology.Form.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetGloss(self, etymology_or_hvo, ws=None):
@@ -877,7 +883,9 @@ class EtymologyOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(ws)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        etymology.Gloss.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set etymology gloss"):
+            etymology.Gloss.set_String(wsHandle, mkstr)
 
     # --- Comment & Bibliography Operations ---
 
@@ -971,7 +979,9 @@ class EtymologyOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(ws)
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        etymology.Comment.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set etymology comment"):
+            etymology.Comment.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetBibliography(self, etymology_or_hvo):
@@ -1076,16 +1086,21 @@ class EtymologyOperations(BaseOperations):
         wsHandle = self.project.project.DefaultAnalWs
 
         # Bibliography might be stored as string or ITsString
-        # Try to set it appropriately
+        # Try to set it appropriately.
+        # The outer capability check stays outside the bracket: an etymology
+        # without the field is a true no-op, not an empty named undo entry.
+        # The inner MultiString-vs-scalar dispatch stays INSIDE, because both
+        # of its branches mutate and there is no no-op path to protect (D5).
         if hasattr(etymology, "Bibliography"):
-            # Check if it's a MultiUnicodeAccessor
-            if hasattr(etymology.Bibliography, "set_String"):
-                mkstr = TsStringUtils.MakeString(bibliography_text, wsHandle)
-                etymology.Bibliography.set_String(wsHandle, mkstr)
-            # Otherwise treat as direct string property
-            else:
-                mkstr = TsStringUtils.MakeString(bibliography_text, wsHandle)
-                etymology.Bibliography = mkstr
+            with self._TransactionCM("Set etymology bibliography"):
+                # Check if it's a MultiUnicodeAccessor
+                if hasattr(etymology.Bibliography, "set_String"):
+                    mkstr = TsStringUtils.MakeString(bibliography_text, wsHandle)
+                    etymology.Bibliography.set_String(wsHandle, mkstr)
+                # Otherwise treat as direct string property
+                else:
+                    mkstr = TsStringUtils.MakeString(bibliography_text, wsHandle)
+                    etymology.Bibliography = mkstr
 
     # --- Utility Operations ---
 
@@ -1216,7 +1231,9 @@ class EtymologyOperations(BaseOperations):
         self._ValidateParam(etymology_or_hvo, "etymology_or_hvo")
 
         etymology = self.__GetEtymologyObject(etymology_or_hvo)
-        etymology.LanguageRA = language
+
+        with self._TransactionCM("Set etymology language"):
+            etymology.LanguageRA = language
 
     # --- Private Helper Methods ---
 

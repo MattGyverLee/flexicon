@@ -449,8 +449,10 @@ class AnnotationDefOperations(BaseOperations):
             raise FP_ParameterError("Name cannot be empty")
 
         wsHandle = self.__WSHandle(wsHandle)
-        mkstr = TsStringUtils.MakeString(name, wsHandle)
-        anno_def.Name.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set annotation definition name '{name}'"):
+            mkstr = TsStringUtils.MakeString(name, wsHandle)
+            anno_def.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetHelpString(self, anno_def, wsHandle=None):
@@ -534,8 +536,9 @@ class AnnotationDefOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         if hasattr(anno_def, "HelpString"):
-            mkstr = TsStringUtils.MakeString(help_string, wsHandle)
-            anno_def.HelpString.set_String(wsHandle, mkstr)
+            with self._TransactionCM("Set annotation definition help string"):
+                mkstr = TsStringUtils.MakeString(help_string, wsHandle)
+                anno_def.HelpString.set_String(wsHandle, mkstr)
 
     # --- Type and Instance Information ---
 
@@ -698,8 +701,10 @@ class AnnotationDefOperations(BaseOperations):
         self._ValidateParam(anno_def, "anno_def")
         self._ValidateParam(can_create, "can_create")
 
+        # hasattr guard outside the bracket -- its absence is a true no-op.
         if hasattr(anno_def, "UserCanCreate"):
-            anno_def.UserCanCreate = bool(can_create)
+            with self._TransactionCM("Set annotation user-can-create flag"):
+                anno_def.UserCanCreate = bool(can_create)
 
     @OperationsMethod
     def GetMultiple(self, anno_def):
@@ -777,8 +782,10 @@ class AnnotationDefOperations(BaseOperations):
         self._ValidateParam(anno_def, "anno_def")
         self._ValidateParam(allow_multiple, "allow_multiple")
 
+        # hasattr guard outside the bracket -- its absence is a true no-op.
         if hasattr(anno_def, "AllowsMultiple"):
-            anno_def.AllowsMultiple = bool(allow_multiple)
+            with self._TransactionCM("Set annotation allows-multiple flag"):
+                anno_def.AllowsMultiple = bool(allow_multiple)
 
     # --- Prompt and Copy/Paste Settings ---
 
@@ -862,8 +869,9 @@ class AnnotationDefOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         if hasattr(anno_def, "Prompt"):
-            mkstr = TsStringUtils.MakeString(prompt_text, wsHandle)
-            anno_def.Prompt.set_String(wsHandle, mkstr)
+            with self._TransactionCM("Set annotation definition prompt"):
+                mkstr = TsStringUtils.MakeString(prompt_text, wsHandle)
+                anno_def.Prompt.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetCopyCutPasteAllowed(self, anno_def):
@@ -1159,30 +1167,34 @@ class AnnotationDefOperations(BaseOperations):
 
     def _DuplicateSubDefInto(self, source_def, parent_dup, deep=True):
         """Duplicate an annotation sub-definition into the specified parent."""
-        factory = self.project.project.ServiceLocator.GetService(ICmAnnotationDefnFactory)
-        dup_def = factory.Create()
-        parent_dup.SubPossibilitiesOS.Add(dup_def)
+        with self._TransactionCM("Duplicate annotation definition"):
+            factory = self.project.project.ServiceLocator.GetService(ICmAnnotationDefnFactory)
+            dup_def = factory.Create()
+            parent_dup.SubPossibilitiesOS.Add(dup_def)
 
-        # Copy properties
-        dup_def.Name.CopyAlternatives(source_def.Name)
-        if hasattr(source_def, "HelpString") and source_def.HelpString:
-            dup_def.HelpString.CopyAlternatives(source_def.HelpString)
-        if hasattr(source_def, "Prompt") and source_def.Prompt:
-            dup_def.Prompt.CopyAlternatives(source_def.Prompt)
+            # Copy properties
+            dup_def.Name.CopyAlternatives(source_def.Name)
+            if hasattr(source_def, "HelpString") and source_def.HelpString:
+                dup_def.HelpString.CopyAlternatives(source_def.HelpString)
+            if hasattr(source_def, "Prompt") and source_def.Prompt:
+                dup_def.Prompt.CopyAlternatives(source_def.Prompt)
 
-        if hasattr(source_def, "AnnotationType"):
-            dup_def.AnnotationType = source_def.AnnotationType
-        if hasattr(source_def, "InstanceOf"):
-            dup_def.InstanceOf = source_def.InstanceOf
-        if hasattr(source_def, "UserCanCreate"):
-            dup_def.UserCanCreate = source_def.UserCanCreate
-        if hasattr(source_def, "AllowsMultiple"):
-            dup_def.AllowsMultiple = source_def.AllowsMultiple
+            if hasattr(source_def, "AnnotationType"):
+                dup_def.AnnotationType = source_def.AnnotationType
+            if hasattr(source_def, "InstanceOf"):
+                dup_def.InstanceOf = source_def.InstanceOf
+            if hasattr(source_def, "UserCanCreate"):
+                dup_def.UserCanCreate = source_def.UserCanCreate
+            if hasattr(source_def, "AllowsMultiple"):
+                dup_def.AllowsMultiple = source_def.AllowsMultiple
 
-        # Recurse into nested sub-definitions
-        if deep and hasattr(source_def, "SubPossibilitiesOS") and source_def.SubPossibilitiesOS.Count > 0:
-            for nested_def in source_def.SubPossibilitiesOS:
-                self._DuplicateSubDefInto(nested_def, dup_def, deep=True)
+            # Recurse into nested sub-definitions. The recursive call re-enters
+            # _TransactionCM, which joins this block under Phase 2 rather than
+            # opening a second undo task, so the whole subtree lands as one
+            # named entry.
+            if deep and hasattr(source_def, "SubPossibilitiesOS") and source_def.SubPossibilitiesOS.Count > 0:
+                for nested_def in source_def.SubPossibilitiesOS:
+                    self._DuplicateSubDefInto(nested_def, dup_def, deep=True)
 
     # ========== SYNC INTEGRATION METHODS ==========
 

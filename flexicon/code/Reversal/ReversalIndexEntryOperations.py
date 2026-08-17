@@ -128,15 +128,27 @@ class ReversalIndexEntryOperations(BaseOperations):
             yield entry
 
     @OperationsMethod
-    def Create(self, index_or_hvo, form, sense=None, wsHandle=None):
+    def Create(self, index_or_hvo, form, sense=None, wsHandle=None, guid=None):
         """
         Create a new reversal index entry.
 
         Args:
             index_or_hvo: Either an IReversalIndex object or its HVO
             form (str): The reversal form (headword in analysis language)
-            sense: Optional ILexSense object to link to
+            sense: Optional ILexSense object to link to. Must already be
+                an ILexSense resolved in the TARGET project -- SensesRS
+                is a reference, not an owning relationship, and a
+                reference cannot span two LcmCache instances. Resolve
+                the correct target-project sense yourself before calling.
             wsHandle: Optional writing system handle. Defaults to index's WS.
+            guid (optional): GUID to assign to the new entry, as a
+                ``System.Guid`` or string. Use this when REPRODUCING an
+                entry from another project so it keeps its original
+                identity. Transport-only: like WordformOperations.Create,
+                this method performs NO deduplication -- neither by guid
+                nor by form -- so callers must call Find() first if they
+                need to avoid duplicates. None (the default) mints a
+                fresh GUID.
 
         Returns:
             IReversalIndexEntry: The newly created reversal entry
@@ -144,7 +156,8 @@ class ReversalIndexEntryOperations(BaseOperations):
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
             FP_NullParameterError: If index_or_hvo or form is None
-            FP_ParameterError: If form is empty
+            FP_ParameterError: If form is empty, or guid was supplied but
+                is not a valid GUID.
 
         Example:
             >>> idx = project.ReversalIndexes.Find("English")
@@ -162,6 +175,14 @@ class ReversalIndexEntryOperations(BaseOperations):
             - If sense provided, it's automatically linked
             - Form is stored in the index's writing system
             - Entry can link to multiple senses via AddSense()
+            - This method ALWAYS adds the new entry to
+              ``index.EntriesOC`` (top-level). There is no path here to
+              create directly into a parent entry's ``SubentriesOS``, so
+              a reproduced SUBentry from another project will land
+              top-level and must be re-parented by the caller afterward.
+            - If the requested guid is already present in the project,
+              creation falls back to a fresh identity and logs a
+              warning; it does not raise.
 
         See Also:
             Delete, Find, AddSense
@@ -184,7 +205,7 @@ class ReversalIndexEntryOperations(BaseOperations):
         with self._TransactionCM(f"Create reversal entry '{form}'"):
             # Create the reversal entry using factory
             factory = self.project.project.ServiceLocator.GetService(IReversalIndexEntryFactory)
-            new_entry = factory.Create()
+            new_entry = self._CreateWithGuid(factory, guid, "IReversalIndexEntry")
 
             # Add to index's entries collection
             index.EntriesOC.Add(new_entry)
@@ -235,8 +256,9 @@ class ReversalIndexEntryOperations(BaseOperations):
 
         entry = self.__ResolveObject(entry_or_hvo)
 
-        # Delete the entry (LCM handles removal from collections)
-        entry.Delete()
+        with self._TransactionCM("Delete reversal entry"):
+            # Delete the entry (LCM handles removal from collections)
+            entry.Delete()
 
     @OperationsMethod
     def Find(self, index_or_hvo, form, wsHandle=None):
@@ -407,8 +429,9 @@ class ReversalIndexEntryOperations(BaseOperations):
         if wsHandle is None:
             wsHandle = self.__GetEntryWS(entry)
 
-        mkstr = TsStringUtils.MakeString(text, wsHandle)
-        entry.ReversalForm.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set reversal form '{text}'"):
+            mkstr = TsStringUtils.MakeString(text, wsHandle)
+            entry.ReversalForm.set_String(wsHandle, mkstr)
 
     # --- Sense Linking ---
 
@@ -484,9 +507,12 @@ class ReversalIndexEntryOperations(BaseOperations):
 
         entry = self.__ResolveObject(entry_or_hvo)
 
-        # Add sense if not already linked
+        # Add sense if not already linked. The membership test stays OUTSIDE
+        # the transaction so an already-linked sense is a true no-op and does
+        # not open an empty undo task.
         if sense not in entry.SensesRS:
-            entry.SensesRS.Add(sense)
+            with self._TransactionCM("Link sense to reversal entry"):
+                entry.SensesRS.Add(sense)
 
     @OperationsMethod
     def RemoveSense(self, entry_or_hvo, sense):
@@ -521,9 +547,12 @@ class ReversalIndexEntryOperations(BaseOperations):
 
         entry = self.__ResolveObject(entry_or_hvo)
 
-        # Remove sense if linked
+        # Remove sense if linked. The membership test stays OUTSIDE the
+        # transaction so an unlinked sense is a true no-op and does not open
+        # an empty undo task.
         if sense in entry.SensesRS:
-            entry.SensesRS.Remove(sense)
+            with self._TransactionCM("Unlink sense from reversal entry"):
+                entry.SensesRS.Remove(sense)
 
     # --- Hierarchical Structure ---
 

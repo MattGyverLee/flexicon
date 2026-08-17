@@ -233,8 +233,9 @@ class ScrNoteOperations(BaseOperations):
         # Resolve to note object
         note = self.__ResolveObject(note_or_hvo)
 
-        # Delete the note (LCM handles removal from repository)
-        note.Delete()
+        with self._TransactionCM("Delete scripture note"):
+            # Delete the note (LCM handles removal from repository)
+            note.Delete()
 
     @OperationsMethod
     def Find(self, book_or_hvo, index):
@@ -522,8 +523,10 @@ class ScrNoteOperations(BaseOperations):
         # Note: The exact property for resolution may vary
         # For now, we set a simple flag approach
         # A full implementation would use note.ResolutionStatus
+        # hasattr guard outside the bracket -- its absence is a true no-op.
         if hasattr(note, "ResolutionStatus"):
-            note.ResolutionStatus = 1  # Resolved
+            with self._TransactionCM("Resolve scripture note"):
+                note.ResolutionStatus = 1  # Resolved
 
     @OperationsMethod
     def IsResolved(self, note_or_hvo):

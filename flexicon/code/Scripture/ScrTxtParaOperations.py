@@ -193,8 +193,9 @@ class ScrTxtParaOperations(BaseOperations):
         # Resolve to paragraph object
         para = self.__ResolveObject(para_or_hvo)
 
-        # Delete the paragraph (LCM handles removal from repository)
-        para.Delete()
+        with self._TransactionCM("Delete scripture paragraph"):
+            # Delete the paragraph (LCM handles removal from repository)
+            para.Delete()
 
     @OperationsMethod
     def Find(self, section_or_hvo, index):
@@ -371,7 +372,8 @@ class ScrTxtParaOperations(BaseOperations):
 
         # Contents is ITsString, assign directly
         mkstr = TsStringUtils.MakeString(text, wsHandle)
-        para.Contents = mkstr
+        with self._TransactionCM("Set scripture paragraph text"):
+            para.Contents = mkstr
 
     @OperationsMethod
     def GetStyleName(self, para_or_hvo):
@@ -452,7 +454,10 @@ class ScrTxtParaOperations(BaseOperations):
         if not style:
             raise FP_ParameterError(f"Paragraph style '{style_name}' not found")
 
-        para.StyleRules = style
+        # Lookup above stays outside the bracket: an unknown style must raise
+        # before any undo task opens (D5/P3).
+        with self._TransactionCM(f"Set paragraph style '{style_name}'"):
+            para.StyleRules = style
 
     # --- Private Helper Methods ---
 

@@ -2,10 +2,50 @@
 
 This suite ships a parallel "live-DB" testing track that exercises the
 operations classes against a real `.fwdata` project on the developer's
-machine (the standard candidates are `Sena 3`, `Test`, `SampleLexicon`,
-`SampleLexicon3`). Live tests need FieldWorks installed and the project
-reachable on disk -- they are skipped automatically in CI / mock-only
-environments.
+machine. Live tests need FieldWorks installed and the project reachable
+on disk -- they are skipped automatically in CI / mock-only environments,
+unless `FLEXLIBS_REQUIRE_LIVE=1` is set (see below).
+
+**Live LCM verification is REQUIRED for any change written against the
+LCM.** A mock-only pass is not verification. See CLAUDE.md, "Live LCM
+Verification (REQUIRED)", for the policy; this file is the mechanics.
+
+## The two live projects
+
+| Project | Contents | Use for | Restore |
+|---------|----------|---------|---------|
+| **Target** | Mostly blank scratch | **Write-path work**: create / modify / delete against a clean slate | `python scripts/restore_target.py` |
+| **Sena 3** | Fully populated example | Read-path coverage, modify-pre-existing-data | `python scripts/restore_sena3.py` |
+
+Default to **Target** for anything that writes: a leaked `TEST_` object is
+obvious in a blank project, and its backup is ~1.3 MB against Sena 3's
+~15 MB, so restores are cheap. Reach for Sena 3 only when the test needs
+pre-existing data to read or modify.
+
+`Test`, `SampleLexicon`, and `SampleLexicon3` remain as fallback candidates
+in older per-module `writable_project` fixtures, but new live tests should
+use the Target or Sena 3 fixtures below.
+
+### Target fixtures
+
+- `target_project` -- module-scoped, write-enabled, **in-place on the real
+  Target**. Capture-and-restore in a `finally:`; prefix created objects
+  `TEST_`.
+- `target_sandbox` -- write-enabled on a fresh tempdir copy of the Target
+  `.fwbackup`. Nothing can leak into a real project. Use it for
+  destructive tests, and whenever an open FieldWorks holds the file lock
+  on Target.
+
+Both fail loudly rather than skipping when `FLEXLIBS_REQUIRE_LIVE=1`.
+
+The canonical template is `tests/operations/test_target_live_smoke.py`.
+
+### The Target fixture backup
+
+`tests/fixtures/Target *.fwbackup` is gitignored (same convention as the
+Sena 3 fixture). The golden copy lives at
+`D:\Github\_Projects\_LEX\GramTrans\backups\Target 2026-07-06 0218.fwbackup`;
+copy it into `tests/fixtures/` on a fresh checkout.
 
 ## Running the live suite
 
@@ -20,17 +60,41 @@ To run everything EXCEPT live tests (mock-only fast suite):
 The unfiltered `pytest` invocation still collects both buckets, so the
 existing CI behaviour is preserved.
 
-## Fail-loud on mock fallback
+## Fail-loud on mock fallback (REQUIRED for verification)
 
 The session fixture in `tests/conftest.py` silently falls back to mock
 mode when FieldWorks initialization fails (e.g. on a CI runner with no
-FW install). When you intentionally want a live run and would rather see
-a hard error than a quiet mock pass, set the environment variable:
+FW install), printing `[WARN] MOCK MODE` and letting the session pass
+green. That green wall is how unverified write-path changes have been
+reported as done.
+
+Any run whose purpose is to VERIFY a change must set:
 
     $env:FLEXLIBS_REQUIRE_LIVE = "1"
     pytest -m requires_live_project
 
-This raises `pytest.UsageError` instead of degrading to mocks.
+With it set, every silent degradation becomes a hard failure:
+
+- FLEx initialization falling back to mocks -> `pytest.UsageError`
+- Target locked by an open FieldWorks -> `pytest.fail` with the remedy
+- Missing `.fwbackup` fixture -> `pytest.fail`, not a skip
+
+## Confirming a run was actually live
+
+`tests/live_status.json` records `run_mode`:
+
+    python -c "import json;print(json.load(open('tests/live_status.json'))['run_mode'])"
+
+`live` means the session reached a real LCM. `mock` means it degraded and
+proved nothing. A verification claim must cite `run_mode: live`; anything
+else is `FAIL: unverified`.
+
+## Never run bare `pytest`
+
+Neither bare `pytest` nor `pytest --ignore=tests/contract` applies an `-m`
+filter, so both collect and EXECUTE the ~322 `requires_live_project`
+tests -- Phases A-D of which run in-place against real projects. This has
+happened twice in this repo's history. Always pass an explicit `-m`.
 
 ## Ledger and Markdown summary
 

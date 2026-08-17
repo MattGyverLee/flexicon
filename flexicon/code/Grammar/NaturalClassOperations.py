@@ -146,11 +146,16 @@ class NaturalClassOperations(BaseOperations):
         wsHandle = self.project.project.DefaultAnalWs
 
         mkstr_name = TsStringUtils.MakeString(name, wsHandle)
-        nc.Name.set_String(wsHandle, mkstr_name)
 
-        if abbreviation:
-            mkstr_abbr = TsStringUtils.MakeString(abbreviation, wsHandle)
-            nc.Abbreviation.set_String(wsHandle, mkstr_abbr)
+        # Callers reach this helper from inside their own bracket, so this
+        # transaction joins that one (nesting-aware per B1). Stated anyway so
+        # the site is grep-auditable per D5.
+        with self._TransactionCM(f"Set natural class name '{name}'"):
+            nc.Name.set_String(wsHandle, mkstr_name)
+
+            if abbreviation:
+                mkstr_abbr = TsStringUtils.MakeString(abbreviation, wsHandle)
+                nc.Abbreviation.set_String(wsHandle, mkstr_abbr)
 
     @wrap_enumerable
     @OperationsMethod
@@ -340,7 +345,9 @@ class NaturalClassOperations(BaseOperations):
 
         # Remove from the natural classes collection
         phon_data = self.project.lp.PhonologicalDataOA
-        phon_data.NaturalClassesOS.Remove(nc)
+
+        with self._TransactionCM("Delete natural class"):
+            phon_data.NaturalClassesOS.Remove(nc)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True):
@@ -534,7 +541,9 @@ class NaturalClassOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        nc.Name.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set natural class name '{name}'"):
+            nc.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetAbbreviation(self, nc_or_hvo, wsHandle=None):
@@ -696,7 +705,8 @@ class NaturalClassOperations(BaseOperations):
 
         # Add the phoneme if not already present
         if phoneme not in nc.SegmentsRC:
-            nc.SegmentsRC.Add(phoneme)
+            with self._TransactionCM("Add phoneme to natural class"):
+                nc.SegmentsRC.Add(phoneme)
 
     @OperationsMethod
     def RemovePhoneme(self, nc_or_hvo, phoneme_or_hvo):
@@ -753,7 +763,8 @@ class NaturalClassOperations(BaseOperations):
             raise FP_ParameterError("Phoneme not found in natural class")
 
         # Remove the phoneme
-        nc.SegmentsRC.Remove(phoneme)
+        with self._TransactionCM("Remove phoneme from natural class"):
+            nc.SegmentsRC.Remove(phoneme)
 
     # ========== FEATURE-BASED NATURAL CLASSES ==========
 

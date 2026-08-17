@@ -106,9 +106,12 @@ class TestLexEntryDuplicateDeep:
             from SIL.LCModel.Core.Text import TsStringUtils
 
             ws = writable_project.project.DefaultVernWs
-            sense.Source = TsStringUtils.MakeString(
-                "qZ-regression-source", ws
-            )
+            # Raw LCM property write from the test -- needs its own UoW
+            # (see D14); free under the old session envelope.
+            with writable_project.UndoableOperation("test: seed sense source"):
+                sense.Source = TsStringUtils.MakeString(
+                    "qZ-regression-source", ws
+                )
 
             # The call that previously crashed with:
             #   AttributeError: 'ITsString' object has no attribute

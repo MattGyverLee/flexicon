@@ -2,9 +2,15 @@
 #   test_transaction_rollback.py
 #
 #   Class: TestTransactionRollback
-#          Mock-based unit tests for _FLExTransaction and
-#          _NestingAwareTransaction failure/rollback paths.
-#          No live FLEx project or pythonnet required.
+#          Mock-based unit tests for _FLExTransaction, _NestingAwareTransaction,
+#          and _FLExUndoableOperation failure/rollback paths.
+#          No live FLEx project or pythonnet write required -- Phase 2 tests
+#          patch the UndoableUnitOfWorkHelper name imported into
+#          flexicon.code.transaction / flexicon.code.undoable_operation with a
+#          fake double so they never touch a real LcmCache (the real
+#          SIL.LCModel.Infrastructure CLR namespace does not support
+#          attribute assignment, so it cannot be patched directly). Written
+#          for the write-path-transactions B1/B3 rewrite (issues #233, #234).
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -14,7 +20,7 @@
 
 import contextlib
 import pytest
-from unittest.mock import MagicMock, Mock, call
+from unittest.mock import MagicMock, Mock, call, patch
 
 
 # ---------------------------------------------------------------------------
@@ -35,7 +41,6 @@ def _make_phase1_project(mark_return="mark-token-1"):
     project = Mock()
     project.writeEnabled = True
     project._undoable = False
-    project._transaction_depth = 0
 
     # project.Transaction(label) is called by _NestingAwareTransaction.
     # We return a real _FLExTransaction wired to our mark/rollback doubles.
@@ -65,22 +70,121 @@ def _make_phase1_project_no_mark():
     return project
 
 
-def _make_phase2_project():
+class _FakeActionHandler:
     """
-    Phase 2 project (_undoable=True, depth=0).
-    UndoableOperation returns a real nullcontext so __enter__/__exit__ work.
+    Minimal ``IActionHandler`` double exposing a real, mutable ``CurrentDepth``
+    int -- unlike a bare ``Mock()``, ``> 0`` comparisons work directly on it.
+
+    ``CanUndo``/``CanRedo`` are exposed for the B3 (Undo/Redo) tests
+    elsewhere; not every test here needs them.
+    """
+
+    def __init__(self, current_depth=0):
+        self.CurrentDepth = current_depth
+        self._can_undo = False
+        self._can_redo = False
+        self.undo_calls = 0
+        self.redo_calls = 0
+
+    def CanUndo(self):
+        return self._can_undo
+
+    def CanRedo(self):
+        return self._can_redo
+
+    def Undo(self):
+        self.undo_calls += 1
+
+    def Redo(self):
+        self.redo_calls += 1
+
+
+class _FakeUndoableUnitOfWorkHelper:
+    """
+    Stand-in for ``SIL.LCModel.Infrastructure.UndoableUnitOfWorkHelper``.
+
+    Records constructor args and ``RollBack``/``Dispose`` activity so tests
+    can assert on the join-vs-open decision and the rollback flag without a
+    live ``LcmCache``. Mimics the two real-world facts this rewrite depends
+    on:
+
+      * the constructor "begins the undo task" -- here, simply bumps the
+        fake action handler's ``CurrentDepth`` to 1 so a nested
+        ``_NestingAwareTransaction``/``_FLExUndoableOperation`` sees an
+        already-open UnitOfWork and joins instead of opening a second one;
+      * the rollback flag defaults to True (``UnitOfWorkHelper.cs:31``) and
+        ``Dispose()`` resets the depth back to 0 (approximating
+        ``EndUndoTask``/``Rollback(0)``, both of which leave the FSM at
+        ``ReadyForBeginTask``);
+      * the flag is reachable ONLY through ``set_RollBack(...)``. ``RollBack``
+        is ``{private get; set;}`` in C# and pythonnet does not synthesize a
+        property when the getter is private -- it exposes only the raw
+        ``set_RollBack`` accessor. Verified live on the Target sandbox during
+        task A3: ``hasattr(helper, "RollBack")`` is False, and assigning it
+        silently creates a Python-side attribute while the .NET flag stays
+        True, so every clean UnitOfWork was rolled back on Dispose(). This
+        double raises on the assignment form so that mistake cannot pass
+        offline again.
+
+    ``instances`` is a class-level list of every instance constructed during
+    a test; tests read and then clear it.
+    """
+
+    instances = []
+
+    def __init__(self, action_handler, undo_text, redo_text):
+        self.action_handler = action_handler
+        self.undo_text = undo_text
+        self.redo_text = redo_text
+        self._rollback = True  # ctor default (UnitOfWorkHelper.cs:31)
+        self.disposed = False
+        self.rollback_value_at_dispose = None
+        type(self).instances.append(self)
+        self.action_handler.CurrentDepth = 1
+
+    def __setattr__(self, name, value):
+        if name == "RollBack":
+            raise AttributeError(
+                "pythonnet exposes no settable `RollBack` property on "
+                "UndoableUnitOfWorkHelper -- call set_RollBack(...) instead. "
+                "The assignment form silently leaves the flag True and rolls "
+                "back every clean UnitOfWork."
+            )
+        object.__setattr__(self, name, value)
+
+    def set_RollBack(self, value):
+        object.__setattr__(self, "_rollback", value)
+
+    def Dispose(self):
+        self.disposed = True
+        self.rollback_value_at_dispose = self._rollback
+        self.action_handler.CurrentDepth = 0
+
+
+def _make_phase2_project(current_depth=0):
+    """
+    Phase 2 project (_undoable=True) with a real action-handler double at
+    ``project.project.ActionHandlerAccessor`` -- the exact attribute path
+    ``_NestingAwareTransaction``/``_FLExUndoableOperation`` read.
     """
     project = Mock()
     project.writeEnabled = True
     project._undoable = True
-    project._transaction_depth = 0
-    project.UndoableOperation = Mock(
-        side_effect=lambda label: contextlib.nullcontext()
-    )
+    project.project = Mock()
+    project.project.ActionHandlerAccessor = _FakeActionHandler(current_depth)
+    # Legacy Phase 1 escape hatch some shared helpers still reference.
     project.Transaction = Mock(
         side_effect=lambda label="transaction": contextlib.nullcontext()
     )
     return project
+
+
+@pytest.fixture(autouse=True)
+def _reset_fake_helper_instances():
+    """Ensure _FakeUndoableUnitOfWorkHelper.instances never leaks across tests."""
+    _FakeUndoableUnitOfWorkHelper.instances = []
+    yield
+    _FakeUndoableUnitOfWorkHelper.instances = []
 
 
 # ---------------------------------------------------------------------------
@@ -199,97 +303,174 @@ class TestPhase1NoMarkAPI:
 
 
 # ---------------------------------------------------------------------------
-# Phase 2: nesting depth regression-lock
+# Phase 2: join-vs-open on liblcm's own CurrentDepth (B1 rewrite)
 # ---------------------------------------------------------------------------
 
-class TestPhase2Nesting:
+class TestPhase2JoinOrOpen:
     """
-    PHASE 2: regression lock for the cycle-1 nesting fix.
+    PHASE 2: regression lock for the B1 rewrite of _NestingAwareTransaction
+    onto UndoableUnitOfWorkHelper.
 
     Verifies:
-    - depth 0  -> UndoableOperation used (outermost)
-    - depth > 0 -> no-op (no undo API touched)
-    - depth balanced to 0 on clean exit
-    - depth balanced to 0 even when body raises
+    - CurrentDepth == 0  -> a new UndoableUnitOfWorkHelper is opened
+    - CurrentDepth > 0   -> join (no second helper constructed)
+    - RollBack is cleared (False) on a clean exit, left True (rolled back)
+      on an exception
+    - the helper ctor is always called with BOTH undo and redo text
+      (regression lock for #233 -- the one-argument BeginUndoTask call can
+      no longer occur, because there is no BeginUndoTask call at all here)
+    - no local depth counter exists anywhere (there is nothing named
+      `_transaction_depth` left to leak -- #234 dies by construction)
     """
 
-    def test_outermost_uses_undoable_operation(self):
+    @patch(
+        "flexicon.code.transaction.UndoableUnitOfWorkHelper",
+        _FakeUndoableUnitOfWorkHelper,
+    )
+    def test_outermost_opens_new_unit_of_work(self):
+        from flexlibs2.code.transaction import _NestingAwareTransaction
+
+        project = _make_phase2_project(current_depth=0)
+        action_handler = project.project.ActionHandlerAccessor
+
+        with _NestingAwareTransaction(project, "outer"):
+            assert len(_FakeUndoableUnitOfWorkHelper.instances) == 1
+            assert action_handler.CurrentDepth == 1  # ctor "began the task"
+
+        helper = _FakeUndoableUnitOfWorkHelper.instances[0]
+        assert helper.disposed is True
+        assert helper.rollback_value_at_dispose is False  # cleared on clean exit
+        assert action_handler.CurrentDepth == 0  # Dispose() closed it
+
+    @patch(
+        "flexicon.code.transaction.UndoableUnitOfWorkHelper",
+        _FakeUndoableUnitOfWorkHelper,
+    )
+    def test_ctor_called_with_both_undo_and_redo_text(self):
         """
-        At depth 0 with _undoable=True, _NestingAwareTransaction must
-        call project.UndoableOperation(), not project.Transaction().
+        Regression lock for #233: the helper must be constructed with the
+        action handler AND both undo/redo strings -- never a single string.
         """
         from flexlibs2.code.transaction import _NestingAwareTransaction
 
-        project = _make_phase2_project()
-        assert project._transaction_depth == 0
+        project = _make_phase2_project(current_depth=0)
 
-        with _NestingAwareTransaction(project, "outer"):
+        with _NestingAwareTransaction(project, "Create entry 'run'"):
             pass
 
-        project.UndoableOperation.assert_called_once_with("outer")
-        project.Transaction.assert_not_called()
+        helper = _FakeUndoableUnitOfWorkHelper.instances[0]
+        assert helper.undo_text == "Create entry 'run'"
+        assert helper.redo_text == "Create entry 'run'"
 
-    def test_nested_phase2_is_noop(self):
+    @patch(
+        "flexicon.code.transaction.UndoableUnitOfWorkHelper",
+        _FakeUndoableUnitOfWorkHelper,
+    )
+    def test_nested_phase2_joins_without_opening_second_helper(self):
         """
-        A second _NestingAwareTransaction entered while one is already
-        active (depth > 0) must NOT call UndoableOperation or Transaction.
+        A second _NestingAwareTransaction entered while CurrentDepth > 0
+        (i.e. the outer block's helper already bumped it) must NOT
+        construct a second UndoableUnitOfWorkHelper.
         """
         from flexlibs2.code.transaction import _NestingAwareTransaction
 
-        project = _make_phase2_project()
+        project = _make_phase2_project(current_depth=0)
 
         with _NestingAwareTransaction(project, "outer"):
-            # depth is now 1; inner must be a no-op
-            inner = _NestingAwareTransaction(project, "inner")
-            with inner:
-                pass  # inner body runs without error
+            inner_ran = []
+            with _NestingAwareTransaction(project, "inner"):
+                inner_ran.append(True)
+            assert inner_ran == [True]
 
-        # UndoableOperation called exactly once (for the outer block only).
-        assert project.UndoableOperation.call_count == 1
+        # Exactly one helper constructed (for the outer block only).
+        assert len(_FakeUndoableUnitOfWorkHelper.instances) == 1
 
-    def test_depth_restored_on_clean_exit(self):
+    @patch(
+        "flexicon.code.transaction.UndoableUnitOfWorkHelper",
+        _FakeUndoableUnitOfWorkHelper,
+    )
+    def test_rollback_flag_set_true_on_exception(self):
         """
-        _transaction_depth must return to 0 after a clean exit.
-        """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
-
-        project = _make_phase2_project()
-
-        with _NestingAwareTransaction(project, "outer"):
-            assert project._transaction_depth == 1
-
-        assert project._transaction_depth == 0
-
-    def test_depth_restored_on_exception(self):
-        """
-        _transaction_depth must return to 0 even when the body raises.
-        The depth counter must not leak across calls.
+        An exception inside the outermost block must leave RollBack True
+        (the ctor default) at Dispose() time -- i.e. NOT cleared -- so
+        liblcm's Dispose() rolls back rather than committing.
         """
         from flexlibs2.code.transaction import _NestingAwareTransaction
 
-        project = _make_phase2_project()
+        project = _make_phase2_project(current_depth=0)
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError, match="boom"):
             with _NestingAwareTransaction(project, "outer-raises"):
                 raise RuntimeError("boom")
 
-        assert project._transaction_depth == 0
+        helper = _FakeUndoableUnitOfWorkHelper.instances[0]
+        assert helper.disposed is True
+        assert helper.rollback_value_at_dispose is True
 
-    def test_nested_depth_restored_on_inner_exception(self):
+    @patch(
+        "flexicon.code.transaction.UndoableUnitOfWorkHelper",
+        _FakeUndoableUnitOfWorkHelper,
+    )
+    def test_nested_inner_exception_still_disposes_outer_with_rollback(self):
         """
-        When the inner (no-op) block raises, both outer and inner depth
-        decrements must still fire, leaving depth at 0.
+        When the (joined, no-op) inner block raises, the outer helper must
+        still see the exception at its own __exit__ and roll back.
         """
         from flexlibs2.code.transaction import _NestingAwareTransaction
 
-        project = _make_phase2_project()
+        project = _make_phase2_project(current_depth=0)
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError, match="inner boom"):
             with _NestingAwareTransaction(project, "outer"):
                 with _NestingAwareTransaction(project, "inner"):
                     raise RuntimeError("inner boom")
 
-        assert project._transaction_depth == 0
+        assert len(_FakeUndoableUnitOfWorkHelper.instances) == 1
+        helper = _FakeUndoableUnitOfWorkHelper.instances[0]
+        assert helper.disposed is True
+        assert helper.rollback_value_at_dispose is True
+
+    @patch(
+        "flexicon.code.transaction.UndoableUnitOfWorkHelper",
+        _FakeUndoableUnitOfWorkHelper,
+    )
+    def test_joins_a_unit_of_work_opened_by_something_else(self):
+        """
+        CurrentDepth is LCM's own state, so _NestingAwareTransaction must
+        join a UnitOfWork opened by ANY caller -- not just one it opened
+        itself. Simulate that by constructing the project with
+        current_depth=1 directly (as if some other code already opened a
+        task) and confirm no helper is constructed.
+        """
+        from flexlibs2.code.transaction import _NestingAwareTransaction
+
+        project = _make_phase2_project(current_depth=1)
+
+        with _NestingAwareTransaction(project, "outer"):
+            pass
+
+        assert len(_FakeUndoableUnitOfWorkHelper.instances) == 0
+
+    def test_no_local_transaction_depth_attribute_referenced_in_source(self):
+        """
+        #234 dies by construction: transaction.py must never set or read a
+        `_transaction_depth` attribute on the project. (A runtime probe via
+        `hasattr(project, ...)` on a bare `Mock()` is not meaningful here --
+        Mock auto-vivifies any attribute name on access -- so this checks
+        the source directly, mirroring the pattern used elsewhere in this
+        suite, e.g. `tests/test_transaction_honesty.py`.)
+        """
+        import pathlib
+
+        source = (
+            pathlib.Path(__file__).resolve().parent.parent.parent
+            / "flexicon"
+            / "code"
+            / "transaction.py"
+        ).read_text(encoding="utf-8")
+
+        assert "project._transaction_depth" not in source
+        assert "self._transaction_depth" not in source
 
 
 # ---------------------------------------------------------------------------
@@ -299,25 +480,23 @@ class TestPhase2Nesting:
 class TestPhase1Nesting:
     """
     Phase 1 nesting is allowed and each block gets its own mark.
-    Regression: depth still balances to 0 after nested Phase 1 blocks.
+    Phase 1 never opens an LCM undo task at all (the session-long
+    non-undoable envelope is opened once at OpenProject()), so there is no
+    LCM-level nesting concern to guard against in this mode.
     """
 
-    def test_phase1_nested_depth_balances(self):
+    def test_phase1_nested_enters_and_exits_cleanly(self):
         """
         Entering two nested _NestingAwareTransaction blocks (Phase 1)
-        increments depth to 2 then restores it to 0 on exit.
+        must enter and exit without error at any depth.
         """
         from flexlibs2.code.transaction import _NestingAwareTransaction
 
         project, mark_mock, rollback_mock = _make_phase1_project()
 
         with _NestingAwareTransaction(project, "outer"):
-            assert project._transaction_depth == 1
             with _NestingAwareTransaction(project, "inner"):
-                assert project._transaction_depth == 2
-            assert project._transaction_depth == 1
-
-        assert project._transaction_depth == 0
+                pass
 
     def test_phase1_nested_mark_called_twice(self):
         """
@@ -333,6 +512,101 @@ class TestPhase1Nesting:
                 pass
 
         assert mark_mock.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# _FLExUndoableOperation (FLExProject.UndoableOperation()) -- same join/open
+# idiom, exercised directly. Regression lock for #233 at this entry point too.
+# ---------------------------------------------------------------------------
+
+class TestFLExUndoableOperation:
+    """
+    Direct coverage of undoable_operation._FLExUndoableOperation, the public
+    FLExProject.UndoableOperation() context manager. Before B1 this called
+    self._begin_undo_fn(self._label) with a single argument against liblcm's
+    two-argument BeginUndoTask(String, String) -- issue #233. It now
+    constructs UndoableUnitOfWorkHelper directly (or joins), the same as
+    _NestingAwareTransaction.
+    """
+
+    def _make_project(self, current_depth=0, write_enabled=True, undoable=True):
+        project = Mock()
+        project.writeEnabled = write_enabled
+        project._undoable = undoable
+        project.project = Mock()
+        project.project.ActionHandlerAccessor = _FakeActionHandler(current_depth)
+        return project
+
+    def test_raises_if_not_write_enabled(self):
+        from flexlibs2.code.undoable_operation import _FLExUndoableOperation
+        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+
+        project = self._make_project(write_enabled=False)
+        op = _FLExUndoableOperation(project, "label")
+
+        with pytest.raises(FP_ReadOnlyError):
+            with op:
+                pass
+
+    def test_raises_if_not_undoable(self):
+        from flexlibs2.code.undoable_operation import _FLExUndoableOperation
+        from flexlibs2.code.FLExProject import FP_TransactionError
+
+        project = self._make_project(undoable=False)
+        op = _FLExUndoableOperation(project, "label")
+
+        with pytest.raises(FP_TransactionError):
+            with op:
+                pass
+
+    @patch(
+        "flexicon.code.undoable_operation.UndoableUnitOfWorkHelper",
+        _FakeUndoableUnitOfWorkHelper,
+    )
+    def test_opens_helper_with_both_undo_and_redo_text(self):
+        """Regression lock for #233 at the UndoableOperation() entry point."""
+        from flexlibs2.code.undoable_operation import _FLExUndoableOperation
+
+        project = self._make_project(current_depth=0)
+
+        with _FLExUndoableOperation(project, "Add entry 'run'"):
+            pass
+
+        helper = _FakeUndoableUnitOfWorkHelper.instances[0]
+        assert helper.undo_text == "Add entry 'run'"
+        assert helper.redo_text == "Add entry 'run'"
+        assert helper.disposed is True
+        assert helper.rollback_value_at_dispose is False
+
+    @patch(
+        "flexicon.code.undoable_operation.UndoableUnitOfWorkHelper",
+        _FakeUndoableUnitOfWorkHelper,
+    )
+    def test_joins_when_current_depth_positive(self):
+        from flexlibs2.code.undoable_operation import _FLExUndoableOperation
+
+        project = self._make_project(current_depth=1)
+
+        with _FLExUndoableOperation(project, "inner"):
+            pass
+
+        assert len(_FakeUndoableUnitOfWorkHelper.instances) == 0
+
+    @patch(
+        "flexicon.code.undoable_operation.UndoableUnitOfWorkHelper",
+        _FakeUndoableUnitOfWorkHelper,
+    )
+    def test_rollback_on_exception(self):
+        from flexlibs2.code.undoable_operation import _FLExUndoableOperation
+
+        project = self._make_project(current_depth=0)
+
+        with pytest.raises(RuntimeError, match="boom"):
+            with _FLExUndoableOperation(project, "label"):
+                raise RuntimeError("boom")
+
+        helper = _FakeUndoableUnitOfWorkHelper.instances[0]
+        assert helper.rollback_value_at_dispose is True
 
 
 if __name__ == "__main__":

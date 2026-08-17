@@ -1,0 +1,382 @@
+{
+  "workflow": "speckit",
+  "specName": "write-path-transactions",
+  "branch": "write-path-transactions-b1-b3",
+  "selectedAt": "2026-08-14T06:48:48.070Z",
+  "currentStep": "implement",
+  "status": "completed",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-08-14T07:08:43.759Z"
+    },
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-14T07:11:44.046Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "start",
+      "by": "ai",
+      "at": "2026-08-14T07:11:44.246Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-14T07:11:44.446Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "start",
+      "by": "ai",
+      "at": "2026-08-14T07:11:44.646Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-14T07:11:44.846Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "ai",
+      "at": "2026-08-14T07:11:45.046Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-16T20:18:04.797Z"
+    }
+  ],
+  "telemetryInstanceId": "23b3fddf-568f-441a-be88-88f8edc7d953",
+  "verified": [
+    {
+      "what": "B2g ratchet guard after bracketing 21 Discourse sites; scanner and baseline both report 211",
+      "command": "python -m pytest tests/write_path_transactions/ -q",
+      "result": "4 passed",
+      "warnings": [
+        "flexlibs2->flexicon rename DeprecationWarning from tests/conftest.py:133 - benign, pre-existing"
+      ]
+    },
+    {
+      "what": "Discourse/chart behavior preserved after per-site bracketing",
+      "command": "python -m pytest -m \"not requires_live_project\" -k \"chart or discourse\" -q",
+      "result": "48 passed, 1842 deselected"
+    },
+    {
+      "what": "B1t nesting/action-handler-double suite plus ratchet guard still green",
+      "command": "python -m pytest tests/write_path_transactions/ tests/test_b1t_action_handler_double.py -q",
+      "result": "34 passed"
+    },
+    {
+      "what": "Full offline gate; 117 failures confirmed pre-existing by stashing the batch and re-running on a clean tree (identical 117/1424/11/17)",
+      "command": "python -m pytest -m \"not requires_live_project\" -q",
+      "result": "117 failed, 1424 passed, 11 skipped, 17 errors - identical with and without this batch"
+    },
+    {
+      "what": "B2 batch 8/11: scanner drops 211->187 (exactly 24), zero TextsWords sites remain; baseline diff is exactly the 24 removals plus the total",
+      "command": "python tests/write_path_transactions/scan_unbracketed_mutations.py",
+      "result": "Total unbracketed methods: 187; grep -c TextsWords/ = 0"
+    },
+    {
+      "what": "B2g ratchet guard plus B1t action-handler-double suite after batch 8",
+      "command": "python -m pytest tests/write_path_transactions/ tests/test_b1t_action_handler_double.py -q",
+      "result": "34 passed"
+    },
+    {
+      "what": "TextsWords-domain offline selection; 25 failures confirmed pre-existing by stashing batch 8 and re-running the identical selection on a clean tree",
+      "command": "python -m pytest -m \"not requires_live_project\" -k \"segment or wordform or text or gloss or morphbundle or paragraph or analysis or discourse\" -q",
+      "result": "25 failed, 222 passed, 2 skipped, 1 error - identical with and without this batch"
+    },
+    {
+      "what": "Full offline gate after batch 8; byte-identical to the batch-7 baseline, so zero regressions",
+      "command": "python -m pytest -m \"not requires_live_project\" -q",
+      "result": "117 failed, 1424 passed, 11 skipped, 322 deselected, 17 errors"
+    },
+    {
+      "what": "LIVE on FLEx project 'Target' (human-authorised, FLEx closed, backed up). Batch-8 bracketed WfiGloss.SetForm write persisted across CloseProject -> reopen: wordform 'nnyo' hvo=147, analysis 8c07178d, gloss 'snake' -> sentinel -> reopen reads sentinel -> restored to 'snake' -> reopen reads 'snake'. This is the #237 persistence behaviour B2t asks for, but NOT a discharge of B2t: the MCP harness controls the OpenProject flags, so undoable=True could not be set explicitly.",
+      "command": "flextools_run_module against Target (write) then re-run read-only",
+      "result": "[PASS] persisted across close/reopen; [PASS] restored; 124 wordforms unchanged"
+    },
+    {
+      "what": "LIVE undo-accounting evidence for D5 'validators outside the bracket'. Both mutating runs reported lcm_undoable_action_count exactly 1 while ALSO executing a rejected call in the same run: SetForm(gloss, None) raised FP_NullParameterError, and SetSense(bundle, 999999999) raised KeyNotFoundException. Neither rejection contributed an undoable action, which is precisely the property the per-site bracket shape exists to preserve.",
+      "command": "flextools_run_module against Target, write_enabled=True",
+      "result": "lcm_undoable_action_count: 1 on both write runs (the single intended mutation only)"
+    },
+    {
+      "what": "LIVE confirmation of the batch-8 reference-setter resolution hoist. WfiMorphBundle.SetSense with an unresolvable hvo raised BEFORE the transaction opened and left both morph bundles on analysis 8c07178d untouched (sense=None both before and after).",
+      "command": "flextools_run_module against Target, write_enabled=True",
+      "result": "KeyNotFoundException raised; bundles unchanged; zero undoable actions from the failed call"
+    },
+    {
+      "what": "B2 batch 9/11: scanner drops 187->143 (exactly 44), zero Notebook sites remain; baseline diff is exactly the 44 removals plus the total",
+      "command": "python tests/write_path_transactions/scan_unbracketed_mutations.py",
+      "result": "Total unbracketed methods: 143; every removed baseline file-entry is Notebook/ (44 of them); the only added line is \"total\": 143"
+    },
+    {
+      "what": "B2g ratchet guard plus B1t action-handler-double suite after batch 9",
+      "command": "python -m pytest tests/write_path_transactions/ tests/test_b1t_action_handler_double.py -q",
+      "result": "34 passed"
+    },
+    {
+      "what": "Notebook-domain offline selection, captured BEFORE the batch and re-run after; identical both times. The 9 errors are the pre-existing sync/tests/test_duplicate_operations.py set.",
+      "command": "python -m pytest -m \"not requires_live_project\" -k \"notebook or anthro or person or location or note or record\" -q",
+      "result": "64 passed, 1818 deselected, 9 errors - identical with and without this batch"
+    },
+    {
+      "what": "Full offline gate after batch 9; byte-identical to the batch-8 baseline, so zero regressions",
+      "command": "python -m pytest -m \"not requires_live_project\" -q",
+      "result": "117 failed, 1424 passed, 11 skipped, 322 deselected, 17 errors"
+    },
+    {
+      "what": "LIVE smoke test of batch-9 brackets on 'Target'. LOAD-PATH CAVEAT worth reusing for later batches: the FlexTools MCP runner imports pyflexicon 4.3.0 from site-packages, NOT this checkout, so a naive live run verifies the released package and proves nothing about new work. This run purged flexicon.* from sys.modules and prepended the checkout to sys.path, then asserted BaseOperations.__file__ pointed at the working tree before any write.",
+      "command": "flextools_run_module against Target, write_enabled=True, checkout prepended to sys.path",
+      "result": "SetName/SetAddress/SetEducation round-trip; empty-name guard raises FP_ParameterError with the value UNCHANGED (validation confirmed outside the bracket); Delete removes the person (people 2->1, Exists=False); lcm_undoable_action_count=4. Test objects created and deleted; Target left clean.",
+      "warnings": [
+        "stderr showed the legacy 'no LCM rollback API found' Transaction warning. That string does not exist in this checkout - it comes from the installed FLExProject instance the runner built before the sys.path swap. An artifact of the hybrid load, not a regression."
+      ]
+    },
+    {
+      "what": "B2g ratchet guard after bracketing 59 Grammar sites; scanner and baseline both report 84, Grammar remaining 0",
+      "command": "python -m pytest tests/write_path_transactions/ tests/test_b1t_action_handler_double.py -m \"not requires_live_project\" -q",
+      "result": "34 passed"
+    },
+    {
+      "what": "Full offline gate unchanged by batch 10 (measured by stashing the batch and re-running the identical invocation)",
+      "command": "python -m pytest tests/ -m \"not requires_live_project\" -q",
+      "result": "35 failed, 1201 passed, 325 deselected -- byte-identical pre- and post-batch; the 35 are pre-existing (#240 rename path, sync engine)"
+    },
+    {
+      "what": "Live LCM verification of the Grammar brackets on the Target project",
+      "command": "$env:FLEXLIBS_REQUIRE_LIVE=\"1\"; python -m pytest tests/operations/test_grammar_brackets_live.py -m requires_live_project -q",
+      "result": "16 passed; tests/live_status.json run_mode=live; setters round-trip re-read from the LCM, Deletes detach, empty-input guards raise FP_ParameterError with the stored value unchanged"
+    },
+    {
+      "what": "B2 batch 11/11 (Lexicon, 84 sites) takes the sweep to completion: scanner 84 -> 0, zero unbracketed sites remain anywhere under flexicon/code/. Baseline diff is exactly the 84 removals plus the total (769 deletions, 2 insertions, no additions).",
+      "command": "python tests/write_path_transactions/scan_unbracketed_mutations.py",
+      "result": "Total unbracketed methods: 0; baseline ratcheted 84 -> 0"
+    },
+    {
+      "what": "B2g ratchet guard plus B1t action-handler-double suite after batch 11",
+      "command": "python -m pytest tests/write_path_transactions/ tests/test_b1t_action_handler_double.py -m \"not requires_live_project\" -q",
+      "result": "34 passed"
+    },
+    {
+      "what": "Full offline gate unchanged by batch 11 (measured by stashing the batch and re-running the identical invocation on a clean tree)",
+      "command": "python -m pytest tests/ -m \"not requires_live_project\" -q",
+      "result": "35 failed, 1201 passed -- byte-identical pre- and post-batch; the 35 are pre-existing (#240 rename path, sync engine). Deselected rose 341 -> 364 for the 23 new live tests."
+    },
+    {
+      "what": "Live LCM verification of the Lexicon brackets on the Target project. Setters round-trip re-read from the LCM (not the value passed in), Deletes detach from their owning collections, redundant Add/Remove on SemanticDomainsRC are true no-ops, and the empty-input guards on SetLexemeForm and Allomorph SetForm raise FP_ParameterError with the stored value unchanged -- proving validation sits outside the bracket. The 3 xfails are documented pre-existing bugs, all failing before the bracket is entered.",
+      "command": "$env:FLEXLIBS_REQUIRE_LIVE=\"1\"; python -m pytest tests/operations/test_lexicon_brackets_live.py -m requires_live_project -q",
+      "result": "20 passed, 3 xfailed; tests/live_status.json run_mode=live; evidence at specs/write-path-transactions/evidence/live-b2-batch11-lexicon.md"
+    },
+    {
+      "what": "B4 CAPABILITIES guard test plus the existing write-path and B1t suites",
+      "command": "python -m pytest tests/write_path_transactions/ tests/test_b1t_action_handler_double.py -m \"not requires_live_project\" -q",
+      "result": "40 passed (34 pre-existing + 6 new in test_capabilities.py)",
+      "warnings": [
+        "flexlibs2->flexicon rename DeprecationWarning from tests/conftest.py:140 - benign, pre-existing"
+      ]
+    },
+    {
+      "what": "A3 offline suite (AbortSession guards, rollback path, envelope reopen, failure mapping) plus the existing write-path and B1t suites",
+      "command": "python -m pytest tests/operations/test_transaction_rollback.py tests/test_b1t_action_handler_double.py tests/write_path_transactions/ -m \"not requires_live_project\" -q",
+      "result": "76 passed"
+    },
+    {
+      "what": "LIVE verification of A3 AbortSession on the Target sandbox. Every assertion re-queries the LCM after the write. Proves Rollback(0) reverts DATA not just undo records (created POS gone; a rename of a pre-existing on-disk POS reverted); proves the O2 catch is handled (CurrentDepth 1 -> 1 across the abort, and a further create+rename succeeds, which an FSM left in ReadyForBeginTask could not support); proves the abort is repeatable 3x; proves pre-session data is untouched; and proves the undoable=True refusal leaves the enclosing UnitOfWork intact so its write still survives the block.",
+      "command": "$env:FLEXLIBS_REQUIRE_LIVE=\"1\"; python -m pytest tests/operations/test_abort_session_live.py -m requires_live_project -q",
+      "result": "12 passed; tests/live_status.json run_mode=live; evidence at specs/write-path-transactions/evidence/live-a3-abort-session.md"
+    },
+    {
+      "what": "CRITICAL pre-existing B1 defect found by A3's live run and FIXED: under undoable=True every clean UnitOfWork was rolled back, so every write was silently discarded. Cause: helper.RollBack = False never reached .NET (pythonnet exposes no RollBack property for a private-getter member; hasattr is False and dir() shows only set_RollBack/RollBackChanges), so the real flag stayed True and Dispose() took the rollback branch. Control proved the LCM was fine: a raw BeginUndoTask/Create/EndUndoTask persisted. Fixed to set_RollBack(...) in transaction.py and undoable_operation.py.",
+      "command": "$env:FLEXLIBS_REQUIRE_LIVE=\"1\"; python -m pytest <probe> -m requires_live_project -s   (probe removed after diagnosis; behaviour now covered by the suites below)",
+      "result": "Pre-fix: POS count 5->6->5, CanUndo False, UndoableActionCount 0, .Hvo raised NullReferenceException. Post-fix: _TransactionCM clean exit 5->6 CanUndo True; UndoableOperation clean exit 5->6; raising block 5->5 Find None (still rolls back)."
+    },
+    {
+      "what": "Regression re-run of every previously landed live suite after the B1 fix touched shared code",
+      "command": "$env:FLEXLIBS_REQUIRE_LIVE=\"1\"; python -m pytest tests/operations/test_grammar_brackets_live.py tests/operations/test_lexicon_brackets_live.py tests/operations/test_target_live_smoke.py -m requires_live_project -q",
+      "result": "39 passed, 3 xfailed - identical to the batch-10/11 baseline; the 3 xfails are the documented pre-existing Lexicon bugs"
+    },
+    {
+      "what": "Full offline gate after A3 plus the B1 fix and the two updated doubles",
+      "command": "python -m pytest tests/ -m \"not requires_live_project\" -q",
+      "result": "35 failed, 1223 passed - same 35 pre-existing failures (#240 rename path, sync engine); passed 1201 -> 1207 (B4) -> 1221 (A3 offline) -> 1223 (B1 regression guards). Zero regressions."
+    },
+    {
+      "what": "DEF-COV + B2t: live undoable=True coverage (33 tests) incl. persistence across CloseProject/reopen; validated by mutation (reintroducing D9 turns 19 of 33 red)",
+      "command": "$env:FLEXLIBS_REQUIRE_LIVE='1'; python -m pytest tests/operations/test_undoable_mode_live.py -m requires_live_project -q",
+      "result": "33 passed; tests/live_status.json run_mode=live",
+      "warnings": [
+        "flexlibs2->flexicon rename DeprecationWarning from tests/conftest.py:140 - benign, pre-existing"
+      ]
+    },
+    {
+      "what": "No regression in the targeted live suites after the conftest target_sandbox_path addition",
+      "command": "per-file: test_abort_session_live, test_grammar_brackets_live, test_lexicon_brackets_live, test_{allomorphs,etymologies,examples}_live, test_{locations,persons,pronunciations,variants}_live",
+      "result": "12 / 16 / 20+3xfail / 18 / 27+3skip passed",
+      "warnings": [
+        "the 3 xfails are the recorded pre-existing Lexicon bugs, unchanged"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "D8 - AbortSession() reopens the non-undoable envelope after Rollback(0) rather than being documented as terminal, and refuses (FP_TransactionError) rather than rolling back when undoable=True with a block open",
+      "why": "Rollback leaves the FSM in ReadyForBeginTask (UndoStack.cs:724), which ENDS the session envelope, and CloseProject() unconditionally calls EndNonUndoableTask() - so 'terminal' would mean every abort is followed by a broken close, and would make the only revert primitive a one-shot. Reopening makes it non-terminal and safe in an except: block. The undoable=True refusal is because an open unit there is always owned by an UndoableUnitOfWorkHelper whose Dispose() would then raise a second exception out of the with-block exit, masking the caller's original error. Net effect: despite spec.md A3's 'available in both modes', AbortSession is in practice an undoable=False primitive - correct, since per-operation rollback already covers the other mode.",
+      "rejected": "Documenting the abort as terminal (breaks CloseProject); rolling back regardless of mode (corrupts the owning helper)"
+    },
+    {
+      "decision": "D9 - use helper.set_RollBack(...), never helper.RollBack = ...; and treat 'a pythonnet attribute assignment that silently succeeds' as proving nothing",
+      "why": "RollBack is {private get; set;} and pythonnet synthesizes no property when the getter is private - only set_RollBack exists. helper.RollBack = False does not raise; it lands as a plain Python attribute on the wrapper while the .NET field keeps its ctor default of True, so Dispose() rolled back EVERY UnitOfWork and undoable=True silently discarded every write. Found by A3's live run, fixed at both call sites, verified live (clean exits now commit, raising blocks still roll back). Third instance of the same shape after ILexEtymology.LanguageRA, so it is now a standing rule rather than a one-off note.",
+      "rejected": "Keeping the assignment form (silent total data loss in undoable=True); a getattr/hasattr fallback (would re-hide the failure instead of failing loudly)"
+    },
+    {
+      "decision": "Bracket the two lazy-init private helpers (__GetOrCreateChartMarkers, __GetOrCreateDiscourse) inside the helper, not at the call site",
+      "why": "Both are invoked before their Create method enters its own _TransactionCM, so a call-site bracket would leave DiscourseDataOA/ChartMarkersOA creation unbracketed; _TransactionCM is nesting-aware so a future caller can still wrap them",
+      "rejected": "Bracketing at the Create call sites, or hoisting the helper call inside Create-s existing with-block"
+    },
+    {
+      "decision": "Keep hasattr capability checks and membership tests outside the transaction in AddDependentClause and the two lazy-init guards",
+      "why": "A redundant add or an already-initialised slot stays a true no-op instead of opening an empty named undo entry that Phase 2 would also Rollback(0)",
+      "rejected": "Wrapping the whole conditional including the guard"
+    },
+    {
+      "decision": "For reference setters shaped `if x is None: obj.XRA = None else: x = resolve(...); obj.XRA = x`, hoist the resolution out of both branches so it runs before the transaction opens, leaving a single assignment inside one bracket",
+      "why": "Resolution can raise; hoisting it means an unresolvable reference raises without opening an empty named undo entry that Phase 2 would Rollback(0). Also collapses two bracket sites into one per method. Applied to the five WfiMorphBundle setters in batch 8; the same shape recurs in Notebook/Grammar/Lexicon",
+      "rejected": "Bracketing each assignment separately in its own branch, which opens a transaction after the raising resolve call"
+    },
+    {
+      "decision": "D6 - a mutation deliberately hoisted OUT of a transaction still needs a transaction of its own. AnthropologyOperations.Create keeps its AnthroListOA hoist but gets a separate named bracket ('Create anthropology list'); the `is None` guard stays outside both.",
+      "why": "The existing hoist was right about ordering (a missing list must not orphan an ICmAnthroItem) but wrong about coverage: it left list_factory.Create() and the AnthroListOA assignment inside no unit of work at all, which undoable=True rejects outright. Generalises to any future 'resolve before the transaction' hoist - before must mean in an earlier transaction, never in none.",
+      "rejected": "Leaving the hoisted mutations unbracketed (illegal under undoable=True), or folding them into the per-item bracket (reintroduces the orphan the hoist exists to prevent)"
+    },
+    {
+      "decision": "For try/except cast sites shaped `try: x = ICast(arg); coll.Add(x) except ...: raise FP_ParameterError`, keep the cast inside the try but move ONLY the mutation into the bracket",
+      "why": "Preserves the existing FP_ParameterError mapping exactly while still ensuring an invalid argument raises before any transaction opens. Applied to Person AddPosition/AddResidence/AddLanguage and Anthropology AddText/AddResearcher plus their Remove pairs in batch 9",
+      "rejected": "Hoisting the cast out of the try entirely, which would let cast failures propagate as raw AttributeError/InvalidCastException and change the documented exception contract"
+    },
+    {
+      "decision": "Bracket per branch inside each guard for polymorphic Delete dispatch (MorphRuleOperations.Delete's three ClassName branches)",
+      "why": "An unmatched ClassName or a missing container must not open an empty named undo entry that Phase 2 would Rollback(0); per-branch labels also keep FLEx undo-menu fidelity (P4)",
+      "rejected": "One bracket around the whole if/elif chain, which opens a transaction even when no branch matches"
+    },
+    {
+      "decision": "Keep the dispatch guard INSIDE the bracket where every branch mutates (PhonemeOperations.SetBasicIPASymbol MultiString-vs-scalar, _path_b_attach owner shape)",
+      "why": "There is no no-op path to protect, so hoisting the guard buys nothing and would split one logical write into two sites",
+      "rejected": "Mechanically applying guards-outside everywhere regardless of whether a no-op path exists"
+    },
+    {
+      "decision": "Treat __WireContext's multi-element path as a single unit of work rather than bracketing each mutation",
+      "why": "If IPhSequenceContextFactory is unavailable after members are already added to PhPhonData.ContextsOS, those additions must roll back with it rather than leak into the project-wide owner pool",
+      "rejected": "Per-mutation brackets, which would commit the member additions before the sequence create is attempted"
+    },
+    {
+      "decision": "Install pyflexicon editable against the working checkout",
+      "why": "FlexToolsMCP loaded flexicon from a copied site-packages install still carrying pre-B1 transaction.py (4 _transaction_depth hits, 0 UndoableUnitOfWorkHelper), so any verification routed through flextools_run_module would have exercised released code, not this branch",
+      "rejected": "Leaving the copied install and relying on cwd ordering, which only happens to work for pytest run from the repo root"
+    },
+    {
+      "decision": "Bracket the deep-copy helpers (LexSenseOperations._deep_copy_sense_to, __copy_sense_content) as ONE unit of work each, not per-field",
+      "why": "A failure partway through must not leave the duplicate holding half the source content, or a created sense already in SensesOS with nothing in it. Extends decision 8 (multi-element wiring paths are one unit) from Grammar __WireContext to the Lexicon deep-copy chain",
+      "rejected": "Per-field brackets, which would commit each copied property independently and leave a half-populated duplicate behind on failure"
+    },
+    {
+      "decision": "Keep a filesystem side-effect OUTSIDE the bracket: LexSenseOperations.RemovePicture brackets only the PicturesOS.Remove, leaving the optional os.remove of the physical file outside it",
+      "why": "The LCM cannot roll back a filesystem unlink. Enclosing it in a named unit of work would imply a reversibility that does not exist, and under Phase 2 a Rollback would restore the LCM reference while the file stayed deleted",
+      "rejected": "Wrapping the whole method including the file deletion, which would make the undo entry a lie"
+    },
+    {
+      "decision": "With the ratchet baseline at 0, keep the three ratchet tests but replace the scanner sanity check: test_scanner_runs_and_finds_entries (len(scan()) > 0) becomes test_scanner_is_functional",
+      "why": "The old assertion would now fail precisely BECAUSE the sweep succeeded. A zero-violation scan no longer proves the scanner works, so the replacement pins the two properties it no longer demonstrates on its own: the scanner walks a tree containing real source, and its detection logic still flags an unbracketed mutation while not flagging a bracketed one. The ratchet itself inverts from a countdown into a permanent guard",
+      "rejected": "Deleting the ratchet tests as the old docstring suggested, which would remove the very guard that keeps 0 at 0; or silencing the assertion, which the docstring explicitly forbade"
+    },
+    {
+      "decision": "flexicon.CAPABILITIES ships ALL FOUR contract section-3 tokens (ui-injection, refresh-from-disk, per-operation-uow, transaction-rollback), and a token means 'this BUILD implements the capability', not 'the capability is active in your session'",
+      "why": "Contract section 3 said transaction-rollback is 'undoable=True only; undoable=False never sets this token', which presumes a mode-aware set; a module-level frozenset cannot vary by mode, and the same tension applies to per-operation-uow which tasks.md mandates B4 ship. Constitution V explicitly permits a mode-dependent guarantee provided the mode dependence is stated plainly in the docstring AND warned once at the boundary where the mode is chosen - A2d's one-shot OpenProject warning already provides the latter, so the mode dependence is now stated in three places (flexicon/__init__.py docstring, contract section 3, OpenProject warning). Withholding a token the build genuinely implements would make the probe under-report, which is the failure mode B4 exists to fix.",
+      "rejected": "Shipping only the two unconditional tokens (leaves FlexToolsMCP unable to detect B1+B2 at all - the entire point of B4); adding a mode-aware FLExProject.capabilities accessor (honors section 3's wording exactly but is API surface beyond B4's scope - remains the clean answer if per-session granularity is ever needed, flagged against DEF)"
+    },
+    {
+      "decision": "Describe B4 (and B1) in the contract as LANDED, NOT RELEASED rather than SHIPPED",
+      "why": "Contract section 2 line 98 already told FlexToolsMCP to 'treat B1 as PLANNED for integration purposes until it ships in a release'. B4 is on the same branch, and the contract's audience pins pyflexicon>=4.3.0,<5 - a version-pinned install cannot see CAPABILITIES until a release cuts, so calling it shipped would overstate exactly to the reader who most depends on the distinction.",
+      "rejected": "Saying 'SHIPPED', which contradicts the framing section 2 already uses for B1 on the same branch"
+    },
+    {
+      "decision": "D10 - a test suite that only asserts the FAILURE path cannot detect a roll-back-everything bug; the commit branch needs the stronger test, and at least one test must survive CloseProject()",
+      "why": "Reintroducing D9 turns 19 of DEF-COV's 33 live tests red; the 14 survivors are largely the ones asserting that a rollback happened, which a build that rolls back EVERYTHING satisfies perfectly. That is the shape B1t was mostly built out of. Under undoable=True the commit path carries a silent total-data-loss mode - a discarded write raises nothing and every in-session read still returns the cached value - so an in-memory assertion cannot distinguish 'written' from 'written and then discarded'. Corrected mid-task: the offline suite was expected to stay green under the same mutation and does not (14 fail), because D9's fix had also hardened the doubles; the surviving distinction is that offline guards pin HOW the code calls pythonnet while the live tests observe DATA LOSS."
+    }
+  ],
+  "concerns": [
+    {
+      "note": "BLOCKER FOR DEF, discovered by A3's live run: the undoable=True path had NEVER been exercised against a live LCM. Every landed live suite (batches 8-11, target_live_smoke) uses the target_sandbox fixture, which is undoable=False, so B1/B2 were marked complete for the mode they exist to serve on offline-double evidence alone - and the doubles encoded the bug (they modelled RollBack as an assignable attribute, so 30 tests passed against code that discarded every write live). A new target_sandbox_undoable fixture now exists in tests/conftest.py. DEF (flip the default to undoable=True) must NOT be attempted until the undoable=True path has live coverage comparable to what undoable=False already has; the B1 fix verified here is a point fix, not coverage.",
+      "step": "implement"
+    },
+    {
+      "note": "PRE-EXISTING DEFECT, recorded not fixed (out of A3 scope): FLExProject.SaveChanges() cannot succeed under undoable=False - i.e. in the DEFAULT write mode. The session envelope holds the FSM in ProcessingDataChanges, but SaveInternal() runs CheckReadyForCommit('Commit at wrong place.') which requires ReadyForBeginTask (UnitOfWorkService.cs:304). Live result is a raw System.InvalidOperationException, and per UndoStack.cs:239-246 that check ROLLS BACK the open bundle before throwing - so the failed save also silently discards the session's uncommitted work. CloseProject() is unaffected (it calls EndNonUndoableTask() first). The mechanism was already documented in spec.md:177, the contract at :149 and cycle2-explore-liblcm-facts.md F4, but nobody had connected it to SaveChanges() being unusable. Pinned by TestSaveChangesIsUnusableInThisMode in tests/operations/test_abort_session_live.py, which asserts the CURRENT broken behaviour and must be inverted when fixed. Likely fix mirrors CloseProject: End/Begin the envelope around usm.Save().",
+      "step": "implement"
+    },
+    {
+      "note": "The full offline gate has 117 pre-existing failures and 17 errors unrelated to this feature (largely flexicon/sync/tests/test_duplicate_operations.py). Verified identical on a clean tree, but it means the gate cannot be read as a simple pass/fail for later B2 batches - compare counts against a stashed baseline instead.",
+      "step": "implement"
+    },
+    {
+      "note": "Companion tooling cannot track this feature: task_sync.py COMPLETED_TASK_RE/PENDING_TASK_RE only match ids shaped T<digits>, but this feature uses A1a/B2/CB/CO1/DEF. Consequences: status-context.py falsely reports complete:true (resume dispatches nothing), and --materialize cannot flip any tasks.md checkbox, so they must be maintained by hand. Also status-context.py crashes on its own arrow glyph under Windows cp1252 unless PYTHONUTF8=1.",
+      "step": "implement"
+    },
+    {
+      "note": "Live testing on Target surfaced FOUR pre-existing Notebook bugs that are NOT caused by B2 bracketing and were deliberately left unfixed to keep batch 9 mechanical. All are Category 8 (same-name fields with different LCM types) or wrong-receiver bugs, and all make the affected methods fail on any live project: (1) PersonOperations.SetGender/GetGender - ICmPerson.Gender is an int, not a multistring, so person.Gender.set_String(...) raises AttributeError; (2) SetEmail, SetPhone (writes PlaceOfBirth) and AddNote (writes Comment) target fields that come back as plain str, so set_String fails there too; (3) DataNotebookOperations.Create/Duplicate call repos.RecordsOC on an IRnResearchNbkRepository, but RecordsOC lives on IRnResearchNbk - needs IRnResearchNbk(project.lp.ResearchNotebookOA); (4) DataNotebookOperations.__GetRecordObject calls self.project.project.GetObject(hvo), but LcmCache has no GetObject, so EVERY record-resolving DataNotebook method is broken live. Consequence for this feature: the 16 DataNotebook sites bracketed in batch 9 are correct but currently unreachable at runtime, so their brackets could only be verified statically and by the scanner, not live.",
+      "step": "implement"
+    },
+    {
+      "note": "The FlexTools MCP runner imports pyflexicon 4.3.0 from site-packages, not this checkout (flextools_start reports running_from_this_checkout: false). Any live verification of uncommitted work MUST purge flexicon.* from sys.modules, prepend the checkout to sys.path, and assert BaseOperations.__file__ before writing - otherwise it silently tests the released package. Note the resulting hybrid: the injected `project` object is still an installed-package FLExProject, which is why the legacy 'no LCM rollback API found' warning appears on stderr even though that string is absent from this checkout.",
+      "step": "implement"
+    },
+    {
+      "note": "CONCURRENCY: another session was writing to this repo during batch 9 (tests/conftest.py and scripts/restore_sena3.py modified, scripts/fw_restore.py and scripts/restore_target.py added, all timestamped mid-session, plus three batch-8 LIVE entries appended to this file's verified[]). Those changes were left unstaged and are NOT part of commit e20252c, which contains only the 5 Notebook modules, the ratchet baseline and tasks.md. Later batches should re-read spec files before editing and stage explicitly by path rather than using git add -A.",
+      "step": "implement"
+    },
+    {
+      "note": "Live testing on Target surfaced THREE pre-existing Lexicon bugs that are NOT caused by B2 bracketing and were deliberately left unfixed to keep batch 11 mechanical (same call as batch 9). All fail BEFORE the bracket is entered, so those three sites brackets could only be verified statically and by the scanner: (1) ExampleOperations.SetLiteralTranslation/GetLiteralTranslation call self.__WSHandleAnalysis(), which does not exist on that class (only __WSHandle/__WSHandleVern) -- AttributeError on any live project, present at HEAD lines 1491/1520; (2) EtymologyOperations.SetSource/GetSource -- ILexEtymology has no Source attribute at all, CLAUDE.md Category 8 territory since Source is ITsString on ILexSense; (3) EtymologyOperations.SetLanguage is the worst because it does NOT raise -- ILexEtymology has no LanguageRA, but pythonnet accepts the assignment as a plain Python attribute on the wrapper, so hasattr flips False->True on that handle while a freshly-fetched LCM handle for the same Hvo still has no such field. Silent data loss. All three are xfail(strict=True) in tests/operations/test_lexicon_brackets_live.py; #3 asserts the CORRECT behaviour so it XPASSes the moment the bug is fixed.",
+      "step": "implement"
+    },
+    {
+      "note": "The B2g ratchet has changed character now that the baseline is 0: it is no longer a shrinking countdown but a permanent zero-tolerance guard. Anyone adding a new LCM mutator anywhere under flexicon/code/ will now fail test_no_new_unbracketed_mutations, which is the intended steady state -- these tests are not scaffolding to remove once the feature closes. The module docstring and the replaced scanner sanity check both say so explicitly.",
+      "step": "implement"
+    },
+    {
+      "note": "Contract section 3's original wording for transaction-rollback ('undoable=False never sets this token') is not literally honorable by a module-level frozenset - it presumes a mode-aware capability set. B4 resolves this by redefining a token as a BUILD capability plus documenting mode dependence in three places, which satisfies constitution V. But if a consumer ever needs to ask 'is rollback live in THIS session', the module constant cannot answer it and a mode-aware FLExProject.capabilities accessor would be required. Deliberately NOT built here (out of B4 scope); the natural place to revisit is DEF, which flips the default to undoable=True and largely dissolves the question.",
+      "step": "implement"
+    },
+    {
+      "note": "B4 updated five stale rows in the contract's task-status table (B1, B1t, B2s, B2, B3) and two prose rows that still called B1 PLANNED, because section 3 now cites B1+B2 as landed and the document would otherwise contradict itself. Those edits are honesty fixes forced by B4, not B4 scope creep - but it means the contract's status table has been drifting behind tasks.md and should be re-checked whenever a task closes. B2t/A3/DEF and the two unfiled items remain correctly PLANNED.",
+      "step": "implement"
+    },
+    {
+      "note": "NOT A BLOCKER, but file it: `pytest tests/operations/ -m requires_live_project` stalls indefinitely and must not be used as a gate. ~25 files in that directory (e.g. test_pos_operations.py:487, TestPOSOperationsIntegration.flex_project) define their own fixture calling AllProjectNames()[0] and opening the FIRST REAL PROJECT ON THE MACHINE in place, write-enabled. That is the exact hazard CLAUDE.md warns about. The *_live.py files all use tempdir sandboxes and pass per-file in seconds; the stall is entirely in the older non-sandbox files. Recommended follow-up: migrate those fixtures to target_sandbox. Until then the supported live gate is per-file, never the directory."
+    },
+    {
+      "note": "DEF's remaining risk is now behavioral, not coverage. Two semantics DEF-COV pinned that callers will hit the moment the default flips: (1) nested blocks JOIN, so an inner block has no independent rollback - catching an inner exception inside an outer block commits the inner's partial writes (test_inner_exception_caught_inside_the_outer_block_still_commits); (2) AbortSession() becomes near-useless in the new default mode - it refuses inside a block (FP_TransactionError) and returns False outside one (D8), so any existing caller relying on it for recovery silently stops being protected. Both are documented in docs/EXCEPTION_HANDLING.md's new 'Atomicity Under undoable=True' section, but (2) in particular deserves a release-note callout, not just a docs section."
+    }
+  ],
+  "last_action": {
+    "step": "implement",
+    "task": "DEF-COV + B2t",
+    "result": "complete"
+  }
+}

@@ -274,7 +274,9 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
 
         # Remove from the POS list
         pos_list = self.project.lp.PartsOfSpeechOA
-        pos_list.PossibilitiesOS.Remove(pos)
+
+        with self._TransactionCM("Delete part of speech"):
+            pos_list.PossibilitiesOS.Remove(pos)
 
     @OperationsMethod
     def Exists(self, name):
@@ -438,7 +440,9 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        pos.Name.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set part of speech name '{name}'"):
+            pos.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetAbbreviation(self, pos_or_hvo, wsHandle=None):
@@ -508,7 +512,9 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(abbr, wsHandle)
-        pos.Abbreviation.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set part of speech abbreviation '{abbr}'"):
+            pos.Abbreviation.set_String(wsHandle, mkstr)
 
     @wrap_enumerable
     @OperationsMethod
@@ -668,7 +674,8 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         subcat = self.__ResolveObject(subcat_or_hvo)
 
         # Remove from parent's SubPossibilitiesOS
-        pos.SubPossibilitiesOS.Remove(subcat)
+        with self._TransactionCM("Remove subcategory"):
+            pos.SubPossibilitiesOS.Remove(subcat)
 
     @OperationsMethod
     def GetCatalogSourceId(self, pos_or_hvo):
@@ -964,27 +971,31 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         Returns:
             IPartOfSpeech: The duplicated subcategory.
         """
-        # Create new subcategory
+        # Create new subcategory. Reached only from inside Duplicate's
+        # bracket, so this transaction joins that one (nesting-aware per B1).
+        # Stated anyway so the site is grep-auditable per D5.
         factory = self.project.project.ServiceLocator.GetService(IPartOfSpeechFactory)
-        sub_duplicate = factory.Create()
 
-        # Add to parent's SubPossibilitiesOS
-        parent_duplicate.SubPossibilitiesOS.Add(sub_duplicate)
+        with self._TransactionCM("Duplicate subcategory"):
+            sub_duplicate = factory.Create()
 
-        # Copy properties
-        sub_duplicate.Name.CopyAlternatives(source_sub.Name)
-        sub_duplicate.Abbreviation.CopyAlternatives(source_sub.Abbreviation)
-        sub_duplicate.Description.CopyAlternatives(source_sub.Description)
+            # Add to parent's SubPossibilitiesOS
+            parent_duplicate.SubPossibilitiesOS.Add(sub_duplicate)
 
-        if source_sub.CatalogSourceId:
-            sub_duplicate.CatalogSourceId = source_sub.CatalogSourceId
+            # Copy properties
+            sub_duplicate.Name.CopyAlternatives(source_sub.Name)
+            sub_duplicate.Abbreviation.CopyAlternatives(source_sub.Abbreviation)
+            sub_duplicate.Description.CopyAlternatives(source_sub.Description)
 
-        # Recursively duplicate nested subcategories
-        if source_sub.SubPossibilitiesOS.Count > 0:
-            for nested_sub in source_sub.SubPossibilitiesOS:
-                self.__DuplicateSubcategory(nested_sub, sub_duplicate)
+            if source_sub.CatalogSourceId:
+                sub_duplicate.CatalogSourceId = source_sub.CatalogSourceId
 
-        return sub_duplicate
+            # Recursively duplicate nested subcategories
+            if source_sub.SubPossibilitiesOS.Count > 0:
+                for nested_sub in source_sub.SubPossibilitiesOS:
+                    self.__DuplicateSubcategory(nested_sub, sub_duplicate)
+
+            return sub_duplicate
 
     # ========== CATALOG (GOLDEtic) IMPORT METHODS ==========
     #
@@ -1028,9 +1039,14 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         """
         factory = self._get_factory()
         try:
-            if parent_obj is not None:
-                return factory.Create(guid, parent_obj)
-            return factory.Create(guid, self._get_root_list())
+            # Reached from inside the mixin's "Create ... from catalog"
+            # bracket (catalog_backed.py), so this joins that transaction
+            # rather than opening its own (nesting-aware per B1). Stated
+            # anyway so the site is grep-auditable per D5.
+            with self._TransactionCM("Create part of speech from catalog"):
+                if parent_obj is not None:
+                    return factory.Create(guid, parent_obj)
+                return factory.Create(guid, self._get_root_list())
         except Exception:
             return None
 
@@ -1041,10 +1057,13 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         subcategory, or None for a top-level POS (in which case we
         attach to the PartsOfSpeechOA list).
         """
-        if parent_obj is not None:
-            parent_obj.SubPossibilitiesOS.Add(new_obj)
-        else:
-            self._get_root_list().PossibilitiesOS.Add(new_obj)
+        # Both branches mutate, so the owner-shape guard sits inside the
+        # bracket. Joins the mixin's catalog bracket per B1.
+        with self._TransactionCM("Attach part of speech from catalog"):
+            if parent_obj is not None:
+                parent_obj.SubPossibilitiesOS.Add(new_obj)
+            else:
+                self._get_root_list().PossibilitiesOS.Add(new_obj)
 
     def _cast_to_domain(self, raw):
         """Return the IPartOfSpeech view of a raw LCM POS object."""

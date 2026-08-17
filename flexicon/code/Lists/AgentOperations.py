@@ -112,7 +112,7 @@ class AgentOperations(PossibilityItemOperations):
         return list(agents_oc)
 
     @OperationsMethod
-    def Create(self, name, wsHandle=None):
+    def Create(self, name, wsHandle=None, guid=None):
         """
         Create a new agent in AnalyzingAgentsOC.
 
@@ -124,6 +124,17 @@ class AgentOperations(PossibilityItemOperations):
         Args:
             name (str): The name for the new agent.
             wsHandle: Optional writing system handle. Defaults to analysis WS.
+            guid (optional): GUID to assign to the new agent, as a
+                ``System.Guid`` or string. Use this when REPRODUCING an
+                agent from another project so it keeps its original
+                identity -- useful with the ``flexlibs2/sync/`` engine
+                for preserving which agent evaluated an analysis across
+                a transfer or merge. None (the default) mints a fresh
+                GUID. Note that the 3 bootstrap agents
+                (``kguidAgentDefUser``, ``kguidAgentXAmpleParser``,
+                ``kguidAgentComputer``) already exist in every project,
+                so passing one of their GUIDs will hit the duplicate-GUID
+                fallback below.
 
         Returns:
             ICmAgent: The newly created agent object.
@@ -131,7 +142,17 @@ class AgentOperations(PossibilityItemOperations):
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If name is None.
-            FP_ParameterError: If name is empty.
+            FP_ParameterError: If name is empty, or if guid was supplied
+                but is not a valid GUID.
+
+        Notes:
+            - If the requested guid is already present in the project
+              (e.g. one of the 3 bootstrap agent GUIDs), creation falls
+              back to a fresh identity and logs a warning; it does not
+              raise.
+
+        See Also:
+            Duplicate, Find, Delete
         """
         self._EnsureWriteEnabled()
         self._ValidateParam(name, "name")
@@ -149,7 +170,7 @@ class AgentOperations(PossibilityItemOperations):
         factory = self.project.project.ServiceLocator.GetService(ICmAgentFactory)
 
         with self._TransactionCM(f"Create agent {name!r}"):
-            new_agent = factory.Create()
+            new_agent = self._CreateWithGuid(factory, guid, "ICmAgent")
 
             # Add to collection before setting properties
             agents_oc.Add(new_agent)
@@ -182,7 +203,8 @@ class AgentOperations(PossibilityItemOperations):
 
         agents_oc = self._get_list_object()
         if agents_oc is not None and agent in agents_oc:
-            agents_oc.Remove(agent)
+            with self._TransactionCM("Delete agent"):
+                agents_oc.Remove(agent)
 
     @OperationsMethod
     def Duplicate(self, agent_or_hvo, insert_after=True):
@@ -362,7 +384,8 @@ class AgentOperations(PossibilityItemOperations):
 
         agent = self._PossibilityItemOperations__ResolveObject(agent_or_hvo)
 
-        agent.Version = version
+        with self._TransactionCM("Set agent version"):
+            agent.Version = version
 
     # --- Agent Type Operations ---
 
@@ -537,14 +560,20 @@ class AgentOperations(PossibilityItemOperations):
 
         agent = self._PossibilityItemOperations__ResolveObject(agent_or_hvo)
 
+        # Resolve/validate the cast BEFORE opening the unit of work: a bad
+        # `person` must raise without ever opening (and immediately rolling
+        # back) an undo task. Both branches then mutate, so the bracket has
+        # no no-op path to protect. (D5/P3 validate-then-mutate.)
         if person is None:
-            agent.Human = None
+            person_obj = None
         else:
             try:
                 person_obj = ICmPerson(person)
-                agent.Human = person_obj
             except (TypeError, System.InvalidCastException, AttributeError) as e:
                 raise FP_ParameterError(f"person must be a valid ICmPerson object: {e}")
+
+        with self._TransactionCM("Set agent human analyst"):
+            agent.Human = person_obj
 
     # --- Evaluations ---
 

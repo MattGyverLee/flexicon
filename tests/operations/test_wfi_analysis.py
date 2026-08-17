@@ -269,8 +269,15 @@ class TestWfiAnalysisAgentTypeDiscrimination:
         # them parser-first so that, before the fix, the buggy
         # element-[0] fallback in GetHumanEvaluation would return the
         # parser evaluation rather than the human one.
-        parser_agent.SetEvaluation(analysis, Opinions.approves)
-        human_agent.SetEvaluation(analysis, Opinions.approves)
+        # Raw ICmAgent.SetEvaluation is an LCM write made directly by the
+        # test rather than through the wrapper, so it needs its own unit of
+        # work. Free under the old undoable=False session envelope; since the
+        # DEF default flip nothing is open between operations and an
+        # unbracketed write raises "Not in the right state to register a
+        # change." (tasks.md D14).
+        with writable_project.UndoableOperation("test: seed both evaluations"):
+            parser_agent.SetEvaluation(analysis, Opinions.approves)
+            human_agent.SetEvaluation(analysis, Opinions.approves)
 
         try:
             yield analysis, human_agent, parser_agent
@@ -365,7 +372,9 @@ class TestWfiAnalysisAgentTypeDiscrimination:
 
         analysis = writable_project.WfiAnalyses.Create(candidate_wf)
         try:
-            human_agent.SetEvaluation(analysis, Opinions.approves)
+            # Raw LCM write from the test -- needs its own UoW (see D14).
+            with writable_project.UndoableOperation("test: seed human evaluation"):
+                human_agent.SetEvaluation(analysis, Opinions.approves)
 
             got = writable_project.WfiAnalyses.GetAgentEvaluation(analysis)
 
@@ -640,8 +649,10 @@ class TestWfiAnalysisDeleteWithMorphBundles:
             bundle_factory = writable_project.project.ServiceLocator.GetService(
                 IWfiMorphBundleFactory
             )
-            new_bundle = bundle_factory.Create()
-            analysis.MorphBundlesOS.Add(new_bundle)
+            # Raw LCM writes -> own unit of work (tasks.md D14).
+            with writable_project.UndoableOperation("test: add morph bundle"):
+                new_bundle = bundle_factory.Create()
+                analysis.MorphBundlesOS.Add(new_bundle)
             bundle_hvo = new_bundle.Hvo
 
             assert analysis.MorphBundlesOS.Count == 1, (

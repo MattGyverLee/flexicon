@@ -509,10 +509,12 @@ def add_allomorph(entry, form_text):
 ## Atomicity Under `undoable=False`: the Session Is the Unit
 
 **This section states the actual, verified atomicity guarantee for the
-default write mode (`undoable=False`). Read it before relying on
-`Transaction()` or `_TransactionCM` for rollback.**
+legacy opt-out write mode (`undoable=False`). Since 4.4.0 the default is
+`undoable=True` (task DEF) and the section below it applies instead; you
+reach this mode only by passing `undoable=False` explicitly. Read this
+before relying on `Transaction()` or `_TransactionCM` for rollback.**
 
-`OpenProject(..., writeEnabled=True)` with the default `undoable=False`
+`OpenProject(..., writeEnabled=True, undoable=False)`
 opens exactly one LCM `NonUndoableUnitOfWork` for the entire session
 (`BeginNonUndoableTask()` at open, `EndNonUndoableTask()` at close). There is
 no per-operation or per-`Transaction()` rollback boundary inside that
@@ -531,7 +533,7 @@ Those mutations will be written to disk on the next `SaveChanges()` or
 `CloseProject()` call, exception or no exception.
 
 ```python
-project.OpenProject("MyProject", writeEnabled=True)  # undoable=False (default)
+project.OpenProject("MyProject", writeEnabled=True, undoable=False)  # explicit opt-out
 
 with project.Transaction("import batch"):
     project.LexEntry.Create("run", "stem")     # (1) applied
@@ -550,14 +552,110 @@ project.CloseProject()  # (1) and (2) are saved to disk, despite the exception.
   evidence that no partial state was written -- assume the opposite.
 - A single warning to this effect is logged once, at `OpenProject()` time
   (not once per transaction, which would train callers to ignore it).
-- `FLExProject.RefreshFromDisk()` and `FLExProject.AbortSession()` (planned)
-  operate at session granularity for the same reason: there is no finer
-  granularity available in `undoable=False`.
-- If you need real per-operation rollback, `undoable=True` is the
-  destination mode once the Track B rewrite of `flexicon/code/transaction.py`
-  (on liblcm's `UndoableUnitOfWorkHelper`) lands; see
-  `specs/write-path-transactions/spec.md` D2/D3/B1. Until then, `undoable=True`
-  has the same no-rollback limitation.
+- `FLExProject.RefreshFromDisk()` and `FLExProject.AbortSession()` operate at
+  session granularity for the same reason: there is no finer granularity
+  available in `undoable=False`.
+- **`AbortSession()` is the recovery tool for exactly the situation above.**
+  It calls liblcm's one real revert primitive, `IActionHandler.Rollback(0)`,
+  discarding everything the session has written but not yet committed -- so
+  in the example, calling it in the `except` block really does remove (1) and
+  (2). It then reopens the session envelope, so the abort is non-terminal and
+  the session stays usable. What it cannot revert is anything already on disk
+  when the session opened.
+- **Do not call `SaveChanges()` in this mode.** It cannot succeed: the
+  session envelope holds the FSM in `ProcessingDataChanges`, while
+  `SaveInternal()` requires `ReadyForBeginTask`. It raises a raw
+  `System.InvalidOperationException("Commit at wrong place.")` *and* rolls
+  back the open bundle on the way out, discarding uncommitted work.
+  `CloseProject()` is the supported way to persist, and is unaffected (it
+  ends the envelope before saving).
+- If you need real per-operation rollback, simply **stop passing
+  `undoable=False`** -- `undoable=True` is the default since 4.4.0 and is the
+  destination mode decision D3 designates. The Track B rewrite of
+  `flexicon/code/transaction.py` onto liblcm's `UndoableUnitOfWorkHelper` has
+  landed, so an exception inside a block genuinely rolls that block back. See
+  `specs/write-path-transactions/spec.md` D2/D3/B1. Note `AbortSession()`
+  deliberately refuses in that mode (per-operation rollback is already
+  automatic there); see tasks.md D8.
+
+---
+
+## Atomicity Under `undoable=True` (the default): the Block Is the Unit
+
+This is the mode `undoable=False`'s caveats point at, the destination
+decision D3 designates, and **since 4.4.0 the default** -- it is what you get
+from a plain `OpenProject(..., writeEnabled=True)` (task DEF). Everything
+below is verified against a live LCM in
+`tests/operations/test_undoable_mode_live.py`; see
+`specs/write-path-transactions/evidence/live-def-undoable-coverage.md`.
+
+**The guarantee:** an exception inside a `with project.UndoableOperation(...)`
+block rolls that block's mutations back, for real, via liblcm's
+`UndoableUnitOfWorkHelper`. Creates, field writes and deletes are all
+reverted, and the rollback is durable -- a rolled-back object does not
+reappear when the project is reopened.
+
+```python
+project.OpenProject("MyProject", writeEnabled=True)   # undoable=True (default)
+
+with project.UndoableOperation("import batch"):
+    project.LexEntry.Create("run", "stem")     # (1)
+    project.LexEntry.Create("walk", "stem")    # (2)
+    raise RuntimeError("network timeout mid-import")
+    # (1) and (2) ARE rolled back. Neither reaches disk.
+```
+
+**Every operation is its own unit of work.** A bare Operations call with no
+block around it opens, commits and closes its own `UnitOfWork` -- that is the
+`per-operation-uow` capability, and it holds end to end (the write survives
+`CloseProject()`). Each such call is one entry in the FLEx Ctrl+Z menu,
+labelled from the call's own arguments (`Create part of speech 'Noun'`), not
+from the method name.
+
+**A rejected input costs nothing.** Validation runs outside the bracket, so a
+call that raises `FP_ParameterError` adds no undo entry and opens no unit of
+work. Callers get no empty entries on a linguist's undo stack.
+
+### Nesting joins -- an inner block has no independent rollback
+
+Nested blocks **join** the enclosing unit of work rather than opening a second
+one. This is not a style choice: liblcm's `UndoStack` responds to a second
+`BeginUndoTask` by rolling the *already-open* unit back and then throwing, so
+joining is what keeps an inner block from destroying the outer block's work.
+
+The consequence callers must know:
+
+```python
+with project.UndoableOperation("outer"):
+    try:
+        with project.UndoableOperation("inner"):
+            project.LexEntry.Create("partial", "stem")
+            raise RuntimeError("boom")
+    except RuntimeError:
+        pass          # <-- swallowing the inner exception here
+# "partial" IS COMMITTED. The inner block joined the outer unit of work,
+# so it had no rollback of its own; only the OUTERMOST block's exit decides.
+```
+
+If you need the inner step to be independently revertible, it must not be
+nested -- run it as its own top-level block, or let the exception propagate
+out of the outer block so the whole unit rolls back together.
+
+### Other mode-specific behaviors
+
+- **`AbortSession()` refuses inside a block** (`FP_TransactionError`) and
+  returns `False` between operations. It is in practice an `undoable=False`
+  primitive; per-operation rollback already covers this mode. See tasks.md D8.
+- **`Undo()`/`Redo()` are in-process only** (issue #235). They drive the live
+  `ActionHandlerAccessor`, whose stack lives in RAM and is never serialized
+  into `.fwdata`. A reopened project always starts with `CanUndo()` False, so
+  work committed by a previous session is past undoing.
+- **Never write `helper.RollBack = ...`.** `RollBack` is `{private get; set;}`
+  and pythonnet synthesizes no property for it, so the assignment silently
+  lands on the Python wrapper and leaves the real field at its default of
+  `True` -- rolling back every clean unit of work. Use `set_RollBack(...)`.
+  This is decision D9, and it is why a pythonnet write must always be verified
+  by reading the effect back through the LCM.
 
 ---
 

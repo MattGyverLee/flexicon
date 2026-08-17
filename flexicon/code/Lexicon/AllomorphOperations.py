@@ -672,7 +672,9 @@ class AllomorphOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(form, wsHandle)
-        allomorph.Form.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set allomorph form '{form}'"):
+            allomorph.Form.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def SetFormAudio(self, allomorph_or_hvo, file_path, wsHandle=None):
@@ -936,7 +938,9 @@ class AllomorphOperations(BaseOperations):
         self._ValidateParam(morphType, "morphType")
 
         allomorph = self.__GetAllomorphObject(allomorph_or_hvo)
-        allomorph.MorphTypeRA = morphType
+
+        with self._TransactionCM("Set allomorph morph type"):
+            allomorph.MorphTypeRA = morphType
 
     @OperationsMethod
     def GetPhoneEnv(self, allomorph_or_hvo):
@@ -1022,7 +1026,8 @@ class AllomorphOperations(BaseOperations):
         allomorph = self.__GetAllomorphObject(allomorph_or_hvo)
         env = self.__GetEnvironmentObject(env_or_hvo)
 
-        allomorph.PhoneEnvRC.Add(env)
+        with self._TransactionCM("Add phonological environment"):
+            allomorph.PhoneEnvRC.Add(env)
 
     @OperationsMethod
     def RemovePhoneEnv(self, allomorph_or_hvo, env_or_hvo):
@@ -1063,9 +1068,11 @@ class AllomorphOperations(BaseOperations):
         allomorph = self.__GetAllomorphObject(allomorph_or_hvo)
         env = self.__GetEnvironmentObject(env_or_hvo)
 
-        # Only remove if it's actually in the collection
+        # Membership test stays outside the bracket so a redundant remove is a
+        # true no-op rather than an empty named undo entry (D5).
         if env in allomorph.PhoneEnvRC:
-            allomorph.PhoneEnvRC.Remove(env)
+            with self._TransactionCM("Remove phonological environment"):
+                allomorph.PhoneEnvRC.Remove(env)
 
     # --- Private Helper Methods ---
 
