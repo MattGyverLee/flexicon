@@ -108,13 +108,20 @@ class ReversalIndexOperations(BaseOperations):
         return self.project.ObjectsIn(IReversalIndexRepository)
 
     @OperationsMethod
-    def Create(self, name, writing_system):
+    def Create(self, name, writing_system, guid=None):
         """
         Create a new reversal index for an analysis writing system.
 
         Args:
             name (str): Name for the reversal index (e.g., "English", "French")
             writing_system: Writing system handle (must be analysis WS)
+            guid (optional): GUID to assign to the new index, as a
+                ``System.Guid`` or string. Use this when REPRODUCING an
+                index from another project so it keeps its original
+                identity -- e.g. to re-link ``ReversalIndexEntry``
+                owner-refs and downstream sense cross-references by
+                identity instead of re-deriving from the WS string. None
+                (the default) mints a fresh GUID.
 
         Returns:
             IReversalIndex: The newly created reversal index
@@ -122,7 +129,9 @@ class ReversalIndexOperations(BaseOperations):
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
             FP_NullParameterError: If name or writing_system is None
-            FP_ParameterError: If name is empty or index already exists for WS
+            FP_ParameterError: If name is empty, an index already exists
+                for the writing system, or guid was supplied but is not a
+                valid GUID.
 
         Example:
             >>> # Create English reversal index
@@ -141,6 +150,14 @@ class ReversalIndexOperations(BaseOperations):
             - Writing system must be an analysis writing system
             - Index is automatically added to project's reversal indexes
             - New index starts with zero entries
+            - Supplying guid does NOT bypass the one-index-per-writing-
+              system rule: a duplicate writing system still raises
+              FP_ParameterError even when a guid is supplied. Callers
+              reproducing an index from another project should call
+              FindByWritingSystem() first and skip creation if found.
+            - If the requested guid is already present in the project,
+              creation falls back to a fresh identity and logs a
+              warning; it does not raise.
 
         See Also:
             Delete, Find, FindByWritingSystem, GetName
@@ -153,7 +170,11 @@ class ReversalIndexOperations(BaseOperations):
         if not name or not name.strip():
             raise FP_ParameterError("Reversal index name cannot be empty")
 
-        # Check if index already exists for this writing system
+        # Check if index already exists for this writing system. This
+        # business-rule validation happens BEFORE any mutation (and
+        # BEFORE _CreateWithGuid), so it still raises even when a guid is
+        # supplied -- guid identity is purely additive on top of the
+        # WS-uniqueness guard, not a replacement for it.
         existing = self.FindByWritingSystem(writing_system)
         if existing:
             raise FP_ParameterError(f"Reversal index already exists for writing system {writing_system}")
@@ -161,7 +182,7 @@ class ReversalIndexOperations(BaseOperations):
         with self._TransactionCM(f"Create reversal index '{name}'"):
             # Create the reversal index using factory
             factory = self.project.project.ServiceLocator.GetService(IReversalIndexFactory)
-            new_index = factory.Create()
+            new_index = self._CreateWithGuid(factory, guid, "IReversalIndex")
 
             # Add to language project's reversal indexes
             self.project.lp.LexDbOA.ReversalIndexesOC.Add(new_index)

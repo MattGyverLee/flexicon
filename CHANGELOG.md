@@ -14,6 +14,27 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 > Targets **4.4.0**. Contains a public-API default change; read the first
 > entry before upgrading.
 
+### Added
+- **`guid=` on three more `Create()` methods.** `Agents.Create()`,
+  `ReversalIndexes.Create()`, and `ReversalEntries.Create()` now accept an
+  optional trailing `guid=` argument and route through the existing
+  `BaseOperations._CreateWithGuid()` helper already used by eight other
+  `Create()` methods. This lets a sync/migration tool preserve a source
+  project's identity for agents, reversal indexes, and reversal entries
+  instead of minting new GUIDs on every run.
+
+  The parameter is trailing and defaults to `None`, so existing positional
+  call sites are unaffected, and `guid=None` behaves exactly as before.
+  Semantics match the established helper: a malformed GUID string raises
+  `FP_ParameterError` before anything is written, and a GUID already in use
+  logs a warning and falls back to a newly minted identity rather than
+  raising -- the requested GUID is **not** preserved in that case, so callers
+  that care must read `.Guid` back. Supplying a `guid` does not weaken any
+  existing business rule: `ReversalIndexes.Create()` still raises
+  `FP_ParameterError` when the writing system already has an index, and
+  `ReversalEntries.Create()` performs no GUID-based deduplication.
+  `Agents.Duplicate()` is unchanged and still always mints a new GUID.
+
 ### Changed
 - **BREAKING (behavioural): `OpenProject(..., undoable=...)` now defaults to
   `True`.** Task DEF of `specs/write-path-transactions`, gated on decision D3.
