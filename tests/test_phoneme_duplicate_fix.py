@@ -26,7 +26,7 @@ class TestPhonemeDuplicateFix:
         Verifies the code correctly uses SetCloneProperties() to copy objects,
         which is the actual method available in LCM (CopyObject doesn't exist).
         """
-        phoneme_ops_file = Path("flexlibs2/code/Grammar/PhonemeOperations.py")
+        phoneme_ops_file = Path("flexicon/code/Grammar/PhonemeOperations.py")
         content = phoneme_ops_file.read_text(encoding="utf-8")
 
         # Verify the correct pattern is used
@@ -46,7 +46,7 @@ class TestPhonemeDuplicateFix:
         """
         from pathlib import Path
 
-        phoneme_ops_file = Path("flexlibs2/code/Grammar/PhonemeOperations.py")
+        phoneme_ops_file = Path("flexicon/code/Grammar/PhonemeOperations.py")
         content = phoneme_ops_file.read_text(encoding="utf-8")
 
         # Check that generic bracket syntax is not used
@@ -74,7 +74,7 @@ class TestCopyObjectImportRemoved:
         """
         from pathlib import Path
 
-        phoneme_ops_file = Path("flexlibs2/code/Grammar/PhonemeOperations.py")
+        phoneme_ops_file = Path("flexicon/code/Grammar/PhonemeOperations.py")
         content = phoneme_ops_file.read_text(encoding="utf-8")
 
         # Check that the try/except import is removed

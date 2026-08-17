@@ -42,8 +42,8 @@ class ConsolidationAnalyzer:
     @staticmethod
     def _get_file_path(file_name: str) -> str:
         """Convert file name to path (CamelCase to snake_case if needed)."""
-        # Files are stored under flexlibs2/code/Lists/
-        base_path = os.path.join(_project_root, "flexlibs2", "code", "Lists")
+        # Files are stored under flexicon/code/Lists/
+        base_path = os.path.join(_project_root, "flexicon", "code", "Lists")
 
         # Try both CamelCase and snake_case
         candidates = [
@@ -56,7 +56,7 @@ class ConsolidationAnalyzer:
                 return path
 
         # If not in Lists, check parent directories
-        base_path = os.path.join(_project_root, "flexlibs2", "code")
+        base_path = os.path.join(_project_root, "flexicon", "code")
         for path in candidates:
             # Try with base code directory
             alt_path = os.path.join(base_path, *Path(path).relative_to(base_path).parts)

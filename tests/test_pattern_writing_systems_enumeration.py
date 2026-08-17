@@ -33,10 +33,10 @@ class TestWritingSystemsEnumerationPattern:
     Catches regressions where known-bad patterns re-appear in source code.
     """
 
-    CODEBASE_ROOT = Path(__file__).parent.parent / "flexlibs2" / "code"
+    CODEBASE_ROOT = Path(__file__).parent.parent / "flexicon" / "code"
 
     def _scan_files(self, pattern):
-        """Scan all .py files under flexlibs2/code/ for pattern match."""
+        """Scan all .py files under flexicon/code/ for pattern match."""
         matches = []
         for py_file in self.CODEBASE_ROOT.rglob("*.py"):
             with open(py_file, "r", encoding="utf-8") as f:
