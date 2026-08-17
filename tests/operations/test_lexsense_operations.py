@@ -484,7 +484,7 @@ class TestGetComplexFormsNotSubentries:
 
         src_path = os.path.join(
             os.path.dirname(__file__),
-            "..", "..", "flexlibs2", "code", "Lexicon", "LexSenseOperations.py"
+            "..", "..", "flexicon", "code", "Lexicon", "LexSenseOperations.py"
         )
         with open(os.path.normpath(src_path), encoding="utf-8") as fh:
             tree = ast.parse(fh.read())
