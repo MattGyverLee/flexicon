@@ -452,12 +452,25 @@ ImportError: cannot import name 'IMoMorphRule' from 'SIL.LCModel'
 | Object type | `Source` field type | Correct access pattern |
 |---|---|---|
 | `ILexSense` | `ITsString` (single string with embedded ws handle) | Read `.Text` directly; write via `TsStringUtils.MakeString(text, ws_handle)` |
-| `ILexEtymology` | `IMultiString` (per-WS) | Iterate ws handles; use `.get_String(ws)` / `.set_String(ws, ts_string)` |
-| `IStText` | `IMultiAccessorBase` (per-WS; virtualised; "Used to get Text.Source") | Same multi-WS access pattern as `ILexEtymology`; field lives on the `IStText` body of a `IText`, not on `ICmBaseAnnotation` |
+| `ILexEtymology` | **Does not exist.** See "The vanished `ILexEtymology.Source` field" below. | N/A -- use `LanguageNotes` (`IMultiString`) instead |
+| `IStText` | `IMultiAccessorBase` (per-WS; virtualised; "Used to get Text.Source") | Same multi-WS access pattern as the old `ILexEtymology.Source` did; field lives on the `IStText` body of a `IText`, not on `ICmBaseAnnotation` |
 
 Note: `ICmBaseAnnotation` does NOT expose a `Source` field. The source-of-confusion was that the `OverridesCellar.cs` helper `TextSourceForWs(int ws)` (line ~683) navigates from an annotation to its owning `IStText` to call `text.Source.get_String(ws)` -- it is a helper that *reads* `IStText.Source`, not a field on the annotation itself. The LCM declaration is in `InterfaceAdditions.cs` line 3018 inside `public partial interface IStText`.
 
-Reference: see `LexSenseOperations._ReadTsString` / `_MakeTsString` (ITsString helpers, single source of truth on `BaseOperations`) versus `EtymologyOperations` and `NoteOperations` which iterate ws handles for the IMultiString form.
+Reference: see `LexSenseOperations._ReadTsString` / `_MakeTsString` (ITsString helpers, single source of truth on `BaseOperations`) versus `NoteOperations` which iterates ws handles for the `IMultiString` form. `EtymologyOperations` used to be listed here too, but see the correction immediately below -- it no longer touches a field named `Source` at all.
+
+### CORRECTED 2026-08-18: the vanished `ILexEtymology.Source` field
+
+This table previously listed `ILexEtymology.Source` as `IMultiString`. That entry was **wrong** and has caused real breakage (flexicon issue tracker; live-LCM regression closed alongside the 4.4.1 release). Live reflection against the installed LCM (`dir()` on a freshly-`factory.Create()`'d, owned `ILexEtymology`) shows **no `Source` member at all** -- not renamed, not retyped, simply absent. `getattr(etymology, "Source")` raises `AttributeError` unconditionally.
+
+The free-text "source language" concept this field used to carry now lives on a **different field name**, `LanguageNotes` (`IMultiString`, UI label "Source Language Notes" -- see `Language Explorer/Configuration/Parts/LexEntryParts.xml`, part `LexEtymology-Detail-LanguageNotes`). A separate, new, *controlled-vocabulary* field, `LanguageRS` (an `ILcmReferenceSequence<ICmPossibility>` onto the project's Languages list, UI label "Source Language"), also exists but is a distinct concept from the old free-text `Source` and is not a drop-in replacement.
+
+| Object | Old (never existed) | Correct field | LCM type |
+|---|---|---|---|
+| `ILexEtymology` | ~~`Source`~~ | `LanguageNotes` | `IMultiString` (per-WS; same access pattern the stale entry described: `.get_String(ws)` / `.set_String(ws, ts_string)`) |
+| `ILexEtymology` | *(n/a -- new field, not a rename)* | `LanguageRS` | `ILcmReferenceSequence<ICmPossibility>` (reference sequence onto the Languages list; not yet wired up by `EtymologyOperations.GetLanguage`/`SetLanguage`, which still assume a nonexistent atomic `LanguageRA` -- tracked separately, deliberately left unfixed alongside this correction) |
+
+`EtymologyOperations.Create(source=...)`, `GetSource()`, `SetSource()`, `GetSyncableProperties()`, and `ApplySyncableProperties()` have all been repaired to read/write `LanguageNotes` under the hood; the public `source=` parameter and `GetSource`/`SetSource` method names, and the `"Source"` key in the syncable-properties dict, are kept as-is for API stability -- only the LCM-facing field they resolve to has changed.
 
 ### The `BaselineText` field
 
@@ -496,7 +509,7 @@ LCM source references:
 
 - Same field name + different LCM type = silent bug. The `hasattr` / duck-typing patterns common in this codebase mask the mismatch.
 - `Source` has caused issues #36, #39, #40 -- the same shape recurs whenever an author looks at one Operations class to learn how to handle "Source" and applies the pattern to the wrong type.
-- `BaselineText` is the poster-child of the single-vs-multi confusion: it looks like any other text field on a text-bearing object, but it is single-WS `ITsString` while other fields on neighbouring types (like `ILexEtymology.Source`) are per-WS `IMultiString`.
+- `BaselineText` is the poster-child of the single-vs-multi confusion: it looks like any other text field on a text-bearing object, but it is single-WS `ITsString` while other fields on neighbouring types (like `ILexEtymology.LanguageNotes`) are per-WS `IMultiString`.
 
 ### Recommended pattern
 
@@ -558,7 +571,7 @@ parent.FooOC.Add(duplicate)
 
 Category 8 and Category 9 are the same trap at different levels:
 
-- **Category 8**: Same *field name*, different *LCM type* (e.g., `Source` is `ITsString` on `ILexSense` but `IMultiString` on `ILexEtymology`).
+- **Category 8**: Same *field name*, different *LCM type* (e.g., `Source` is `ITsString` on `ILexSense` but does not exist at all on `ILexEtymology` -- see the correction above).
 - **Category 9**: Same *variable name convention*, different *collection contract* (e.g., `FooOC` is unordered while `FooOS` is ordered).
 
 ---

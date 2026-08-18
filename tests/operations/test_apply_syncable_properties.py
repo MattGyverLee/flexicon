@@ -580,10 +580,13 @@ def _method_source(import_path, class_name, method_name):
 # over writing systems -- NOT via _ReadTsString).
 _TYPE_CORRECTION_SITES = [
     (
-        "EtymologyOperations.Source (IMultiString on ILexEtymology)",
+        "EtymologyOperations.LanguageNotes (IMultiString on ILexEtymology; "
+        "backs the syncable-properties 'Source' key -- ILexEtymology has "
+        "no field literally named 'Source'; see "
+        "docs/API_ISSUES_CATEGORIZED.md Category 8, corrected 2026-08-18)",
         "flexicon.code.Lexicon.EtymologyOperations",
         "EtymologyOperations",
-        "Source",
+        "LanguageNotes",
         "multistring",
     ),
     (
@@ -847,10 +850,16 @@ class TestApplySyncablePropertiesLive:
         etym_ops = writable_project.Etymologies
         etymology = etym_ops.Create(entry, source="qZ217 seed source")
 
-        analysis_ws = writable_project.GetAllAnalysisWSs()
-        if not analysis_ws:
+        # GetAllAnalysisWSs() returns a *set* of language tags (documented
+        # on FLExProject.GetAllAnalysisWSs) -- sets are unordered and not
+        # subscriptable, and picking an arbitrary member wouldn't match
+        # the single writing system Create(source=...) actually wrote to
+        # above (the project's DEFAULT analysis WS). Use
+        # GetDefaultAnalysisWS() so the readback below sees exactly one
+        # WS alternative, matching the single-key `props` dict.
+        ws_id, _ws_name = writable_project.GetDefaultAnalysisWS()
+        if not ws_id:
             pytest.skip("Project has no analysis writing systems")
-        ws_id = analysis_ws[0]
 
         props = {"Source": {ws_id: "qZ217 multistring source"}}
         etym_ops.ApplySyncableProperties(etymology, props)
@@ -885,10 +894,17 @@ class TestApplySyncablePropertiesLive:
         pron_ops = writable_project.Pronunciations
         pronunciation = pron_ops.Create(entry, "qZ217pron")
 
-        analysis_ws = writable_project.GetAllVernacularWSs()
-        if not analysis_ws:
+        # GetAllVernacularWSs() returns a *set* of language tags
+        # (documented on FLExProject.GetAllVernacularWSs) -- sets are
+        # unordered and not subscriptable, and picking an arbitrary
+        # member wouldn't match the single writing system Create() above
+        # actually wrote to (Pronunciation.Create defaults to the
+        # project's DEFAULT vernacular WS). Use GetDefaultVernacularWS()
+        # so the readback below sees exactly one WS alternative, matching
+        # the single-key `props` dict.
+        ws_id, _ws_name = writable_project.GetDefaultVernacularWS()
+        if not ws_id:
             pytest.skip("Project has no vernacular writing systems")
-        ws_id = analysis_ws[0]
 
         props = {"Form": {ws_id: "qZ217pronform"}}
         pron_ops.ApplySyncableProperties(pronunciation, props)

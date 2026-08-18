@@ -366,18 +366,19 @@ class TestEtymologyBrackets:
         finally:
             target_sandbox.LexEntry.Delete(entry)
 
-    @pytest.mark.xfail(
-        reason="PRE-EXISTING (not B2): ILexEtymology has no 'Source' attribute "
-        "at all, so SetSource/GetSource raise AttributeError on any live "
-        "project. This is CLAUDE.md Category 8 territory (same-name fields "
-        "with different LCM types across interfaces -- 'Source' is ITsString "
-        "on ILexSense). The failure happens BEFORE the bracket is entered. "
-        "Left unfixed to keep batch 11 mechanical; see .spec-context.json.",
-        raises=AttributeError,
-        strict=True,
-    )
     @pytest.mark.live_phase("EtymologyOperations", "modify")
     def test_setsource_round_trips_through_lcm(self, target_sandbox):
+        """
+        FIXED 2026-08-18 (live-reflection): ILexEtymology genuinely has no
+        'Source' attribute -- the xfail this test used to carry has been
+        confirmed accurate, but the underlying bug is now repaired rather
+        than merely documented. GetSource/SetSource/Create(source=...) all
+        now read/write the real backing field, LanguageNotes (IMultiString),
+        while keeping the same public Get/SetSource surface. See
+        docs/API_ISSUES_CATEGORIZED.md Category 8 (corrected) and
+        EtymologyOperations.GetSource/SetSource/Create for the detail.
+        This test now asserts the fixed behaviour directly, with no xfail.
+        """
         ops = target_sandbox.Etymology
         entry = _make_entry(target_sandbox, "etym_source")
 

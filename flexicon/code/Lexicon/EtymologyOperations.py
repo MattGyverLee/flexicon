@@ -216,10 +216,19 @@ class EtymologyOperations(BaseOperations):
             # Add to entry's etymology collection (must be done before setting properties)
             entry.EtymologyOS.Add(new_etymology)
 
-            # Set optional fields if provided
+            # Set optional fields if provided.
+            # NOTE (live-reflection, 2026-08-18): ILexEtymology has NO
+            # "Source" field in the installed LCM -- it was not renamed,
+            # the whole scalar/multi-string field is gone. The free-text
+            # "source language" slot users expect from `source=` is now
+            # LanguageNotes (IMultiString, UI label "Source Language
+            # Notes"); the separate controlled-vocabulary field is
+            # LanguageRS (a reference SEQUENCE onto the Languages list,
+            # exposed via GetLanguage/SetLanguage -- out of scope here,
+            # see docs/API_ISSUES_CATEGORIZED.md Category 8).
             if source:
                 mkstr = TsStringUtils.MakeString(source, wsHandle)
-                new_etymology.Source.set_String(wsHandle, mkstr)
+                new_etymology.LanguageNotes.set_String(wsHandle, mkstr)
 
             if form:
                 mkstr = TsStringUtils.MakeString(form, wsHandle)
@@ -283,7 +292,7 @@ class EtymologyOperations(BaseOperations):
             owner.EtymologyOS.Remove(etymology)
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
         """
         Duplicate an etymology, creating a new copy with a new GUID.
 
@@ -291,9 +300,8 @@ class EtymologyOperations(BaseOperations):
             item_or_hvo: The ILexEtymology object or HVO to duplicate.
             insert_after (bool): If True (default), insert after the source etymology.
                                 If False, insert at end of entry's etymology list.
-            deep (bool): If True, also duplicate owned objects (if any exist).
-                        If False (default), only copy simple properties and references.
-                        Note: Etymology has no owned objects, so deep has no effect.
+            deep (bool): Accepted for API uniformity across Operations classes.
+                        Etymology has no owned objects, so this parameter is ignored.
 
         Returns:
             ILexEtymology: The newly created duplicate etymology with a new GUID.
@@ -321,7 +329,8 @@ class EtymologyOperations(BaseOperations):
         Notes:
             - Factory.Create() automatically generates a new GUID
             - insert_after=True preserves the original etymology's position
-            - Simple properties copied: Source, Form, Gloss, Comment, Bibliography
+            - Simple properties copied: LanguageNotes (source language notes),
+              Form, Gloss, Comment, Bibliography
             - Reference properties copied: LanguageNotesRA
             - Etymology has no owned objects, so deep parameter has no effect
 
@@ -356,19 +365,19 @@ class EtymologyOperations(BaseOperations):
                 parent.EtymologyOS.Add(duplicate)
 
             # Copy simple MultiString properties (AFTER adding to parent).
-            # NOTE (found during live verification, 2026-08-18): the
-            # installed LCM version's ILexEtymology has NO "Source" field
-            # at all -- it was not merely renamed, the whole scalar/
-            # multi-string field is gone, replaced by the reference
-            # sequence LanguageRS (see docs/API_ISSUES_CATEGORIZED.md
-            # Category 8, which is now stale on this point; also affects
-            # GetSource/SetSource/Create/GetSyncableProperties in this
-            # class, none of which this fix touches -- flagged separately,
-            # out of scope for this change). Guarded with hasattr so this
-            # method degrades gracefully instead of crashing, matching the
-            # defensive style already used elsewhere in this class.
-            if hasattr(duplicate, "Source") and hasattr(source, "Source"):
-                duplicate.Source.CopyAlternatives(source.Source)
+            # NOTE (live-reflection, 2026-08-18): ILexEtymology has NO
+            # "Source" field at all -- it was not merely renamed, the
+            # whole scalar/multi-string field is gone. The free-text
+            # "source language" data now lives on LanguageNotes
+            # (IMultiString), which Create/GetSource/SetSource/
+            # GetSyncableProperties/ApplySyncableProperties have all been
+            # repaired to use -- copy it unconditionally here too so
+            # Duplicate() does not silently drop it (docs/
+            # API_ISSUES_CATEGORIZED.md Category 8 has been corrected to
+            # match). The separate controlled-vocabulary reference
+            # sequence, LanguageRS, is left uncopied -- out of scope,
+            # same as GetLanguage/SetLanguage.
+            duplicate.LanguageNotes.CopyAlternatives(source.LanguageNotes)
             duplicate.Form.CopyAlternatives(source.Form)
             duplicate.Gloss.CopyAlternatives(source.Gloss)
             duplicate.Comment.CopyAlternatives(source.Comment)
@@ -422,13 +431,18 @@ class EtymologyOperations(BaseOperations):
                     gloss_dict[ws_tag] = text
         props["Gloss"] = gloss_dict
 
-        # Source - source language or reference
+        # Source - source language or reference.
+        # NOTE (live-reflection, 2026-08-18): ILexEtymology has no
+        # "Source" field at all; the "Source" key in this syncable-
+        # properties dict is a stable API name kept for cross-project
+        # sync compatibility, backed by the real LCM field LanguageNotes
+        # (IMultiString). ApplySyncableProperties mirrors this mapping.
         source_dict = {}
-        if hasattr(item, "Source"):
+        if hasattr(item, "LanguageNotes"):
             for ws_def in self.project.WritingSystems.GetAll():
                 from SIL.LCModel.Core.KernelInterfaces import ITsString
 
-                text = normalize_text(ITsString(item.Source.get_String(ws_def.Handle)).Text)
+                text = normalize_text(ITsString(item.LanguageNotes.get_String(ws_def.Handle)).Text)
                 if text:
                     ws_tag = ws_def.Id
                     source_dict[ws_tag] = text
@@ -511,6 +525,15 @@ class EtymologyOperations(BaseOperations):
         for k, v in props.items():
             if k in _ra_fields:
                 ra_props[k] = v
+            elif k == "Source":
+                # ILexEtymology has no "Source" field (live-reflection,
+                # 2026-08-18) -- "Source" is kept as the syncable-
+                # properties dict key for API/cross-project stability,
+                # but the real backing field is LanguageNotes
+                # (IMultiString). Rename the key so the base class's
+                # generic dict-shaped-value branch in _apply_props_loop
+                # resolves getattr(item, "LanguageNotes") correctly.
+                remaining_props["LanguageNotes"] = v
             else:
                 remaining_props[k] = v
 
@@ -670,7 +693,12 @@ class EtymologyOperations(BaseOperations):
         etymology = self.__GetEtymologyObject(etymology_or_hvo)
         wsHandle = self.__WSHandleAnalysis(ws)
 
-        source = ITsString(etymology.Source.get_String(wsHandle)).Text
+        # ILexEtymology has no "Source" field in the installed LCM
+        # (live-reflection, 2026-08-18); LanguageNotes is the real
+        # backing field for the free-text "source language" concept
+        # this method exposes. See docs/API_ISSUES_CATEGORIZED.md
+        # Category 8.
+        source = ITsString(etymology.LanguageNotes.get_String(wsHandle)).Text
         return self._NormalizeMultiString(source)
 
     @OperationsMethod
@@ -719,8 +747,10 @@ class EtymologyOperations(BaseOperations):
 
         mkstr = TsStringUtils.MakeString(text, wsHandle)
 
+        # See GetSource(): "Source" does not exist on ILexEtymology;
+        # LanguageNotes is the real backing field.
         with self._TransactionCM("Set etymology source"):
-            etymology.Source.set_String(wsHandle, mkstr)
+            etymology.LanguageNotes.set_String(wsHandle, mkstr)
 
     # --- Form & Gloss Operations ---
 

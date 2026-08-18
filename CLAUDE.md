@@ -121,13 +121,19 @@ flexlibs2/
 - Import FLEx types from `SIL.LCModel`
 - Use factory and repository interfaces for object creation
 - Handle ITsString properly for multilingual text
-- **Same-name fields can have different LCM types across object types.**
-  For example, `Source` is `ITsString` on `ILexSense` but `IMultiString`
-  on `ILexEtymology` and `ICmBaseAnnotation`. Copying a working pattern
-  from one Operations class to another without checking the field's type
-  on the *target* LCM interface is the root cause of issues #36/#39/#40.
-  See `docs/API_ISSUES_CATEGORIZED.md` "Category 8: Same-name fields
-  with different LCM types" for the current table and the correct access
+- **Same-name fields can have different LCM types across object types --
+  or not exist at all on the type you'd expect.** For example, `Source`
+  is `ITsString` on `ILexSense`, but `ILexEtymology` has **no `Source`
+  field whatsoever** (confirmed by live reflection, 2026-08-18; the
+  free-text "source language" data now lives on `LanguageNotes`, an
+  `IMultiString`), and `ICmBaseAnnotation` likewise has no `Source` field
+  (that access pattern actually belongs to `IStText.Source`, reached via
+  a helper that navigates from the annotation to its owning text).
+  Copying a working pattern from one Operations class to another without
+  checking the field's type -- or existence -- on the *target* LCM
+  interface is the root cause of issues #36/#39/#40. See
+  `docs/API_ISSUES_CATEGORIZED.md` "Category 8: Same-name fields with
+  different LCM types" for the current table and the correct access
   patterns.
 
 ### Write Operations
