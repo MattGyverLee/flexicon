@@ -207,7 +207,7 @@ class AgentOperations(PossibilityItemOperations):
                 agents_oc.Remove(agent)
 
     @OperationsMethod
-    def Duplicate(self, agent_or_hvo, insert_after=True):
+    def Duplicate(self, agent_or_hvo, insert_after=True, deep=False):
         """
         Duplicate an agent, creating a new copy with a new GUID.
 
@@ -220,6 +220,7 @@ class AgentOperations(PossibilityItemOperations):
             agent_or_hvo: Either an ICmAgent object or its HVO to duplicate.
             insert_after (bool): Ignored for OC collections (no ordered insert);
                                  the duplicate is always appended.
+            deep (bool): Accepted for API uniformity across Operations classes. Agent has no owned objects, so this parameter is ignored.
 
         Returns:
             ICmAgent: The newly created duplicate agent with a new GUID.

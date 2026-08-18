@@ -1243,12 +1243,14 @@ class FilterOperations:
         return True
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
         """
         Duplicate a filter, creating a new copy with a new GUID.
 
         Args:
             item_or_hvo: The filter dict object to duplicate (not HVO-based).
+            insert_after (bool): Accepted for API uniformity across Operations classes. Filters are stored as a dict keyed by GUID with no positional ordering, so this parameter is ignored.
+            deep (bool): Accepted for API uniformity across Operations classes. Filter criteria are stored as a plain dict and already copied wholesale, so this parameter is ignored.
 
         Returns:
             dict: The newly created duplicate filter with a new GUID.

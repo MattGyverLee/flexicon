@@ -997,12 +997,16 @@ class WritingSystemOperations(BaseOperations):
             return ws
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
         """
         Duplicate operation is not applicable for writing systems.
 
         Writing systems are project-level configuration objects with unique
         identifiers and cannot be duplicated in the traditional sense.
+
+        Args:
+            insert_after (bool): Accepted for API uniformity across Operations classes. Ignored -- this method always raises.
+            deep (bool): Accepted for API uniformity across Operations classes. Ignored -- this method always raises.
 
         Raises:
             NotImplementedError: Always raised - writing systems cannot be duplicated.

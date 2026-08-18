@@ -506,10 +506,9 @@ class TestAllomorphDuplicate(unittest.TestCase):
             self.skipTest("No suitable entry with allomorphs found")
 
         original = self.test_entry.AlternateFormsOS[0]
-        # AllomorphOperations.Duplicate() has no `deep` parameter (signature
-        # is `(item_or_hvo, insert_after=True)`); calling with deep= raised
-        # TypeError. Allomorphs have no owned objects either way.
-        duplicate = self.project.Allomorphs.Duplicate(original)
+        # deep is accepted-but-ignored for Allomorph (no owned objects), so
+        # this assertion stays weak on purpose.
+        duplicate = self.project.Allomorphs.Duplicate(original, deep=False)
 
         # Just verify it was created
         self.assertIsNotNone(duplicate)
@@ -524,9 +523,9 @@ class TestAllomorphDuplicate(unittest.TestCase):
             self.skipTest("No suitable entry with allomorphs found")
 
         original = self.test_entry.AlternateFormsOS[0]
-        # AllomorphOperations.Duplicate() has no `deep` parameter; see note
-        # in test_duplicate_shallow_no_owned_objects above.
-        duplicate = self.project.Allomorphs.Duplicate(original)
+        # deep is accepted-but-ignored for Allomorph (no owned objects), so
+        # this assertion stays weak on purpose.
+        duplicate = self.project.Allomorphs.Duplicate(original, deep=True)
 
         # Just verify deep flag works
         self.assertIsNotNone(duplicate)
@@ -836,10 +835,9 @@ class TestVariantDuplicate(unittest.TestCase):
         if not self.test_variant:
             self.skipTest("No suitable variant reference found")
 
-        # VariantOperations.Duplicate() has no `deep` parameter (signature
-        # is `(item_or_hvo, insert_after=True)`); calling with deep= raised
-        # TypeError. Variants have no owned objects either way.
-        duplicate = self.project.Variants.Duplicate(self.test_variant)
+        # deep is accepted-but-ignored for Variant (no owned objects), so
+        # this assertion stays weak on purpose.
+        duplicate = self.project.Variants.Duplicate(self.test_variant, deep=False)
 
         # Just verify it was created
         self.assertIsNotNone(duplicate)
@@ -852,8 +850,9 @@ class TestVariantDuplicate(unittest.TestCase):
         if not self.test_variant:
             self.skipTest("No suitable variant reference found")
 
-        # See note in test_duplicate_shallow_no_owned_objects: no deep parameter.
-        duplicate = self.project.Variants.Duplicate(self.test_variant)
+        # deep is accepted-but-ignored for Variant (no owned objects), so
+        # this assertion stays weak on purpose.
+        duplicate = self.project.Variants.Duplicate(self.test_variant, deep=True)
 
         # Just verify deep flag works
         self.assertIsNotNone(duplicate)
@@ -948,12 +947,10 @@ class TestLexEntryDuplicate(unittest.TestCase):
         if not self.test_entry:
             self.skipTest("No suitable entry found")
 
-        # LexEntry doesn't use insert_after in same way (no sequence).
-        # LexEntryOperations.Duplicate() signature is actually
-        # `(item_or_hvo, deep=True)` -- it has no insert_after parameter
-        # (entries live in the project's top-level entry list, not an
-        # ordered sequence with a "position").
-        duplicate = self.project.LexEntry.Duplicate(self.test_entry)
+        # insert_after is accepted-but-ignored for LexEntry (entries live in
+        # the project's top-level entry list, not an ordered sequence with a
+        # "position"), so this assertion stays weak on purpose.
+        duplicate = self.project.LexEntry.Duplicate(self.test_entry, insert_after=True)
 
         # Just verify it was created
         self.assertIsNotNone(duplicate)
@@ -966,8 +963,9 @@ class TestLexEntryDuplicate(unittest.TestCase):
         if not self.test_entry:
             self.skipTest("No suitable entry found")
 
-        # See note in test_duplicate_insert_after: no insert_after parameter.
-        duplicate = self.project.LexEntry.Duplicate(self.test_entry)
+        # insert_after is accepted-but-ignored for LexEntry; see note in
+        # test_duplicate_insert_after above.
+        duplicate = self.project.LexEntry.Duplicate(self.test_entry, insert_after=False)
 
         # Just verify it was created
         self.assertIsNotNone(duplicate)
@@ -1091,10 +1089,10 @@ class TestTextDuplicate(unittest.TestCase):
         if not self.test_text:
             self.skipTest("No suitable text found")
 
-        # Text doesn't use sequential insertion. TextOperations.Duplicate()
-        # signature is actually `(item_or_hvo, deep=True)` -- it has no
-        # insert_after parameter.
-        duplicate = self.project.Text.Duplicate(self.test_text)
+        # insert_after is accepted-but-ignored for Text (Create() appends to
+        # the project's texts collection with no positional-insert concept),
+        # so this assertion stays weak on purpose.
+        duplicate = self.project.Text.Duplicate(self.test_text, insert_after=True)
 
         # Just verify it was created
         self.assertIsNotNone(duplicate)
@@ -1107,8 +1105,9 @@ class TestTextDuplicate(unittest.TestCase):
         if not self.test_text:
             self.skipTest("No suitable text found")
 
-        # See note in test_duplicate_insert_after: no insert_after parameter.
-        duplicate = self.project.Text.Duplicate(self.test_text)
+        # insert_after is accepted-but-ignored for Text; see note in
+        # test_duplicate_insert_after above.
+        duplicate = self.project.Text.Duplicate(self.test_text, insert_after=False)
 
         # Just verify it was created
         self.assertIsNotNone(duplicate)
@@ -1695,10 +1694,9 @@ class TestEtymologyDuplicate(unittest.TestCase):
         if not self.test_etymology:
             self.skipTest("No suitable etymology found")
 
-        # EtymologyOperations.Duplicate() has no `deep` parameter (signature
-        # is `(item_or_hvo, insert_after=True)`); calling with deep= raised
-        # TypeError. Etymology has no owned objects either way.
-        duplicate = self.project.Etymologies.Duplicate(self.test_etymology)
+        # deep is accepted-but-ignored for Etymology (no owned objects), so
+        # this assertion stays weak on purpose.
+        duplicate = self.project.Etymologies.Duplicate(self.test_etymology, deep=False)
 
         # Just verify it was created
         self.assertIsNotNone(duplicate)
@@ -1711,8 +1709,9 @@ class TestEtymologyDuplicate(unittest.TestCase):
         if not self.test_etymology:
             self.skipTest("No suitable etymology found")
 
-        # See note in test_duplicate_shallow_no_owned_objects: no deep parameter.
-        duplicate = self.project.Etymologies.Duplicate(self.test_etymology)
+        # deep is accepted-but-ignored for Etymology (no owned objects), so
+        # this assertion stays weak on purpose.
+        duplicate = self.project.Etymologies.Duplicate(self.test_etymology, deep=True)
 
         # Just verify deep flag works
         self.assertIsNotNone(duplicate)
@@ -1946,10 +1945,9 @@ class TestWfiGlossDuplicate(unittest.TestCase):
         if not self.test_gloss:
             self.skipTest("No suitable gloss found")
 
-        # WfiGlossOperations.Duplicate() has no `deep` parameter (signature
-        # is `(item_or_hvo, insert_after=False)`); calling with deep= raised
-        # TypeError. WfiGloss has no owned objects either way.
-        duplicate = self.project.WfiGlosses.Duplicate(self.test_gloss)
+        # deep is accepted-but-ignored for WfiGloss (no owned objects), so
+        # this assertion stays weak on purpose.
+        duplicate = self.project.WfiGlosses.Duplicate(self.test_gloss, deep=False)
 
         # Just verify it was created
         self.assertIsNotNone(duplicate)
@@ -1962,8 +1960,9 @@ class TestWfiGlossDuplicate(unittest.TestCase):
         if not self.test_gloss:
             self.skipTest("No suitable gloss found")
 
-        # See note in test_duplicate_shallow_no_owned_objects: no deep parameter.
-        duplicate = self.project.WfiGlosses.Duplicate(self.test_gloss)
+        # deep is accepted-but-ignored for WfiGloss (no owned objects), so
+        # this assertion stays weak on purpose.
+        duplicate = self.project.WfiGlosses.Duplicate(self.test_gloss, deep=True)
 
         # Just verify deep flag works
         self.assertIsNotNone(duplicate)
@@ -2084,10 +2083,9 @@ class TestWfiMorphBundleDuplicate(unittest.TestCase):
         if not self.test_bundle:
             self.skipTest("No suitable morph bundle found")
 
-        # WfiMorphBundleOperations.Duplicate() has no `deep` parameter
-        # (signature is `(item_or_hvo, insert_after=True)`); calling with
-        # deep= raised TypeError. WfiMorphBundle has no owned objects either way.
-        duplicate = self.project.WfiMorphBundles.Duplicate(self.test_bundle)
+        # deep is accepted-but-ignored for WfiMorphBundle (no owned objects),
+        # so this assertion stays weak on purpose.
+        duplicate = self.project.WfiMorphBundles.Duplicate(self.test_bundle, deep=False)
 
         # Just verify it was created
         self.assertIsNotNone(duplicate)
@@ -2100,8 +2098,9 @@ class TestWfiMorphBundleDuplicate(unittest.TestCase):
         if not self.test_bundle:
             self.skipTest("No suitable morph bundle found")
 
-        # See note in test_duplicate_shallow_no_owned_objects: no deep parameter.
-        duplicate = self.project.WfiMorphBundles.Duplicate(self.test_bundle)
+        # deep is accepted-but-ignored for WfiMorphBundle (no owned objects),
+        # so this assertion stays weak on purpose.
+        duplicate = self.project.WfiMorphBundles.Duplicate(self.test_bundle, deep=True)
 
         # Just verify deep flag works
         self.assertIsNotNone(duplicate)
@@ -2335,10 +2334,10 @@ class TestNaturalClassDuplicate(unittest.TestCase):
         if not self.test_nc:
             self.skipTest("No suitable natural class found")
 
-        # NaturalClassOperations.Duplicate() has no `deep` parameter
-        # (signature is `(item_or_hvo, insert_after=True)`); calling with
-        # deep= raised TypeError.
-        duplicate = self.project.NaturalClasses.Duplicate(self.test_nc)
+        # deep is accepted-but-ignored for NaturalClass -- FeaturesOA specs
+        # are always cloned for feature-based sources regardless of this
+        # flag, so this assertion stays weak on purpose.
+        duplicate = self.project.NaturalClasses.Duplicate(self.test_nc, deep=False)
 
         # Just verify it was created
         self.assertIsNotNone(duplicate)
@@ -2351,8 +2350,10 @@ class TestNaturalClassDuplicate(unittest.TestCase):
         if not self.test_nc:
             self.skipTest("No suitable natural class found")
 
-        # See note in test_duplicate_shallow_no_owned_objects: no deep parameter.
-        duplicate = self.project.NaturalClasses.Duplicate(self.test_nc)
+        # deep is accepted-but-ignored for NaturalClass -- FeaturesOA specs
+        # are always cloned for feature-based sources regardless of this
+        # flag, so this assertion stays weak on purpose.
+        duplicate = self.project.NaturalClasses.Duplicate(self.test_nc, deep=True)
 
         # Just verify deep flag works
         self.assertIsNotNone(duplicate)

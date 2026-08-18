@@ -310,7 +310,7 @@ class MediaOperations(BaseOperations):
         self.project.cache.DomainDataByFlid.DeleteObj(media.Hvo)
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, deep=False):
+    def Duplicate(self, item_or_hvo, deep=False, *, insert_after=True):
         """
         Duplicate a media file reference, creating a new reference to the same file.
 
@@ -324,6 +324,9 @@ class MediaOperations(BaseOperations):
             deep (bool): If True, the physical file is also copied with a new name.
                 If False, only the database reference is duplicated (both references
                 point to the same file).
+            insert_after (bool): Accepted for API uniformity across Operations classes.
+                Media file references are created via Create(), which has no
+                positional-insert concept, so this parameter is ignored.
 
         Returns:
             ICmFile: The newly created duplicate media file reference

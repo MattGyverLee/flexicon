@@ -218,7 +218,7 @@ class TextOperations(BaseOperations):
             self.project.lp.Texts.Remove(text_obj)
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, deep=True):
+    def Duplicate(self, item_or_hvo, deep=True, *, insert_after=True):
         """
         Duplicate a text, creating a new text with the same properties.
 
@@ -230,6 +230,10 @@ class TextOperations(BaseOperations):
             item_or_hvo: Either an IText object or its HVO (integer identifier)
             deep (bool): If True (default), recursively duplicate all paragraphs
                 and segments. If False, only duplicate the text shell (name, genre).
+            insert_after (bool): Accepted for API uniformity across Operations classes.
+                Texts are created via Create(), which appends to the project's
+                texts collection with no positional-insert concept, so this
+                parameter is ignored.
 
         Returns:
             IText: The newly created duplicate text

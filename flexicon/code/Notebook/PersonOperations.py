@@ -980,7 +980,7 @@ class PersonOperations(BaseOperations):
             raise FP_ParameterError("position must be a valid ICmPossibility object")
 
     @OperationsMethod
-    def Duplicate(self, person_or_hvo, insert_after=True):
+    def Duplicate(self, person_or_hvo, insert_after=True, deep=False):
         """
         Duplicate a person, creating a new copy with a new GUID.
 
@@ -988,8 +988,7 @@ class PersonOperations(BaseOperations):
             person_or_hvo: The ICmPerson object or HVO to duplicate.
             insert_after (bool): If True (default), insert after the source person.
                                 If False, insert at end of people collection.
-            deep (bool): Reserved for future use (persons have no owned objects).
-                        Currently has no effect.
+            deep (bool): Accepted for API uniformity across Operations classes. Person has no owned objects, so this parameter is ignored.
 
         Returns:
             ICmPerson: The newly created duplicate person with a new GUID.

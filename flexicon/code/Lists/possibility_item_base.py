@@ -225,13 +225,14 @@ class PossibilityItemOperations(BaseOperations):
                 list_obj.PossibilitiesOS.Remove(item)
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
         """Duplicate an item, creating a new copy with a new GUID.
 
         Args:
             item_or_hvo: Either an ICmPossibility object or its HVO to duplicate.
             insert_after (bool): If True (default), insert after the source item.
                                 If False, insert at end of list.
+            deep (bool): Accepted for API uniformity across Operations classes. CmPossibility has no owned objects, so this parameter is ignored.
 
         Returns:
             ICmPossibility: The newly created duplicate item with a new GUID.

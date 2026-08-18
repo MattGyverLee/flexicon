@@ -368,7 +368,7 @@ class AllomorphOperations(BaseOperations):
                 owner.AlternateFormsOS.Remove(allomorph)
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
         """
         Duplicate an allomorph, creating a new copy with a new GUID.
 
@@ -376,7 +376,7 @@ class AllomorphOperations(BaseOperations):
             item_or_hvo: The IMoForm object or HVO to duplicate.
             insert_after (bool): If True (default), insert after the source allomorph.
                                 If False, insert at end of parent's alternate forms list.
-            deep (bool): Reserved for future use (allomorphs have no owned objects).
+            deep (bool): Accepted for API uniformity across Operations classes. Allomorph has no owned objects, so this parameter is ignored.
 
         Returns:
             IMoForm: The newly created duplicate allomorph with a new GUID.

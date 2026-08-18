@@ -386,7 +386,7 @@ class WfiGlossOperations(BaseOperations):
             analysis.MeaningsOC.Remove(gloss)
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=False):
+    def Duplicate(self, item_or_hvo, insert_after=False, deep=False):
         """
         Duplicate a wordform gloss, creating a new copy with a new GUID.
 
@@ -395,6 +395,7 @@ class WfiGlossOperations(BaseOperations):
             insert_after (bool): Ignored. MeaningsOC is an unordered
                 ILcmOwningCollection with no Insert() method and no concept of
                 positional ordering. The duplicate is always appended via Add().
+            deep (bool): Accepted for API uniformity across Operations classes. WfiGloss has no owned objects, so this parameter is ignored.
 
         Returns:
             IWfiGloss: The newly created duplicate gloss with a new GUID.

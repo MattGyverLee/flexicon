@@ -350,7 +350,7 @@ class NaturalClassOperations(BaseOperations):
             phon_data.NaturalClassesOS.Remove(nc)
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
         """
         Duplicate a natural class, creating a new copy with a new GUID.
 
@@ -358,9 +358,9 @@ class NaturalClassOperations(BaseOperations):
             item_or_hvo: The IPhNaturalClass object or HVO to duplicate.
             insert_after (bool): If True (default), insert after the source natural class.
                                 If False, insert at end of natural classes list.
-            deep (bool): If True, also duplicate owned objects (if any exist).
-                        If False (default), only copy simple properties and references.
-                        Note: NaturalClass has no owned objects, so deep has no effect.
+            deep (bool): Accepted for API uniformity across Operations classes.
+                        Feature-based natural classes own FeaturesOA, but it is
+                        always cloned regardless of this flag, so it is ignored.
 
         Returns:
             IPhNaturalClass: The newly created duplicate. Returns

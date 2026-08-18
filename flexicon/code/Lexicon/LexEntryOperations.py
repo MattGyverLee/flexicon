@@ -293,7 +293,7 @@ class LexEntryOperations(BaseOperations):
             entry.Delete()
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, deep=True):
+    def Duplicate(self, item_or_hvo, deep=True, *, insert_after=True):
         """
         Duplicate a lexical entry, creating a new entry with the same properties.
 
@@ -309,6 +309,10 @@ class LexEntryOperations(BaseOperations):
             deep (bool): If True (default), recursively duplicate all owned objects
                 (senses, allomorphs, pronunciations, etymologies). If False, only
                 duplicate the entry shell (lexeme form, citation form, morph type).
+            insert_after (bool): Accepted for API uniformity across Operations classes.
+                Lexicon entries are automatically sorted alphabetically by FLEx, so
+                there is no positional ordering to insert relative to; this parameter
+                is ignored.
 
         Returns:
             ILexEntry: The newly created duplicate entry

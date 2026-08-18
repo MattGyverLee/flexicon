@@ -1122,11 +1122,15 @@ class ProjectSettingsOperations(BaseOperations):
         return language_tag.replace("_", "-").lower()
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
         """
         Duplicate operation is not applicable for project settings.
 
         Project settings are singleton configuration objects and cannot be duplicated.
+
+        Args:
+            insert_after (bool): Accepted for API uniformity across Operations classes. Ignored -- this method always raises.
+            deep (bool): Accepted for API uniformity across Operations classes. Ignored -- this method always raises.
 
         Raises:
             NotImplementedError: Always raised - project settings cannot be duplicated.

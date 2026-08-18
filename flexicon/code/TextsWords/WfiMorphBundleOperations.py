@@ -240,7 +240,7 @@ class WfiMorphBundleOperations(BaseOperations):
             owner.MorphBundlesOS.Remove(bundle)
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
         """
         Duplicate a morph bundle, creating a new copy with a new GUID.
 
@@ -248,9 +248,7 @@ class WfiMorphBundleOperations(BaseOperations):
             item_or_hvo: The IWfiMorphBundle object or HVO to duplicate.
             insert_after (bool): If True (default), insert after the source bundle.
                                 If False, insert at end of analysis's bundle sequence.
-            deep (bool): If True, also duplicate owned objects (if any exist).
-                        If False (default), only copy simple properties and references.
-                        Note: WfiMorphBundle has no owned objects, so deep has no effect.
+            deep (bool): Accepted for API uniformity across Operations classes. WfiMorphBundle has no owned objects, so this parameter is ignored.
 
         Returns:
             IWfiMorphBundle: The newly created duplicate bundle with a new GUID.

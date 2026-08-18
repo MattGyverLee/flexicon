@@ -1398,12 +1398,16 @@ class CustomFieldOperations(BaseOperations):
         return ws
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
         """
         Duplicate operation is not applicable for custom fields.
 
         Custom fields are metadata definitions at the project schema level and
         cannot be duplicated like data objects.
+
+        Args:
+            insert_after (bool): Accepted for API uniformity across Operations classes. Ignored -- this method always raises.
+            deep (bool): Accepted for API uniformity across Operations classes. Ignored -- this method always raises.
 
         Raises:
             NotImplementedError: Always raised - custom fields cannot be duplicated.
