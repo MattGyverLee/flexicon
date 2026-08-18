@@ -346,8 +346,12 @@ class PhonemeOperations(BaseOperations):
             # Copy simple MultiString properties
             duplicate.Name.CopyAlternatives(source.Name)
             duplicate.Description.CopyAlternatives(source.Description)
+            # BasicIPASymbol is a single-WS ITsString (not IMultiString),
+            # so it has no CopyAlternatives. It is immutable, so sharing
+            # the reference is safe (same pattern as ILexSense.Source,
+            # issues #31/#93).
             if hasattr(source, "BasicIPASymbol") and source.BasicIPASymbol:
-                duplicate.BasicIPASymbol.CopyAlternatives(source.BasicIPASymbol)
+                duplicate.BasicIPASymbol = source.BasicIPASymbol
 
             # Note: FeaturesOA is an owned atomic object (OA), NOT a reference.
             # Assigning it directly would TRANSFER ownership from source, corrupting it.

@@ -355,8 +355,20 @@ class EtymologyOperations(BaseOperations):
                 # Insert at end
                 parent.EtymologyOS.Add(duplicate)
 
-            # Copy simple MultiString properties (AFTER adding to parent)
-            duplicate.Source.CopyAlternatives(source.Source)
+            # Copy simple MultiString properties (AFTER adding to parent).
+            # NOTE (found during live verification, 2026-08-18): the
+            # installed LCM version's ILexEtymology has NO "Source" field
+            # at all -- it was not merely renamed, the whole scalar/
+            # multi-string field is gone, replaced by the reference
+            # sequence LanguageRS (see docs/API_ISSUES_CATEGORIZED.md
+            # Category 8, which is now stale on this point; also affects
+            # GetSource/SetSource/Create/GetSyncableProperties in this
+            # class, none of which this fix touches -- flagged separately,
+            # out of scope for this change). Guarded with hasattr so this
+            # method degrades gracefully instead of crashing, matching the
+            # defensive style already used elsewhere in this class.
+            if hasattr(duplicate, "Source") and hasattr(source, "Source"):
+                duplicate.Source.CopyAlternatives(source.Source)
             duplicate.Form.CopyAlternatives(source.Form)
             duplicate.Gloss.CopyAlternatives(source.Gloss)
             duplicate.Comment.CopyAlternatives(source.Comment)

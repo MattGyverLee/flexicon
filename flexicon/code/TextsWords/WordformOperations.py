@@ -858,9 +858,12 @@ class WordformOperations(BaseOperations):
                             new_bundle = bundle_factory.Create()
                             new_analysis.MorphBundlesOS.Add(new_bundle)
 
-                            # Copy MultiString properties
+                            # Copy MultiString properties. IWfiMorphBundle
+                            # has Form but NOT Gloss -- the displayed gloss
+                            # comes from SenseRA.Gloss, preserved by the
+                            # SenseRA copy below. (same root bug as
+                            # #16/#107/#108, sibling site)
                             new_bundle.Form.CopyAlternatives(bundle.Form)
-                            new_bundle.Gloss.CopyAlternatives(bundle.Gloss)
 
                             # Copy Reference Atomic (RA) properties
                             if hasattr(bundle, "SenseRA") and bundle.SenseRA:

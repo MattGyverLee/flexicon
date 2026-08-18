@@ -545,9 +545,13 @@ class WfiAnalysisOperations(BaseOperations):
                     bundle_factory = self.project.project.ServiceLocator.GetService(IWfiMorphBundleFactory)
                     new_bundle = bundle_factory.Create()
                     duplicate.MorphBundlesOS.Add(new_bundle)
-                    # Copy bundle properties
+                    # Copy bundle properties. IWfiMorphBundle has Form but
+                    # NOT Gloss -- the displayed gloss comes from
+                    # SenseRA.Gloss, preserved by the SenseRA copy below.
+                    # (same root bug as #16/#107/#108, missed in this
+                    # sibling site; WfiMorphBundleOperations.Duplicate
+                    # already carries the fix.)
                     new_bundle.Form.CopyAlternatives(bundle.Form)
-                    new_bundle.Gloss.CopyAlternatives(bundle.Gloss)
                     if hasattr(bundle, "SenseRA") and bundle.SenseRA:
                         new_bundle.SenseRA = bundle.SenseRA
                     if hasattr(bundle, "MsaRA") and bundle.MsaRA:

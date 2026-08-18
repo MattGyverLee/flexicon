@@ -465,7 +465,12 @@ class LexSenseOperations(BaseOperations):
                     new_example = ex_factory.Create()
                     duplicate.ExamplesOS.Add(new_example)
                     new_example.Example.CopyAlternatives(example.Example)
-                    new_example.Reference.CopyAlternatives(example.Reference)
+                    # Reference is a single-WS ITsString (not IMultiString),
+                    # so it has no CopyAlternatives. It is immutable, so
+                    # sharing the reference is safe (same pattern as this
+                    # method's own Source/ScientificName/ImportResidue
+                    # fields above, issues #31/#93).
+                    new_example.Reference = example.Reference
                     # Deep copy translations
                     for translation in example.TranslationsOC:
                         trans_factory = self.project.project.ServiceLocator.GetService(ICmTranslationFactory)

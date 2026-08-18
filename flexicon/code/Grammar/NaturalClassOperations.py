@@ -461,7 +461,12 @@ class NaturalClassOperations(BaseOperations):
             else:
                 # Reference-collection copy of phoneme members (shallow:
                 # both classes reference the same IPhPhoneme objects).
-                for phoneme in source.SegmentsRC:
+                # SegmentsRC is declared on the concrete IPhNCSegments, not
+                # on the base IPhNaturalClass that __GetNaturalClassObject
+                # returns; cast before reading it (same root pattern as the
+                # is_features branch already getting this right via the
+                # factory-typed `duplicate`).
+                for phoneme in IPhNCSegments(source).SegmentsRC:
                     duplicate.SegmentsRC.Add(phoneme)
 
             return duplicate

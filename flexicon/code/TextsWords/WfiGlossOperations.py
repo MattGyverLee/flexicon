@@ -436,7 +436,11 @@ class WfiGlossOperations(BaseOperations):
         # Resolve to a concrete IWfiGloss (issue #212)
         source = self.__ResolveGloss(item_or_hvo)
 
-        parent = self._GetObject(source.Owner.Hvo)
+        # MeaningsOC is declared on IWfiAnalysis; the untyped _GetObject()
+        # round-trip previously returned a bare ICmObject here, silently
+        # failing on `.MeaningsOC`. Cast directly like Delete() already
+        # does above (same fix pattern, sibling site).
+        parent = IWfiAnalysis(source.Owner)
 
         with self._TransactionCM("Duplicate gloss"):
             # Create new gloss using factory (auto-generates new GUID)

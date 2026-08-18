@@ -380,8 +380,13 @@ class LexEntryOperations(BaseOperations):
                 morph_type_name = ITsString(morph_type_name_ts).Text or "stem"
 
         with self._TransactionCM("Duplicate entry"):
-            # Create the new entry (skip blank sense when deep copying — we copy source senses)
-            new_entry = self.Create(lexeme_form, morph_type_name, wsHandle, create_blank_sense=(not deep))
+            # Create the new entry shell with NO blank sense: when deep=True
+            # we copy the source's real senses below, and when deep=False
+            # the docstring's own contract promises GetSenseCount() == 0
+            # ("only duplicate the entry shell"). The previous
+            # `create_blank_sense=(not deep)` gave every shallow duplicate
+            # a spurious blank sense, contradicting that documented example.
+            new_entry = self.Create(lexeme_form, morph_type_name, wsHandle, create_blank_sense=False)
 
             # Copy lexeme form for all writing systems (Create only sets default vernacular)
             if source_entry.LexemeFormOA and new_entry.LexemeFormOA:

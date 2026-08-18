@@ -428,14 +428,21 @@ class AllomorphOperations(BaseOperations):
         class_name = source.ClassName
         factory = None
 
+        # PhoneEnvRC is declared on the concrete allomorph interfaces, not
+        # on the base IMoForm that __GetAllomorphObject returns; cast
+        # `source` to whichever concrete type class_name identifies so
+        # PhoneEnvRC is reachable below.
+        concrete_source = None
         if class_name == "MoStemAllomorph":
-            from SIL.LCModel import IMoStemAllomorphFactory
+            from SIL.LCModel import IMoStemAllomorph, IMoStemAllomorphFactory
 
             factory = self.project.project.ServiceLocator.GetService(IMoStemAllomorphFactory)
+            concrete_source = IMoStemAllomorph(source)
         elif class_name == "MoAffixAllomorph":
-            from SIL.LCModel import IMoAffixAllomorphFactory
+            from SIL.LCModel import IMoAffixAllomorph, IMoAffixAllomorphFactory
 
             factory = self.project.project.ServiceLocator.GetService(IMoAffixAllomorphFactory)
+            concrete_source = IMoAffixAllomorph(source)
         else:
             # Unrecognized allomorph type - raise error instead of defaulting
             raise FP_ParameterError(
@@ -469,7 +476,7 @@ class AllomorphOperations(BaseOperations):
             duplicate.MorphTypeRA = source.MorphTypeRA
 
             # Copy Reference Collection (RC) properties
-            for env in source.PhoneEnvRC:
+            for env in concrete_source.PhoneEnvRC:
                 duplicate.PhoneEnvRC.Add(env)
 
             return duplicate

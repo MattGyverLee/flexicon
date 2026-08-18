@@ -185,9 +185,22 @@ class NoteOperations(BaseOperations):
             factory = self.project.project.ServiceLocator.GetService(ICmBaseAnnotationFactory)
             note = factory.Create()
 
-            # Add to the annotations collection (must be done before setting properties)
+            # Add to the annotations collection (must be done before setting
+            # properties -- an unowned CmObject has no Services yet, so
+            # note.Comment.set_String() below throws
+            # System.NullReferenceException at CmObject.get_Services()
+            # until the note is owned by *something*).
+            #
+            # In this LCM version, AnnotationsOC lives ONLY on LangProject
+            # (the project root) -- no domain object (ILexEntry, ILexSense,
+            # IText, IStTxtPara, ...) exposes it directly (verified live).
+            # Notes reference their subject via BeginObjectRA instead of
+            # being owned children of it, so fall back to the project-level
+            # collection whenever the owner_object itself has none.
             if hasattr(owner_object, "AnnotationsOC"):
                 owner_object.AnnotationsOC.Add(note)
+            else:
+                self.project.lp.AnnotationsOC.Add(note)
 
             # Set the content
             mkstr = TsStringUtils.MakeString(content, wsHandle)
@@ -250,8 +263,15 @@ class NoteOperations(BaseOperations):
                 elif hasattr(owner, "RepliesOS") and note in owner.RepliesOS:
                     owner.RepliesOS.Remove(note)
 
-            # Delete the note object
-            if hasattr(note, "Delete"):
+            # Removing from an owning collection (AnnotationsOC/RepliesOS)
+            # already deletes the underlying CmObject -- calling
+            # note.Delete() again afterward throws
+            # System.NullReferenceException at
+            # CmObject.ICmObjectInternal.DeleteObject() because the object
+            # is already gone. Only call Delete() explicitly when the note
+            # is still a valid object (e.g. it had no owning collection to
+            # remove it from).
+            if hasattr(note, "Delete") and getattr(note, "IsValidObject", True):
                 note.Delete()
 
     @OperationsMethod
@@ -337,9 +357,15 @@ class NoteOperations(BaseOperations):
 
             # Copy simple MultiString properties
             duplicate.Comment.CopyAlternatives(source.Comment)
-            duplicate.Source.CopyAlternatives(source.Source)
 
             # Copy Reference Atomic (RA) properties
+            # "Source" was renamed to SourceRA in this LCM version -- it is
+            # a reference to the annotation's author/source object, not a
+            # MultiString, so it has no CopyAlternatives (confirmed live:
+            # AttributeError with pythonnet's own "Did you mean: 'SourceRA'?"
+            # hint).
+            if hasattr(source, "SourceRA"):
+                duplicate.SourceRA = source.SourceRA
             if hasattr(source, "AnnotationTypeRA"):
                 duplicate.AnnotationTypeRA = source.AnnotationTypeRA
             if hasattr(source, "BeginObjectRA"):
@@ -372,9 +398,12 @@ class NoteOperations(BaseOperations):
             dup_reply = factory.Create()
             parent_note.RepliesOS.Add(dup_reply)
 
-            # Copy properties
+            # Copy properties. "Source" was renamed to SourceRA in this LCM
+            # version (see note in Duplicate() above) -- it is a reference,
+            # not a MultiString.
             dup_reply.Comment.CopyAlternatives(source_reply.Comment)
-            dup_reply.Source.CopyAlternatives(source_reply.Source)
+            if hasattr(source_reply, "SourceRA"):
+                dup_reply.SourceRA = source_reply.SourceRA
             if hasattr(source_reply, "AnnotationTypeRA"):
                 dup_reply.AnnotationTypeRA = source_reply.AnnotationTypeRA
             if hasattr(source_reply, "BeginObjectRA"):
