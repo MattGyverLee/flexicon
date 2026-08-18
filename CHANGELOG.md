@@ -11,10 +11,45 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
-> Targets **4.4.0**. Contains a public-API default change; read the first
-> entry before upgrading.
+---
+
+## [4.4.0] - 2026-08-18
+
+> **The write path is now transactional.** This release contains a public-API
+> default change; read the first entry under **Changed** before upgrading.
+> Completes `specs/write-path-transactions`.
 
 ### Added
+- **`FLExProject.AbortSession()`.** Task A3. Wraps `IActionHandler.Rollback(0)`
+  to discard every uncommitted change made since the session's write envelope
+  was opened, then reopens that envelope so the abort is non-terminal,
+  repeatable, and safe to call from inside an `except:` block. Reopening is
+  required (decision D8): `Rollback` leaves the handler's state machine in
+  `ReadyForBeginTask`, which ends the `undoable=False` session envelope, and
+  `CloseProject()` unconditionally calls `EndNonUndoableTask()` -- so a
+  terminal abort would leave every abort followed by a broken close.
+
+  Guards: a read-only project raises `FP_ReadOnlyError`; nothing open
+  (`CurrentDepth == 0`) returns `False` rather than surfacing a raw
+  `InvalidOperationException`; and `undoable=True` with a block open raises
+  `FP_TransactionError` rather than rolling back underneath the owning
+  `UndoableUnitOfWorkHelper`.
+
+  Note that under the new 4.4.0 default this method is a near-no-op by design
+  -- see the `OpenProject` entry under **Changed**. It is useful chiefly to
+  callers who opt into `undoable=False`.
+
+- **`flexicon.CAPABILITIES`.** Task B4. A module-level `frozenset` of
+  capability tokens declaring what this build implements, so consumers such as
+  FlexToolsMCP can feature-detect rather than version-sniff. This release ships
+  all four tokens of section 3 of the write contract: `ui-injection`,
+  `refresh-from-disk`, `per-operation-uow`, and `transaction-rollback`.
+
+  Per decision D7 a token means "this build implements the capability", not
+  "it is active in your session" -- two of the four are mode-dependent and
+  deliver nothing to a caller who opts out with `undoable=False`. See
+  `docs/FLEXTOOLSMCP_WRITE_CONTRACT.md` section 3.
+
 - **`guid=` on three more `Create()` methods.** `Agents.Create()`,
   `ReversalIndexes.Create()`, and `ReversalEntries.Create()` now accept an
   optional trailing `guid=` argument and route through the existing
@@ -81,6 +116,50 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `InvalidOperationException: Not in the right state to register a change.`
 
 ### Fixed
+- **CRITICAL: every write under `undoable=True` was silently discarded.**
+  Decision D9. `UndoableUnitOfWorkHelper.RollBack` is declared
+  `{private get; set;}`, so pythonnet synthesizes no property for it and
+  surfaces only `set_RollBack`. The assignment form `helper.RollBack = False`
+  therefore does **not** raise -- pythonnet accepts it as a plain Python
+  attribute on the wrapper object while the real .NET field keeps its
+  constructor default of `True`. `Dispose()` consequently rolled back *every*
+  unit of work, successful ones included, so under `undoable=True` no write
+  ever reached the project. Both call sites now use `set_RollBack(...)`.
+
+  This was invisible offline, because the test doubles had encoded the same
+  bug: 30 tests passed against code that destroyed all data live. Both doubles
+  now raise on the assignment form, and a source-level guard keeps the
+  assignment form from reappearing.
+
+- **`_NestingAwareTransaction` rewritten on `UndoableUnitOfWorkHelper`**
+  (#233, #234). The hand-rolled `_transaction_depth` counter is deleted
+  outright; every `__enter__` now asks liblcm's own
+  `ActionHandlerAccessor.CurrentDepth`, following
+  `UndoableUnitOfWorkHelper.DoUsingNewOrCurrentUOW`'s join-or-open idiom
+  verbatim. The `undoable=True` phase constructs `UndoableUnitOfWorkHelper`
+  directly and is genuinely rollback-capable; the `undoable=False` phase is
+  unchanged. All 174 `with self._TransactionCM(...)` call sites keep working
+  unedited.
+
+  `_FLExUndoableOperation` is rewritten on the same idiom, since it shared the
+  one-argument `BeginUndoTask` call that was #233 -- that method needs both
+  undo *and* redo text, not a single label. `FLExProject._GetUndoRedoAPI`, the
+  discovery layer that produced the bad call, is deleted.
+
+- **`FLExProject.Undo()` / `Redo()` no longer reference a non-existent
+  attribute** (#235). Both now read `LcmCache.ActionHandlerAccessor` -- the old
+  `self.project.UndoStack` did not exist at all -- and both gate on
+  `CanUndo()` / `CanRedo()`, since calling into an empty stack throws rather
+  than returning a status. The dead `if undo_stack is None` / `else` branches
+  are removed.
+
+  **Scope caveat, now stated in both docstrings:** liblcm's undo stack lives in
+  RAM and is never serialized into `.fwdata`, so undo/redo is in-process only.
+  A reopened project always starts with `CanUndo()` returning `False`.
+
+- **Writes now persist across `CloseProject()` under `undoable=True`** (#237),
+  covered by a live-project test on the Target (task B2t).
+
 - **47 mutation sites that were running outside any unit of work are now
   bracketed.** Found by the DEF default flip, which turned a latent gap into a
   visible failure. They were missed by the original 295-site sweep because its
@@ -112,7 +191,6 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   them. The whole property loop is bracketed as one unit, so a sync that fails
   partway cannot leave the target item half-updated.
 
-### Fixed
 - **`project.Senses.GetPartOfSpeechObject()` no longer returns `None` for every
   sense.** The method read `getattr(msa, "PartOfSpeechRA", None)` off the base
   `IMoMorphSynAnalysis` interface, where that property is not declared, so it
@@ -130,6 +208,70 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `GetPartOfSpeech()` (the string getter, which uses `InterlinearAbbr`) was
   not affected and is unchanged -- `InterlinearAbbr` is declared on the base
   interface.
+
+- **The offline test suite is green again: 117 failures and 17 errors down to
+  zero.** All of it was fallout from the `flexlibs2` -> `flexicon` rename plus
+  two mismarked test modules; no production behaviour was at fault except where
+  noted below.
+
+  - **Source-inspection tests were silently vacuous.** Roughly thirty tests
+    across nine files `read_text()` a source file and assert on its contents,
+    but still named `flexlibs2/code/...`. Where the path was a single file they
+    died with `FileNotFoundError`; where it was an `rglob` root they passed by
+    iterating zero files, which is worse. All are repointed at `flexicon/code`.
+    Two of them then reported genuine false positives on first real execution
+    and were repaired, not deleted: the factory/`GetService` guard now exempts
+    a shared helper handed an already-resolved `factory`, and the LCM
+    collection-method regex no longer matches the all-caps `POS` facade
+    attribute merely because it ends in the letters "OS".
+  - **Two modules opened live FLEx projects without the
+    `requires_live_project` marker**, so they ran under the offline selector
+    and crashed `FLExInitialize` with a Windows access violation --
+    `flexicon/sync/tests/test_duplicate_operations.py` (86 of the failures, on
+    Sena 3) and `flexicon/tests/test_CustomFields.py`. Both are now marked.
+    `test_duplicate_operations.py`'s `tearDownModule()` also called
+    `FLExCleanup()` without importing it, which would have raised `NameError`
+    on its first successful live run.
+  - **Mock-fidelity bugs in the sync test doubles.** A bare `Mock()`
+    auto-vivifies any attribute, which defeats the `hasattr()` checks in
+    `sync/validation.py` and `sync/diff.py` that exist precisely to detect
+    "this LCM object does not have this attribute" -- so the code went on to
+    `len()` and iterate Mocks it had never been given values for. The doubles
+    now stub the attributes each code path touches and use `spec=` where the
+    real operations class has a narrower surface.
+
+- **`SelectiveImport._exists_in_target()` no longer propagates unexpected
+  lookup failures.** It caught only `(AttributeError, KeyError)` while every
+  other `except` in the same file catches broad `Exception` and logs. A
+  `project.Object(guid)` lookup goes through pythonnet into the live LCM and
+  can raise other types (malformed GUID, backend errors); this is a boolean
+  existence check, so any failure now means "not found" and is logged, rather
+  than aborting the caller's candidate scan.
+
+### Known limitations
+
+Stated rather than papered over:
+
+- **A single whole-suite live run has never completed, in either mode.** It
+  hangs at the same point on the unmodified pre-4.4.0 tree, so it is
+  pre-existing and not caused by this work -- but "the entire live suite is
+  green in one process" is not a claim this release makes. Running the suite
+  one file at a time completes cleanly and is the supported way to execute it.
+- **The broad live suite still runs `undoable=False` by design** (decision
+  D12), so continuous coverage of the new default rests on the DEF-COV suite
+  plus the module-scoped fixtures that pin no mode.
+- **`SaveChanges()` cannot succeed under `undoable=False`,** and the failed
+  save also rolls back the session's uncommitted work. Pinned by
+  `TestSaveChangesIsUnusableInThisMode`, which asserts the current broken
+  behaviour and must be inverted when it is fixed.
+- **`ReversalIndexOperations.Create()` stores an int writing-system handle as a
+  stringified int,** breaking the entry path's own writing-system resolution.
+  Pre-existing, surfaced incidentally by the `guid=` work, and sidestepped in
+  the tests with an explicit `wsHandle=`.
+- **`flexicon/tests/test_CustomFields.py` needs a `__flexlibs_testing`
+  project** that is not part of either checked-in fixture project. It is now
+  correctly gated behind `requires_live_project`, and skips rather than
+  crashing where that project is absent.
 
 ---
 

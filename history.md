@@ -10,6 +10,61 @@ None
 
 ## History
 
+### 2026-08-18 - v4.4.0 release cut: the write path becomes transactional
+
+Merges `write-path-transactions-b1-b3` into main and cuts v4.4.0, completing
+`specs/write-path-transactions`. Closes MattGyverLee/flexicon#233, #234, #235,
+#236, #237.
+
+**What changed:**
+
+- `_NestingAwareTransaction` is rewritten on liblcm's own
+  `UndoableUnitOfWorkHelper`, asking `ActionHandlerAccessor.CurrentDepth` at
+  every `__enter__` instead of tracking a hand-rolled depth counter (B1/B3).
+  All 174 `with self._TransactionCM(...)` call sites keep working unedited.
+- `FLExProject.Undo()`/`Redo()` are rewired onto `ActionHandlerAccessor`; the
+  old `self.project.UndoStack` never existed. In-process scope only -- liblcm's
+  undo stack is RAM-only and is never serialized into `.fwdata`.
+- `AbortSession()` (A3) and `flexicon.CAPABILITIES` (B4) are added.
+- D9, the worst bug of the cycle: pythonnet silently accepted
+  `helper.RollBack = False` as a plain Python attribute while the real .NET
+  field kept its constructor default of `True`, so `Dispose()` rolled back
+  every unit of work and NO write under `undoable=True` ever reached the
+  project. The offline doubles had encoded the same bug, so 30 tests passed
+  against code that destroyed all data live. Both call sites now use
+  `set_RollBack(...)`, both doubles raise on the assignment form, and a
+  source-level guard keeps it from coming back.
+- 295 mutation sites bracketed by the B2 sweep, plus 47 more the original
+  scanner structurally could not see (unsuffixed scalar setters,
+  `ISilDataAccess` setters, one LCM domain mutator).
+- DEF: `OpenProject(..., undoable=True)` is now the DEFAULT. Behaviourally
+  breaking; no signature change. `undoable=False` remains as an explicit
+  opt-out.
+- `guid=` accepted by `Agents.Create()`, `ReversalIndexes.Create()` and
+  `ReversalEntries.Create()`.
+
+**Test-suite repair shipped in the same cut:**
+
+The offline suite went from 117 failed + 17 errors to 0. Nearly all of it was
+`flexlibs2` -> `flexicon` rename fallout in source-inspection tests, which had
+gone not just red but *vacuous* -- the ones using an `rglob` root passed by
+iterating zero files. Two modules (`flexicon/sync/tests/test_duplicate_
+operations.py`, `flexicon/tests/test_CustomFields.py`) opened live FLEx
+projects with no `requires_live_project` marker and were crashing
+`FLExInitialize` inside the offline selector; both are now marked.
+
+**Verification:**
+
+- offline: 1461 passed, 0 failed, 0 errors
+- live, `FLEXLIBS_REQUIRE_LIVE=1`, restored Target + Sena 3, run one file at a
+  time: 42/42 original live files completed, 406 passed / 4 failed / 11
+  skipped / 3 xfailed, no mock fallback. The 4 failures
+  (`test_phonemes::TestPhonemeSync` x2, `test_apply_syncable_properties` x2)
+  reproduce identically on the pre-merge `origin/main`.
+- A whole-suite live run in a single process still hangs, exactly as it does
+  on the unmodified pre-4.4.0 tree. Pre-existing, not from this work; per-file
+  execution is the supported route.
+
 ### 2026-07-22 — v4.3.0 release cut: SegmentOperations AnalysesRS writes, MSA.RemoveOrphaned, wrapper_base cast fix
 
 Closes MattGyverLee/flexlibs#215, #206, #199. Completes the v4.3.0 release
