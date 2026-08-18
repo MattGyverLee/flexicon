@@ -11,6 +11,47 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+> Targets **4.4.1**. Contains one production fix to a public method that was
+> broken outright.
+
+### Fixed
+- **`ILexEtymology.Source` does not exist in the installed LCM, so every
+  etymology source method was broken.** Live reflection confirms the field is
+  absent entirely -- `CLAUDE.md` and `docs/API_ISSUES_CATEGORIZED.md`
+  "Category 8" were both **wrong** to list it as an `IMultiString`, and are
+  corrected here. The real field is `LanguageNotes` (an `IMultiString`); the
+  separate `LanguageRS` (a reference sequence onto the Languages list) is a
+  distinct concept, not a rename.
+
+  `EtymologyOperations.Create(source=...)`, `GetSource()`, `SetSource()`,
+  `GetSyncableProperties()` and `ApplySyncableProperties()` now read and write
+  `LanguageNotes`. The public surface is unchanged: `source=`, `GetSource()`,
+  `SetSource()` and the `"Source"` dictionary key all keep their names, so no
+  caller has to change. `Duplicate()`'s `hasattr(duplicate, "Source")` guard
+  could never fire and was therefore **silently dropping the field on every
+  duplicate**; it is now an unconditional `LanguageNotes` copy.
+
+  `GetLanguage()` / `SetLanguage()` reference the equally absent `LanguageRA`
+  and are deliberately **not** fixed here -- a separate bug, already recorded
+  as `xfail`.
+
+- **Two live tests were asserting against the wrong writing system.**
+  `test_phonemes.py::TestPhonemeSync` matched a feature value by calling
+  `GetAbbreviation(v)` with no explicit writing system, which resolves to the
+  *project's* default analysis WS. The `PHON:fPAConsonantal` catalog only ever
+  writes `Abbreviation` into `en`, and Sena 3's default analysis WS is `pt`,
+  so the lookup was always empty and `next()` raised a bare `StopIteration`.
+  The tests now match on the catalog's stable value GUID, following the
+  existing pattern in `test_phon_features.py`. This is why the failure looked
+  environment-dependent: the same tests pass against Target, whose default
+  analysis WS is `en`.
+
+- **`test_pronunciation_form_roundtrip` indexed a set.**
+  `GetAllVernacularWSs()` / `GetAllAnalysisWSs()` are documented to return a
+  `set`, and the test subscripted the result with `[0]`. It now uses
+  `GetDefaultVernacularWS()` / `GetDefaultAnalysisWS()`, which additionally
+  match the writing system the preceding `Create()` actually wrote to.
+
 ---
 
 ## [4.4.0] - 2026-08-18
