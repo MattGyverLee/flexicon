@@ -11,10 +11,55 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
-> Targets **4.4.1**. Contains one production fix to a public method that was
-> broken outright.
+## [4.4.1] - 2026-08-18
+
+> Two production fixes to public methods that were broken outright, plus a
+> type-stub correction. No breaking changes.
 
 ### Fixed
+- **Seven `Duplicate()` methods rejected keyword arguments their own
+  docstrings documented.** `AllomorphOperations`, `EtymologyOperations`,
+  `NaturalClassOperations`, `WfiGlossOperations` and
+  `WfiMorphBundleOperations` raised `TypeError: got an unexpected keyword
+  argument 'deep'`; `LexEntryOperations` and `TextOperations` did the same for
+  `insert_after`. Five of them already described a `deep` parameter in their
+  `Args:` block that the signature never had -- the docstring was the
+  published spec and the signature was the defect. Found on the first live run
+  of `test_duplicate_operations.py`.
+
+  Harmonised **additively** rather than by imposing one uniform signature.
+  `CLAUDE.md`'s canonical shape is `Duplicate(item_or_hvo, deep=True)` with no
+  `insert_after`, but most classes have `insert_after`, some genuinely need it
+  (ordered owning sequences) and others cannot use it (unordered owning
+  collections) -- so no single shape fits. Every `Duplicate()` now accepts
+  **both** keywords, and a parameter that is meaningless for its type is
+  accepted and documented as ignored. **No existing default and no existing
+  behaviour changed**, so this is not a breaking change.
+
+  Where a class already had `insert_after`, `deep=False` is appended -- `False`
+  because it honestly describes the existing shallow behaviour. Where a class
+  already had `deep`, `insert_after` is added **keyword-only**
+  (`deep=True, *, insert_after=True`); the bare `*` is load-bearing, preserving
+  positional compatibility for existing `Duplicate(obj, False)` callers.
+
+  Closes #246.
+
+- **The `.pyi` stubs lied about nearly every `Duplicate()`.** The stubs emitted
+  one of two fabricated templates -- `(self, obj: Any, deep: bool = True)` or
+  the fully untyped `(self, *args: Any, **kwargs: Any)` -- almost universally,
+  while the real implementations vary along three independent axes. A caller
+  who trusted a stub got a `TypeError`, which is worse than having no stub at
+  all. 40 stub lines were rewritten from the real signatures and 4 fabricated
+  ones deleted, for classes that define no `Duplicate()` and inherit none
+  (`BaseOperations`, `InflectionFeatureOperations`, `LexReferenceOperations`,
+  `SegmentOperations`).
+
+  Note for whoever next regenerates stubs: `Duplicate` is wrapped by
+  `OperationsMethod.__get__` in `BaseOperations`, so `inspect.signature()`
+  reports `(project, *args, **kwargs)` for every one of them. That wrapper is
+  where the bogus template came from. **Generate from the AST, not from
+  `inspect`.**
+
 - **`ILexEtymology.Source` does not exist in the installed LCM, so every
   etymology source method was broken.** Live reflection confirms the field is
   absent entirely -- `CLAUDE.md` and `docs/API_ISSUES_CATEGORIZED.md`
