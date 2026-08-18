@@ -40,8 +40,22 @@ class TestSuite(unittest.TestCase):
     """
 
     def _openProject(self):
-        """Open the test project with write access."""
+        """Open the test project with write access.
+
+        ``__flexlibs_testing`` is an upstream fixture project that is not
+        shipped with this repository and is not one of the two projects
+        CLAUDE.md designates (Target, Sena 3). Where it is absent this is a
+        missing environmental precondition, not a failure, so skip rather
+        than fail -- a red test nobody can make green destroys the signal of
+        the live suite.
+        """
         FLExInitialize()
+        if TEST_PROJECT not in AllProjectNames():
+            self.skipTest(
+                f"Project '{TEST_PROJECT}' is not present on this machine. "
+                "This is an upstream fixture project, not one of the two "
+                "projects this repository provisions (Target, Sena 3)."
+            )
         fp = FLExProject()
         try:
             fp.OpenProject(TEST_PROJECT, writeEnabled=True)

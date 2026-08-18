@@ -240,6 +240,53 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
     now stub the attributes each code path touches and use `spec=` where the
     real operations class has a narrower surface.
 
+- **Ten `Duplicate()` and related crashes fixed, all of the same shape.** Marking
+  `flexicon/sync/tests/test_duplicate_operations.py` as a live test made it
+  execute for the first time in a long while, and it went from 69 failed / 27
+  passed / 16 errors to **112 passed, 0 failed, 0 errors** against a restored
+  Sena 3. Almost every failure was `CLAUDE.md`'s "Category 8" trap -- a property
+  declared on a *concrete* LCM type being read off a *base* interface -- or a
+  field that has since moved or vanished:
+
+  - `AllomorphOperations.Duplicate()` read `PhoneEnvRC` off base `IMoForm`; now
+    casts to the concrete `IMoStemAllomorph` / `IMoAffixAllomorph` first.
+  - `ParagraphOperations.__GetParagraphObject()` cast to `IStTxtPara` on its HVO
+    branch but returned the raw `IStPara` unchanged on its already-an-object
+    branch. The two branches now agree, which alone fixed most of the
+    paragraph and text failures.
+  - `NaturalClassOperations.Duplicate()` read `SegmentsRC` off base
+    `IPhNaturalClass`; now casts to `IPhNCSegments`.
+  - `WfiGlossOperations.Duplicate()` did not cast its owner to `IWfiAnalysis`,
+    though `Delete()` in the same class already did.
+  - `PhonemeOperations.Duplicate()` (`BasicIPASymbol`) and
+    `LexSenseOperations.__copy_sense_content()` (`ILexExampleSentence.Reference`)
+    called `.CopyAlternatives()` on fields that are single-writing-system
+    `ITsString`, not `IMultiString`. Both now reference-share the immutable
+    `ITsString`, matching the pattern this codebase already uses for
+    `Source` / `ScientificName` / `ImportResidue` (#31, #93). **`Senses.Duplicate(deep=True)`
+    was raising `AttributeError` for any sense carrying an example sentence.**
+  - `WfiAnalysisOperations.Duplicate()` and `WordformOperations`' deep-copy loops
+    referenced `IWfiMorphBundle.Gloss`, which does not exist.
+    `WfiMorphBundleOperations.Duplicate()` already carried this fix; these were
+    the missed sibling sites.
+  - `NoteOperations`: `Source` is now `SourceRA` (a reference, not text);
+    `Create()` raised `NullReferenceException` for any owner without
+    `AnnotationsOC` and now falls back to the language project's collection;
+    and `Delete()` double-deleted, because removing an object from an owning
+    collection already deletes it.
+  - `LexEntryOperations.Duplicate()` passed `create_blank_sense=(not deep)`,
+    so a *shallow* duplicate acquired a spurious blank sense -- contradicting
+    the method's own documented example.
+  - `lcm_casting.py` gains `LangProject` in its ClassName-to-interface registry.
+
+- **`ILexEtymology.Source` does not exist in the installed LCM.** Confirmed by
+  live reflection. `EtymologyOperations.Duplicate()` now guards the copy with
+  `hasattr` rather than guessing at a replacement field. Note that `GetSource()`,
+  `SetSource()` and `Create()` on the same class are broken by the same missing
+  field and are **not** fixed here -- and that `CLAUDE.md` and
+  `docs/API_ISSUES_CATEGORIZED.md` Category 8 are stale on this point, both
+  still listing `Source` as an `IMultiString` on `ILexEtymology`.
+
 - **`SelectiveImport._exists_in_target()` no longer propagates unexpected
   lookup failures.** It caught only `(AttributeError, KeyError)` while every
   other `except` in the same file catches broad `Exception` and logs. A
@@ -268,6 +315,21 @@ Stated rather than papered over:
   stringified int,** breaking the entry path's own writing-system resolution.
   Pre-existing, surfaced incidentally by the `guid=` work, and sidestepped in
   the tests with an explicit `wsHandle=`.
+- **`Duplicate()` signatures are inconsistent across the codebase,** and the
+  `.pyi` stubs are wrong about nearly all of them. The stub generator emits
+  `(obj, deep: bool = True)` or a fully untyped `(*args, **kwargs)`, while the
+  real implementations vary in whether they take `insert_after`, whether they
+  take `deep`, and what those default to. A caller trusting a stub can get a
+  `TypeError`. Catalogued in `reports/audit/duplicate-signature-audit.md`; no
+  signature was changed, because harmonising them is a breaking API change that
+  deserves its own deliberate release.
+- **Only `LexSenseOperations` was live-verified against every branch of its
+  duplicate path.** The other operations classes in the sweep above were
+  verified by the `test_duplicate_operations.py` suite, which does not exercise
+  every field of every type.
+- **`TextOperations` calls `IText.Source.CopyAlternatives()`,** but the field
+  table says the real `Source` lives on `IStText`, not `IText`. Possibly a
+  silent no-op rather than a crash. Flagged, not touched.
 - **`flexicon/tests/test_CustomFields.py` needs a `__flexlibs_testing`
   project** that is not part of either checked-in fixture project. It is now
   correctly gated behind `requires_live_project`, and skips rather than
