@@ -11,6 +11,50 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+## [4.5.2] - 2026-08-19
+
+> Follow-up to 4.5.1: a residual falsy-gate gap for empty-but-present
+> feature structures. No breaking changes.
+
+### Fixed
+- **`NaturalClassOperations.ApplySyncableProperties` silently dropped a
+  present-but-empty `FeaturesOA` on 3 of 41 `PhNCFeatures`.** Found by
+  code review (not a live run) after 4.5.1 shipped. `GetSyncableProperties`
+  correctly omits the `"Features"` key when a feature-based class's
+  `FeatureSpecsOC` is genuinely empty (auto-generated placeholder classes
+  for phonological rules with no constraints), but always emits
+  `"FeaturesGuid"` whenever `FeaturesOA` is non-null. `ApplySyncableProperties`
+  gated the whole feature-rewiring branch on `if features:` alone -- and
+  both `[]` and `None` are falsy in Python, so a present-but-empty source
+  `FeaturesOA` was treated identically to "no `FeaturesOA` at all":
+  `__ApplyFeatures` was never called, and the target's `FeaturesOA`
+  stayed null even though `GetSyncableProperties` only ever emits
+  `FeaturesGuid` when the source's `FeaturesOA` is definitively non-null.
+  A rule referencing one of these 3 classes would silently match nothing,
+  same as the original 4.5.0 bug, on a narrower slice of data (3/41
+  instead of 41/41).
+
+  The gate is now `if features or features_guid:`, so presence of
+  *either* key -- not truthiness of `features` -- decides whether the
+  branch runs; `__ApplyFeatures` receives `features or []` so `specs`
+  is never `None`. `__ApplyFeatures` itself needed no change: it already
+  creates/attaches the `IFsFeatStruc` (GUID-preserving via
+  `_CreateWithGuid`) before touching `FeatureSpecsOC`, so an empty specs
+  list correctly produces a non-null, zero-spec target struct. The
+  type-mismatch guard (source carries feature data, target isn't
+  feature-based) now sits inside the widened gate and fires correctly for
+  the `FeaturesGuid`-only shape too; a legitimate `PhNCSegments` sync
+  (neither key present) still never enters the branch at all.
+
+  New behavioural tests (`TestNaturalClassSyncEmptyFeatureStructPreservation`
+  in `tests/operations/test_natural_class_feature_sync.py`) exercise the
+  real `ApplySyncableProperties`/`__ApplyFeatures` code -- not just the
+  gate expression -- against fakes with `BaseOperations._TransactionCM`/
+  `_CreateWithGuid` reduced to trivial stand-ins (no live LCM transaction
+  machinery needed). Confirmed 3 of the 4 new tests fail red against the
+  reverted 4.5.1 source and pass green against this fix; the 4th is a
+  non-regression check that correctly passes under both.
+
 ## [4.5.1] - 2026-08-19
 
 > Follow-up to 4.5.0: the fix in that release was dead code against live

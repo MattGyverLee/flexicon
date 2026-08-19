@@ -305,12 +305,30 @@ class _FakeBaseNaturalClass:
 
 
 class _FakeFeaturesCastView:
-    """Stand-in for the concrete IPhNCFeatures interface view."""
+    """
+    Stand-in for the concrete IPhNCFeatures interface view.
+
+    FeaturesOA is a property delegating to the shared `base`, not a
+    snapshot taken at cast time -- exactly like a real pythonnet cast,
+    which is a different view of the SAME underlying CLR object, not a
+    copy. This matters once a test needs to WRITE FeaturesOA (as
+    __ApplyFeatures does) and then observe the write from elsewhere
+    (e.g. a second cast, or GetSyncableProperties reading the same base
+    object back).
+    """
 
     def __init__(self, base):
-        self.FeaturesOA = base._hidden_feat_struc
+        self._base = base
         self.Name = base.Name
         self.ClassName = base.ClassName
+
+    @property
+    def FeaturesOA(self):
+        return self._base._hidden_feat_struc
+
+    @FeaturesOA.setter
+    def FeaturesOA(self, value):
+        self._base._hidden_feat_struc = value
 
 
 class _FakeSegmentsCastView:
@@ -333,9 +351,36 @@ class _FakeWritingSystemOperations:
         return [_FakeWS("en", 1)]
 
 
+class _FakeServiceLocator:
+    """Stand-in for ServiceLocator.GetService(iface) -- the returned
+    sentinel is never dereferenced meaningfully once _CreateWithGuid is
+    monkeypatched, but the real code path calls GetService() before
+    _CreateWithGuid, so it must return *something*."""
+
+    def GetService(self, iface):
+        return object()
+
+
+class _FakeLcmProject:
+    """Stand-in for FLExProject.project (the underlying LCM cache/
+    LangProject accessor) -- only the members ApplySyncableProperties'
+    write path actually touches."""
+
+    def __init__(self):
+        self.ServiceLocator = _FakeServiceLocator()
+        self.DefaultAnalWs = 1
+
+
 class _FakeProject:
     def __init__(self):
         self.WritingSystems = _FakeWritingSystemOperations()
+        # Write-path extras (unused by the read-only GetSyncableProperties
+        # tests above, needed by ApplySyncableProperties below).
+        self.writeEnabled = True
+        self.project = _FakeLcmProject()
+
+    def GetDefaultAnalysisWSHandle(self):
+        return 1
 
 
 class TestNaturalClassSyncPythonnetBaseInterfaceView:
@@ -444,6 +489,181 @@ class TestNaturalClassSyncPythonnetBaseInterfaceView:
 
         assert "Features" not in props
         assert "FeaturesGuid" not in props
+
+
+class TestNaturalClassSyncEmptyFeatureStructPreservation:
+    """
+    BEHAVIOURAL regression coverage for the 2026-08-19 empty-FeatureSpecsOC
+    gap (found by code review, confirmed live on Ngoreme FLEx: 3 of 41
+    PhNCFeatures have a real, non-null FeaturesOA whose FeatureSpecsOC is
+    genuinely empty -- auto-generated placeholder classes for phonological
+    rules). GetSyncableProperties correctly omits the "Features" key for
+    those (an empty list is not worth emitting) but always emits
+    "FeaturesGuid" whenever FeaturesOA is non-null. The original 4.5.1
+    ApplySyncableProperties gated on `if features:` alone, and both `[]`
+    and `None` are falsy, so a present-but-empty FeaturesOA on the source
+    was silently never reproduced on the target -- __ApplyFeatures was
+    never even called, and the target's FeaturesOA stayed null despite the
+    source definitively having one.
+
+    These tests exercise the real ApplySyncableProperties/__ApplyFeatures
+    code (not just the gate expression) against fakes, so on top of
+    IPhNCFeatures/IPhNCSegments/ITsString/IFsClosedValue/IFsFeatStruc this
+    also monkeypatches BaseOperations._TransactionCM (a real transaction
+    needs a live LCM undo-stack / action handler this test deliberately
+    does not have) and BaseOperations._CreateWithGuid (the real one parses
+    a System.Guid and calls a real LCM factory) down to trivial stand-ins.
+    Everything under test -- the widened gate, the ClassName-based
+    dispatch, the GUID-preserving struct-creation call, the empty-specs
+    loop -- runs for real; only the LCM/transaction plumbing underneath is
+    faked.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _patch_lcm_names(self, monkeypatch):
+        import contextlib
+
+        import flexicon.code.Grammar.NaturalClassOperations as nco
+        from flexicon.code.BaseOperations import BaseOperations
+
+        monkeypatch.setattr(nco, "ITsString", lambda x: x)
+        monkeypatch.setattr(
+            nco, "IPhNCFeatures", lambda obj: _FakeFeaturesCastView(obj)
+        )
+        monkeypatch.setattr(
+            nco, "IPhNCSegments", lambda obj: _FakeSegmentsCastView(obj)
+        )
+        monkeypatch.setattr(nco, "IFsClosedValue", lambda x: x)
+        monkeypatch.setattr(nco, "IFsFeatStruc", lambda x: x)
+
+        monkeypatch.setattr(
+            BaseOperations,
+            "_TransactionCM",
+            lambda self, label: contextlib.nullcontext(),
+        )
+
+        def _fake_create_with_guid(self, factory, guid=None, kind=None):
+            return _FakeFeatStruc(guid, [])
+
+        monkeypatch.setattr(
+            BaseOperations, "_CreateWithGuid", _fake_create_with_guid
+        )
+
+    def test_apply_preserves_present_but_empty_feature_struct(self):
+        """
+        props carrying FeaturesGuid with Features absent (the shape
+        GetSyncableProperties actually emits for an empty FeatureSpecsOC)
+        must produce a target FeaturesOA that is non-null, has zero specs,
+        and carries the source's GUID -- not a null FeaturesOA.
+        """
+        from flexicon.code.Grammar.NaturalClassOperations import (
+            NaturalClassOperations,
+        )
+
+        struct_guid = "f7b73472-9dd2-4133-81bd-a6fed8be5e84"
+
+        # Target: a feature-based class with NO FeaturesOA yet (the
+        # "empty shell" shape a freshly-created/synced target starts as),
+        # wrapped exactly like GetAll()/Object() actually returns it.
+        fake_nc = _FakeBaseNaturalClass("PhNCFeatures", "Created automatically")
+
+        ops = NaturalClassOperations(_FakeProject())
+
+        # Exactly what GetSyncableProperties emits for a real class whose
+        # FeaturesOA is set but FeatureSpecsOC.Count == 0: FeaturesGuid
+        # present, "Features" key ABSENT (not even an empty list).
+        src_props = {"FeaturesGuid": struct_guid}
+        assert "Features" not in src_props
+
+        ops.ApplySyncableProperties(fake_nc, src_props)
+
+        assert fake_nc._hidden_feat_struc is not None, (
+            "ApplySyncableProperties left FeaturesOA null for a source "
+            "that definitively had a (possibly empty) feature struct -- "
+            "GetSyncableProperties only ever emits FeaturesGuid when "
+            "FeaturesOA is non-null."
+        )
+        assert str(fake_nc._hidden_feat_struc.Guid) == struct_guid, (
+            "The target's newly-created feature struct must preserve "
+            "the source's FeaturesGuid."
+        )
+        assert fake_nc._hidden_feat_struc.FeatureSpecsOC == [], (
+            "An empty source FeatureSpecsOC must produce an empty "
+            "(not fabricated) target FeatureSpecsOC."
+        )
+
+        # Round-trip via GetSyncableProperties: FeaturesGuid reappears,
+        # "Features" stays correctly absent (empty, not worth emitting).
+        props_back = ops.GetSyncableProperties(fake_nc)
+        assert props_back.get("FeaturesGuid") == struct_guid
+        assert "Features" not in props_back
+
+    def test_apply_with_empty_features_list_and_guid_also_preserves_struct(self):
+        """
+        Same as above, but for the (also falsy, also must-not-be-skipped)
+        Features-equals-empty-list shape, in case a caller ever
+        constructs props by hand rather than via GetSyncableProperties.
+        """
+        from flexicon.code.Grammar.NaturalClassOperations import (
+            NaturalClassOperations,
+        )
+
+        struct_guid = "11111111-2222-3333-4444-555555555555"
+        fake_nc = _FakeBaseNaturalClass("PhNCFeatures", "Unspecified vowel")
+        ops = NaturalClassOperations(_FakeProject())
+
+        src_props = {"FeaturesGuid": struct_guid, "Features": []}
+
+        ops.ApplySyncableProperties(fake_nc, src_props)
+
+        assert fake_nc._hidden_feat_struc is not None
+        assert str(fake_nc._hidden_feat_struc.Guid) == struct_guid
+        assert fake_nc._hidden_feat_struc.FeatureSpecsOC == []
+
+    def test_apply_still_raises_on_type_mismatch_with_only_featuresguid(self):
+        """
+        The type-mismatch guard must still fire when ONLY FeaturesGuid is
+        present (no Features key) and the target is segment-based --
+        widening the gate to `features or features_guid` must not weaken
+        this check.
+        """
+        from flexicon.code.Grammar.NaturalClassOperations import (
+            NaturalClassOperations,
+        )
+        from flexlibs2.code.FLExProject import FP_ParameterError
+
+        fake_nc = _FakeBaseNaturalClass("PhNCSegments", "Stops")
+        ops = NaturalClassOperations(_FakeProject())
+
+        src_props = {"FeaturesGuid": "f7b73472-9dd2-4133-81bd-a6fed8be5e84"}
+
+        with pytest.raises(FP_ParameterError):
+            ops.ApplySyncableProperties(fake_nc, src_props)
+
+    def test_apply_does_not_fire_type_mismatch_guard_for_plain_segments_sync(self):
+        """
+        A legitimate PhNCSegments sync -- neither Features nor
+        FeaturesGuid present at all -- must never enter the feature
+        branch, so the type-mismatch guard cannot spuriously fire on
+        every ordinary segment-based sync.
+        """
+        from flexicon.code.Grammar.NaturalClassOperations import (
+            NaturalClassOperations,
+        )
+
+        fake_nc = _FakeBaseNaturalClass("PhNCSegments", "Stops")
+        ops = NaturalClassOperations(_FakeProject())
+
+        # No Features / FeaturesGuid keys at all -- the real shape
+        # GetSyncableProperties emits for a segment-based source.
+        src_props = {"PhonemeGuids": ["11111111-1111-1111-1111-111111111111"]}
+
+        # Must not raise -- this is a well-formed segment-based sync.
+        ops.ApplySyncableProperties(fake_nc, src_props)
+        assert fake_nc._hidden_feat_struc is None, (
+            "A segment-based sync with no Features/FeaturesGuid keys must "
+            "never create a FeaturesOA on the target."
+        )
 
 
 if __name__ == "__main__":

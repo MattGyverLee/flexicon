@@ -1192,17 +1192,20 @@ class NaturalClassOperations(BaseOperations):
 
         Raises:
             FP_ParameterError: If ``item`` is None, ``props`` is not a
-                dict, the source carries ``Features`` but the target item
-                is not feature-based (type mismatch), or a Features spec
-                references a feature or value GUID that does not exist in
-                the target project. Unlike PhonemeOperations' equivalent
-                (which skips an unresolved spec), an unresolvable GUID
-                here RAISES: silently dropping a natural-class feature
-                spec is exactly the data-loss defect this method exists
-                to close, and a rule referencing an incomplete class would
-                otherwise fail to match anything with no visible error.
-                The feature system must be synced into the target project
-                *before* natural classes are rewired.
+                dict, the source carries ``Features`` and/or
+                ``FeaturesGuid`` (including a present-but-empty feature
+                structure -- ``FeaturesGuid`` set with ``Features``
+                absent/``[]``) but the target item is not feature-based
+                (type mismatch), or a Features spec references a feature
+                or value GUID that does not exist in the target project.
+                Unlike PhonemeOperations' equivalent (which skips an
+                unresolved spec), an unresolvable GUID here RAISES:
+                silently dropping a natural-class feature spec is exactly
+                the data-loss defect this method exists to close, and a
+                rule referencing an incomplete class would otherwise fail
+                to match anything with no visible error. The feature
+                system must be synced into the target project *before*
+                natural classes are rewired.
 
         Notes:
             - Must run inside the caller's unit of work / already-open
@@ -1234,7 +1237,24 @@ class NaturalClassOperations(BaseOperations):
 
         super().ApplySyncableProperties(nc, base_props, ws_map, fill_gaps=fill_gaps)
 
-        if features:
+        # Gate on the PRESENCE of either key, not truthiness of `features`
+        # alone. GetSyncableProperties omits the "Features" key entirely
+        # when a feature-based class's FeatureSpecsOC is genuinely empty
+        # (an IFsFeatStruc with zero specs -- e.g. an auto-generated
+        # placeholder natural class for a phonological rule), but it still
+        # emits "FeaturesGuid" whenever FeaturesOA is non-null. Gating on
+        # `if features:` alone treated that legitimate empty-but-present
+        # FeaturesOA the same as "no FeaturesOA at all" -- `[]`/`None` are
+        # both falsy -- so __ApplyFeatures was never called and the
+        # target's FeaturesOA stayed null even though the source
+        # definitively has one (found 2026-08-19 via code review, not a
+        # live run: GetSyncableProperties only ever emits FeaturesGuid
+        # when FeaturesOA is non-null, so a present FeaturesGuid with an
+        # absent/empty Features list means "source has an empty feature
+        # struct", not "source has none"). A source item with neither key
+        # present (segment-based, or a feature-based item somehow lacking
+        # FeaturesOA) correctly skips this whole block.
+        if features or features_guid:
             # Discriminate on ClassName, not hasattr(nc, "FeaturesOA") --
             # `nc` here may be base-`IPhNaturalClass`-typed (e.g. resolved
             # via `self.project.Object(hvo_or_guid)`, which returns a
@@ -1251,13 +1271,13 @@ class NaturalClassOperations(BaseOperations):
                 ).Text or "(unnamed)"
                 raise FP_ParameterError(
                     f"ApplySyncableProperties: source natural class "
-                    f"'{name_text}' carries Features specs but the target "
-                    f"item is not feature-based (class={nc.ClassName}); "
-                    f"type mismatch between source and target natural "
-                    f"class."
+                    f"'{name_text}' carries a Features/FeaturesGuid "
+                    f"feature structure but the target item is not "
+                    f"feature-based (class={nc.ClassName}); type mismatch "
+                    f"between source and target natural class."
                 )
             feat_nc = IPhNCFeatures(nc)
-            self.__ApplyFeatures(feat_nc, features, features_guid)
+            self.__ApplyFeatures(feat_nc, features or [], features_guid)
 
     def __ApplyFeatures(self, nc, specs, features_guid):
         """
