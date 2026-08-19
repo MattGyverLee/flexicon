@@ -11,6 +11,47 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+## [4.5.1] - 2026-08-19
+
+> Follow-up to 4.5.0: the fix in that release was dead code against live
+> data. No breaking changes.
+
+### Fixed
+- **4.5.0's `NaturalClassOperations.GetSyncableProperties`/
+  `ApplySyncableProperties` fix never actually fired against a real
+  project.** Both gated on `hasattr(nc, "FeaturesOA")` /
+  `hasattr(nc, "SegmentsRC")`, mirroring `PhonemeOperations`. That works
+  for phonemes because `IPhPhoneme` declares `FeaturesOA` directly, but
+  `NaturalClassOperations.GetAll()` (and `Find()`/`Object()`) yield
+  objects wrapped by pythonnet under the BASE `IPhNaturalClass`
+  interface -- `FeaturesOA` and `SegmentsRC` are declared on the
+  concrete subtypes `IPhNCFeatures`/`IPhNCSegments`, and pythonnet's
+  attribute visibility follows the static wrapper interface, not the
+  runtime CLR type. Both `hasattr` checks were therefore always `False`,
+  even for a genuine, populated `PhNCFeatures`/`PhNCSegments` object --
+  the entire 4.5.0 capture block was dead code. Verified live against
+  `Ngoreme FLEx` (read-only): 0/41 `PhNCFeatures` and 0/7 `PhNCSegments`
+  passed either gate, so **neither** `Features`/`FeaturesGuid` **nor**
+  `PhonemeGuids` was ever emitted for any class reached via `GetAll()` --
+  a strictly worse regression than the original bug, since the
+  previously-working `PhonemeGuids` path silently broke too.
+
+  `GetSyncableProperties` and `ApplySyncableProperties` now discriminate
+  on the reliable `.ClassName` string (declared on the base interface, so
+  always visible) and explicitly cast to `IPhNCFeatures`/`IPhNCSegments`
+  before touching a subtype-only member. Re-verified live against
+  `Ngoreme FLEx`: 41/41 `PhNCFeatures` now emit `FeaturesGuid` (38/41
+  emit `Features`; the other 3 legitimately have an empty
+  `FeatureSpecsOC` -- auto-generated placeholder classes for rules with
+  no constraints), and 7/7 `PhNCSegments` emit `PhonemeGuids`.
+
+  New behavioural tests (`tests/operations/test_natural_class_feature_sync.py`,
+  `TestNaturalClassSyncPythonnetBaseInterfaceView`) exercise the real code
+  against a fake object that reproduces pythonnet's base-interface view
+  (no `FeaturesOA`/`SegmentsRC` attribute, `.ClassName` set) so the same
+  class of bug cannot regress silently again; confirmed these fail
+  against the 4.5.0 code and pass against this fix.
+
 ## [4.5.0] - 2026-08-19
 
 > Additive fix: closes a silent cross-project data-loss bug for

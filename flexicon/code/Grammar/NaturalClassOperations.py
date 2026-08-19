@@ -1100,10 +1100,31 @@ class NaturalClassOperations(BaseOperations):
                     props[prop_name] = ws_values
 
         # Reference Collection (RC) properties - return list of GUIDs.
-        # Segment-based (IPhNCSegments) natural classes only; left exactly
-        # as-is, unaffected by the FeaturesOA fix below.
-        if hasattr(nc, "SegmentsRC"):
-            phoneme_guids = [str(phoneme.Guid) for phoneme in nc.SegmentsRC]
+        # Segment-based (IPhNCSegments) natural classes only; left
+        # behaviourally as-is (same PhonemeGuids shape), but the dispatch
+        # itself is corrected below.
+        #
+        # IMPORTANT (found 2026-08-19 against live Ngoreme FLEx data):
+        # `GetAll()` (and `Object()`/`Find()`) yield objects wrapped by
+        # pythonnet under the BASE `IPhNaturalClass` interface, not the
+        # concrete `IPhNCSegments`/`IPhNCFeatures` subtype. Under
+        # pythonnet, attribute visibility follows the STATIC interface the
+        # object is wrapped as, not its runtime CLR type -- so
+        # `hasattr(nc, "SegmentsRC")` and `hasattr(nc, "FeaturesOA")` are
+        # BOTH always False here, even when the underlying object really
+        # is a populated PhNCSegments/PhNCFeatures. The previous hasattr
+        # gates were therefore dead code: verified live that 0/41
+        # PhNCFeatures and 0/7 PhNCSegments passed either gate, so neither
+        # PhonemeGuids nor Features/FeaturesGuid was ever emitted for any
+        # class reached via GetAll(). Discriminate on the reliable
+        # `.ClassName` string (declared on the base interface, so it is
+        # always visible) and cast to the concrete interface before
+        # touching a subtype-only member -- casting to the WRONG interface
+        # raises TypeError, so ClassName must be checked first.
+        class_name = nc.ClassName
+        if class_name == "PhNCSegments":
+            seg_nc = IPhNCSegments(nc)
+            phoneme_guids = [str(phoneme.Guid) for phoneme in seg_nc.SegmentsRC]
             if phoneme_guids:
                 props["PhonemeGuids"] = phoneme_guids
 
@@ -1114,29 +1135,33 @@ class NaturalClassOperations(BaseOperations):
         # Name/GUID but a null FeaturesOA, and any rule referencing it
         # then silently matched nothing (data-loss bug; same class as
         # PhonemeOperations issue #222, applied here to IPhNCFeatures).
-        if hasattr(nc, "FeaturesOA") and nc.FeaturesOA:
-            features = nc.FeaturesOA
-            props["FeaturesGuid"] = str(features.Guid)
-            specs = []
-            if hasattr(features, "FeatureSpecsOC"):
-                for spec in features.FeatureSpecsOC:
-                    try:
-                        cv = IFsClosedValue(spec)
-                        feat_ra = cv.FeatureRA
-                        val_ra = cv.ValueRA
-                    except Exception:
-                        # Non-closed spec shape (e.g. complex value) --
-                        # natural-class feature structs only use closed
-                        # values, so skip anything that isn't one.
-                        continue
-                    if feat_ra is None or val_ra is None:
-                        continue
-                    specs.append({
-                        "FeatureGuid": str(feat_ra.Guid),
-                        "ValueGuid": str(val_ra.Guid),
-                    })
-            if specs:
-                props["Features"] = specs
+        elif class_name == "PhNCFeatures":
+            feat_nc = IPhNCFeatures(nc)
+            if feat_nc.FeaturesOA:
+                features = feat_nc.FeaturesOA
+                props["FeaturesGuid"] = str(features.Guid)
+                specs = []
+                if hasattr(features, "FeatureSpecsOC"):
+                    for spec in features.FeatureSpecsOC:
+                        try:
+                            cv = IFsClosedValue(spec)
+                            feat_ra = cv.FeatureRA
+                            val_ra = cv.ValueRA
+                        except Exception:
+                            # Non-closed spec shape (e.g. complex value) --
+                            # natural-class feature structs only use closed
+                            # values, so skip anything that isn't one.
+                            continue
+                        if feat_ra is None or val_ra is None:
+                            continue
+                        specs.append({
+                            "FeatureGuid": str(feat_ra.Guid),
+                            "ValueGuid": str(val_ra.Guid),
+                        })
+                if specs:
+                    props["Features"] = specs
+        # else: unknown/defensive fallback -- no membership or feature
+        # data captured, mirroring GetType()'s ClassName fallback.
 
         return props
 
@@ -1210,7 +1235,17 @@ class NaturalClassOperations(BaseOperations):
         super().ApplySyncableProperties(nc, base_props, ws_map, fill_gaps=fill_gaps)
 
         if features:
-            if not hasattr(nc, "FeaturesOA"):
+            # Discriminate on ClassName, not hasattr(nc, "FeaturesOA") --
+            # `nc` here may be base-`IPhNaturalClass`-typed (e.g. resolved
+            # via `self.project.Object(hvo_or_guid)`, which returns a
+            # generic ICmObject/IPhNaturalClass wrapper), and pythonnet's
+            # attribute visibility follows that static wrapper type, not
+            # the runtime CLR type. `hasattr(nc, "FeaturesOA")` would be
+            # False even for a genuine PhNCFeatures target, which would
+            # misfire this type-mismatch guard on every real call. Verified
+            # live against Ngoreme FLEx (see GetSyncableProperties above
+            # for the full write-up).
+            if nc.ClassName != "PhNCFeatures":
                 name_text = ITsString(
                     nc.Name.get_String(self.project.project.DefaultAnalWs)
                 ).Text or "(unnamed)"
@@ -1221,7 +1256,8 @@ class NaturalClassOperations(BaseOperations):
                     f"type mismatch between source and target natural "
                     f"class."
                 )
-            self.__ApplyFeatures(nc, features, features_guid)
+            feat_nc = IPhNCFeatures(nc)
+            self.__ApplyFeatures(feat_nc, features, features_guid)
 
     def __ApplyFeatures(self, nc, specs, features_guid):
         """

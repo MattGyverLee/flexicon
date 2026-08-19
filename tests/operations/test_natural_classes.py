@@ -745,13 +745,29 @@ class TestNaturalClassSync:
     ApplySyncableProperties on feature-based (IPhNCFeatures) natural
     classes -- the data-loss bug fixed alongside this test class.
 
-    Prior to the fix, a feature-based natural class's owned FeaturesOA
-    was never captured by GetSyncableProperties nor rewired by
+    Prior to the 4.5.0 fix, a feature-based natural class's owned
+    FeaturesOA was never captured by GetSyncableProperties nor rewired by
     ApplySyncableProperties, so a synced class always arrived with a
     correct Name/GUID but a null FeaturesOA -- rules referencing it then
     silently matched nothing. Same bug class as PhonemeOperations issue
     #222 (see TestPhonemeSync in test_phonemes.py), applied here to
     IPhNCFeatures.
+
+    4.5.0's first attempt at this fix was itself dead code against live
+    data (confirmed against Ngoreme FLEx, read-only): GetAll()/Find()/
+    Object() all hand back objects wrapped by pythonnet under the BASE
+    IPhNaturalClass interface, on which hasattr(nc, "FeaturesOA") /
+    hasattr(nc, "SegmentsRC") are always False even for a genuine,
+    populated PhNCFeatures/PhNCSegments object -- pythonnet's attribute
+    visibility follows the static wrapper interface, not the runtime CLR
+    type. `CreateFeatureBased`/`Create` return a properly *concrete*-typed
+    object straight from the factory, so calling GetSyncableProperties
+    directly on THAT reference would not exercise the bug at all. The
+    tests below therefore explicitly re-fetch via `Find()` (which
+    round-trips through `GetAll()`) before calling
+    GetSyncableProperties/ApplySyncableProperties, mirroring how
+    real-world callers (GramTrans) actually obtain the item -- so a
+    regression of the 4.5.0 dead-code shape would be caught here too.
     """
 
     def test_getsyncable_does_not_include_features_for_segments(
@@ -764,7 +780,12 @@ class TestNaturalClassSync:
         """
         nc = writable_project.NaturalClasses.Create("qZ_sync_segments", "qZss")
         try:
-            props = writable_project.NaturalClasses.GetSyncableProperties(nc)
+            # Re-fetch via Find() -- see class docstring: this is the
+            # base-IPhNaturalClass-typed shape GetAll() actually returns,
+            # NOT the concrete-typed object Create() just handed back.
+            found = writable_project.NaturalClasses.Find("qZ_sync_segments")
+            assert found is not None
+            props = writable_project.NaturalClasses.GetSyncableProperties(found)
             assert "FeaturesGuid" not in props
             assert "Features" not in props
         finally:
@@ -793,7 +814,12 @@ class TestNaturalClassSync:
             "qZ_sync_getfeat", "qZsg", specs=[(feat, plus)]
         )
         try:
-            props = writable_project.NaturalClasses.GetSyncableProperties(nc)
+            # Re-fetch via Find() -- see class docstring for why calling
+            # GetSyncableProperties directly on the factory-fresh `nc`
+            # would not have caught the 4.5.0 dead-code regression.
+            found = writable_project.NaturalClasses.Find("qZ_sync_getfeat")
+            assert found is not None
+            props = writable_project.NaturalClasses.GetSyncableProperties(found)
             assert "FeaturesGuid" in props
             assert "Features" in props, "Feature specs missing"
             pairs = {
@@ -849,8 +875,14 @@ class TestNaturalClassSync:
         try:
             assert nc.FeaturesOA is None
 
+            # Apply through a base-IPhNaturalClass-typed reference
+            # (resolved by GUID, mirroring how a real cross-project sync
+            # caller would hold the target) -- see class docstring for
+            # why applying directly through the factory-fresh `nc`
+            # reference would not exercise the 4.5.0 dead-code shape.
+            target = writable_project.Object(str(nc.Guid))
             writable_project.NaturalClasses.ApplySyncableProperties(
-                nc, src_props
+                target, src_props
             )
 
             assert nc.FeaturesOA is not None, (
@@ -900,9 +932,13 @@ class TestNaturalClassSync:
             "qZ_sync_apply_raise", "qZsr"
         )
         try:
+            # Base-IPhNaturalClass-typed reference -- see
+            # test_apply_rewires_feature_specs_onto_empty_shell / class
+            # docstring for why.
+            target = writable_project.Object(str(nc.Guid))
             with pytest.raises(FP_ParameterError, match=bogus_feature_guid):
                 writable_project.NaturalClasses.ApplySyncableProperties(
-                    nc, src_props
+                    target, src_props
                 )
         finally:
             _delete_nc(writable_project, nc)
@@ -930,9 +966,13 @@ class TestNaturalClassSync:
             "qZ_sync_apply_mismatch", "qZsm"
         )
         try:
+            # Base-IPhNaturalClass-typed reference -- see
+            # test_apply_rewires_feature_specs_onto_empty_shell / class
+            # docstring for why.
+            target = writable_project.Object(str(nc.Guid))
             with pytest.raises(FP_ParameterError):
                 writable_project.NaturalClasses.ApplySyncableProperties(
-                    nc, src_props
+                    target, src_props
                 )
         finally:
             _delete_nc(writable_project, nc)
