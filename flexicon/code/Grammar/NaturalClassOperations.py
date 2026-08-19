@@ -22,7 +22,10 @@ from SIL.LCModel import (
     IPhNCFeatures,
     IPhNCFeaturesFactory,
     IPhPhoneme,
+    IFsFeatStruc,
+    IFsFeatStrucFactory,
     IFsClosedValue,
+    IFsClosedValueFactory,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
 from SIL.LCModel.Core.Text import TsStringUtils
@@ -1041,19 +1044,37 @@ class NaturalClassOperations(BaseOperations):
             item: The IPhNaturalClass object.
 
         Returns:
-            dict: Dictionary mapping property names to their values.
-                Keys are property names, values are the property values.
+            dict: Dictionary mapping property names to their values. Shapes:
+
+            - ``Name`` / ``Abbreviation`` / ``Description``:
+              ``{ws_id: text}`` multistring dicts (non-empty alts only).
+            - ``PhonemeGuids``: list of GUID strings (segment-based
+              IPhNCSegments members, from ``SegmentsRC``).
+            - ``FeaturesGuid``: ``str`` GUID of the owned IFsFeatStruc,
+              feature-based (IPhNCFeatures) classes only.
+            - ``Features``: a list of ``{"FeatureGuid": str, "ValueGuid":
+              str}`` specs -- one per IFsClosedValue in the class's
+              ``FeaturesOA.FeatureSpecsOC`` -- so a synced feature-based
+              natural class carries the actual feature-value constraints
+              that define its membership, not just its Name/GUID. The
+              feature/value GUIDs let ApplySyncableProperties rewire the
+              specs against the target project's (already-synced) feature
+              system. Same bug class as PhonemeOperations issue #222,
+              closed here for IPhNCFeatures.
 
         Example:
             >>> ncOps = NaturalClassOperations(project)
             >>> nc = list(ncOps.GetAll())[0]
             >>> props = ncOps.GetSyncableProperties(nc)
-            >>> print(props.keys())
-            dict_keys(['Name', 'Abbreviation', 'Description', 'PhonemeGuids'])
+            >>> sorted(props.keys())
+            ['Abbreviation', 'Description', 'Features', 'FeaturesGuid', 'Name']
 
         Notes:
             - Returns all MultiString properties (all writing systems)
-            - Returns PhonemeGuids as list of GUID strings (SegmentsRC members)
+            - ``PhonemeGuids`` and ``Features``/``FeaturesGuid`` are
+              mutually exclusive in practice: a natural class is either
+              segment-based (IPhNCSegments, has SegmentsRC) or
+              feature-based (IPhNCFeatures, has FeaturesOA), never both.
             - Does not include GUID or HVO of the natural class itself
         """
         nc = self.__GetNaturalClassObject(item)
@@ -1078,23 +1099,262 @@ class NaturalClassOperations(BaseOperations):
                 if ws_values:  # Only include property if it has values
                     props[prop_name] = ws_values
 
-        # Reference Collection (RC) properties - return list of GUIDs
+        # Reference Collection (RC) properties - return list of GUIDs.
+        # Segment-based (IPhNCSegments) natural classes only; left exactly
+        # as-is, unaffected by the FeaturesOA fix below.
         if hasattr(nc, "SegmentsRC"):
             phoneme_guids = [str(phoneme.Guid) for phoneme in nc.SegmentsRC]
             if phoneme_guids:
                 props["PhonemeGuids"] = phoneme_guids
 
+        # Feature structure (IPhNCFeatures only). A feature-based natural
+        # class's entire reason for existing is its owned FeaturesOA
+        # constraint bundle -- without this block it was never captured,
+        # so every feature-based class synced across with a correct
+        # Name/GUID but a null FeaturesOA, and any rule referencing it
+        # then silently matched nothing (data-loss bug; same class as
+        # PhonemeOperations issue #222, applied here to IPhNCFeatures).
+        if hasattr(nc, "FeaturesOA") and nc.FeaturesOA:
+            features = nc.FeaturesOA
+            props["FeaturesGuid"] = str(features.Guid)
+            specs = []
+            if hasattr(features, "FeatureSpecsOC"):
+                for spec in features.FeatureSpecsOC:
+                    try:
+                        cv = IFsClosedValue(spec)
+                        feat_ra = cv.FeatureRA
+                        val_ra = cv.ValueRA
+                    except Exception:
+                        # Non-closed spec shape (e.g. complex value) --
+                        # natural-class feature structs only use closed
+                        # values, so skip anything that isn't one.
+                        continue
+                    if feat_ra is None or val_ra is None:
+                        continue
+                    specs.append({
+                        "FeatureGuid": str(feat_ra.Guid),
+                        "ValueGuid": str(val_ra.Guid),
+                    })
+            if specs:
+                props["Features"] = specs
+
         return props
 
     @OperationsMethod
     def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
-        """Apply syncable properties (from GetSyncableProperties) onto an item.
+        """Apply syncable properties (from GetSyncableProperties) onto a
+        natural class.
 
-        Inherited from BaseOperations; declared on the concrete class so static
-        API indexers see it. The base implementation handles every property
-        shape this class's GetSyncableProperties emits.
+        Handles the multistring fields (Name/Abbreviation/Description) and
+        ``PhonemeGuids`` via the BaseOperations loop -- unchanged behaviour
+        for segment-based (IPhNCSegments) natural classes. When the source
+        props carry ``Features``/``FeaturesGuid``, rewires the target's
+        owned FeaturesOA feature-value specs against the target project's
+        feature system by GUID (same bug class as PhonemeOperations issue
+        #222, closed here for IPhNCFeatures).
+
+        Args:
+            item: Target IPhNaturalClass (already created + owned + GUID-
+                assigned by the caller).
+            props: dict produced by GetSyncableProperties.
+            ws_map: Optional source->target writing-system Id mapping.
+            fill_gaps: If True, only fill empty target alts / add missing
+                feature specs; never overwrite existing target data.
+                Feature specs are always purely additive (an existing
+                (feature, value) pair is never removed or replaced), so
+                this flag has no further effect on the Features branch
+                beyond the base loop's multistring handling.
+
+        Raises:
+            FP_ParameterError: If ``item`` is None, ``props`` is not a
+                dict, the source carries ``Features`` but the target item
+                is not feature-based (type mismatch), or a Features spec
+                references a feature or value GUID that does not exist in
+                the target project. Unlike PhonemeOperations' equivalent
+                (which skips an unresolved spec), an unresolvable GUID
+                here RAISES: silently dropping a natural-class feature
+                spec is exactly the data-loss defect this method exists
+                to close, and a rule referencing an incomplete class would
+                otherwise fail to match anything with no visible error.
+                The feature system must be synced into the target project
+                *before* natural classes are rewired.
+
+        Notes:
+            - Must run inside the caller's unit of work / already-open
+              transaction context where required by callers that batch
+              multiple applies together.
         """
-        return super().ApplySyncableProperties(item, props, ws_map, fill_gaps=fill_gaps)
+        if item is None:
+            raise FP_ParameterError("ApplySyncableProperties: item is None")
+        if not isinstance(props, dict):
+            raise FP_ParameterError(
+                f"ApplySyncableProperties: props must be a dict, got "
+                f"{type(props).__name__}"
+            )
+
+        # Resolve once so an HVO or wrapper input is handled uniformly by
+        # the base loop and the dedicated Features handler below.
+        nc = self.__GetNaturalClassObject(item)
+
+        # Features/FeaturesGuid need dedicated handling; everything else
+        # (Name, Abbreviation, Description, PhonemeGuids, and any future
+        # plain scalars) goes through the base loop unchanged.
+        features = props.get("Features")
+        features_guid = props.get("FeaturesGuid")
+        base_props = {
+            k: v
+            for k, v in props.items()
+            if k not in ("Features", "FeaturesGuid")
+        }
+
+        super().ApplySyncableProperties(nc, base_props, ws_map, fill_gaps=fill_gaps)
+
+        if features:
+            if not hasattr(nc, "FeaturesOA"):
+                name_text = ITsString(
+                    nc.Name.get_String(self.project.project.DefaultAnalWs)
+                ).Text or "(unnamed)"
+                raise FP_ParameterError(
+                    f"ApplySyncableProperties: source natural class "
+                    f"'{name_text}' carries Features specs but the target "
+                    f"item is not feature-based (class={nc.ClassName}); "
+                    f"type mismatch between source and target natural "
+                    f"class."
+                )
+            self.__ApplyFeatures(nc, features, features_guid)
+
+    def __ApplyFeatures(self, nc, specs, features_guid):
+        """
+        Rewire a feature-based natural class's FeaturesOA feature-value
+        specs from a list of ``{"FeatureGuid", "ValueGuid"}`` dicts,
+        resolving each feature/value against the TARGET project's feature
+        system by GUID.
+
+        A missing FeaturesOA is created (ownership-first), preserving
+        ``features_guid`` via ``_CreateWithGuid`` where the factory
+        supports a ``Create(Guid)`` overload. Specs are matched by
+        (FeatureGuid, ValueGuid) so re-application is idempotent.
+
+        Unlike ``PhonemeOperations.__ApplyFeatures`` (which skips an
+        unresolved spec and logs nothing), a feature or value GUID that
+        does not resolve in the target project RAISES here -- see the
+        ``Raises`` section of ``ApplySyncableProperties`` for why: a
+        silently-incomplete FeaturesOA is precisely the bug this method
+        closes.
+
+        Args:
+            nc: The target IPhNCFeatures object (already confirmed to
+                have a FeaturesOA property by the caller).
+            specs: list of ``{"FeatureGuid": str, "ValueGuid": str}``
+                dicts, as produced by GetSyncableProperties.
+            features_guid: Optional ``str`` GUID of the source
+                IFsFeatStruc, used to preserve identity when a new struct
+                must be created.
+
+        Raises:
+            FP_ParameterError: If a spec is malformed, or if a feature or
+                value GUID does not resolve to an object in the target
+                project.
+        """
+        struct = nc.FeaturesOA
+        if struct is None:
+            factory = self.project.project.ServiceLocator.GetService(
+                IFsFeatStrucFactory
+            )
+            # Ownership-first: attach to FeaturesOA before populating specs
+            # (LCM accessors NPE on free-floating IFsFeatStruc objects).
+            with self._TransactionCM("Create natural class feature structure"):
+                new_struct = self._CreateWithGuid(
+                    factory,
+                    guid=features_guid,
+                    kind="natural class feature structure",
+                )
+                nc.FeaturesOA = new_struct
+            struct = nc.FeaturesOA
+        struct = IFsFeatStruc(struct)
+
+        # Existing (feature, value) GUID pairs for idempotency.
+        existing_pairs = set()
+        for raw in struct.FeatureSpecsOC:
+            try:
+                cv = IFsClosedValue(raw)
+                if cv.FeatureRA is not None and cv.ValueRA is not None:
+                    existing_pairs.add(
+                        (str(cv.FeatureRA.Guid).lower(),
+                         str(cv.ValueRA.Guid).lower())
+                    )
+            except Exception:
+                continue
+
+        nc_name = ITsString(
+            nc.Name.get_String(self.project.project.DefaultAnalWs)
+        ).Text or "(unnamed)"
+
+        cv_factory = self.project.project.ServiceLocator.GetService(
+            IFsClosedValueFactory
+        )
+        for spec in specs:
+            if not isinstance(spec, dict):
+                raise FP_ParameterError(
+                    f"ApplySyncableProperties: natural class '{nc_name}' "
+                    f"Features entry is not a dict: {spec!r}"
+                )
+            feat_guid = spec.get("FeatureGuid")
+            val_guid = spec.get("ValueGuid")
+            if not feat_guid or not val_guid:
+                raise FP_ParameterError(
+                    f"ApplySyncableProperties: natural class '{nc_name}' "
+                    f"has a Features spec missing FeatureGuid/ValueGuid: "
+                    f"{spec!r}"
+                )
+            if (feat_guid.lower(), val_guid.lower()) in existing_pairs:
+                continue  # already present (fill_gaps and normal both keep it)
+
+            feat_obj = self.__ResolveByGuid(feat_guid)
+            if feat_obj is None:
+                raise FP_ParameterError(
+                    f"ApplySyncableProperties: natural class '{nc_name}' "
+                    f"references feature GUID {feat_guid} which does not "
+                    f"exist in the target project. The feature system "
+                    f"must be synced before natural classes are rewired; "
+                    f"silently dropping this spec would leave the target "
+                    f"class's FeaturesOA incomplete with no visible error."
+                )
+            val_obj = self.__ResolveByGuid(val_guid)
+            if val_obj is None:
+                raise FP_ParameterError(
+                    f"ApplySyncableProperties: natural class '{nc_name}' "
+                    f"references value GUID {val_guid} (feature "
+                    f"{feat_guid}) which does not exist in the target "
+                    f"project. The feature system must be synced before "
+                    f"natural classes are rewired; silently dropping this "
+                    f"spec would leave the target class's FeaturesOA "
+                    f"incomplete with no visible error."
+                )
+
+            # Every guard above stays outside: a spec that fails to
+            # resolve raises before any transaction opens, so no empty
+            # named undo entry is ever created.
+            with self._TransactionCM("Add natural class feature value"):
+                closed_value = cv_factory.Create()
+                struct.FeatureSpecsOC.Add(closed_value)
+                cv = IFsClosedValue(closed_value)
+                cv.FeatureRA = feat_obj
+                cv.ValueRA = val_obj
+
+            existing_pairs.add((feat_guid.lower(), val_guid.lower()))
+
+    def __ResolveByGuid(self, guid_str):
+        """
+        Resolve a GUID string to an LCM object in this (target) project,
+        returning None if it does not exist rather than raising -- the
+        caller (``__ApplyFeatures``) is responsible for turning a None
+        into a loud, actionable exception.
+        """
+        try:
+            return self.project.Object(guid_str)
+        except Exception:
+            return None
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):

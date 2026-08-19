@@ -11,6 +11,41 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-08-19
+
+> Additive fix: closes a silent cross-project data-loss bug for
+> feature-based natural classes. No breaking changes.
+
+### Fixed
+- **`NaturalClassOperations.GetSyncableProperties` dropped every
+  feature-based natural class's `FeaturesOA` constraint bundle.** For an
+  `IPhNCFeatures` item -- whose entire reason for existing is its owned
+  `FeaturesOA` (an `IFsFeatStruc` of `IFsClosedValue` specs) -- only
+  `Name`/`Abbreviation`/`Description`/`PhonemeGuids` were ever captured.
+  `ApplySyncableProperties` had no `Features` handling at all (it purely
+  delegated to `BaseOperations`). The result: every feature-based natural
+  class synced across to a target project with the correct Name and GUID
+  but a `null` `FeaturesOA`, so any phonological rule referencing the
+  class silently matched nothing -- no error, no warning. Measured on two
+  real project pairs: 0/34 and 0/11 `PhNCFeatures` retained their feature
+  structure after sync (source had 41/41 and 15/15 respectively).
+
+  Same bug class as `PhonemeOperations` issue #222 (which already closed
+  the identical hole for phoneme `FeaturesOA`), never swept to
+  `NaturalClassOperations` when #222 landed. `GetSyncableProperties` now
+  additionally emits `FeaturesGuid` and `Features` (a list of
+  `{"FeatureGuid", "ValueGuid"}` specs) for `IPhNCFeatures` items, and
+  `ApplySyncableProperties` rewires those specs against the target
+  project's feature system by GUID, creating the owned `IFsFeatStruc`
+  (GUID-preserving via `_CreateWithGuid`) when needed. The segment-based
+  `IPhNCSegments` / `PhonemeGuids` path is unchanged.
+
+  Unlike the phoneme path (which skips an unresolved feature/value GUID),
+  `ApplySyncableProperties` here **raises** `FP_ParameterError` naming the
+  missing GUID and the natural class when the target's feature system has
+  no matching feature or value. Silence is the exact defect being fixed;
+  the fix must not reintroduce it by a different route.
+
 ## [4.4.1] - 2026-08-18
 
 > Two production fixes to public methods that were broken outright, plus a

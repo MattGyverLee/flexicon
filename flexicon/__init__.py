@@ -12,7 +12,7 @@
 #   License:    LGPL-2.1-or-later  (see LICENSE.txt)
 # ----------------------------------------------------------------------------
 
-version = "4.4.1"
+version = "4.5.0"
 
 #: Capabilities this *build* of flexicon implements, probed with ``in``.
 #:
