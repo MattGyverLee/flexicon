@@ -178,12 +178,50 @@ Issue #250 names only `BaseOperations.py:1306-1308`. The exact-case
 | `Grammar/NaturalClassOperations.py` | 1086 | capture |
 | `Grammar/EnvironmentOperations.py` | 694 | capture |
 | `Grammar/GramCatOperations.py` | 630 | capture |
-| `Grammar/InflectionFeatureOperations.py` | 1694 | capture |
+| `Grammar/InflectionFeatureOperations.py` | ~1647 | capture |
 | `Grammar/MorphRuleOperations.py` | 916 | capture |
-| `Grammar/PhonFeatureOperations.py` | 683 | capture |
+| `Grammar/PhonFeatureOperations.py` | ~634 | capture |
 | `Grammar/PhonologicalRuleOperations.py` | 1470 | capture |
 | `Grammar/StratumOperations.py` | 287 | capture |
-| `Lexicon/ExampleOperations.py` | 491 | capture |
+| `Lexicon/ExampleOperations.py` | ~491 | **apply (SELF-RESOLVING)** -- see errata |
+
+### ERRATA + the table that actually governs coverage (cycle 7, 2026-09-07)
+
+**This table is a convenience INDEX, not a frozen artifact. Indexes are allowed
+to be out of date -- flexicon is actively changing, and this one will drift
+again.** Anchor on symbols and literals (section 6.1), report the line numbers
+you actually find, and **do not gate work on this table being current**. Do not
+build process around keeping it current either. D4-T4 (cycle 7) found two line
+drifts (`InflectionFeatureOperations` 1694 -> 1647, `PhonFeatureOperations`
+683 -> 634); both are expected staleness and neither is contract damage.
+
+**One row was mislabelled, and that one mattered.** `Lexicon/ExampleOperations.py`
+was labelled *capture*. It is **apply-side and self-resolving**: the build at
+`~:488-492` and its `dict.get` at `~:551` are both inside
+`def ApplySyncableProperties(` (`:431-560`). Corrected in place per the
+errata-and-proceed rule; **this did not trigger a contract re-freeze**, because
+the FIX SITE (`_apply_props_loop`) was never in doubt and C-D4-2's "do not edit
+these builds" is unaffected by the label.
+
+**The 13-row build table above is the WRONG DENOMINATOR for coverage.** Coverage
+is a question about **resolution** sites -- places that turn a `ws.Id` string
+into a handle and can therefore silently drop an alt. Enumerated exactly at
+`b3ba083b` by two independent greps (`ws_map.get(` and `target_ws_by_id.get(`),
+which returned identical 3-row sets:
+
+| # | Resolution site | Enclosing symbol | Reached by the D4 lookup-only fix? |
+|---|---|---|---|
+| 1 | `BaseOperations.py` `~:358/360` | `_apply_props_loop` | **YES -- this is the fix** |
+| 2 | `Grammar/PhonemeOperations.py` `~:1446/1447` | `__ApplyBasicIPASymbol` | **NO** |
+| 3 | `Lexicon/ExampleOperations.py` `~:549/551` | `ApplySyncableProperties` | **NO** |
+
+All three share the identical signature:
+`ws_map.get(src_ws_id, src_ws_id) if ws_map else src_ws_id` ->
+`target_ws_by_id.get(tgt_ws_id)` -> silent `continue`. **The other ten build
+sites are pure captures that resolve nothing and are not in the coverage
+question at all.** So Defect 4 as scoped covers **1 of 3 resolution sites**, not
+"13 of 13" and not "11 of 13". Sites 2 and 3 are declared OUT OF SCOPE with a
+reason in section 7 (F2/F5) and pinned by acceptance criterion 8.
 
 **This inventory is why the fix must be lookup-only.** Normalizing 13 builds
 would (a) collide head-on with `specs/feature-structure-sync-gap` T6-T8, which
@@ -274,6 +312,30 @@ must not alter `CurVernWss` / `CurAnalysisWss`. Asserted directly by a test
 
 ---
 
+### C-D4-7 -- The helper is MODULE-LEVEL and INDEPENDENTLY CALLABLE (added cycle 7)
+
+Added after D4-T4 proved two *other* apply paths self-resolve and cannot be
+reached by a fallback inside `_apply_props_loop` (section 3's resolution table).
+Those two are out of scope here (section 7, F2/F5) -- but this task must not make
+closing them harder than it needs to be.
+
+The new helper therefore **must**:
+
+- be a **module-level function** in `flexicon/code/BaseOperations.py` (the fence
+  1.1 wording already permits exactly this), **not** a method on
+  `BaseOperations` and **not** a closure inside `_apply_props_loop`;
+- take everything it needs as parameters -- suggested signature
+  `_resolve_ws_handle(target_ws_by_id, tgt_ws_id, _index_cache=None)` -- so it
+  depends on **no** `self`, no project handle, and no enclosing state;
+- be importable and callable from `Grammar/PhonemeOperations.py` and
+  `Lexicon/ExampleOperations.py` without modification.
+
+**Rationale.** With this shape, closing resolution sites 2 and 3 later is a
+one-line substitution each (`tgt_handle = _resolve_ws_handle(target_ws_by_id,
+tgt_ws_id)`). Without it, the follow-up becomes a redesign. This costs D4
+nothing -- it is a placement constraint, not extra behaviour. **Do not actually
+edit those two sites in this task** (fence 1.2, C-D4-2); just do not preclude it.
+
 ## 5. Task list
 
 - [ ] **D4-T1** Add the normalized-fallback resolution to
@@ -288,6 +350,15 @@ must not alter `CurVernWss` / `CurAnalysisWss`. Asserted directly by a test
       is built at most once (assert via a counting fake). These run against
       `_apply_props_loop` directly with fabricated dicts -- it is a pure helper
       designed for exactly that (its docstring cites T-S3a).
+      **Plus the RESOLUTION-SITE RATCHET (added cycle 7).** A lexical test that
+      greps `flexicon/code/` for the resolution signature
+      (`ws_map.get(src_ws_id, src_ws_id)` / `target_ws_by_id.get(`) and asserts
+      the set is **exactly** the three sites in the section-3 errata table. Its
+      failure message must say: "a FOURTH self-resolving writing-system
+      resolution loop was added; route it through `_apply_props_loop` or
+      `_resolve_ws_handle` instead (spec 250 C-D4-7), or update this ratchet if
+      a site was legitimately fixed." This is what makes the T6-T8 rider in
+      section 6.3 machine-checkable instead of a hope. Offline only; no LCM.
 - [ ] **D4-T3** Live verification on **`target_sandbox`** -- shape frozen in
       section 6.4. **Predictions committed BEFORE the run** (repo precedent:
       commits `be42aaf`, `a580f7b`, `558654e`). Both sides measured: the test
@@ -295,7 +366,7 @@ must not alter `CurVernWss` / `CurAnalysisWss`. Asserted directly by a test
       against fixed code and demonstrate the save. Evidence ->
       `specs/250-writingsystem-activation/evidence/live-D4-T3.md`,
       `run_mode: live` required.
-- [ ] **D4-T4** Re-verify the section 3 inventory by grep and report any drift
+- [x] **D4-T4** DONE cycle 7 -- `reviews/cycle7-archivist-D4-T4.md`. Two line drifts, one ROLE mislabel (`ExampleOperations` is apply-side, not capture), no 14th site. **F2 SETTLED: MIXED** -- `PhonemeOperations` `Name`/`Description` delegate via `super()` and DO inherit the fix; `BasicIPASymbol` self-resolves in `__ApplyBasicIPASymbol` and does NOT. Lead then closed the enumeration: exactly 3 resolution sites exist (section 3 errata table). Original text: Re-verify the section 3 inventory by grep and report any drift
       (T4/T5 of the FS feature may have moved
       `PhonemeOperations.py:1441`/`:1336`). **Report only -- do not edit those
       sites** (C-D4-2). Settle finding F2 explicitly.
@@ -323,6 +394,20 @@ must not alter `CurVernWss` / `CurAnalysisWss`. Asserted directly by a test
    `CHANGELOG.md`, and this spec's tree. Any hit in
    `System/WritingSystemOperations.py` is an automatic rejection.
 7. None of the 13 section-3 build sites is modified.
+8. **The COVERAGE BOUNDARY is stated explicitly, not implied (added cycle 7).**
+   The evidence file, the `CHANGELOG.md` entry and the D4-T6 issue comment must
+   each say, in plain words, that this fix reaches **`_apply_props_loop` only**,
+   and must **name** the two apply paths it does NOT reach:
+   `Grammar/PhonemeOperations.__ApplyBasicIPASymbol` and
+   `Lexicon/ExampleOperations.ApplySyncableProperties`' `TranslationsOC` loop.
+   A `BasicIPASymbol` alt with a case- or separator-divergent tag will still be
+   silently dropped after this fix lands, **even though the same phoneme's
+   `Name`/`Description` alts will be saved** -- that asymmetry is surprising and
+   must be written down rather than discovered. Reporting Defect 4 as "fixed"
+   without this boundary is an automatic rejection: a fix that silently covers
+   one of three resolution sites while the spec reads as covering all of them is
+   the same silent-partial-coverage shape this work exists to eliminate.
+   The ratchet in D4-T2 is the machine-checkable half of this criterion.
 
 ---
 
@@ -467,8 +552,20 @@ Filing any of these needs the user's approval.
   copy-pasted again. A follow-up should introduce a single shared
   `_BuildWSHandleMap()` and retire the idiom -- **after** the FS feature's T6-T8,
   since those add more instances.
-- **F2 -- `PhonemeOperations.py:1441` is a second, module-local apply-side
-  build.** If Phoneme's apply path does its own resolution rather than delegating
+- **F2 -- SETTLED cycle 7: MIXED, and it is a real, declared coverage gap.**
+  `PhonemeOperations.ApplySyncableProperties` splits props: `Name`/`Description`
+  go to `super()` and therefore through `_apply_props_loop`, so they **do**
+  inherit the Defect-4 fix. `BasicIPASymbol` is handled by
+  `__ApplyBasicIPASymbol` (`~:1441-1450`), which builds its own map and runs its
+  own exact-case `dict.get` loop, and therefore **does not**. Declared OUT OF
+  SCOPE here -- fence 1.2 and C-D4-2 forbid editing it, and closing it properly
+  means *refactoring it to delegate*, which is different work with a different
+  risk profile from a lookup fallback. C-D4-7 makes that later fix a one-line
+  substitution. Pinned by acceptance criterion 8. **Candidate follow-up issue --
+  filing needs the user's approval and has NOT been done.**
+  Original text follows.
+  **F2 (original) -- `PhonemeOperations.py:1441` is a second, module-local
+  apply-side build.** If Phoneme's apply path does its own resolution rather than delegating
   to `_apply_props_loop`, it will **not** inherit the Defect 4 fix. D4-T4 must
   determine which, and say so explicitly. If it self-resolves, that is a genuine
   gap in this fix and must be reported at handoff -- not quietly patched (it is
@@ -485,3 +582,28 @@ Filing any of these needs the user's approval.
   whole-store -- so it returns True for exactly the tags that then get dropped.
   This is the Defect 2 <-> Defect 4 interaction; it resolves when Defects 1-3 do.
   Recorded so the docstring is revisited then.
+
+- **F5 -- `ExampleOperations.ApplySyncableProperties` is a THIRD self-resolving
+  apply loop (found cycle 7).** Its `TranslationsOC` branch (`~:543-555`) repeats
+  the vulnerable pattern verbatim for example-sentence translations, and its
+  section-3 row was mislabelled *capture*. Same disposition as F2: out of scope
+  here, one-line to close later thanks to C-D4-7, pinned by acceptance criterion
+  8 and by the D4-T2 ratchet. **Together F2 and F5 are the complete set** -- the
+  resolution enumeration in the section-3 errata is closed at three sites, so
+  there is no open-ended tail here, and the ratchet fails loudly if a fourth
+  appears. F1's "retire the exact-case idiom" follow-up should absorb F2 and F5
+  and should now be framed as *"make every apply path delegate its
+  writing-system resolution"* rather than *"unify the 13 builds"* -- the builds
+  were never the thing that drops data. **Filing needs the user's approval.**
+
+- **F6 -- BINDING RIDER ON `feature-structure-sync-gap` T6-T8 (cycle 7).** The
+  before-T6 sequencing ruling rests on "the five new sync implementations
+  inherit the fix for free". D4-T4 proved that holds **only for paths that
+  delegate to `_apply_props_loop`** -- and that two existing paths do not, which
+  is precisely the failure mode the sequencing was chosen to avoid, already
+  realised twice. So the ruling stands and is *reinforced*, with this rider made
+  explicit: **any new `ApplySyncableProperties` implementation added by T6-T8
+  MUST route multistring alts through `_apply_props_loop` and MUST NOT build a
+  local `{ws.Id: ws.Handle}` map with its own `dict.get` resolution loop.** The
+  D4-T2 ratchet enforces this automatically at three sites; a fourth turns the
+  suite red.
