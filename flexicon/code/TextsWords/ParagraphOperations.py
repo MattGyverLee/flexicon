@@ -177,8 +177,12 @@ class ParagraphOperations(BaseOperations):
         self._EnsureWriteEnabled()
         self._ValidateParam(content, "content")
 
-        content_str = content.strip() if isinstance(content, str) else str(content)
-        if not content_str:
+        # NOTE (#242): .strip() here is a THROWAWAY used only for the
+        # emptiness check. The caller's ORIGINAL payload (content_str) is
+        # what is persisted via TsStringUtils.MakeString below -- leading/
+        # trailing/internal whitespace is preserved, not stripped.
+        content_str = content if isinstance(content, str) else str(content)
+        if not content_str.strip():
             raise FP_ParameterError("Content cannot be empty")
 
         text_obj = self.__GetTextObject(text_or_hvo)
@@ -582,8 +586,12 @@ class ParagraphOperations(BaseOperations):
         self._EnsureWriteEnabled()
         self._ValidateParam(content, "content")
 
-        content_str = content.strip() if isinstance(content, str) else str(content)
-        if not content_str:
+        # NOTE (#242): .strip() here is a THROWAWAY used only for the
+        # emptiness check. The caller's ORIGINAL payload (content_str) is
+        # what is persisted via TsStringUtils.MakeString below -- leading/
+        # trailing/internal whitespace is preserved, not stripped.
+        content_str = content if isinstance(content, str) else str(content)
+        if not content_str.strip():
             raise FP_ParameterError("Content cannot be empty")
 
         para_obj = self.__GetParagraphObject(paragraph_or_hvo)
@@ -723,8 +731,12 @@ class ParagraphOperations(BaseOperations):
         self._EnsureWriteEnabled()
         self._ValidateParam(content, "content")
 
-        content_str = content.strip() if isinstance(content, str) else str(content)
-        if not content_str:
+        # NOTE (#242): .strip() here is a THROWAWAY used only for the
+        # emptiness check. The caller's ORIGINAL payload (content_str) is
+        # what is persisted via TsStringUtils.MakeString below -- leading/
+        # trailing/internal whitespace is preserved, not stripped.
+        content_str = content if isinstance(content, str) else str(content)
+        if not content_str.strip():
             raise FP_ParameterError("Content cannot be empty")
 
         text_obj = self.__GetTextObject(text_or_hvo)

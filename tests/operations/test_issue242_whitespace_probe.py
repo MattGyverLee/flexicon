@@ -5,21 +5,30 @@
 #   measures whether whitespace written through the paragraph/segment text
 #   writers actually survives a write-read cycle.
 #
-#   THE FOUR SITES UNDER STUDY:
-#     flexicon/code/TextsWords/ParagraphOperations.py:171  Create
-#     flexicon/code/TextsWords/ParagraphOperations.py:576  SetText
-#     flexicon/code/TextsWords/ParagraphOperations.py:716  InsertAt
-#     flexicon/code/TextsWords/SegmentOperations.py:589    AppendSentence
-#   All four strip a copy of the incoming text for the emptiness check and
-#   then persist the STRIPPED value via TsStringUtils.MakeString. Branch
-#   asymmetry already found by inspection: ParagraphOperations does NOT
-#   strip the non-str branch (`str(content)`), while SegmentOperations
-#   DOES strip it (`str(text).strip()`) -- see test_p5 below.
+#   CHECKPOINT 3 UPDATE (2026-09-07): the fix ruled on by /lex-lead has now
+#   LANDED at all four sites. Each site's .strip() is now a THROWAWAY used
+#   only for the emptiness check; the caller's ORIGINAL payload reaches
+#   TsStringUtils.MakeString unmodified. test_p1/p2/p3/p4/p5 below are
+#   FLIPPED from asserting/observing "stripped" (pre-fix) to asserting
+#   "preserved" (post-fix); the pre-fix behaviour is kept in comments for
+#   the historical record. test_p6 through test_p8 are NEW additions for
+#   Checkpoint 3 (see specs/242-paragraph-whitespace/evidence/
+#   live-t1-t2-fix.md for the PREDICTIONS committed before this run).
 #
-#   This file measures the bug; it does NOT fix it. No file under
-#   flexicon/code/ is touched by this task -- see
-#   specs/242-paragraph-whitespace/evidence/live-probe-cycle1.md for the
-#   `git diff --stat -- flexicon/` proof.
+#   THE FOUR SITES UNDER STUDY (post-fix line numbers; see
+#   `git diff --stat -- flexicon/` for the exact patch):
+#     flexicon/code/TextsWords/ParagraphOperations.py       Create
+#     flexicon/code/TextsWords/ParagraphOperations.py       SetText
+#     flexicon/code/TextsWords/ParagraphOperations.py       InsertAt
+#     flexicon/code/TextsWords/SegmentOperations.py         AppendSentence
+#   PRE-FIX (historical record): all four stripped a copy of the incoming
+#   text for the emptiness check and then persisted the STRIPPED value via
+#   TsStringUtils.MakeString. Branch asymmetry found by inspection:
+#   ParagraphOperations did NOT strip the non-str branch (`str(content)`),
+#   while SegmentOperations DID strip it (`str(text).strip()`) -- see
+#   test_p5 below. POST-FIX: that asymmetry is resolved -- neither family
+#   strips the non-str branch any more (SegmentOperations's trailing
+#   `.strip()` on `str(text)` was deliberately removed per the ruling).
 #
 #   TWO MEASUREMENT LAYERS (both required):
 #     Layer A (test_p1, test_p2) -- call the public writers as they ship
@@ -114,14 +123,18 @@ class _NonStrPayload:
 @pytest.mark.live_phase("ParagraphOperations", "add")
 def test_p1_layer_a_paragraph_writers_matrix(target_sandbox):
     """
-    CURRENT BEHAVIOUR (layer A): call Create / SetText / InsertAt as they
-    ship today for every payload in the matrix, and re-read via GetText().
+    POST-FIX BEHAVIOUR (layer A): call Create / SetText / InsertAt as they
+    ship after the Checkpoint 3 fix, for every payload in the matrix, and
+    re-read via GetText(). The .strip() at each site is now a THROWAWAY
+    used only for the emptiness check; the persisted value is the raw,
+    UNSTRIPPED payload. So each writer's re-read value is predicted to
+    equal `raw` byte-for-byte (P6), not `raw.strip()`.
 
-    All three writers share one stripping line:
+    HISTORICAL RECORD (pre-fix, cycle 1): all three writers shared one
+    stripping line:
         content_str = content.strip() if isinstance(content, str) else str(content)
-    so they are predicted to behave IDENTICALLY to each other (unlike
-    AppendSentence, which has a different line -- measured separately in
-    test_p2).
+    and persisted the STRIPPED value, so the pre-fix re-read equalled
+    `raw.strip()` for every payload, not `raw`.
     """
     project = target_sandbox
     text = project.Texts.Create(f"{TEST_PREFIX}p1_text")
@@ -168,18 +181,18 @@ def test_p1_layer_a_paragraph_writers_matrix(target_sandbox):
 
     print(f"[SUMMARY][P1] full layer-A paragraph-writer table: {results}")
 
-    # Headline sanity: all three writers strip via the SAME source line, so
-    # for every payload their re-read values must agree with each other. A
-    # divergence here would itself be a finding, not an expected outcome.
+    # P6: post-fix, each writer must round-trip the RAW payload
+    # byte-for-byte (not `raw.strip()`). This is the headline assertion
+    # this test flipped from "stripped" to "preserved" for.
     for label, row in results.items():
         assert row["create_exc"] is None and row["insert_exc"] is None and row["settext_exc"] is None, (
             f"Payload {label!r}: unexpected exception -- {row}"
         )
-        assert row["create"] == row["insert"] == row["settext"], (
-            f"Payload {label!r} (raw={row['raw']!r}): Create/InsertAt/SetText "
-            f"disagree -- {row['create']!r} vs {row['insert']!r} vs "
-            f"{row['settext']!r}. They share one stripping line; a "
-            f"divergence here would itself be a finding."
+        assert row["create"] == row["insert"] == row["settext"] == row["raw"], (
+            f"Payload {label!r} (raw={row['raw']!r}): expected Create/InsertAt/"
+            f"SetText to all round-trip the RAW payload post-fix -- got "
+            f"{row['create']!r} / {row['insert']!r} / {row['settext']!r}. "
+            f"(Pre-fix, cycle 1, these would have equalled raw.strip().)"
         )
 
 
@@ -190,18 +203,26 @@ def test_p1_layer_a_paragraph_writers_matrix(target_sandbox):
 @pytest.mark.live_phase("SegmentOperations", "add")
 def test_p2_layer_a_append_sentence_matrix(target_sandbox):
     """
-    CURRENT BEHAVIOUR (layer A) for AppendSentence, measured separately
-    from the paragraph writers because its stripping line differs:
+    POST-FIX BEHAVIOUR (layer A) for AppendSentence. Checkpoint 3 landed:
+        text_str = text if isinstance(text, str) else str(text)
+        if not text_str.strip():
+            raise FP_ParameterError("text cannot be empty")
+    so text_str is now the RAW payload; the .strip() is a throwaway used
+    only for the emptiness check (the non-str branch's former trailing
+    `.strip()` was also removed, per the ruling).
+
+    HISTORICAL RECORD (pre-fix, cycle 1): the stripping line was
         text_str = text.strip() if isinstance(text, str) else str(text).strip()
+    and AppendSentence persisted the STRIPPED value.
 
     Each payload gets a FRESH paragraph seeded with "Seed." so the append
     takes AppendSentence's "already terminated" branch (a single space
     separator is inserted, not ". "). Both of AppendSentence's branches
-    consume the SAME already-stripped `text_str`, so exercising one branch
-    is sufficient to characterise the strip itself; the
-    current_length == 0 (empty-paragraph, direct-write) branch was NOT
-    separately probed here -- noted explicitly rather than silently
-    skipped.
+    consume the SAME `text_str`, so exercising one branch is sufficient to
+    characterise the strip itself; the current_length == 0 (empty-
+    paragraph, direct-write) branch was NOT separately probed here --
+    noted explicitly rather than silently skipped. Post-fix, full_contents
+    is predicted to equal "Seed. " + raw exactly (P6).
 
     Also measures the segment BASELINE (Segments.GetBaselineText)
     independently of the paragraph Contents, per the task brief: segment
@@ -253,6 +274,19 @@ def test_p2_layer_a_append_sentence_matrix(target_sandbox):
         assert "error" not in row, f"Payload {label!r}: {row.get('error')}"
         assert row["append_exc"] is None, f"Payload {label!r}: AppendSentence raised: {row['append_exc']}"
 
+    # P6: post-fix, AppendSentence must persist the RAW payload
+    # byte-for-byte. The seed paragraph ("Seed.") already ends in ".", so
+    # AppendSentence takes the "already terminated" branch and inserts a
+    # single space separator before the appended text.
+    for label, row in results.items():
+        expected = f"Seed. {row['raw']}"
+        assert row["full_contents"] == expected, (
+            f"Payload {label!r} (raw={row['raw']!r}): expected full_contents "
+            f"to round-trip the RAW payload post-fix -- expected "
+            f"{expected!r}, got {row['full_contents']!r}. (Pre-fix, cycle 1, "
+            f"this would have equalled 'Seed. ' + raw.strip().)"
+        )
+
     # Independent check requested by the task brief: does the segment
     # baseline agree with the tail of the paragraph Contents, or does
     # segment/reparse logic diverge from it? Reported, not asserted, since
@@ -281,12 +315,17 @@ def test_p3_layer_b_bypass_operations_layer(target_sandbox):
     entirely: build the TsString from the RAW, unstripped payload and set
     para.Contents directly inside a transaction, then re-read.
 
-    If the LCM/FLEx layer normalises the whitespace on its own here (with
-    NO .strip() from this library anywhere in the path), then #242's fix
-    would be COSMETIC and the spec must say so in those words. If the raw
-    payload survives unchanged, the loss measured in P1/P2 above is proven
-    to originate ENTIRELY in this library's own .strip() calls, and
-    removing them is a real fix.
+    CHECKPOINT 1 (cycle 1) answered this as an open question, recorded as
+    contract item C3(i): whitespace survives a raw `MakeString` write for
+    every payload in the matrix -- the loss measured at layer A (P1/P2)
+    originates ENTIRELY in this library's own .strip() calls, not the LCM/
+    FLEx layer. CHECKPOINT 3 FLIPS the observational-only verdict below
+    into a hard assertion (`match` for every payload), locking in that
+    answer as a regression test now that the fix at layer A depends on it.
+
+    HISTORICAL RECORD (pre-fix, cycle 1): no blanket assertion on `match`
+    existed here -- it was "the open question this probe exists to
+    answer," reported via [VERDICT] prints only.
     """
     from SIL.LCModel.Core.Text import TsStringUtils
 
@@ -332,11 +371,16 @@ def test_p3_layer_b_bypass_operations_layer(target_sandbox):
             "normalises them regardless of what this library does."
         )
 
-    # No blanket assertion on `match` -- that IS the open question this
-    # probe exists to answer. Sanity-only: every bypass write reached the
-    # LCM without raising.
+    # P6 (flipped from an open question to a hard assertion, Checkpoint 3):
+    # every payload must survive the raw LCM bypass unchanged.
     for label, row in results.items():
         assert row["write_exc"] is None, f"Bypass write for {label!r} raised: {row['write_exc']}"
+        assert row["match"], (
+            f"Payload {label!r} (raw={row['raw']!r}): expected the raw LCM "
+            f"bypass to round-trip unchanged -- got {row['reread']!r}. "
+            f"(This was the open question in cycle 1; C3(i) already "
+            f"answered it as 'yes, for every payload'.)"
+        )
 
 
 # ===========================================================================
@@ -347,12 +391,19 @@ def test_p3_layer_b_bypass_operations_layer(target_sandbox):
 def test_p4_inmemory_vs_ondisk_persistence(target_sandbox_path):
     """
     Read back in-session, then CLOSE and REOPEN the same sandbox .fwdata
-    and read again. Item 1 of this campaign was decided by these two
-    differing -- do not assume they agree here.
+    and read again.
 
     Uses the layer-B bypass (raw, unstripped MakeString) so this isolates
     whether ON-DISK persistence itself normalises whitespace, independent
-    of anything this library's writers do.
+    of anything this library's writers do. CHECKPOINT 3 FLIPS this from an
+    open question into a hard assertion: both in-memory and on-disk reads
+    must equal the RAW payload for every entry in the matrix (P6).
+
+    HISTORICAL RECORD (pre-fix, cycle 1): no blanket equality assertion
+    existed here -- "Item 1 of this campaign was decided by these two
+    differing -- do not assume they agree here" was the operative caution,
+    and in-memory/on-disk agreement (or disagreement) was reported via
+    [VERDICT] prints only.
     """
     from SIL.LCModel.Core.Text import TsStringUtils
 
@@ -418,10 +469,19 @@ def test_p4_inmemory_vs_ondisk_persistence(target_sandbox_path):
     else:
         print("[VERDICT][P4] in-memory and on-disk agree for every payload measured here.")
 
-    # No blanket equality assertion -- that IS the open question. Sanity-only:
-    # every payload was read back on both sides.
+    # P6 (flipped from an open question to a hard assertion, Checkpoint 3):
+    # both in-memory and on-disk reads must equal the RAW payload.
     assert set(inmemory) == {label for label, _ in PAYLOADS}
     assert set(ondisk) == {label for label, _ in PAYLOADS}
+    for label, raw in PAYLOADS:
+        assert inmemory[label] == raw, (
+            f"Payload {label!r}: expected in-memory read to equal raw "
+            f"{raw!r}, got {inmemory[label]!r}"
+        )
+        assert ondisk[label] == raw, (
+            f"Payload {label!r}: expected on-disk read (after close+reopen) "
+            f"to equal raw {raw!r}, got {ondisk[label]!r}"
+        )
 
 
 # ===========================================================================
@@ -431,15 +491,22 @@ def test_p4_inmemory_vs_ondisk_persistence(target_sandbox_path):
 @pytest.mark.live_phase("ParagraphOperations", "add")
 def test_p5_non_str_branch_divergence(target_sandbox):
     """
-    ParagraphOperations (Create/SetText/InsertAt) does NOT strip the
-    non-str branch:
-        content_str = content.strip() if isinstance(content, str) else str(content)
-    SegmentOperations.AppendSentence DOES strip it regardless of type:
-        text_str = text.strip() if isinstance(text, str) else str(text).strip()
+    POST-FIX (Checkpoint 3): the C6 non-str-branch asymmetry is RESOLVED.
+    Neither family strips the non-str branch any more:
+        ParagraphOperations: content_str = content if isinstance(content, str) else str(content)
+        SegmentOperations:   text_str = text if isinstance(text, str) else str(text)
+    (SegmentOperations's former trailing `.strip()` on `str(text)` was
+    deliberately removed per the ruling.) Both are therefore predicted to
+    PRESERVE the trailing space on the same non-str payload.
+
+    HISTORICAL RECORD (pre-fix, cycle 1): ParagraphOperations did NOT
+    strip the non-str branch (`str(content)`), while SegmentOperations DID
+    strip it (`str(text).strip()`) -- confirmed as a divergence for this
+    exact payload.
 
     Pass the SAME non-str object (str() == "ka ", trailing space) to a
-    ParagraphOperations writer and to AppendSentence, and show whether they
-    disagree as the source reads.
+    ParagraphOperations writer and to AppendSentence, and confirm they now
+    AGREE (both preserve it).
     """
     project = target_sandbox
     text = project.Texts.Create(f"{TEST_PREFIX}p5_text")
@@ -480,6 +547,176 @@ def test_p5_non_str_branch_divergence(target_sandbox):
             "families agree despite the source-level asymmetry."
         )
 
+    # P6 (flipped, Checkpoint 3): the C6 asymmetry is resolved -- both
+    # families must now preserve the non-str trailing space, and agree
+    # with each other. (Pre-fix, cycle 1: para_preserved_trailing_space was
+    # True and segment_preserved_trailing_space was False -- a confirmed
+    # divergence.)
+    assert para_preserved_trailing_space, (
+        f"Expected ParagraphOperations.Create(non-str) to preserve the "
+        f"trailing space post-fix -- got {para_read!r}"
+    )
+    assert segment_preserved_trailing_space, (
+        f"Expected SegmentOperations.AppendSentence(non-str) to preserve "
+        f"the trailing space post-fix -- got {seg_full!r}"
+    )
+    assert para_preserved_trailing_space == segment_preserved_trailing_space, (
+        "Expected the C6 asymmetry to be resolved: both writer families "
+        "must agree on the same non-str input."
+    )
+
     # Sanity only: both writers actually produced content containing "ka".
     assert "ka" in para_read
     assert "ka" in seg_full
+
+
+# ===========================================================================
+# P-7 -- WHITESPACE-ONLY INPUT STILL RAISES (NEW, Checkpoint 3)
+# ===========================================================================
+
+@pytest.mark.live_phase("ParagraphOperations", "add")
+def test_p7_whitespace_only_still_raises(target_sandbox):
+    """
+    P7: the fix uses `.strip()` as a THROWAWAY for the emptiness check
+    only -- it must still catch a whitespace-only payload as empty, at all
+    four sites. Persisting the raw payload does NOT mean persisting
+    "nothing but whitespace" silently succeeds.
+    """
+    project = target_sandbox
+    text = project.Texts.Create(f"{TEST_PREFIX}p7_text")
+    whitespace_only = "   "
+
+    # Site 1: Create
+    _, create_exc = _safe(
+        lambda: project.Paragraphs.Create(text, whitespace_only), "P7 Create(whitespace-only)"
+    )
+    print(f"[TABLE][P7] Create(whitespace-only={whitespace_only!r}) -> raised {create_exc!r}")
+    assert create_exc is not None and create_exc.startswith("FP_ParameterError"), (
+        f"Expected Create(whitespace-only) to raise FP_ParameterError -- got {create_exc!r}"
+    )
+
+    # Site 2: SetText (needs a valid seed paragraph first)
+    seed, seed_exc = _safe(lambda: project.Paragraphs.Create(text, "Seed."), "P7 seed para")
+    assert seed is not None, f"Seed paragraph creation failed: {seed_exc}"
+    _, settext_exc = _safe(
+        lambda: project.Paragraphs.SetText(seed, whitespace_only), "P7 SetText(whitespace-only)"
+    )
+    print(f"[TABLE][P7] SetText(whitespace-only={whitespace_only!r}) -> raised {settext_exc!r}")
+    assert settext_exc is not None and settext_exc.startswith("FP_ParameterError"), (
+        f"Expected SetText(whitespace-only) to raise FP_ParameterError -- got {settext_exc!r}"
+    )
+    # Confirm SetText did not silently write the whitespace-only payload.
+    assert project.Paragraphs.GetText(seed) == "Seed.", (
+        "SetText(whitespace-only) raised, but the seed paragraph's content "
+        "changed anyway -- the raise must happen BEFORE any write."
+    )
+
+    # Site 3: InsertAt
+    para_count = text.ContentsOA.ParagraphsOS.Count
+    _, insert_exc = _safe(
+        lambda: project.Paragraphs.InsertAt(text, para_count, whitespace_only),
+        "P7 InsertAt(whitespace-only)",
+    )
+    print(f"[TABLE][P7] InsertAt(whitespace-only={whitespace_only!r}) -> raised {insert_exc!r}")
+    assert insert_exc is not None and insert_exc.startswith("FP_ParameterError"), (
+        f"Expected InsertAt(whitespace-only) to raise FP_ParameterError -- got {insert_exc!r}"
+    )
+
+    # Site 4: AppendSentence
+    seed2, seed2_exc = _safe(lambda: project.Paragraphs.Create(text, "Seed2."), "P7 seed2 para")
+    assert seed2 is not None, f"Seed2 paragraph creation failed: {seed2_exc}"
+    _, append_exc = _safe(
+        lambda: project.Segments.AppendSentence(seed2, whitespace_only),
+        "P7 AppendSentence(whitespace-only)",
+    )
+    print(f"[TABLE][P7] AppendSentence(whitespace-only={whitespace_only!r}) -> raised {append_exc!r}")
+    assert append_exc is not None and append_exc.startswith("FP_ParameterError"), (
+        f"Expected AppendSentence(whitespace-only) to raise FP_ParameterError -- got {append_exc!r}"
+    )
+    assert project.Paragraphs.GetText(seed2) == "Seed2.", (
+        "AppendSentence(whitespace-only) raised, but the seed paragraph's "
+        "content changed anyway -- the raise must happen BEFORE any write."
+    )
+
+    print(
+        "[VERDICT][P7] whitespace-only input still raises FP_ParameterError at all "
+        "four sites, confirming the .strip() emptiness check survived the fix "
+        "as a throwaway check (it just no longer affects what gets persisted "
+        "for non-empty payloads)."
+    )
+
+
+# ===========================================================================
+# P-8 -- MEASURE (DO NOT FIX): TERMINATOR BRANCH READS THE RAW LAST CHAR
+# ===========================================================================
+
+@pytest.mark.live_phase("SegmentOperations", "add")
+def test_p8_terminator_branch_reads_raw_trailing_space(target_sandbox):
+    """
+    P8: MEASURE ONLY, per the ruling -- do not fix, report it.
+
+    AppendSentence's terminator branch (SegmentOperations.py, untouched by
+    this fix) reads the RAW last character of para.Contents to decide
+    whether the paragraph is already sentence-terminated. Before this fix,
+    a paragraph's Contents could not end in a literal trailing space
+    (Create/SetText/InsertAt all stripped it). After this fix, they no
+    longer strip, so a paragraph can now genuinely end in " ".
+
+    PREDICTION (P8, committed before this run in
+    evidence/live-t1-t2-fix.md): create a paragraph via
+    Paragraphs.Create() with content "foo " (trailing space, now
+    preserved). Append "bar" via AppendSentence. The terminator branch
+    reads the last char as " ", which is NOT in (".", "!", "?"), so it
+    takes the "insert '. ' as sentence terminator" branch -- producing
+    "foo . bar" (a space BEFORE the period), a state that was UNREACHABLE
+    before this fix (because Contents could never end in a raw space).
+
+    This test measures and asserts the PREDICTED (if anomalous) behaviour
+    to lock it in as a regression-detectable fact. It does NOT change
+    SegmentOperations.py's terminator logic (lines left untouched per the
+    ruling). /lex-lead rules on whether this is acceptable next cycle.
+    """
+    project = target_sandbox
+    text = project.Texts.Create(f"{TEST_PREFIX}p8_text")
+
+    para, create_exc = _safe(
+        lambda: project.Paragraphs.Create(text, "foo "), "P8 Create('foo ', trailing space)"
+    )
+    assert create_exc is None, f"Create('foo ') raised: {create_exc}"
+    pre_append = project.Paragraphs.GetText(para)
+    print(f"[TABLE][P8] pre-append Contents: {pre_append!r}")
+    assert pre_append == "foo ", (
+        f"Precondition failed: expected the seed paragraph to end in a raw "
+        f"trailing space post-fix -- got {pre_append!r}"
+    )
+
+    _, append_exc = _safe(
+        lambda: project.Segments.AppendSentence(para, "bar"), "P8 AppendSentence('bar')"
+    )
+    assert append_exc is None, f"AppendSentence('bar') raised: {append_exc}"
+
+    post_append = project.Paragraphs.GetText(para)
+    print(f"[TABLE][P8] post-append Contents: {post_append!r}")
+
+    predicted = "foo . bar"
+    if post_append == predicted:
+        print(
+            f"[VERDICT][P8] CONFIRMED: terminator branch read the raw trailing "
+            f"space as the last char (not in '.!?'), inserting '. ' and "
+            f"producing {post_append!r} -- a space-before-period state that "
+            f"was UNREACHABLE before this fix. NOT FIXED here per the ruling; "
+            f"/lex-lead rules on it next cycle."
+        )
+    else:
+        print(
+            f"[VERDICT][P8] PREDICTION MISS: expected {predicted!r}, got "
+            f"{post_append!r}. Reporting the actual measured value, not "
+            f"adjusting the prediction after the fact."
+        )
+
+    assert post_append == predicted, (
+        f"P8 measurement: expected {predicted!r} (the predicted anomaly), "
+        f"got {post_append!r}. This assertion locks in the MEASURED "
+        f"behaviour so a future change to the terminator logic shows up "
+        f"here as a diff, not a silent regression."
+    )

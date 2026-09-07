@@ -592,8 +592,13 @@ class SegmentOperations(BaseOperations):
         self._ValidateParam(paragraph_or_hvo, "paragraph_or_hvo")
         self._ValidateParam(text, "text")
 
-        text_str = text.strip() if isinstance(text, str) else str(text).strip()
-        if not text_str:
+        # NOTE (#242): .strip() here is a THROWAWAY used only for the
+        # emptiness check. The caller's ORIGINAL payload (text_str) is what
+        # is persisted below -- leading/trailing/internal whitespace is
+        # preserved, not stripped. Non-str branch is str(text) with NO
+        # trailing .strip() (per the ruling, deliberately removed).
+        text_str = text if isinstance(text, str) else str(text)
+        if not text_str.strip():
             raise FP_ParameterError("text cannot be empty")
 
         para = self.__GetParagraphObject(paragraph_or_hvo)
