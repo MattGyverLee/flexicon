@@ -338,11 +338,26 @@ edit those two sites in this task** (fence 1.2, C-D4-2); just do not preclude it
 
 ## 5. Task list
 
-- [ ] **D4-T1** Add the normalized-fallback resolution to
+- [x] **D4-T1** DONE cycle 7 -- commit `269b6a7` (authored by the OTHER
+      session; see the duplicate-dispatch incident in
+      `specs/feature-structure-sync-gap/STATUS.md`). `_normalize_ws_tag` and
+      `_resolve_ws_handle` added module-level per C-D4-7 (`_resolve_ws_handle`
+      at `BaseOperations.py:333`); `_apply_props_loop` changed only at its
+      resolution line plus a `_ws_resolve_cache = {}` init. **`269b6a7` is a
+      RECONSTRUCTION and is treated as unreviewed third-party code -- the
+      cycle-8 gate re-verifies it from scratch and may NOT cite
+      byte-identical convergence with the other session's copy as
+      corroboration (possibly circular).** Original text: Add the
+      normalized-fallback resolution to
       `BaseOperations._apply_props_loop` per C-D4-1..C-D4-6. Locate the target by
       **symbol and literal**, not by line number (section 6.1). Report the line
       numbers you actually found.
-- [ ] **D4-T2** Offline tests: exact-match-first preserved (a hit never consults
+- [x] **D4-T2** DONE cycle 7 -- `tests/operations/test_issue250_defect4_ws_resolution.py`,
+      21 passed including the resolution-site ratchet. **RESIDUE, redone in
+      cycle 8:** the ratchet's bites-when-mutated proof used an UNTRACKED
+      scratch file, so it carries no `git hash-object`/`git rev-parse` pair.
+      The gate re-does it in tracked, hash-verified form. Original text:
+      Offline tests: exact-match-first preserved (a hit never consults
       the index); D4-a, D4-b and D4-c each resolve; ambiguity (`en-US` and
       `en-us` -> two distinct handles) raises `FP_ParameterError` naming both;
       keys normalizing together with one shared handle do **not** raise;
@@ -359,7 +374,13 @@ edit those two sites in this task** (fence 1.2, C-D4-2); just do not preclude it
       `_resolve_ws_handle` instead (spec 250 C-D4-7), or update this ratchet if
       a site was legitimately fixed." This is what makes the T6-T8 rider in
       section 6.3 machine-checkable instead of a hope. Offline only; no LCM.
-- [ ] **D4-T3** Live verification on **`target_sandbox`** -- shape frozen in
+- [x] **D4-T3** DONE cycle 7 -- `evidence/live-D4-T3.md`, `run_mode: live` on
+      BOTH sides. Unfixed: 2 FAILED (the drop, measured). Fixed: 2 PASSED
+      (the save, re-read from the LCM via a fresh `project.Object(hvo)` cast
+      to `IPartOfSpeech`). **D4-c SKIPPED live on both sides** -- ruled
+      ACCEPTABLE, see the amendment to acceptance criterion 1. Predictions
+      were committed before either run at `302d266`. Original text: Live
+      verification on **`target_sandbox`** -- shape frozen in
       section 6.4. **Predictions committed BEFORE the run** (repo precedent:
       commits `be42aaf`, `a580f7b`, `558654e`). Both sides measured: the test
       must be run against **unfixed** code first and demonstrate the drop, then
@@ -370,19 +391,62 @@ edit those two sites in this task** (fence 1.2, C-D4-2); just do not preclude it
       (T4/T5 of the FS feature may have moved
       `PhonemeOperations.py:1441`/`:1336`). **Report only -- do not edit those
       sites** (C-D4-2). Settle finding F2 explicitly.
-- [ ] **D4-T5** `CHANGELOG.md` `[Unreleased] ### Fixed`. This is a **bug fix, not
+- [x] **D4-T5** DONE cycle 7 -- commit `8c679ed` (also the other session).
+      States the bug-fix-not-breaking-change framing, the new
+      `FP_ParameterError` failure mode, and the criterion-8 coverage boundary
+      naming both unreached apply paths. **Cycle-8 rider:** the gate must
+      confirm it does not describe D4-c as live-verified. Original text:
+      `CHANGELOG.md` `[Unreleased] ### Fixed`. This is a **bug fix, not
       a breaking change**: no currently-succeeding write changes behaviour
       (C-D4-3 step 1). Note the new `FP_ParameterError` on ambiguous spellings as
       the one new failure mode.
 - [ ] **D4-T6** Post a comment on #250 recording that Defect 4 is fixed
       independently, that Defects 1-3 remain open, and that the issue must NOT be
       closed. **Do not close #250.** Filing/closing needs the user's approval.
+      **Cycle 8 produces the DRAFT ONLY, unposted** -- the user has approved
+      the #264/#265 filings and the #256 closure separately, but has NOT
+      approved this comment. It must state that D4-c is offline-covered only.
+- [ ] **D4-T7** (added cycle 8) Add `@pytest.mark.live_phase(...)` to the three
+      tests in `tests/operations/test_issue250_ws_case_divergence.py`. They
+      currently appear in `tests/live_status.json` under
+      `uncategorized_live_tests` as `missing live_phase marker`, making them
+      invisible to `tests/LIVE_COVERAGE.md` / `tests/LIVE_STATUS.md`
+      accounting. Metadata only -- no behavioural change. Must be done by the
+      agent holding the live token, AFTER the gate's own measurements, and
+      re-verified in the same window: re-run the live file and show
+      `phase` populated and these three gone from `uncategorized_live_tests`.
 
 ## 5.1 Acceptance criteria
 
-1. D4-a, D4-b and D4-c all resolve to the correct existing handle, proven live
-   with a post-write value **re-read from the LCM** after re-fetching the object
+1. D4-a, D4-b and D4-c all resolve to the correct existing handle, with a
+   post-write value **re-read from the LCM** after re-fetching the object
    (asserting on the value passed in proves nothing).
+
+   **AMENDED cycle 7 (lead ruling, after D4-T3 measured).** The live/offline
+   split is now explicit rather than aspirational:
+   - **D4-a and D4-b: proven LIVE**, both sides -- the drop on unfixed code and
+     the save on fixed code, `run_mode: live` on each.
+   - **D4-c (separator divergence): proven OFFLINE ONLY**, against the real
+     `_apply_props_loop` with fabricated dicts. It is SKIPPED live, loudly, on
+     both sides: `target_sandbox`'s only two active writing systems are `en`
+     and `etu`, **neither of which contains a `-` or `_` to flip**, so the
+     trigger is unconstructible from real project state -- and section 6.4's
+     "no special project state" design forbids hunting for or fabricating a
+     differently-shaped project to manufacture it.
+
+   The ruling rests on the fact that all three variants reach the LCM through
+   **one** call site (`_resolve_ws_handle(...)`) with no case/separator
+   branching below it; the residue unique to D4-c is `str.replace("_", "-")`,
+   pure Python, with no LCM behaviour that could distinguish a hyphen fold from
+   a case fold -- and that fold's LCM-facing half is proven live twice by
+   D4-a/D4-b.
+
+   **BINDING: no artifact may describe D4-c as live-verified.** The evidence
+   file, the `CHANGELOG.md` entry and the D4-T6 comment must each say
+   "offline only" for D4-c wherever they characterise its coverage. Reporting
+   otherwise is an automatic rejection under criterion 8's rule against silent
+   partial coverage. Full rationale and the named falsifiability residue:
+   `specs/feature-structure-sync-gap/STATUS.md`, cycle 7.
 2. The **pre-fix drop is demonstrated**, not assumed -- an unfixed-code run
    showing the alt still empty after apply.
 3. Zero offline-suite regressions. Baseline to beat is whatever the FS

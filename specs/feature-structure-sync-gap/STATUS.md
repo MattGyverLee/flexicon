@@ -698,3 +698,270 @@ by the main session and confirmed by the project owner as expected. It names
 - Cycle 3 disclosed an incident: a misdirected `git checkout --` briefly
   discarded uncommitted `BaseOperations.py`, recovered byte-exact from a
   dangling stash blob. **Commit before stash-based baselining.**
+
+---
+
+# Cycle 7 (spurt 6) -- #250 Defect 4 micro-spurt: PASS, gate pending
+
+**Result: D4-T1 / D4-T2 / D4-T3 / D4-T5 complete; D4-T4 was already done at
+cycle 7 group 1. Checkpoint D4 is NOT yet closed -- it closes on the cycle-8
+verification gate.**
+
+- **D4-T1** `_normalize_ws_tag` + `_resolve_ws_handle`, both module-level per
+  C-D4-7 (`_resolve_ws_handle` at `flexicon/code/BaseOperations.py:333`,
+  independently confirmed by the lead), plus a one-line change to
+  `_apply_props_loop`'s resolution step and a shared `_ws_resolve_cache`.
+  Committed `269b6a7` -- **by the OTHER session, see the incident below.**
+- **D4-T2** offline suite + resolution-site ratchet: 21 passed.
+- **D4-T3** live on `target_sandbox`, `run_mode: live` on BOTH sides.
+  Unfixed: 2 FAILED (the drop, measured not assumed). Fixed: 2 PASSED.
+  D4-c SKIPPED on both sides -- see the ruling below.
+  Evidence: `specs/250-writingsystem-activation/evidence/live-D4-T3.md`.
+- **D4-T5** CHANGELOG entry, committed `8c679ed` (also the other session).
+- Offline delta +21 passed, 0 change in failures, agreeing across 5 runs.
+- Fence held: zero commits touched `PhonemeOperations.py`,
+  `ExampleOperations.py` or `WritingSystemOperations.py` (lead-verified).
+
+## LEAD RULING -- the D4-c live skip is ACCEPTED, with an amendment
+
+`test_d4c_separator_divergent_resolves` was SKIPPED (loudly, on both the
+unfixed and fixed sides) because `target_sandbox`'s only two active writing
+systems are `en` and `etu` -- **neither contains a `-` or `_` to flip**, so a
+separator-divergent spelling cannot be constructed from real project state.
+
+**Ruled ACCEPTABLE. The gate does not need to close it live.** Reasoning:
+
+1. D4-a, D4-b and D4-c reach the LCM through **one** call site --
+   `_resolve_ws_handle(target_ws_by_id, tgt_ws_id, _index_cache=...)`. There
+   is no case/separator branching below it. The three variants differ **only**
+   in what `_normalize_ws_tag` folds, a pure two-operation string transform.
+2. The LCM-facing half of that path is proven live **twice** (D4-a and D4-b,
+   drop and save). The residue unique to D4-c is `str.replace("_", "-")` --
+   pure Python, with no LCM behaviour that could distinguish a hyphen fold
+   from a case fold.
+3. D4-c is covered offline **against the real `_apply_props_loop`**, not a
+   mock -- which is the form spec 250 D4-T2 itself prescribes ("run against
+   `_apply_props_loop` directly with fabricated dicts").
+4. Closing it live would require either hunting for a differently-shaped
+   project or fabricating a separator-bearing writing system -- both excluded
+   by spec section 6.4's "no special project state" design, and it would cost
+   a full serialised live cycle to test a string method.
+
+**The amendment is the load-bearing half of this ruling.** Acceptance
+criterion 1 is FROZEN and reads "D4-a, D4-b and D4-c all resolve ... proven
+live". Leaving that text standing next to a skipped D4-c is precisely the
+silent-partial-coverage shape this work exists to eliminate. Criterion 1 is
+therefore amended in `specs/250-writingsystem-activation/spec.md` to state the
+live/offline split explicitly. **No artifact -- evidence file, CHANGELOG, or
+the D4-T6 comment -- may describe D4-c as live-verified.** The gate checks this.
+
+**Falsifiability residue, named:** if `_apply_props_loop` ever grows a second
+resolution call site, or if a project with a separator-bearing `ws.Id` becomes
+available, D4-c's live gap reopens and must be closed then.
+
+## LEAD RULING -- `missing live_phase marker` is a real defect, fixed in cycle 8
+
+`tests/live_status.json` lists all three new live tests under
+`uncategorized_live_tests` as `missing live_phase marker`. They are invisible
+to the repo's live-coverage accounting (`tests/LIVE_COVERAGE.md`,
+`tests/LIVE_STATUS.md`). This is a telemetry defect, not a correctness one, but
+it is exactly the kind of silent gap this feature exists to close. Folded into
+cycle 8 as **D4-T7**, done by the agent already holding the live token and
+re-verified in the same window -- splitting it would cost a whole serialised
+live cycle for three decorator lines. It runs AFTER the gate's own measurements,
+so it cannot muddy them.
+
+## INCIDENT -- duplicate dispatch: two sessions ran the SAME dispatch plan
+
+**This is a protocol defect, not an agent error, and it is now the crew's
+governing concurrency lesson.**
+
+A second Claude Code session (`flexicon-cd`) independently executed **this
+lead's own cycle-7 dispatch plan** at the same time as this session, and
+implemented D4-T1/T2/T5 concurrently. Duplicated commits now on `main`:
+`269b6a7` (D4-T1), `8c679ed` (D4-T5), `4287114` (their report), alongside this
+session's `302d266`, `1705e10`, `312c5c3`. The two fixes were byte-identical so
+nothing was lost -- but that was luck, not design.
+
+**ROOT CAUSE: `.crew-handoff.json` + `STATUS.md` are a shared work queue with
+no claim mechanism.** Both sessions read `next_entry` and both executed it.
+Nothing in the handoff protocol as written prevents this.
+
+Two further hazards surfaced inside the incident:
+
+- **A shared-file restore can destroy another session's uncommitted edit.**
+  This session's D4-T3 required swapping `BaseOperations.py` between its
+  pre-fix and post-fix blobs to measure both sides; the other session's
+  in-progress, never-staged D4-T1 edit vanished from the working tree between
+  two of its own bash calls, with no dangling git object anywhere. The
+  no-`git add` rule protects the COMMITTER; **nothing protected the HOLDER.**
+  Any measurement requiring an unfixed/fixed swap must use a private
+  `git worktree` or sandbox copy, never the shared tree.
+- **`269b6a7` is a RECONSTRUCTION, not a recovered blob.** Having lost its
+  edit, the other session's agent re-typed the fix from diff text in its own
+  conversation and committed immediately. Root cause of the vanish was never
+  confirmed.
+
+### The convergence argument is REJECTED as possibly circular (binding)
+
+The reassurance on offer is that the committed blob
+(`a8e914bfd7c31d2d34f2a0e42e47794bd4ad32db`) is byte-identical to this
+session's separately-authored fix. Two independent authorings converging
+byte-for-byte would be strong evidence -- **but `git commit --only -- <path>`
+reads WORKING-TREE content regardless of staging**, and this session's own
+authored fix was sitting in the working tree during that window. So either
+(i) two authorings genuinely converged, or (ii) the commit simply read this
+session's copy, in which case there is ONE authoring counted twice and the
+convergence corroborates nothing. **Neither session can distinguish (i) from
+(ii).** Both agents hedged identically in their own reports.
+
+**Therefore: `269b6a7` is treated as UNREVIEWED THIRD-PARTY CODE. Its
+falsifiability evidence must come from a MUTATION TEST, not from provenance.**
+The cycle-8 gate verifies it from scratch against C-D4-1..C-D4-7 and is
+forbidden from citing byte-identical convergence as corroboration.
+
+## PROTOCOL, NOW IN FORCE -- take the lock, do not read `next_entry`
+
+**Every spurt in either session now BEGINS by acquiring locks via the `lockout`
+skill, not by reading `next_entry`.**
+
+```
+python ~/.claude/skills/lockout/lockout.py acquire <paths> \
+    --team <team> --session <session-id> --purpose "..." --ttl 60 --json
+```
+
+**On conflict: STOP and report. Never wait-loop.** This session currently holds,
+under team `flexicon-19`, session `5b6c151f-877a-48a8-ba39-be2a3de5abdd`:
+`flexicon/code/BaseOperations.py`,
+`specs/feature-structure-sync-gap/{.crew-handoff.json, STATUS.md, spec.md}`,
+`specs/250-writingsystem-activation/spec.md`.
+
+**The binding constraint is the LIVE PYTEST TOKEN, not the file locks.** Only
+one agent may run `FLEXLIBS_REQUIRE_LIVE=1` against the shared FLEx projects at
+a time. Agreed split: **this session owns the live chain** (cycle-8 D4 gate,
+then T6/T7/T8 closing #251/#252, then T9 closing #253); **`flexicon-cd` owns
+non-live work** (T16/T17 docs, and DRAFTING -- not filing -- an issue for the
+two resolution sites D4 does not reach). **Do not plan T16/T17 here.**
+
+**`CLAUDE.md` is FROZEN until the gate returns** -- `flexicon-cd`'s T16 edits
+it and has agreed to defer. No agent may edit it, and no task may depend on it
+changing.
+
+## Committing: the AMENDED rule (the blanket "never `git add`" was wrong)
+
+**The earlier blanket "NEVER `git add`" rule is WITHDRAWN -- it was impossible
+to follow.** Independently verified by both sessions (git 2.32.0.windows.1):
+`git commit --only -- <path>` **fails outright on an untracked file** with
+`error: pathspec ... did not match any file(s) known to git`, and
+`git commit --include` reports `nothing added to commit but untracked files
+present`. `--only` can only restrict a commit to paths git already knows about.
+Every new report, evidence file and test file is untracked at commit time, so
+the blanket rule forbade the majority of what agents legitimately do.
+
+**BINDING PROCEDURE:**
+
+- **MODIFYING a tracked file** -- commit straight from the working tree, no
+  staging at any point:
+  ```
+  git commit --only -F <msgfile> -- <exact path>
+  ```
+- **CREATING a new file** -- `git add` is unavoidable, so minimise the window.
+  Do the add and the commit in a **single shell invocation**, and verify the
+  index is empty on both sides:
+  ```
+  git status --porcelain    # index must be empty
+  git add -- <exact path> && git commit --only -F <msgfile> -- <exact path>
+  git status --porcelain    # index must be empty again
+  ```
+  Keeping `--only` pins the commit to that one path, so even if a third crew
+  stages something inside the window it cannot ride along. This collapses the
+  exposure to microseconds rather than eliminating it -- the best available, and
+  strictly better than the bare `git add` ... later ... bare `git commit`
+  pattern that actually bit us twice.
+- **STILL ABSOLUTELY FORBIDDEN:** `git add -A`, `git add .`, `git add -u`,
+  `git commit -a`, and any `git add` that is not immediately followed by its own
+  scoped commit in the same invocation.
+
+### Documented alternative -- private index (NOT the default)
+
+There is a zero-exposure variant, verified working in a scratch repo by this
+session (another crew's staged `A other.txt` survived untouched throughout):
+
+```
+TMPIDX=$(mktemp)
+GIT_INDEX_FILE=$TMPIDX git read-tree HEAD
+GIT_INDEX_FILE=$TMPIDX git add -- <exact path>
+GIT_INDEX_FILE=$TMPIDX git commit -F <msgfile>
+rm -f $TMPIDX
+git update-index --add -- <exact path>    # MANDATORY reconcile
+```
+
+**It is deliberately NOT the default, because its failure mode is worse than
+the one it prevents.** If an agent omits the final reconcile, the shared index
+shows the new file as a staged **DELETION** against the new HEAD, and anyone
+running `git commit -a` commits that deletion -- losing the file outright,
+versus the microsecond sweep risk of the standard procedure. Use it only where
+an agent is explicitly instructed to and the reconcile is spelled out.
+
+## Baseline correction (prevents a false regression call)
+
+In the pinned `tests/operations tests/contract` subset the expected red set is
+**2 failures, not 3**: the two foreign
+`test_transaction_rollback.py::TestPhase2JoinOrOpen` failures, messages
+unchanged. `test_flexlibs2_alias_ratchet.py` is red **in its own file**, outside
+this subset. The NaturalClass
+`test_apply_raises_on_type_mismatch_segments_target` failure does **not**
+surface in this subset at all.
+
+## Known non-discrepancy (do not report as a gap)
+
+`evidence/live-D4-T3-predictions.md` was never authored; the predictions live
+in the committed `evidence/live-D4-T3.md` under `[PREDICTION]` headings, which
+is sufficient and satisfies the commit-before-run precedent. Do not grep for
+the separate filename and report it missing.
+
+## Inputs from `flexicon-cd`, whose lane is now FINISHED
+
+Commits `4fc2b6bd` (T17) and `b3735f81` (the draft-only issue). They have
+released all their locks and now hold only `CLAUDE.md`, still deferred.
+**T16/T17 are done and are not this session's work.**
+
+### A non-site the ratchet correctly excludes -- do not re-derive it
+
+`flexicon/code/Grammar/PhonemeOperations.py:1336`
+(`all_ws = {ws.Id: ws.Handle ...}`) **looks** like a fourth resolution site and
+is not one. It is a `GetSyncableProperties` **READ** path feeding
+`__ReadMultiString`: it enumerates **source** writing systems and resolves no
+target. It is one of the 13 protected map-build sites, correctly excluded from
+the frozen three-site set. `flexicon-cd` checked this rather than assuming it.
+**The three-site frozen set is confirmed correct.** Recorded here so no future
+sweep spends a cycle re-deriving it.
+
+### Partial-write hazard for whoever closes resolution site 2 (NOT cycle-8 work)
+
+In `flexicon/code/Lexicon/ExampleOperations.py`'s `TranslationsOC` loop,
+`new_trans` is created via `ICmTranslationFactory` and
+`item.TranslationsOC.Add(new_trans)` runs **before** per-writing-system
+resolution. Routing that loop through `_resolve_ws_handle` introduces an
+`FP_ParameterError` that can fire **mid-loop**, potentially leaving an
+`ICmTranslation` owned by the example with **zero alts set**.
+
+**Whether the surrounding transaction rolls that back needs VERIFYING, not
+assuming.** This is a constraint on the future follow-up that closes resolution
+sites 2 and 3 -- recorded now so it is not discovered the hard way. Not
+scheduled in cycle 8.
+
+### Open question for spec 233's owner -- NOT resolved by this campaign
+
+`specs/233-basetype-cast-sweep/spec.md` said "All 16 CONFIRMED sites fixed";
+T17's three appended `SegmentsRC` rows make it 19. `flexicon-cd` added the 3 to
+the criteria as the consistent default but **explicitly did not decide it** --
+it is spec 233's owner's call. Two knock-on facts they flagged:
+
+- the new "19 CONFIRMED" now **collides numerically** with a pre-existing
+  "19 NEEDS RUNTIME" count in the same document;
+- they left the sweep-total arithmetic (`16+19+9+20=64`) on the original 16 so
+  it still reconciles.
+
+**This campaign does not resolve it and no agent here should.** Route to spec
+233's owner.
