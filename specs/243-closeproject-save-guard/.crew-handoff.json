@@ -1,0 +1,54 @@
+{
+  "feature": "243-closeproject-save-guard",
+  "campaign": "tier1-silent-data-loss",
+  "campaign_index": 1,
+  "issues": [243],
+  "status": "in_progress",
+  "last_cycle": 1,
+  "spurts_completed": 1,
+  "checkpoint_reached": "spec + tasks + live probe, no code under flexicon/code/ modified",
+  "checkpoint_numbering_note": "The campaign QUEUE.md called the spec+probe milestone 'Checkpoint 1'; it is DONE. tasks.md's own three implementation checkpoints are now named CP-A (T1-T2), CP-B (T3-T4), CP-C (T5) to remove the collision. Do not read tasks.md's legacy 'Checkpoint 1' heading as un-done work.",
+  "tasks_done": [],
+  "next_checkpoint": "CP-A -- P1 depth-read surface (T1-T2)",
+  "next_entry": "Start at tasks.md T1: add a private depth-read helper on FLExProject that raises FP_ProjectError when self.project does not exist and otherwise returns ActionHandlerAccessor.CurrentDepth verbatim with no lenient fallback (C5), plus the public CurrentDepth passthrough and HasOpenSessionTask() (unconditionally False when self._undoable, else depth > 0) per C2/C3/C4. Live-verify against every row of the frozen P-2 table in spec.md section 2 PLUS two new cases: after a successful CloseProject(), and on a never-opened FLExProject() -- both must raise FP_ProjectError. EXTEND tests/operations/test_issue243_closeproject_probe.py, do not create a parallel probe file. Evidence file: evidence/live-t1-depth-read-surface.md. This is the first task in the feature that modifies flexicon/code/.",
+  "contract_frozen": "C1-C10 in spec.md. Do not reopen.",
+  "key_rulings": {
+    "C1": "Fix shape is a GUARD around the line-326 EndNonUndoableTask() call, NOT the reorder the issue prose proposed. P-5 proved usm.Save() itself raises 'Commit at wrong place.' at CurrentDepth > 0 and collapses the envelope, so swapping lines 326/332 trades one guaranteed raise for another with no save either way.",
+    "C6": "P1 is a hard PREREQUISITE of P0: the guard checks depth first and only calls EndNonUndoableTask() when an envelope is open, then still wraps the call so any other raise cannot skip Save().",
+    "C7": "End-then-Save order is unchanged.",
+    "C9": "Q1 RECONCILED. The owner's incident is a P-5 -> P-3 CHAIN: mid-session SaveChanges() under undoable=False hits usm.Save() at depth 1, raises the owner's exact 'Commit at wrong place.' string and collapses the envelope; the collapsed envelope then makes CloseProject()'s unguarded End raise, skipping Save(), losing the whole in-memory session. The C6 guard breaks the chain. The trigger is reachable from flexicon's own SHIPPED SaveChanges() docstring Example (FLExProject.py:563-588), correct under undoable=True and a guaranteed raise under undoable=False -- so no owner repro steps were needed.",
+    "C10": "The .fwdata file-swap detail is OUT OF SCOPE and must not be claimed as fixed. CloseProject() has no path that renames/rotates/replaces .fwdata; the probe's delta-0 result is the correct consequence of Save() never running. Attributed to FieldWorks-side recovery, left unexplained by design."
+  },
+  "open_questions": {
+    "Q1": "CLOSED 2026-09-07 by /lex-lead -- see C9/C10. Do not reopen; no task may wait on owner repro steps.",
+    "Q2": "OPEN -- should the P0 fix also wrap the whole CloseProject() body in try/finally so Dispose() always runs even when Save() raises? Decide at T3.",
+    "Q3": "OPEN -- does the P1 surface warrant a flexicon.CAPABILITIES token? Decide at T1.",
+    "Q4": "OPEN -- exact CHANGELOG placement and wording. /lex-doc's call at T5."
+  },
+  "artifacts": {
+    "spec": "specs/243-closeproject-save-guard/spec.md",
+    "tasks": "specs/243-closeproject-save-guard/tasks.md",
+    "status": "specs/243-closeproject-save-guard/STATUS.md",
+    "probe_harness": "tests/operations/test_issue243_closeproject_probe.py",
+    "evidence": ["specs/243-closeproject-save-guard/evidence/live-cycle1-probe.md"],
+    "reviews": [
+      "specs/243-closeproject-save-guard/reviews/cycle1-programmer.md",
+      "specs/243-closeproject-save-guard/reviews/cycle1-domain.md",
+      "specs/243-closeproject-save-guard/reviews/cycle1-archivist.md"
+    ]
+  },
+  "live_evidence": {
+    "run_mode": "live",
+    "tests_passed": "5/5",
+    "fixture": "target_sandbox_path (tempdir copy of the Target .fwbackup)",
+    "real_target_touched": false,
+    "restore_script_run": false
+  },
+  "code_modified_under_flexicon_code": false,
+  "github_issues_filed": [],
+  "deferred_needs_user_approval": [
+    "SaveChanges() has no depth guard: under undoable=False it reaches usm.Save() at CurrentDepth=1, raising liblcm's 'Commit at wrong place.' AND collapsing the session envelope -- reachable straight from its own shipped docstring Example. Making it fail fast (or handle depth > 0) is a BEHAVIOUR change and a fourth ask beyond spec.md section 3's three, so it needs user approval to file/scope. In-scope mitigation already assigned to T5: correct the docstring Example (prose only)."
+  ],
+  "blocker": null,
+  "updated": "2026-09-07"
+}

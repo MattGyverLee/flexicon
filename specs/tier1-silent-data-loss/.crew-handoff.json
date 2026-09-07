@@ -1,0 +1,70 @@
+{
+  "campaign": "tier1-silent-data-loss",
+  "kind": "campaign",
+  "status": "in_progress",
+  "completion_promise": "TIER1 COMPLETE",
+  "promise_condition": "all four queue items status=done, gates green, live evidence on file. A per-feature feature_complete from lex-lead does NOT satisfy this.",
+  "active_index": 1,
+  "active_feature": "243-closeproject-save-guard",
+  "next_entry": "Item 1 (243-closeproject-save-guard) is STILL ACTIVE but its spec+probe checkpoint is DONE (spurt 1, 2026-09-07): spec.md contract C1-C10, tasks.md T1-T5, STATUS.md, three cycle-1 reviews, and a 5/5 green live probe (tests/operations/test_issue243_closeproject_probe.py, run_mode: live, target_sandbox only). Nothing under flexicon/code/ modified yet. RESUME from specs/243-closeproject-save-guard/.crew-handoff.json -- its next_entry is authoritative: CP-A / T1, the P1 depth-read surface (_ReadActionHandlerDepth helper + public CurrentDepth + HasOpenSessionTask(), per C2-C5), live-verified against every row of the frozen P-2 table plus two new FP_ProjectError cases. T1 is the first task in this campaign that modifies flexicon/code/. Do NOT re-plan item 1's spec, do NOT reopen C1-C10, and do NOT reopen Q1 (closed as C9/C10).",
+  "queue": [
+    {
+      "index": 1,
+      "slug": "243-closeproject-save-guard",
+      "issues": [
+        243
+      ],
+      "status": "active",
+      "spec_exists": true,
+      "note": "Spec+probe checkpoint DONE (spurt 1). Contract C1-C10 frozen; Q1 CLOSED as C9/C10, Q2/Q3/Q4 still open. Two findings that override the issue prose: (C1) the reorder fix the issue proposed is DISPROVED -- usm.Save() itself raises 'Commit at wrong place.' at CurrentDepth > 0 and collapses the envelope, so the fix GUARDS the line-326 EndNonUndoableTask() call instead, End-then-Save order unchanged (C7); (C6) P1 is a hard prerequisite of P0. Resume at CP-A / T1 per the feature's own .crew-handoff.json. specs/write-path-transactions/ still covers #233-#238, NOT #243."
+    },
+    {
+      "index": 2,
+      "slug": "242-paragraph-whitespace",
+      "issues": [
+        242
+      ],
+      "status": "queued",
+      "spec_exists": false,
+      "note": "Check whether the stripping is load-bearing for the FLEx null-marker path (Shared/string_utils.normalize_text) before changing behaviour."
+    },
+    {
+      "index": 3,
+      "slug": "feature-structure-sync-gap",
+      "issues": [
+        251,
+        252,
+        253,
+        256
+      ],
+      "status": "queued",
+      "spec_exists": true,
+      "note": "RESUME, do not re-plan. Contract C1-C8 frozen, rulings D1-D5 settled, spurt 1 complete. Its own .crew-handoff.json next_entry is authoritative: T1 ALONE (13 owner classes into lcm_casting._interface_cache + caller-delta enumeration + green offline suite and NC/Phoneme live tests) before T2."
+    },
+    {
+      "index": 4,
+      "slug": "250-writingsystem-activation",
+      "issues": [
+        250
+      ],
+      "status": "queued",
+      "spec_exists": false,
+      "note": "LAST on purpose. Needs an API-surface policy decision, so it is the item most likely to end needs_human. Must cover both routes into the silent skip: store-vs-active AND case/separator normalization."
+    }
+  ],
+  "hard_rules": [
+    "Live LCM verification REQUIRED for write-path changes; mock-only is FAIL: unverified.",
+    "Prefer the target_sandbox fixture. Never write to the real Target, and never run scripts/restore_*.py, unattended -- stop with needs_human instead.",
+    "Never run bare pytest or pytest --ignore=tests/contract; always FLEXLIBS_REQUIRE_LIVE=1 with -m requires_live_project and an explicit test file.",
+    "Relay specialist report PATHS + 2-line summaries, never bodies.",
+    "One checkpoint per iteration, then update state, commit, stop.",
+    "Do not file new GitHub issues inside the loop; append them to QUEUE.md 'Awaiting user approval'.",
+    "No emoji in console output (Windows)."
+  ],
+  "spurts_completed": 1,
+  "items_done": [],
+  "blocker": null,
+  "updated": "2026-09-07",
+  "campaign_log_pointer": "specs/tier1-silent-data-loss/QUEUE.md -> 'Campaign Log'",
+  "deferred_needs_user_approval_pointer": "specs/tier1-silent-data-loss/QUEUE.md -> 'Awaiting user approval'. Spurt 1 appended one new item: SaveChanges() has no CurrentDepth guard, so under undoable=False it raises 'Commit at wrong place.' and collapses the session envelope -- reachable from its own shipped docstring Example. Fixing its BEHAVIOUR is a fourth ask beyond #243's three and needs a user ruling; the docstring correction is already in scope as item 1's T5."
+}
