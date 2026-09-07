@@ -399,11 +399,22 @@ needed) and re-ran: **1 passed** again. Full detail in
 
 ## `git diff --stat` (acceptance criterion 6)
 
-See `specs/250-writingsystem-activation/reviews/cycle7-programmer-D4-T1-T3.md`
--- this is the filename this file's task instructions actually specified,
-and it is the file being written. (A now-corrected note previously appeared
-here claiming this filename was abandoned in favour of
-`cycle7-programmer-D4-T1-T2-T5.md`; that was a misreading produced by the
-concurrent-dispatch collision described in the section immediately above --
-`cycle7-programmer-D4-T1-T2-T5.md` was never written as a file and should
-not be treated as the canonical report for this work.)
+See `specs/250-writingsystem-activation/reviews/cycle7-programmer-D4-T1-T3.md`.
+
+**Report reconciliation (corrected 2026-09-07, after cross-session
+coordination).** An earlier revision of this paragraph claimed
+`cycle7-programmer-D4-T1-T2-T5.md` "was never written as a file". **That was
+wrong.** It exists and is tracked as of commit `4287114`, authored by the
+concurrent session `flexicon-cd` described in the CONCURRENCY DISCLOSURE
+above. Two reports exist for this one spurt because two sessions
+independently executed the same dispatch plan. Both are genuine work and
+neither is discarded. The ruling, made by the session holding
+`specs/250-writingsystem-activation/spec.md`:
+
+| Report | Canonical for |
+|---|---|
+| `cycle7-programmer-D4-T1-T2-T5.md` (`4287114`, flexicon-cd) | **D4-T1** (the fix) and **D4-T5** (CHANGELOG) |
+| `cycle7-programmer-D4-T1-T3.md` (`312c5c3`, flexicon-19) | **D4-T2** (offline tests + ratchet) and **D4-T3** (live evidence) |
+
+The production fix itself landed once, as `269b6a7`; the two sessions'
+implementations were byte-identical by hash.
