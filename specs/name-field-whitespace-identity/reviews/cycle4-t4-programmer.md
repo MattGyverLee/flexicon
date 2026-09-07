@@ -86,18 +86,31 @@ a genuine before/after pair, not a reconstruction.
 
 ## STAGING CHECK (AMENDMENT 2, steps 3 and 4)
 
-Three commits this task, each bracketed: `2d8bfc57` (predictions),
-`0ab9c606` (code+test), `cbbb55e6` (results). For every one:
-`git status --porcelain` immediately before `git add`, explicit paths only,
-`git status --porcelain` again immediately before `git commit` (confirmed
-no foreign path in the staged/first-column entries each time -- foreign
-paths seen mid-task included `.claude/ralph-loop.local.md` deleted,
-`.vscode/`, `specs/duplicate-signature-harmonisation/`,
-`specs/feature-structure-sync-gap/{STATUS.md,spec.md,evidence/...,
-reviews/...}` -- none staged), and `git show --stat HEAD` immediately after
-each commit confirmed exactly the intended file list (2, 2, and 2 files
-respectively, all mine). No foreign path was ever staged; no reset was
-needed.
+Four commits this task, each bracketed: `2d8bfc57` (predictions),
+`0ab9c606` (code+test), `cbbb55e6` (results), `f5291e90` (this report). For
+the first three: `git status --porcelain` immediately before `git add`,
+explicit paths only, `git status --porcelain` again immediately before
+`git commit` showed no foreign path in the staged/first-column entries
+(foreign paths seen mid-task included `.claude/ralph-loop.local.md`
+deleted, `.vscode/`, `specs/duplicate-signature-harmonisation/`,
+`specs/feature-structure-sync-gap/{STATUS.md,spec.md}` -- none staged), and
+`git show --stat HEAD` immediately after each commit confirmed exactly the
+intended file list (2, 2, and 2 files respectively, all mine).
+
+**An actual race DID occur on the 4th commit (this report), exactly the
+AMENDMENT 2 scenario.** After `git add` of only my review file, the
+pre-commit `git status --porcelain` check showed FIVE of the other crew's
+`specs/feature-structure-sync-gap/` files already sitting in the shared
+index with staged (first-column) markers -- `.crew-handoff.json`,
+`STATUS.md`, `evidence/live-cycle5-verification-t5.md`,
+`reviews/cycle5-verification-T5.md`, `spec.md` -- landed there by their own
+concurrent `git add` between my `git add` and my pre-commit check. Caught
+BEFORE committing (per the protocol's intended catch point): ran
+`git reset HEAD -- <those five paths>` (index-only, zero working-tree bytes
+touched), re-ran `git status --porcelain` to confirm only my review file
+remained staged, then committed. `git show --stat HEAD` afterward confirms
+`f5291e90` contains exactly one file, mine. No foreign content was read,
+altered, or read back incorrectly at any point.
 
 ## CONTRACT CONTRADICTIONS FOUND
 
