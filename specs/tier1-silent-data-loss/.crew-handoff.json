@@ -5,8 +5,8 @@
   "completion_promise": "TIER1 COMPLETE",
   "promise_condition": "all four queue items status=done, gates green, live evidence on file. A per-feature feature_complete from lex-lead does NOT satisfy this.",
   "loop_status": "CANCELLED. The ralph-loop Stop hook was removed at iteration 5 of 40 on item 1's needs_human handoff. Nothing re-enters on its own; the main session drives lex-lead spurts directly on explicit user authorisation, one queue item at a time.",
-  "active_index": null,
-  "active_feature": null,
+  "active_index": "2a",
+  "active_feature": "name-field-whitespace-identity",
   "next_entry": "Items 3 and 4 remain NOT AUTHORISED. Nothing is active. Item 3 (feature-structure-sync-gap, #251/252/253/256) is RESUME-not-replan: its own .crew-handoff.json next_entry is authoritative (T1 ALONE). Item 4 (250-writingsystem-activation) needs an API-surface policy decision and is the item most likely to end needs_human. Do not start either without explicit user authorisation. Three new approval asks from item 2 sit in QUEUE.md: Q-242A, Q-242B, Q-242C. Q-242B (CheckOperations non-str branch loses the payload ENTIRELY) is Tier-1 silent data loss on its own merits and may warrant promotion into the queue proper rather than sitting as a follow-up.",
   "items_done": [
     {
@@ -74,6 +74,14 @@
       "status": "queued",
       "spec_exists": false,
       "note": "NOT AUTHORISED. LAST on purpose -- needs an API-surface policy decision, so it is the item most likely to end needs_human. Must cover both routes into the silent skip: store-vs-active AND case/separator normalization. Note the cycle-6 lex-domain finding on item 1: writing-system add/remove/change is one instance of a broader class of schema/metadata-mutating operations, which is itself a separate queued approval ask -- this item is the instance, not the class audit."
+    },
+    {
+      "index": "2a",
+      "slug": "name-field-whitespace-identity",
+      "issues": [],
+      "status": "active",
+      "spec_exists": false,
+      "note": "AUTHORISED by the user 2026-09-07 ('use subagent to fix the 12 sites with the bug'). Spun out of item 2: Q-242A's 8 sibling sites plus Q-242B. Bucket 1 held 12; 4 were #242 itself, closed at 249863d, so the authorised remainder is 8. NO GitHub issue exists and none may be filed. lex-lead ruled C1-C8: dedup stays whitespace-insensitive but must be made EXPLICIT and SYMMETRIC, because all three comparisons strip the needle and never the haystack -- a persist-only fix therefore yields UNBOUNDED DUPLICATES of a name byte-identical to itself, not the duplicate-rejection #242 C10 predicted (C2 corrects C10). USER OVERRIDE 2026-09-07: the user directed 'do what is best for the user, /lex-domain can decide', so lex-domain's verdict GOVERNS the C3 identity question rather than merely advising; lex-lead's C3 stands only if lex-domain accepts it. Q-242B rides along as its own task at its own severity, fixed by adopting the already-shipped _ValidateStringNotEmpty; Q-242C stays UNAUTHORISED and untouched. Shared code (BaseOperations.py, Shared/string_utils.py) is fenced off -- needs_human if either must change."
     }
   ],
   "hard_rules": [

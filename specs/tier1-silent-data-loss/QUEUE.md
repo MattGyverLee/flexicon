@@ -32,7 +32,8 @@ promise, so it cannot exit the loop early.
 | # | status | slug | issues | why here |
 |---|--------|------|--------|----------|
 | 1 | **`done` (crew sign-off, spurt 9 / cycle 9 -- `feature_complete`, APPROVED by `/lex-lead`)**. All five closure gates green: T7 live-verified; the C24 CHANGELOG correction landed and independently re-verified; QC score 90/100 with **P0 count 0** and BOTH P1s disposed (fail-open remedied by T9a/T9b, P-11 ruled no-action with a forward rule -- C28); the C26/C27 staleness sweep done; P-11 parked as a user-approval ask with its 25/25 pin intact. Live at closure: probe 11/11, abort-session 12/12, `run_mode: live`; offline 1292 passed / 475 deselected. **GitHub #243 is deliberately still OPEN -- the crew does not close issues, and C10's `.fwdata` half is unmeasured by design.** THREE items sit under "Awaiting user approval" (C25 rollback-discard audit, its C29 counter-measurement, the TRANSACTION_GUIDE gap) plus ONE ungated cleanup (C30, below). | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
-| 2 | **`active`** -- the pointer advanced here by item 1's closure (this file's own "tick it here, advance `active`, and stop" rule). **NOTHING has been done on it and item 1's sign-off authorised no work on it**; it needs its own dispatch, starting at spec + live probe. | `242-paragraph-whitespace` | #242 | Cheap, self-contained, real corruption. Paragraph/Segment text writers silently strip leading/trailing whitespace. |
+| 2 | **`done`** (closed 2026-09-07; see the closure banner under "Per-item entry conditions" below). Q-242A/Q-242B, the two sibling-site asks this item's own cycle-2 sibling sweep surfaced, were spun out to sub-item **2a** rather than folded back in. | `242-paragraph-whitespace` | #242 | Cheap, self-contained, real corruption. Paragraph/Segment text writers silently strip leading/trailing whitespace. |
+| 2a | **`active`** -- **AUTHORISED BY THE OWNER 2026-09-07**, spun out of item 2's "Awaiting user approval" list into its own feature directory (spec+probe checkpoint DONE, cycle 1). | `name-field-whitespace-identity` | Q-242A, Q-242B (both under `specs/tier1-silent-data-loss/QUEUE.md` "Awaiting user approval", now authorised -- see the entries below) | Same bug shape as item 2 (strip -> validate -> persist the stripped copy) at 8 NAME-field sibling sites plus a more severe non-str/whitespace-only silent-empty-name defect at `CheckOperations`, deliberately triaged separately from item 2 because the identity/dedup question needed its own ruling. A **second, owner-confirmed crew** is concurrently active in the same working tree while this sub-item runs -- see `specs/name-field-whitespace-identity/CONCURRENCY.md`. |
 | 3 | `queued` | `feature-structure-sync-gap` | #251 #252 #253 #256 | **Already in flight** -- contract frozen (C1-C8), live ground truth captured, spurt 1 done. RESUME, do not re-plan. Biggest item (T1-T17). Ships data loss today: `Allomorph` and `POS` are live sync object types. |
 | 4 | `queued` | `250-writingsystem-activation` | #250 | Deliberately LAST: resolving it requires an **API-surface policy decision** (active-only `Exists` plus a separately-named whole-store predicate, vs. an `Ensure()` that activates a store-present WS). That is the item most likely to end `needs_human`, so everything landable unattended lands first. |
 
@@ -179,10 +180,74 @@ three things the owner says still stand are the scope:
 
 ### 2. `242-paragraph-whitespace` (#242)
 
-No spec exists yet. **Checkpoint 1 = spec + a live probe that measures what is
-actually stripped**, on which writers, and whether any caller depends on the
-stripping (it may be load-bearing for the FLEx null-marker path -- check
-`Shared/string_utils.normalize_text` before changing behaviour).
+> **CLOSED 2026-09-07 (cycle 4): `done`.** `/lex-lead` signed this item off
+> as `feature_complete` (APPROVED). Four writers (`ParagraphOperations`
+> `Create`/`SetText`/`InsertAt`, `SegmentOperations.AppendSentence`)
+> validated emptiness on a `.strip()`'d copy then persisted that stripped
+> copy; they now validate on a throwaway and persist the caller's original
+> bytes, 8 payloads confirmed round-tripping byte-for-byte through all four
+> writers, the layer-B raw-`MakeString` bypass, and in-memory/on-disk. C12
+> additionally fixed a PRE-EXISTING `AppendSentence` join-boundary defect
+> the whitespace fix exposed (not introduced): the terminator now anchors
+> at the last non-whitespace character and reuses existing trailing
+> whitespace as the separator, deleting zero characters, provably inert on
+> every input reachable before this fix. Contract C1-C14 frozen. **NOT
+> claimed:** the owner's field figures (44/104 paragraphs, 41/86 segment
+> baselines) were not reproduced (Checkpoint 4 DECLINED, not deferred,
+> C13). This item's own cycle-2 sibling sweep surfaced three further asks
+> -- Q-242A, Q-242B, Q-242C -- routed to "Awaiting user approval" below
+> rather than folded back into this item. **Q-242A and Q-242B are now
+> AUTHORISED and spun out to sub-item 2a; Q-242C remains unauthorised.**
+> `specs/242-paragraph-whitespace/spec.md` and `tasks.md` carry the full
+> record; this banner is the audit trail, read below it as history.
+
+No further work is scheduled inside `242-paragraph-whitespace` itself.
+
+### 2a. `name-field-whitespace-identity` (Q-242A, Q-242B)
+
+**AUTHORISED BY THE OWNER, 2026-09-07. `active`.** Spun out of item 2's
+own "Awaiting user approval" list rather than folded back into
+`242-paragraph-whitespace`, because the identity/dedup ruling it needed
+was genuinely a separate decision. **Checkpoint 1 (spec + live probe) is
+DONE** -- `specs/name-field-whitespace-identity/spec.md` (contract C1-C8,
+FROZEN), `tasks.md`, `STATUS.md`, `.crew-handoff.json`, two cycle-1
+reviews, and `tests/operations/test_name_field_identity_probe.py` (8/8
+live, `run_mode: live`). See that feature's own directory for the full
+record; this campaign file does not duplicate it.
+
+**The ruling authority on the identity question changed mid-cycle, and
+that provenance is binding, not incidental:** `/lex-lead` ruled C1-C8, the
+owner then directed *"do what is best for the user, /lex-domain can
+decide,"* placing the identity ruling (C3) under `/lex-domain`'s
+authority, and `/lex-domain` independently re-tested and ACCEPTED
+`/lex-lead`'s option (i) -- whitespace-insensitive comparison, symmetric
+at both sides, raw-byte persistence -- on independent FLEx-domain
+grounds. Full record: `specs/name-field-whitespace-identity/spec.md`
+section 0 and C3.
+
+**A second, owner-confirmed crew is concurrently active in the same
+working tree while this sub-item runs.** See
+`specs/name-field-whitespace-identity/CONCURRENCY.md`, binding on every
+task in this sub-item: never stage, revert, or restore
+`flexicon/code/BaseOperations.py`,
+`flexicon/code/Grammar/NaturalClassOperations.py`,
+`flexicon/code/Grammar/PhonemeOperations.py`,
+`tests/operations/test_natural_class_feature_sync.py`,
+`specs/feature-structure-sync-gap/`, or `specs/250-writingsystem-activation/`.
+The offline suite's fixed baseline is VOID for this sub-item's duration --
+`specs/name-field-whitespace-identity/tasks.md` uses a before/after DELTA
+measurement instead.
+
+**One unrelated, unplanned bug found in cycle 1, recorded not fixed:**
+`CheckOperations._GetCheckList()` is a hardcoded stub whose
+fallback path calls a nonexistent `ServiceLocator.GetInstance(...)`
+(should be `.GetService(...)`), making `CreateCheckType()` raise
+`AttributeError` on every call against a live LCM -- it appears to have
+never worked against a live LCM. Worked around at the test-instance level
+only (zero `flexicon/` lines changed). This is a live-verification
+dependency for every future task in this sub-item that touches
+`CheckOperations.py`, not a design blocker. Not filed as a GitHub issue;
+see `specs/name-field-whitespace-identity/spec.md` section 3.
 
 ### 3. `feature-structure-sync-gap` (#251 #252 #253 #256)
 
@@ -548,6 +613,71 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   issues filed or closed; **#243 stays open for the user's decision** (C10's
   unmeasured `.fwdata` half).
 
+- **2026-09-07 -- item 2 (`242-paragraph-whitespace`) CLOSED, recorded
+  here for the first time.** This Campaign Log fell behind item 2's own
+  cycles (1-4) and its closure -- `specs/tier1-silent-data-loss/.crew-handoff.json`
+  recorded `242-paragraph-whitespace` as `done` (closed cycle 4,
+  `feature_complete` APPROVED by `/lex-lead`, commit `249863d`) and this
+  file's own queue table and per-item banner were not updated to match
+  until this pass. That gap is now closed (see the item-2 table row and
+  banner above); the full technical record remains in
+  `specs/242-paragraph-whitespace/spec.md` (C1-C14) and `STATUS.md`,
+  which this entry does not duplicate.
+
+- **2026-09-07 -- sub-item 2a (`name-field-whitespace-identity`) OPENED
+  and AUTHORISED BY THE OWNER; spurt 1 (cycle 1) COMPLETE.** Item 2's own
+  cycle-2 sibling sweep had surfaced three follow-on asks -- Q-242A (8
+  sibling name-field whitespace sites, blocked on an identity/dedup
+  ruling), Q-242B (a more severe `CheckOperations` silent-empty-name
+  defect), and Q-242C (coercion-policy harmonisation, out of scope) --
+  filed to "Awaiting user approval" rather than folded into item 2. The
+  owner authorised Q-242A and Q-242B; they are spun out to their own
+  feature directory, `specs/name-field-whitespace-identity/`, as campaign
+  sub-item **2a**, rather than reopening item 2. Q-242C remains queued and
+  unauthorised, untouched by this spurt. Crew: `lex-programmer` +
+  `lex-domain` in parallel (the live probe and the identity ruling), then
+  `lex-archivist` sequentially (this file, plus `spec.md`/`tasks.md`/
+  `STATUS.md`/`.crew-handoff.json` for the new sub-item). Delivered:
+  `spec.md` (contract C1-C8, FROZEN -- the needle-only-strip mechanism,
+  the persist-only-fix-produces-duplicates correction to #242's own C10,
+  the whitespace-insensitive-dedup identity ruling, the fix shape and
+  shared-code fence, the four-file scope, the Q-242A/Q-242B bundling
+  rationale, Q-242B's own fix shape and the Q-242C boundary, and the
+  anti-regression pin), `tasks.md`, `STATUS.md`, `.crew-handoff.json`, two
+  cycle-1 reviews, and `tests/operations/test_name_field_identity_probe.py`
+  (8/8 live, `run_mode: live`, `target_sandbox`/`target_sandbox_path`
+  fixtures only, real Target untouched). **The identity ruling's authority
+  changed mid-cycle:** `/lex-lead` ruled C1-C8, the owner then directed
+  the identity question (C3) to `/lex-domain`'s authority, and
+  `/lex-domain` independently re-tested and ACCEPTED `/lex-lead`'s option
+  (i) on its own FLEx-domain grounds (the uniqueness guard at all three
+  families is a flexicon invention, not a FLEx/LCM invariant). One
+  unrelated, unplanned bug found and NOT fixed:
+  `CheckOperations._GetCheckList()` is a hardcoded stub whose fallback
+  path calls a nonexistent `ServiceLocator.GetInstance(...)`, making
+  `CreateCheckType()` raise unconditionally against a live LCM -- worked
+  around at the test-instance level only, recorded as a live-verification
+  dependency for this sub-item's own future tasks, not filed as a GitHub
+  issue.
+
+  **A second, owner-confirmed crew was found active in this same clone
+  during this spurt**, committing under the same git identity
+  (`flexicon/code/BaseOperations.py`,
+  `flexicon/code/Grammar/NaturalClassOperations.py`,
+  `flexicon/code/Grammar/PhonemeOperations.py`,
+  `tests/operations/test_natural_class_feature_sync.py`,
+  `specs/feature-structure-sync-gap/`, and
+  `specs/250-writingsystem-activation/` are theirs). This is confirmed by
+  the owner as expected, not an anomaly. `specs/name-field-whitespace-identity/CONCURRENCY.md`
+  records the binding protocol (explicit-path staging only, never revert
+  or restore a path not authored by this sub-item, and a DELTA-based
+  offline-suite measurement replacing the campaign's fixed baseline for
+  the duration). Item 2a's own crew made zero `Edit`/`Write` calls under
+  `flexicon/` this spurt; any `flexicon/` diff observed during this spurt
+  belongs to the concurrent crew. No GitHub issues filed. Items 3 and 4
+  untouched, not opened. `specs/tier1-silent-data-loss/.crew-handoff.json`
+  is the main session's file and was not edited by this Archivist pass.
+
 ### Ungated cleanups (NO user approval needed -- just do them)
 
 - **NEW (item 1, spurt 9, cycle 9, 2026-09-07) -- bound
@@ -746,6 +876,11 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   `specs/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md`
   and touches the same file as the `IWfiAnalysis` item above. Keep them together
   when the user rules on filing.
+- **AUTHORISED BY THE OWNER 2026-09-07 and MOVED to sub-item 2a
+  (`specs/name-field-whitespace-identity/`) -- see that feature's `spec.md`
+  C1-C8 and `specs/tier1-silent-data-loss/QUEUE.md` section "2a" above.
+  NOT deleted; kept below as the audit trail for how this ask was raised
+  and ruled.** Original text follows verbatim for the record:
 - **NEW (item 2, cycle 2, 2026-09-07) -- Q-242A: 8 sibling name-field
   whitespace sites, routed here by `/lex-lead`'s R3 ruling
   (`specs/242-paragraph-whitespace/spec.md` C10).** Explore's full
@@ -773,6 +908,13 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   `\"Genesis\"`?") that #242's own four filed sites never had to answer,
   because none of them has a name-uniqueness check. No work happens on
   this until the user rules on the dedup-identity question.
+- **AUTHORISED BY THE OWNER 2026-09-07 and MOVED to sub-item 2a
+  (`specs/name-field-whitespace-identity/`), landed TOGETHER with Q-242A
+  at the same expressions per that feature's `spec.md` C6 -- separate
+  tasks, severity labels, CHANGELOG entries, and live evidence, but ONE
+  commit at `CheckOperations.py:196`/`:341`/`:432` rather than two
+  sequential edits of the same lines. NOT deleted; kept below as the
+  audit trail.** Original text follows verbatim for the record:
 - **NEW (item 2, cycle 2, 2026-09-07) -- Q-242B:
   `CheckOperations.py:196` and `:432`
   (`name.strip() if isinstance(name, str) else ""` against a None-only

@@ -1,0 +1,81 @@
+{
+  "feature": "name-field-whitespace-identity",
+  "campaign": "tier1-silent-data-loss",
+  "campaign_index": "2a",
+  "issues_tracked": [
+    "Q-242A (specs/tier1-silent-data-loss/QUEUE.md)",
+    "Q-242B (specs/tier1-silent-data-loss/QUEUE.md)"
+  ],
+  "issues_not_in_scope": [
+    "Q-242C (coercion harmonisation) -- stays queued, unauthorised, per spec.md C7(b) and C11 of specs/242-paragraph-whitespace/spec.md"
+  ],
+  "status": "active",
+  "last_cycle": 1,
+  "spurts_completed": 1,
+  "contract_authority": "specs/name-field-whitespace-identity/spec.md -- C1-C8 FROZEN as of cycle 1. C1/C2 are measured mechanism findings; C3 is the whitespace-insensitive-dedup identity ruling (lex-lead's option (i), ACCEPTED by lex-domain under an explicit owner authority override -- see spec.md section 0 for the full provenance chain); C4 is the fix shape and shared-code fence; C5 is the four-file scope; C6 is the Q-242A/Q-242B bundling rationale; C7 is Q-242B's own fix shape and the Q-242C boundary; C8 is the anti-regression pin. Do NOT reopen C1-C8 without citing and overturning them by number.",
+  "prose_status_authority": "specs/name-field-whitespace-identity/STATUS.md -- current through cycle 1 (Checkpoint 1 DONE). No behaviour change under flexicon/code/ has landed from this feature yet.",
+  "loop_status": "Directed dispatch, not a ralph-loop iteration. Dispatched directly by the main session under the concurrency protocol recorded in CONCURRENCY.md.",
+  "concurrency": {
+    "second_crew_active": true,
+    "protocol_file": "specs/name-field-whitespace-identity/CONCURRENCY.md",
+    "their_files_do_not_touch": [
+      "flexicon/code/BaseOperations.py",
+      "flexicon/code/Grammar/NaturalClassOperations.py",
+      "flexicon/code/Grammar/PhonemeOperations.py",
+      "tests/operations/test_natural_class_feature_sync.py",
+      "specs/feature-structure-sync-gap/",
+      "specs/250-writingsystem-activation/"
+    ],
+    "staging_rule": "Explicit git add <path> only. Never -A, ., -u, or commit -a. Never git checkout/restore/stash/reset a path not authored by this feature.",
+    "offline_baseline_status": "VOID for the duration -- CONCURRENCY.md's DELTA rule replaces the old fixed absolute (1292 passed / 483 deselected). Every future task measures its own before/after delta only."
+  },
+  "tasks_done": [
+    "Checkpoint 1 (tasks.md) -- spec.md (C1-C8 transcribed and frozen, authority/provenance section 0, recorded-not-ruled _GetCheckList bug, contradiction check: none found), tasks.md, STATUS.md, this file. Live probe tests/operations/test_name_field_identity_probe.py (PN1-PN8, 8/8, run_mode: live) and evidence/live-probe-cycle1.md delivered by /lex-programmer in cycle 1; reviews/cycle1-programmer.md and reviews/cycle1-domain.md on file. CONCURRENCY.md already on file from the main session."
+  ],
+  "tasks_dropped": [],
+  "tasks_open": [
+    "Checkpoint 2, T1 (tasks.md) -- DiscourseOperations persist fix (CreateChart:327, SetChartName:482), no comparison exists per C3's per-family carve-out.",
+    "Checkpoint 2, T2 (tasks.md) -- TextOperations persist fix (Create:152, SetName:608) AND comparison-symmetry fix (Exists:458/461/464), landed together per C2's duplicate-explosion hazard.",
+    "Checkpoint 2, T3 (tasks.md) -- AnthropologyOperations persist fix (Create:265, CreateSubitem:374) AND comparison-symmetry fix (Find:558/562/565, reached via Exists:507-510), landed together. Observation only: CreateSubitem has no dedup check, do not add one.",
+    "Checkpoint 2, T4 (tasks.md) -- CheckOperations: Q-242A comparison-symmetry + persist fix (FindCheckType:341/344/350, CreateCheckType:196, SetName:432) AND the distinct Q-242B fix (replace the strip-else-empty-string coercion at :196/:341/:432 with a call to BaseOperations._ValidateStringNotEmpty, no reassignment, per C7), landed in ONE commit per C6 but tracked with two separate evidence files/severity labels/CHANGELOG entries. Live-verification dependency: must reuse the cycle-1 probe's _GetCheckList monkeypatch workaround (spec.md section 3).",
+    "Checkpoint 3, T5 (tasks.md) -- CHANGELOG + docstring updates via /lex-doc, two separate entries (Q-242A, Q-242B) per C6."
+  ],
+  "next_checkpoint": "Checkpoint 2, T1 (DiscourseOperations) -- smallest, lowest-risk, no comparison method to touch.",
+  "next_entry": "Dispatch /lex-programmer for T1 (DiscourseOperations persist fix), live-verified against target_sandbox, following tasks.md READ FIRST items 1-13 in full, especially the CONCURRENCY.md staging rule and the DELTA measurement rule.",
+  "live_evidence": {
+    "run_mode": "live",
+    "fixture": "target_sandbox / target_sandbox_path ONLY -- tempdir copy of the Target .fwbackup",
+    "real_target_touched": false,
+    "restore_script_run": false,
+    "latest_gate_cycle_1": "tests/operations/test_name_field_identity_probe.py 8/8 live (PN1-PN8), run_mode: live; offline suite 1292 passed / 491 deselected at time of measurement (deselected rose 483 -> 491, exactly +8 for the new live tests). This absolute is VOID for future spurts per CONCURRENCY.md's DELTA rule.",
+    "marker_count_rule": "Never name a live suite by filename. Derive the count with '-m requires_live_project --collect-only -q' and paste it into the evidence file. 'no tests collected' is a ZERO, never a pass. Never run bare pytest.",
+    "c28_forward_rule": "Predictions committed BEFORE the live measuring command ran (commit bdbce02); results filled in after. Applies to every future extension of this probe file and every new evidence file."
+  },
+  "evidence_files": [
+    "specs/name-field-whitespace-identity/evidence/live-probe-cycle1.md"
+  ],
+  "code_diff_scope_cumulative": "None yet. This feature has made zero Edit/Write calls under flexicon/ as of cycle 1. Any flexicon/ diff observed in git status at this time belongs to the concurrent crew (see CONCURRENCY.md) and is NOT this feature's contribution.",
+  "public_surface_added": {},
+  "github_issues_filed": [],
+  "deferred_needs_user_approval": [
+    "Q-242C (specs/tier1-silent-data-loss/QUEUE.md, per specs/242-paragraph-whitespace/spec.md C11 and this feature's spec.md C7(b)): coerce-vs-reject for non-str payloads at BaseOperations._ValidateParam; a shared-code/API-surface decision affecting 12+ sites, out of scope for this feature."
+  ],
+  "recorded_not_filed": [
+    "CheckOperations._GetCheckList() (flexicon/code/System/CheckOperations.py:1168-1179) is a hardcoded stub whose fallback path calls a nonexistent ServiceLocator.GetInstance(...) (should be .GetService(...), CheckOperations.py:1198), making CreateCheckType() raise AttributeError on every call against a live LCM. Not fixed, not filed as a GitHub issue. Every future task touching CheckOperations.py must reuse the test-instance-only _GetCheckList monkeypatch from the cycle-1 probe to reach CreateCheckType's own name-handling logic. See spec.md section 3."
+  ],
+  "hard_constraints_for_any_future_spurt": [
+    "Read CONCURRENCY.md before every spurt. Explicit git add <path> only -- never -A, ., -u, or commit -a. Never checkout/restore/stash/reset a path not authored by this feature.",
+    "The DELTA rule replaces the fixed offline baseline for the duration of the concurrency situation -- measure before/after your own edits only; the old 1292/483 (or any other) absolute is VOID.",
+    "target_sandbox / target_sandbox_path ONLY. NEVER the real Target, NEVER scripts/restore_*.py.",
+    "Live verification REQUIRED for code tasks; mock-only is 'FAIL: unverified', never a clean result.",
+    "Derive every live count with --collect-only; 'no tests collected' is a ZERO, never a pass.",
+    "The C28 forward rule: commit predictions BEFORE the measuring run.",
+    "tests/operations/test_name_field_identity_probe.py already exists -- EXTEND per-task, do not duplicate unless a task's scope genuinely needs a dedicated file.",
+    "No GitHub issues filed from inside this feature. Q-242C stays recorded-not-filed; the _GetCheckList bug stays recorded-not-filed.",
+    "C1-C8 are FROZEN. Do not implement C4's fix with any variation (a shared helper, editing normalize_match_key, a per-family exception) without citing and overturning the relevant contract item by number. If Shared/string_utils.py or BaseOperations.py must change: STOP, needs_human.",
+    "Do not touch specs/feature-structure-sync-gap/ or specs/250-writingsystem-activation/ from inside this feature.",
+    "Do not edit specs/tier1-silent-data-loss/.crew-handoff.json from inside this feature -- that campaign-level file is the main session's to maintain.",
+    "T4 (CheckOperations) lands Q-242A and Q-242B in ONE commit at the same expressions, per C6 -- do not split into two sequential edits of the same lines, but DO keep separate evidence files, severity labels, and CHANGELOG entries for the two."
+  ],
+  "updated": "2026-09-07"
+}
