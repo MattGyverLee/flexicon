@@ -164,3 +164,28 @@ messages, confirmed by name:
 all `requires_live_project`). `deselected` up by exactly 3, matching the
 3 new live tests added. This is the expected delta shape for a correct
 change per `CONCURRENCY.md`/`tasks.md`'s DELTA rule.
+
+## WHAT WAS NOT EXERCISED
+
+- **T1-P1, `CreateChart`'s persist half, is `FAIL: unverified`.** Blocked
+  by two pre-existing, unrelated defects (recorded as **Q-DISC1** in
+  `specs/tier1-silent-data-loss/QUEUE.md`): (1) an `IConstChartFactory`
+  NameError at `DiscourseOperations.py:~335`; (2) a wrong chart-ownership
+  interface check at `:~340` (`hasattr(text_obj.ContentsOA, "ChartsOC")`),
+  confirmed by direct reflection on the live LCM assemblies that `IStText`
+  has no `ChartsOC` member -- the real owner is `IDsDiscourseData` via
+  `LangProject.DiscourseDataOA`. Both padded and unpadded inputs raised the
+  identical `FP_ParameterError: Text contents does not support charts`,
+  ruling out this task's own edit as the cause. The persist-and-reread half
+  of the pin could not be exercised through `CreateChart`'s own public
+  entry point.
+  - Why: pythonnet regenerates a fresh Python wrapper on every `.ContentsOA`
+    access, so no test-instance-only workaround (in the spirit of C9) could
+    make the public path reachable without editing `flexicon/` code, which
+    is out of scope for this task.
+- **T1-P1's correctness is confirmed by code inspection only, not by a
+  live persist-and-reread.** `name` was confirmed, by reading the diff, to
+  flow unmodified into `TsStringUtils.MakeString(name, wsHandle)` at the
+  persist line -- the same mechanism independently proven live for
+  `SetChartName` (T1-P2) -- but this is inspection, not an independent live
+  measurement of `CreateChart` itself.

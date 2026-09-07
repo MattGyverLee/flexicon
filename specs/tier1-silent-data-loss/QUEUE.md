@@ -927,6 +927,15 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   entire name. It is deliberately **NOT bundled with Q-242A** so it is
   not triaged at whitespace severity (`specs/242-paragraph-whitespace/spec.md`
   C10, C6 item 3). No work happens on this until the user approves it.
+- **APPENDED CORRECTION (name-field-whitespace-identity, cycle 3,
+  `spec.md` C10(b)) -- Q-242B severity correction, does NOT alter the row
+  above, which is preserved verbatim as an audit trail.** The row above
+  describes the defect as reachable by a non-`str` payload. Live cycle-1
+  measurement (PN5/PN6) established it is ALSO reachable by an ordinary
+  `str`: `CreateCheckType("   ")` strips to `""`, passes the None-only
+  `_ValidateParam`, and persists an empty name with no exception (see
+  `spec.md` C7). The exposure is strictly WIDER than the row states -- no
+  type error on the caller's part is required to lose the entire payload.
 - **NEW (item 2, cycle 2, 2026-09-07) -- Q-242C: coerce-vs-reject for
   non-`str` payloads.** `BaseOperations._ValidateParam`
   (`BaseOperations.py:2377`) is a `None`-check plus a stale-LCM guard
@@ -937,3 +946,54 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   consultation before changing shared validation methods, so this is
   queued rather than implemented incidentally inside #242. No work
   happens on this until the user rules on it.
+- **Q-CHK1** -- `CheckOperations._GetCheckList()`
+  (`flexicon/code/System/CheckOperations.py:1168-1179`) is a hardcoded stub
+  that always returns `None`, forcing `_GetOrCreateCheckList()`
+  (`:1181-1205`) down its create-a-new-list branch, which calls
+  `self.project.project.ServiceLocator.GetInstance(ICmPossibilityListFactory)`
+  at `:1198`. `ILcmServiceLocator` has no `GetInstance` method -- every
+  other call site in this same file (`:209`, `:1391`, `:1430`) and every
+  other Operations class uses `.GetService(...)`. Effect: `CreateCheckType()`
+  raises `AttributeError` on every call, for every payload, `str` or not; it
+  appears never to have worked against a live LCM. TWO defects, not one: the
+  `GetInstance`/`GetService` typo AND the unowned-list design gap (what
+  SHOULD `_GetCheckList` return, and who owns the check list?) -- the second
+  is a design question, not a typo fix. Found by this feature's cycle-1 probe;
+  worked around at the test-instance level ONLY (see C9), zero `flexicon/`
+  lines touched. UNAUTHORISED; no work until the user approves.
+- **Q-DISC1** -- `DiscourseOperations.CreateChart` is unreachable through its
+  own public API, for two independent pre-existing defects, both confirmed by
+  `git blame` to predate this feature: (1) `IConstChartFactory` NameError at
+  `flexicon/code/TextsWords/DiscourseOperations.py:~335` -- the import list was
+  corrected to `IDsConstChartFactory` in `8716a5f2d` (2025-11-26) but the usage
+  site introduced by `d0aac1a54` (2026-06-23) was never updated; (2) wrong
+  chart-ownership interface at `:~340` (`hasattr(text_obj.ContentsOA, "ChartsOC")`)
+  -- confirmed by direct reflection on the live LCM assemblies that `IStText`
+  has NO `ChartsOC` member; the real owner is `IDsDiscourseData`, a
+  project-level singleton reached via `LangProject.DiscourseDataOA`, unrelated
+  to any individual `IText`/`IStText`. The `hasattr` takes its `else` branch
+  unconditionally and raises `FP_ParameterError("Text contents does not support
+  charts")`. Fixing (1) alone merely exposes (2); fixing (2) requires a design
+  decision (should charts be looked up via `LangProject.DiscourseDataOA` with a
+  `BasedOnRA`-style back-reference to the text?). Empirically NOT workaroundable
+  at the harness level: pythonnet regenerates a fresh Python wrapper on every
+  `.ContentsOA` access, so an attribute assigned to one wrapper is invisible when
+  `CreateChart` re-accesses the property internally. **Direct consequence: this
+  feature's C8 persist pin for `CreateChart` is `FAIL: unverified`** -- the edit
+  is confirmed correct by code inspection, and padded/unpadded inputs were
+  measured to fail IDENTICALLY (ruling out the edit as the cause), but the
+  persist-and-reread half could not be exercised. UNAUTHORISED; no work until the
+  user approves.
+- **Q-242D** -- whitespace-only names are silently persisted at the three
+  `_ValidateParam`-only name sites: `AnthropologyOperations.Create`,
+  `AnthropologyOperations.CreateSubitem`, and `TextOperations.SetName`. Because
+  `_ValidateParam` is a null check only, `"   "` passes validation; pre-fix it
+  was stored as `""` (total payload loss), post-fix it is stored as the caller's
+  actual whitespace (raw-byte persistence per C3). Either way no exception is
+  raised and the FLEx list/tree shows a blank-looking row. NOT fixed by
+  `name-field-whitespace-identity` per its C11(c): adopting
+  `_ValidateStringNotEmpty` at these sites is the validator-harmonisation
+  decision **Q-242C** owns, and these are the three sites C7(b) fences into
+  Q-242C. Does not overturn lex-domain's Q6, which is scoped to
+  `CheckOperations`. Should be decided TOGETHER with Q-242C, not before it.
+  UNAUTHORISED; no work until the user approves.

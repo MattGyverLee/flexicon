@@ -310,3 +310,25 @@ checked before deciding whether "just delete the line" (T1's shape) or
   each commit.
 - Did not run `scripts/restore_*.py` or touch the real Target; used
   `target_sandbox` exclusively.
+
+## WHAT WAS NOT EXERCISED
+
+- **T2-P1 (`Create` persist)** -- confirmed by code inspection (`name`
+  flows unmodified into `TsStringUtils.MakeString(name, wsHandle)` at
+  `:170`) plus INDIRECT live evidence (PN8's second-call rejection only
+  makes sense if a padded `Create()` call persists padded bytes). Not
+  independently exercised by a dedicated live persist-and-reread test of
+  `Create` alone, separate from PN1/PN2/PN8's existing coverage.
+- **T2-P2 (`SetName` persist)** -- confirmed by code inspection (the
+  throwaway-`.strip()` mechanism) plus PN7's unchanged live
+  `AttributeError` on a non-str payload, which proves the throwaway
+  `.strip()` call is still reached and still raises. Not independently
+  re-asserted via a dedicated live persist-and-reread of a padded `SetName`
+  call; the task brief named PN2/PN8 as the tests to extend, not a new
+  `SetName`-specific probe.
+- **T2-P6 (whitespace-only rejection unaffected)** -- not independently
+  re-tested by a new live assertion this cycle. Confirmed only by (a) the
+  offline suite's existing coverage of the `_ValidateStringNotEmpty` guard
+  remaining green, and (b) the diff proof showing `:151`/`:457` byte-for-byte
+  unchanged. No live `Create("   ")` / `Exists("   ")` call was newly
+  exercised as part of T2.

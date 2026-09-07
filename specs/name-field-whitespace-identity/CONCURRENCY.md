@@ -75,6 +75,14 @@ and its whitespace-only `FP_ParameterError` raise is at **`:2966`**. **Re-confir
 every line number against HEAD before editing at it.** Cite by symbol name where
 you can; a stale line number in a brief is not authority to edit the wrong place.
 
+**RE-DERIVED AGAINST HEAD, 2026-09-07 (this cycle): the `:2915`/`:2966` figures
+above are ALREADY STALE AGAIN.** Measured at HEAD: `_ValidateStringNotEmpty` is
+`BaseOperations.py:3182`, its `TypeError` raise `:3230`, its whitespace-only
+`FP_ParameterError` raise `:3234`; `_ValidateParam` is `:3014`. **Re-confirm
+every line number against HEAD before editing at it.** Cite by symbol name where
+you can; a stale line number is not authority to edit the wrong place -- that
+rule is now proven twice over.
+
 ## Measure a DELTA, never an absolute
 
 Because their numbers move while you work, an absolute pass count proves nothing.

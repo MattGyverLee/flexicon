@@ -345,6 +345,123 @@ pin-worthy for that family. For the three families with a dedup check
 (`TextOperations`, `AnthropologyOperations`, `CheckOperations`'s
 `CreateCheckType`), both halves apply.
 
+### C9 -- The CheckOperations live-verification workaround BOUNDARY (governs T4)
+
+The ONLY test-harness workaround authorised to reach `CreateCheckType`'s
+own name-handling logic is a **test-instance-only monkeypatch of
+`_GetCheckList` ALONE**, returning a **real LCM `ICmPossibilityList`**
+obtained from the live sandbox project -- the `_seed_valid_check_list()`
+pattern already in `tests/operations/test_name_field_identity_probe.py`
+from cycle 1.
+
+Explicitly NOT authorised. Each one is STOP, `needs_human`:
+- patching `_GetOrCreateCheckList`;
+- patching `ServiceLocator`, `GetInstance`, or `GetService`;
+- returning a Mock, stub, fake, or any non-LCM object in place of a real
+  `ICmPossibilityList`;
+- patching `CreateCheckType`, `FindCheckType`, or `SetName` themselves,
+  or any part of the code under test;
+- editing ANY line under `flexicon/` to make the test reachable -- this
+  includes "just fixing" `CheckOperations.py:1198`'s `GetInstance` ->
+  `GetService`, which is Q-CHK1 and is NOT authorised.
+
+Rationale: a workaround that replaces the object under test, or that
+reaches past `_GetCheckList` into the LCM plumbing, produces a run that
+proves the harness works, not that the fix works. The single-seam rule
+keeps `CreateCheckType`'s own body -- validation, persist, dedup --
+entirely unmocked and genuinely exercised.
+
+If the single authorised seam turns out to be insufficient to reach the
+persist line, the correct outcome is `FAIL: unverified` plus a recorded
+candidate row -- NOT a wider workaround. This is exactly what happened to
+T1 at `DiscourseOperations.CreateChart` (see C10(a) and Q-DISC1).
+
+### C10 -- Mandatory non-exercise disclosure, and the Q-242B severity correction
+
+**(a) Every evidence file this feature writes from cycle 3 onward MUST
+contain a section headed exactly `## WHAT WAS NOT EXERCISED`**, listing:
+every pin half not independently exercised live; every code path confirmed
+by inspection only; every monkeypatched seam and what it displaced; and one
+line for each saying why. An evidence file without this section is
+INCOMPLETE and its task is not done. If everything in the task's pin was
+genuinely exercised, the section still appears, reading
+`None -- every pin half was exercised live.`
+
+This is retro-fitted, not just forward-looking. Two existing evidence files
+must gain the section:
+- `evidence/live-t1-discourse-fix.md` -- `CreateChart`'s persist half
+  (T1-P1) is `FAIL: unverified`, blocked by two pre-existing, unrelated
+  defects (Q-DISC1); confirmed by code inspection only.
+- `evidence/live-t2-text-fix.md` -- T2-P1 confirmed by inspection plus
+  indirect live evidence; T2-P2 confirmed by inspection plus PN7's
+  unchanged `AttributeError`; T2-P6 not independently re-asserted.
+
+**(b) Q-242B severity correction.** `specs/tier1-silent-data-loss/QUEUE.md`'s
+Q-242B row describes the defect as reachable by a **non-`str`** payload.
+Live cycle-1 measurement (PN5/PN6) established it is ALSO reachable by an
+ordinary `str`: `CreateCheckType("   ")` strips to `""`, passes the
+None-only `_ValidateParam`, and persists an empty name with no exception
+(see C7). The exposure is strictly WIDER than the row states -- no type
+error on the caller's part is required to lose the entire payload. The row
+is preserved verbatim as an audit trail and MUST NOT be rewritten; this
+correction is recorded as an APPENDED annotation beneath it.
+
+### C11 -- Per-site fix SHAPE is chosen by the site's own upstream guard, and the three-site whitespace-only carve-out
+
+Grounded in T2's cycle-2 finding and re-verified against HEAD:
+`BaseOperations._ValidateParam` (`:3014` at time of writing) is a `None`
+check plus a stale-LCM-reference guard and NOTHING else -- no type check,
+no empty-string check.
+
+**(a) Two authorised shapes. Which one a site takes is determined by what
+validates the argument BEFORE the `.strip()` line:**
+- **Shape A -- delete the rebinding outright.** Authorised ONLY where the
+  site already calls `_ValidateStringNotEmpty` (or another guard that
+  raises on non-`str`) before the `.strip()` line. Used by T1 at
+  `DiscourseOperations.CreateChart` and `SetChartName`.
+- **Shape B -- keep a throwaway, NON-REASSIGNING `name.strip()`.**
+  REQUIRED where the only upstream guard is a null-check-only
+  `_ValidateParam`, because there `.strip()` ITSELF is what raises
+  `AttributeError` for a non-`str` payload. Deleting it would silently
+  remove an existing loud error and change its type -- which C7(b)
+  forbids. Used by T2 at `TextOperations.SetName`.
+
+Choosing the wrong shape is a CONTRACT VIOLATION, not a style choice. Read
+the site's actual guard at HEAD before editing; never infer it from a
+sibling method or from another family's landed diff.
+
+**(b)** A trailing `self._ValidateParam(name, "name")` that becomes a
+verbatim duplicate of the leading call on the same unmodified value, once
+the rebinding between them is removed, is DEAD and is deleted. The
+**leading** `_ValidateParam` is always KEPT (C7a).
+
+**(c) Whitespace-only carve-out at the three Shape-B sites.** At
+`AnthropologyOperations.Create`, `AnthropologyOperations.CreateSubitem`,
+and `TextOperations.SetName`, a whitespace-only `str` today strips to `""`
+and is persisted with NO exception, because `_ValidateParam` is null-only.
+This is Q-242B's bug shape at sites the frozen contract never enumerated --
+C7's three-way split classified sites by their NON-STR behaviour only and
+did not classify their whitespace-only behaviour. Removing the rebinding
+necessarily changes the stored value from `""` to the caller's actual
+whitespace; "leave it exactly as-is" is not an available option.
+
+**This feature does NOT add a whitespace-only rejection at these three
+sites.** Grounds: adopting `_ValidateStringNotEmpty` there IS the
+validator-harmonisation decision that **Q-242C owns**, and these three are
+precisely the three sites C7(b) names as Q-242C's; deciding half of it here
+would fragment that decision across two features. The pre-existing
+blank-name-row state is neither created nor worsened by this feature -- it
+changes only WHICH invisible string is stored, and it removes a payload
+loss (`""`) in favour of raw-byte persistence, per C3.
+
+This does **not** overturn lex-domain's Q6, which is scoped to C7's
+`CheckOperations` sites; it declines to EXTEND Q6 to three sites C7(b)
+explicitly fences into Q-242C. `CheckOperations` is NOT carved out -- C7
+already rules its whitespace-only path loud, and Q6 governs there.
+
+Recorded as **Q-242D**, an UNAUTHORISED candidate awaiting user approval.
+T5's CHANGELOG entry must disclose it as a known remaining gap.
+
 ---
 
 ## 3. Recorded but not ruled -- an unrelated bug found in cycle 1

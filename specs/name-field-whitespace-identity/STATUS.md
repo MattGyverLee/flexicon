@@ -134,3 +134,28 @@ docs dispatch to `/lex-doc`).
 - Do not edit `specs/tier1-silent-data-loss/.crew-handoff.json` from
   inside this feature -- that campaign-level file is the main session's
   to maintain.
+
+---
+
+## Cycle 2-3
+
+- **T1 landed** (`DiscourseOperations`): `SetChartName` fully live-verified
+  (persist byte-identical, re-read from the LCM). `CreateChart`'s persist
+  half is `FAIL: unverified`, blocked by two independent pre-existing
+  defects unrelated to this feature's edit -- recorded as **Q-DISC1**.
+- **T2 landed fully green** (`TextOperations`): both C8 halves (second
+  `Create()` call raises "already exists"; first record re-reads
+  byte-identical) confirmed live.
+- The baseline re-derivation and the `CONCURRENCY.md` amendment landed at
+  `67114c8`.
+- **C9, C10, C11 frozen** in `spec.md`: C9 is the `_GetCheckList`
+  live-verification workaround boundary governing T4; C10 mandates the
+  `## WHAT WAS NOT EXERCISED` disclosure section (retro-fitted to
+  `evidence/live-t1-discourse-fix.md` and `evidence/live-t2-text-fix.md`)
+  and records the Q-242B severity correction (also reachable by an
+  ordinary whitespace-only `str`); C11 governs per-site fix SHAPE
+  (Shape A vs Shape B) and records the three-site whitespace-only
+  carve-out.
+- **Q-CHK1, Q-DISC1, and Q-242D recorded** in
+  `specs/tier1-silent-data-loss/QUEUE.md`'s "Awaiting user approval"
+  section, all UNAUTHORISED pending user approval.

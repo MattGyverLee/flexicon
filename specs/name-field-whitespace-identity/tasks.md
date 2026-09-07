@@ -95,6 +95,17 @@ the acceptance gate.
     relevant contract item by number. If an implementer concludes
     `Shared/string_utils.py` or `BaseOperations.py` must change: **STOP,
     `needs_human`** (C4).
+14. **C9** (`spec.md`) is the CheckOperations live-verification workaround
+    BOUNDARY -- only a test-instance-only `_GetCheckList`-alone monkeypatch
+    returning a real LCM `ICmPossibilityList` is authorised; see `spec.md`
+    C9 for the full NOT-authorised list.
+15. **C10** (`spec.md`) requires a `## WHAT WAS NOT EXERCISED` section in
+    every evidence file from cycle 3 onward, and records the Q-242B
+    severity correction (also reachable by an ordinary whitespace-only
+    `str`, not just non-`str`).
+16. **C11** (`spec.md`) governs per-site fix SHAPE (Shape A vs Shape B,
+    chosen by the site's own upstream guard) and the three-site
+    whitespace-only carve-out recorded as Q-242D.
 
 ---
 
@@ -197,7 +208,8 @@ documented in a comment for historical record (same pattern as
 writer sites; strip inline at both sides of `Find`'s comparison per C4.
 **Observation, not a task (spec.md C5):** `CreateSubitem` has no dedup
 check at all, unlike `Create` -- do **not** add one while fixing its
-persist behaviour.
+persist behaviour. Both persist sites are Shape B per C11(a) --
+throwaway non-reassigning `.strip()`, not plain deletion.
 
 **Anti-regression pin (C8, full, `Create` only -- `CreateSubitem` has no
 dedup check per the observation above):**
@@ -251,7 +263,9 @@ is unreachable through the public API without the
 the way first. **Reuse** the cycle-1 probe's
 `_seed_valid_check_list()` monkeypatch pattern in this task's live test(s)
 -- do not fix `_GetCheckList` itself (out of scope, unrelated bug,
-`spec.md` section 3).
+`spec.md` section 3). C9 governs the `_GetCheckList` workaround boundary;
+C10(a) requires the `## WHAT WAS NOT EXERCISED` section in BOTH evidence
+files.
 
 **Anti-regression pins:**
 - **C8 (Q-242A half, full):** `CreateCheckType(<name with trailing
@@ -301,6 +315,9 @@ by the Archivist.
 - **Do not** author CHANGELOG prose directly as the Archivist -- if
   tempted, dispatch `/lex-doc` instead, per the Archivist/Doc-Agent
   division of labour.
+- Must disclose Q-242D as a known remaining gap, and must record
+  `CreateChart`'s `FAIL: unverified` persist pin (Q-DISC1) rather than
+  claiming 8/8 verified.
 
 Docs-only, no live-verification requirement.
 
