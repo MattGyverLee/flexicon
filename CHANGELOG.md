@@ -246,6 +246,37 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   first time -- see **Fixed**, below.
 
 ### Fixed
+- **`BaseOperations._apply_props_loop` now resolves a case- or
+  separator-divergent writing-system tag instead of silently dropping the
+  alt** (issue #250, Defect 4). Every `ApplySyncableProperties`-style sync
+  write builds a `{ws.Id: ws.Handle}` map keyed on the **exact-case**
+  `ws.Id`; a caller (or a source project) that spells a tag `en-us`,
+  `EN-US` or `en_US` where the target's real `ws.Id` is `en-US` used to
+  miss that `dict.get` and lose the text via a silent `continue` with no
+  diagnostic. The resolution step now tries an exact match first
+  (byte-for-byte unchanged for every write that already succeeds), then
+  falls back to a normalized (hyphen-lowercase, `_`/`-` folded) lookup
+  built lazily from the same dict, at most once per apply call. This is a
+  **bug fix, not a breaking change**: no currently-succeeding write
+  changes behaviour. **New failure mode:** if two or more distinctly
+  cased/separated spellings in the target's writing-system set normalize
+  to the same form but resolve to *different* handles, the fallback now
+  raises `FP_ParameterError` naming both ambiguous spellings and their
+  handles, rather than guessing which one the caller meant (spellings
+  that normalize together but share one handle do not raise).
+
+  **Coverage boundary -- read before assuming this closes #250's Defect 4
+  everywhere.** The fix reaches `BaseOperations._apply_props_loop` ONLY.
+  It does **NOT** reach two other apply paths that build their own
+  `{ws.Id: ws.Handle}` map and run their own exact-case resolution loop
+  instead of delegating: `Grammar/PhonemeOperations.__ApplyBasicIPASymbol`
+  and `Lexicon/ExampleOperations.ApplySyncableProperties`'s `TranslationsOC`
+  loop. Concretely: a phoneme's `Name`/`Description` alts (which delegate
+  to `_apply_props_loop` via `super()`) will now save under a divergent
+  spelling, while that **same phoneme's** `BasicIPASymbol` alt will still
+  be silently dropped under the identical divergent spelling. Closing
+  those two sites is tracked as follow-up work, not done here (Defects 1-3
+  of #250 also remain open and out of scope for this fix).
 - **`FLExProject.CloseProject()` no longer skips `usm.Save()` if its own
   `EndNonUndoableTask()` mirror call raises** (#243). Under
   `writeEnabled=True, undoable=False`, `CloseProject()` called
