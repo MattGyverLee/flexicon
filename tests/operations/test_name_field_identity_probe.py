@@ -328,12 +328,26 @@ def test_pn3_anthropology_haystack_never_stripped(target_sandbox):
 @pytest.mark.live_phase("CheckOperations", "modify")
 def test_pn4_checks_haystack_never_stripped(target_sandbox):
     """
-    PN4 (binding under the refutation clause): same layer-B shape as PN2/
-    PN3, applied to Checks.FindCheckType. Needle-strip at
-    CheckOperations.py:341; haystack key built raw at :350 (via
-    check_type.Name.get_String(wsHandle), no .strip() in that line or in
-    normalize_match_key). Predicted None for both the unpadded and padded
-    needle.
+    PN4, FLIPPED to assert T4's FIXED behaviour (tasks.md T4, spec.md C4):
+    layer-B store a check type named "TEST_NF_Check_Raw " (trailing space --
+    now matches what the REAL, fixed CreateCheckType/SetName themselves
+    persist post-fix, not just a simulation of it). Then:
+      - FindCheckType(unpadded) -> PREDICTED the item (not None)
+      - FindCheckType(padded)   -> PREDICTED the item (not None)
+    Both predicted because FindCheckType now strips BOTH the needle and the
+    haystack inline before comparing (CheckOperations.py:344/:350), so a
+    padded stored name is found by either a padded or unpadded needle.
+    `casefold=True` unchanged.
+
+    PRE-FIX BEHAVIOUR (historical record, cycle 1, spec.md C1): before T4's
+    comparison-symmetry fix, FindCheckType stripped only the needle
+    parameter (old :341) and built the haystack key straight from the raw
+    check_type.Name with no stripping at all -- so FindCheckType(unpadded)
+    and FindCheckType(padded) BOTH returned None against this same padded
+    haystack. That was the measured, binding result this test originally
+    locked down (see evidence/live-probe-cycle1.md); this flip is the
+    intended, authorised consequence of C4 landing, not a silent behaviour
+    change discovered by accident.
 
     NOTE: requires _seed_valid_check_list() to work around an UNPLANNED,
     unrelated, pre-existing bug discovered this cycle -- see that helper's
@@ -385,19 +399,19 @@ def test_pn4_checks_haystack_never_stripped(target_sandbox):
 
     print(
         f"[VERDICT][PN4] FindCheckType(unpadded) -> {find_unpadded!r} "
-        f"(PREDICTED None); FindCheckType(padded) -> {find_padded!r} "
-        f"(PREDICTED None)"
+        f"(PREDICTED the item, post-fix); FindCheckType(padded) -> "
+        f"{find_padded!r} (PREDICTED the item, post-fix)"
     )
 
-    if find_unpadded is not None or find_padded is not None:
+    if find_unpadded is None or find_padded is None:
         print(
-            "[REFUTATION][PN4] MEASURED OPPOSITE TO PREDICTION -- the needle "
-            "DID find the padded haystack. This REFUTES the ruling's premise "
-            "that dedup paths strip the needle only, never the haystack. "
-            "Reported plainly, NOT reconciled."
+            "[REFUTATION][PN4] MEASURED OPPOSITE TO PREDICTION -- the "
+            "needle did NOT find the padded haystack even after T4's "
+            "comparison-symmetry fix. This REFUTES the fix's premise (both "
+            "sides stripped inline). Reported plainly, NOT reconciled."
         )
-    assert find_unpadded is None, f"PN4 MISS: FindCheckType(unpadded) expected None, got {find_unpadded!r}"
-    assert find_padded is None, f"PN4 MISS: FindCheckType(padded) expected None, got {find_padded!r}"
+    assert find_unpadded is not None, f"PN4 MISS: FindCheckType(unpadded) expected the item, got None"
+    assert find_padded is not None, f"PN4 MISS: FindCheckType(padded) expected the item, got None"
 
 
 # ===========================================================================
@@ -408,18 +422,22 @@ def test_pn4_checks_haystack_never_stripped(target_sandbox):
 @pytest.mark.live_phase("CheckOperations", "add")
 def test_pn5_q242b_nonstr_payload_persists_empty_name(target_sandbox):
     """
-    PN5 (Q-242B): Checks.CreateCheckType(<a plain non-str object>) ->
-    PREDICTED NO exception, and a check type is created whose Name
-    re-reads from the LCM as empty ("") or the "***" null marker.
-    CheckOperations.py:196's
-        name = name.strip() if isinstance(name, str) else ""
-    converts any non-str payload to a literal empty string with no
-    exception, because the preceding _ValidateParam(name, "name") at :194
-    only checks for None (BaseOperations.py:2376-2377), not type.
+    PN5, FLIPPED to assert T4's FIXED behaviour (Q-242B, tasks.md T4,
+    spec.md C7): Checks.CreateCheckType(<a plain non-str object>) is now
+    PREDICTED to RAISE TypeError -- the newly-called
+    `_ValidateStringNotEmpty` opens with
+    `if not isinstance(text, str): raise TypeError(...)`, which fires
+    before any coercion happens -- and NO check type is created, confirmed
+    by comparing the check-type count before and after the raised attempt.
 
-    Re-reads the object FRESH from the LCM after the write (via GetName()
-    AND the raw ITsString accessor) -- asserting on what was passed in
-    would prove nothing.
+    PRE-FIX BEHAVIOUR (historical record, cycle 1): CreateCheckType(<a
+    non-str payload>) raised NO exception and silently persisted an EMPTY
+    name via `name = name.strip() if isinstance(name, str) else ""` (old
+    :196) plus a None-only `_ValidateParam`. That was the measured, binding
+    Q-242B defect this test originally locked down (see
+    evidence/live-probe-cycle1.md); this flip is the intended, authorised
+    consequence of C7 landing, not a silent behaviour change discovered by
+    accident.
 
     NOTE: requires _seed_valid_check_list() to work around an UNPLANNED,
     unrelated, pre-existing bug discovered this cycle -- see that helper's
@@ -431,28 +449,26 @@ def test_pn5_q242b_nonstr_payload_persists_empty_name(target_sandbox):
 
     _seed_valid_check_list(project)
 
+    before_count = sum(1 for _ in project.Checks.GetAllCheckTypes())
+
     check, create_exc = _safe(
         lambda: project.Checks.CreateCheckType(payload), "PN5 CreateCheckType(non-str)"
     )
-    print(f"[VERDICT][PN5] CreateCheckType(non-str) -> exc={create_exc!r} (PREDICTED None)")
-    assert create_exc is None, (
-        f"PN5 MISS: expected CreateCheckType(non-str) to raise NO exception -- "
-        f"got {create_exc}"
+    print(f"[VERDICT][PN5] CreateCheckType(non-str) -> exc={create_exc!r} (PREDICTED TypeError, post-fix)")
+    assert create_exc is not None and create_exc.startswith("TypeError"), (
+        f"PN5 MISS: expected CreateCheckType(non-str) to RAISE TypeError, "
+        f"post-fix -- got {create_exc!r}"
     )
-    assert check is not None, "PN5: CreateCheckType(non-str) returned no object despite no exception"
+    assert check is None, "PN5: CreateCheckType(non-str) returned an object despite raising"
 
-    reread_name = project.Checks.GetName(check)
-    from SIL.LCModel.Core.KernelInterfaces import ITsString
-
-    wsHandle = project.project.DefaultAnalWs
-    raw_reread = ITsString(check.Name.get_String(wsHandle)).Text
+    after_count = sum(1 for _ in project.Checks.GetAllCheckTypes())
     print(
-        f"[TABLE][PN5] re-read via GetName(): {reread_name!r}; "
-        f"raw ITsString re-read: {raw_reread!r}"
+        f"[TABLE][PN5] check-type count before={before_count} after={after_count} "
+        f"(PREDICTED unchanged -- no silent persist on the raised path)"
     )
-    assert reread_name in ("", "***"), (
-        f"PN5 MISS: expected the persisted name to re-read as '' or '***' -- "
-        f"got {reread_name!r}"
+    assert after_count == before_count, (
+        f"PN5 MISS: expected NO check type to be created on the raised path -- "
+        f"count went {before_count} -> {after_count}"
     )
 
 
@@ -464,12 +480,23 @@ def test_pn5_q242b_nonstr_payload_persists_empty_name(target_sandbox):
 @pytest.mark.live_phase("CheckOperations", "add")
 def test_pn6_q242b_whitespace_string_persists_empty_name(target_sandbox):
     """
-    PN6 (Q-242B second path): Checks.CreateCheckType("   ") ->
-    PREDICTED NO exception, empty name persisted. "   ".strip() at :196
-    yields "", and _ValidateParam("", "name") at :197 does not reject an
-    empty string (only None), so the whitespace-only string silently
-    becomes a persisted empty name via the str branch of the same line
-    PN5 exercised via the non-str branch.
+    PN6, FLIPPED to assert T4's FIXED behaviour (Q-242B second path,
+    tasks.md T4, spec.md C7, lex-domain's Q6): Checks.CreateCheckType("   ")
+    is now PREDICTED to RAISE FP_ParameterError -- the newly-called
+    `_ValidateStringNotEmpty`'s `if len(text.strip()) == 0: raise
+    FP_ParameterError(...)` branch fires -- and NO check type is created.
+    Unlike C11(c)'s three Shape-B carve-out sites, Q6 explicitly rules the
+    CheckOperations whitespace-only path loud.
+
+    PRE-FIX BEHAVIOUR (historical record, cycle 1): "   ".strip() at old
+    :196 yielded "", and the None-only `_ValidateParam("", "name")` at old
+    :197 did not reject an empty string, so the whitespace-only string
+    silently became a persisted empty name via the str branch of the same
+    line PN5 exercised via the non-str branch. That was the measured,
+    binding Q-242B defect this test originally locked down (see
+    evidence/live-probe-cycle1.md); this flip is the intended, authorised
+    consequence of C7/Q6 landing, not a silent behaviour change discovered
+    by accident.
 
     NOTE: requires _seed_valid_check_list() to work around an UNPLANNED,
     unrelated, pre-existing bug discovered this cycle -- see that helper's
@@ -480,28 +507,26 @@ def test_pn6_q242b_whitespace_string_persists_empty_name(target_sandbox):
 
     _seed_valid_check_list(project)
 
+    before_count = sum(1 for _ in project.Checks.GetAllCheckTypes())
+
     check, create_exc = _safe(
         lambda: project.Checks.CreateCheckType("   "), "PN6 CreateCheckType('   ')"
     )
-    print(f"[VERDICT][PN6] CreateCheckType('   ') -> exc={create_exc!r} (PREDICTED None)")
-    assert create_exc is None, (
-        f"PN6 MISS: expected CreateCheckType('   ') to raise NO exception -- "
-        f"got {create_exc}"
+    print(f"[VERDICT][PN6] CreateCheckType('   ') -> exc={create_exc!r} (PREDICTED FP_ParameterError, post-fix)")
+    assert create_exc is not None and create_exc.startswith("FP_ParameterError"), (
+        f"PN6 MISS: expected CreateCheckType('   ') to RAISE FP_ParameterError, "
+        f"post-fix -- got {create_exc!r}"
     )
-    assert check is not None, "PN6: CreateCheckType('   ') returned no object despite no exception"
+    assert check is None, "PN6: CreateCheckType('   ') returned an object despite raising"
 
-    reread_name = project.Checks.GetName(check)
-    from SIL.LCModel.Core.KernelInterfaces import ITsString
-
-    wsHandle = project.project.DefaultAnalWs
-    raw_reread = ITsString(check.Name.get_String(wsHandle)).Text
+    after_count = sum(1 for _ in project.Checks.GetAllCheckTypes())
     print(
-        f"[TABLE][PN6] re-read via GetName(): {reread_name!r}; "
-        f"raw ITsString re-read: {raw_reread!r}"
+        f"[TABLE][PN6] check-type count before={before_count} after={after_count} "
+        f"(PREDICTED unchanged -- no silent persist on the raised path)"
     )
-    assert reread_name in ("", "***"), (
-        f"PN6 MISS: expected the persisted name to re-read as '' or '***' -- "
-        f"got {reread_name!r}"
+    assert after_count == before_count, (
+        f"PN6 MISS: expected NO check type to be created on the raised path -- "
+        f"count went {before_count} -> {after_count}"
     )
 
 
@@ -1233,4 +1258,425 @@ def test_pn15_t3_q242d_whitespace_only_create_measurement(target_sandbox):
         f"{whitespace_only!r} -- got {stored!r}. Record the MEASURED value "
         f"in the evidence file either way; do not silently adjust this "
         f"prediction after the fact per the C28 forward rule."
+    )
+
+
+# ===========================================================================
+# PN16 -- T4 -- CheckOperations.CreateCheckType: THE C8 anti-regression pin,
+# BOTH halves, through the real public API (spec.md C6/C8, tasks.md T4).
+# ===========================================================================
+
+@pytest.mark.live_phase("CheckOperations", "add")
+def test_pn16_t4_createchecktype_duplicate_explosion_pin(target_sandbox):
+    """
+    PN16, THE C8 anti-regression pin for CheckOperations.CreateCheckType
+    (tasks.md T4, spec.md C6/C8), through the REAL public API end to end (no
+    layer-B bypass needed here, since CreateCheckType itself is now the
+    thing under test for BOTH halves):
+
+      Checks.CreateCheckType("TEST_NF_Chk ") (trailing space) called TWICE
+      ->
+      - the SECOND call is PREDICTED to RAISE FP_ParameterError ("already
+        exists"), because CreateCheckType's own `self.FindCheckType(name)`
+        check (:200) now reaches FindCheckType's symmetric, inline-stripped
+        comparison (T4's C4 fix) with the SAME padded name the first call
+        persisted.
+      - the FIRST check's stored Name is PREDICTED to re-read
+        BYTE-IDENTICAL ('TEST_NF_Chk ', trailing space intact) from the
+        LCM, re-read AFTER the rejected duplicate attempt -- a genuine
+        re-query, not a re-assertion of the value passed in (same pattern
+        as T2's PN8 `first_reread` / T3's PN12 `first_reread`).
+
+    PRE-FIX BEHAVIOUR (historical record): before T4 landed, CreateCheckType
+    REASSIGNED `name` to its stripped form (old :196), so the persisted
+    value never carried the caller's trailing space, and FindCheckType's
+    needle-only strip meant the second call's stripped needle would have
+    matched the first call's ALREADY-stripped haystack trivially in this
+    single-call-family case -- but more importantly, the caller's actual
+    padded argument was NEVER what got compared or persisted. This test's
+    post-fix assertions (byte-identical WITH the trailing space, second call
+    REJECTED against the padded name) are only reachable once T4's persist
+    fix (no reassignment) and comparison fix (FindCheckType's inline
+    symmetric strip) are BOTH in place together, per C2/C6/C8.
+
+    NOTE: requires _seed_valid_check_list() to work around an UNPLANNED,
+    unrelated, pre-existing bug discovered this cycle -- see that helper's
+    docstring. CreateCheckType raises AttributeError on every call without
+    this test-only workaround (zero flexicon/ lines touched).
+    """
+    from SIL.LCModel.Core.KernelInterfaces import ITsString
+
+    project = target_sandbox
+    padded_name = f"{TEST_PREFIX}Chk "  # trailing space, byte-for-byte
+
+    _seed_valid_check_list(project)
+
+    first_check, first_exc = _safe(
+        lambda: project.Checks.CreateCheckType(padded_name), "PN16 CreateCheckType #1 (padded)"
+    )
+    assert first_exc is None, f"PN16: first CreateCheckType raised unexpectedly: {first_exc}"
+    assert first_check is not None, "PN16: first CreateCheckType returned no object despite no exception"
+
+    wsHandle = project.project.DefaultAnalWs
+    first_raw = ITsString(first_check.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN16] first check stored Name (direct read, before duplicate attempt): {first_raw!r}")
+    assert first_raw == padded_name, (
+        f"PN16 precondition failed: expected the first CreateCheckType() to "
+        f"persist {padded_name!r} verbatim -- got {first_raw!r}"
+    )
+
+    second_check, second_exc = _safe(
+        lambda: project.Checks.CreateCheckType(padded_name), "PN16 CreateCheckType #2 (padded, duplicate)"
+    )
+    print(
+        f"[VERDICT][PN16] CreateCheckType({padded_name!r}) called a second time -> "
+        f"exc={second_exc!r} (PREDICTED FP_ParameterError, post-fix)"
+    )
+
+    if second_exc is None:
+        print(
+            "[REFUTATION][PN16] MEASURED OPPOSITE TO PREDICTION -- the "
+            "second CreateCheckType() SUCCEEDED instead of raising, meaning "
+            "the duplicate guard did NOT fire despite T4's comparison-"
+            "symmetry fix. This REFUTES the fix's premise. Reported "
+            "plainly, NOT reconciled."
+        )
+    assert second_exc is not None and second_exc.startswith("FP_ParameterError"), (
+        f"PN16 MISS (BINDING, C8 pin half 1): expected the second "
+        f"CreateCheckType({padded_name!r}) to RAISE FP_ParameterError "
+        f"('already exists'), post-fix -- got {second_exc!r} instead "
+        f"(second_check={second_check!r})"
+    )
+
+    # C8 pin half 2: the FIRST check's stored Name must re-read
+    # BYTE-IDENTICAL from the LCM after the rejected duplicate attempt --
+    # a genuine re-query, not merely re-asserted against the value read
+    # before the second call.
+    first_reread = ITsString(first_check.Name.get_String(wsHandle)).Text
+    print(
+        f"[TABLE][PN16] first check stored Name, re-read after the "
+        f"rejected duplicate attempt: {first_reread!r}"
+    )
+    assert first_reread == padded_name, (
+        f"PN16 MISS (BINDING, C8 pin half 2): expected the first check's "
+        f"stored Name to re-read byte-identical to {padded_name!r} -- got "
+        f"{first_reread!r}"
+    )
+
+    # Confirm exactly ONE check type matches this name post-fix -- no
+    # duplicate was created (the rejected second CreateCheckType() call
+    # must not have persisted a partial/second record).
+    dup_checks = []
+    for c in project.Checks.GetAllCheckTypes():
+        c_name = ITsString(c.Name.get_String(wsHandle)).Text
+        if c_name and c_name.strip() == padded_name.strip():
+            dup_checks.append((str(c.Guid), c_name))
+    print(f"[SUMMARY][PN16] check types matching {padded_name!r} post-fix (stripped comparison): {dup_checks}")
+
+    assert len(dup_checks) == 1, (
+        f"PN16 MISS (BINDING): expected exactly ONE check type matching "
+        f"{padded_name!r} post-fix (the duplicate must have been REJECTED, "
+        f"not persisted) -- found {len(dup_checks)}: {dup_checks}"
+    )
+
+
+# ===========================================================================
+# PN17 -- T4 -- CheckOperations.SetName: persist fix, through the real
+# public API (spec.md C4, tasks.md T4).
+# ===========================================================================
+
+@pytest.mark.live_phase("CheckOperations", "modify")
+def test_pn17_t4_setname_persists_raw_bytes(target_sandbox):
+    """
+    PN17 (persist pin, tasks.md T4, spec.md C4): Checks.SetName(check,
+    "TEST_NF_Chk_Renamed ") (trailing space) is PREDICTED to persist the
+    check type's Name BYTE-IDENTICAL to the caller's original argument,
+    because SetName no longer rebinds `name = name.strip()` before
+    `TsStringUtils.MakeString(name, wsHandle)`. Re-read from the LCM
+    directly after the write -- asserting on the value passed in would
+    prove nothing.
+
+    NOTE: requires _seed_valid_check_list() to work around an UNPLANNED,
+    unrelated, pre-existing bug discovered this cycle -- see that helper's
+    docstring. CreateCheckType raises AttributeError on every call without
+    this test-only workaround (zero flexicon/ lines touched).
+    """
+    from SIL.LCModel.Core.KernelInterfaces import ITsString
+
+    project = target_sandbox
+    initial_name = f"{TEST_PREFIX}Chk_Rename_Seed"
+    padded_name = f"{TEST_PREFIX}Chk_Renamed "  # trailing space
+
+    _seed_valid_check_list(project)
+
+    check, create_exc = _safe(
+        lambda: project.Checks.CreateCheckType(initial_name), "PN17 seed CreateCheckType"
+    )
+    assert create_exc is None, f"PN17: seed CreateCheckType raised: {create_exc}"
+
+    _, setname_exc = _safe(
+        lambda: project.Checks.SetName(check, padded_name), "PN17 SetName(padded)"
+    )
+    assert setname_exc is None, f"PN17: SetName raised unexpectedly: {setname_exc}"
+
+    wsHandle = project.project.DefaultAnalWs
+    raw_reread = ITsString(check.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN17] check stored Name (direct read): {raw_reread!r}")
+    print(
+        f"[VERDICT][PN17] SetName({padded_name!r}) stored Name -> "
+        f"{raw_reread!r} (PREDICTED byte-identical to {padded_name!r})"
+    )
+    assert raw_reread == padded_name, (
+        f"PN17 MISS: expected SetName to persist {padded_name!r} "
+        f"byte-identically -- got {raw_reread!r}"
+    )
+
+
+# ===========================================================================
+# PN18 -- T4 -- FindCheckType comparison symmetry, exercised end-to-end
+# through the real public CreateCheckType/FindCheckType API (spec.md C4,
+# tasks.md T4). Complements PN4's layer-B-bypass version.
+# ===========================================================================
+
+@pytest.mark.live_phase("CheckOperations", "read")
+def test_pn18_t4_findchecktype_symmetry_via_public_api(target_sandbox):
+    """
+    PN18 (comparison-symmetry pin, tasks.md T4, spec.md C4): a check type
+    created through the real public CreateCheckType with a trailing-space
+    name is PREDICTED to be found by FindCheckType via BOTH a padded and an
+    unpadded needle, since FindCheckType now strips both sides of the
+    comparison inline. This exercises the persist fix (C4) AND the
+    comparison fix (C4) TOGETHER, end to end, through the public API only
+    -- PN4 proves the comparison symmetry alone via a layer-B bypass write;
+    this proves the same symmetry when the padded name reaches the LCM via
+    the fixed CreateCheckType itself.
+
+    NOTE: requires _seed_valid_check_list() to work around an UNPLANNED,
+    unrelated, pre-existing bug discovered this cycle -- see that helper's
+    docstring. CreateCheckType raises AttributeError on every call without
+    this test-only workaround (zero flexicon/ lines touched).
+    """
+    project = target_sandbox
+    padded_name = f"{TEST_PREFIX}Chk_Find "  # trailing space
+
+    _seed_valid_check_list(project)
+
+    check, create_exc = _safe(
+        lambda: project.Checks.CreateCheckType(padded_name), "PN18 seed CreateCheckType"
+    )
+    assert create_exc is None, f"PN18: seed CreateCheckType raised: {create_exc}"
+
+    unpadded_needle = padded_name.strip()
+
+    found_unpadded, fexc1 = _safe(
+        lambda: project.Checks.FindCheckType(unpadded_needle), "PN18 FindCheckType(unpadded)"
+    )
+    found_padded, fexc2 = _safe(
+        lambda: project.Checks.FindCheckType(padded_name), "PN18 FindCheckType(padded)"
+    )
+    assert fexc1 is None and fexc2 is None, f"Unexpected exception(s): {fexc1} / {fexc2}"
+
+    print(
+        f"[VERDICT][PN18] FindCheckType(unpadded) -> {found_unpadded!r}; "
+        f"FindCheckType(padded) -> {found_padded!r} (BOTH PREDICTED the "
+        f"item, post-fix)"
+    )
+    assert found_unpadded is not None, "PN18 MISS: FindCheckType(unpadded) expected the item, got None"
+    assert found_padded is not None, "PN18 MISS: FindCheckType(padded) expected the item, got None"
+
+
+# ===========================================================================
+# PN19 -- T4 -- Q-242B pin, non-str branch, at ALL THREE CheckOperations
+# sites (spec.md C7, tasks.md T4). FindCheckType's own change is a
+# RETURN-TO-RAISE change on a read-path method, measured explicitly.
+# ===========================================================================
+
+@pytest.mark.live_phase("CheckOperations", "add")
+def test_pn19_q242b_nonstr_payload_raises_at_all_three_sites(target_sandbox):
+    """
+    PN19 (Q-242B pin, non-str branch, tasks.md T4, spec.md C7): a plain
+    non-str payload (no .strip() method) now RAISES TypeError at all three
+    CheckOperations sites that used to coerce it to "" and either silently
+    persist (CreateCheckType, SetName) or silently return None
+    (FindCheckType) -- because all three now call the already-shipped
+    `_ValidateStringNotEmpty`, whose `if not isinstance(text, str): raise
+    TypeError(...)` branch fires before any coercion happens.
+
+    FindCheckType's own change is a RETURN-TO-RAISE change, measured
+    explicitly here: pre-fix, FindCheckType(<non-str>) returned None with
+    NO exception (silently coerced to "", found nothing); post-fix it
+    RAISES TypeError instead. This is a behaviour change on a READ-PATH
+    method that previously never raised for a bad needle.
+
+    CreateCheckType and SetName are confirmed NOT to have persisted
+    anything on the raised path (check-type count unchanged for
+    CreateCheckType; the SetName seed's Name unchanged after the rejected
+    SetName(non-str) attempt).
+
+    NOTE: requires _seed_valid_check_list() to work around an UNPLANNED,
+    unrelated, pre-existing bug discovered this cycle -- see that helper's
+    docstring. CreateCheckType raises AttributeError on every call without
+    this test-only workaround (zero flexicon/ lines touched).
+    """
+    from SIL.LCModel.Core.KernelInterfaces import ITsString
+
+    project = target_sandbox
+    payload = _NonStrPayload()
+
+    _seed_valid_check_list(project)
+
+    before_count = sum(1 for _ in project.Checks.GetAllCheckTypes())
+
+    _, create_exc = _safe(
+        lambda: project.Checks.CreateCheckType(payload), "PN19 CreateCheckType(non-str)"
+    )
+    _, find_exc = _safe(
+        lambda: project.Checks.FindCheckType(payload), "PN19 FindCheckType(non-str)"
+    )
+
+    seed_name = f"{TEST_PREFIX}Chk_SetName_NonStr_Seed"
+    check, seed_exc = _safe(
+        lambda: project.Checks.CreateCheckType(seed_name), "PN19 seed CreateCheckType for SetName"
+    )
+    assert seed_exc is None, f"PN19: seed CreateCheckType raised: {seed_exc}"
+
+    _, setname_exc = _safe(
+        lambda: project.Checks.SetName(check, payload), "PN19 SetName(non-str)"
+    )
+
+    print(
+        f"[TABLE][PN19] CreateCheckType(non-str)->{create_exc!r} "
+        f"FindCheckType(non-str)->{find_exc!r} SetName(non-str)->{setname_exc!r}"
+    )
+    print(
+        "[VERDICT][PN19] predicted: all three = TypeError "
+        "(FindCheckType: RETURN-TO-RAISE change, pre-fix returned None silently)"
+    )
+
+    assert create_exc is not None and create_exc.startswith("TypeError"), (
+        f"PN19 MISS: CreateCheckType(non-str) expected TypeError -- got {create_exc!r}"
+    )
+    assert find_exc is not None and find_exc.startswith("TypeError"), (
+        f"PN19 MISS: FindCheckType(non-str) expected TypeError (RETURN-TO-RAISE "
+        f"change from pre-fix's silent None) -- got {find_exc!r}"
+    )
+    assert setname_exc is not None and setname_exc.startswith("TypeError"), (
+        f"PN19 MISS: SetName(non-str) expected TypeError -- got {setname_exc!r}"
+    )
+
+    after_count = sum(1 for _ in project.Checks.GetAllCheckTypes())
+    print(
+        f"[TABLE][PN19] check-type count before={before_count} after={after_count} "
+        f"(+1 expected for the SetName seed only; PREDICTED no additional "
+        f"silent persist from CreateCheckType(non-str))"
+    )
+    assert after_count == before_count + 1, (
+        f"PN19 MISS: expected exactly ONE new check type (the SetName seed) "
+        f"-- count went {before_count} -> {after_count}"
+    )
+
+    wsHandle = project.project.DefaultAnalWs
+    seed_reread = ITsString(check.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN19] SetName seed's Name after rejected SetName(non-str): {seed_reread!r}")
+    assert seed_reread == seed_name, (
+        f"PN19 MISS: SetName(non-str) raised, but the check's name changed "
+        f"anyway -- got {seed_reread!r}, expected unchanged {seed_name!r}"
+    )
+
+
+# ===========================================================================
+# PN20 -- T4 -- lex-domain Q6 pin, whitespace-only branch, at ALL THREE
+# CheckOperations sites (spec.md C7, Q6, tasks.md T4). Unlike C11(c)'s
+# three Shape-B carve-out sites, Q6 explicitly rules CheckOperations'
+# whitespace-only path loud. FindCheckType's change is ALSO a
+# RETURN-TO-RAISE change, measured explicitly.
+# ===========================================================================
+
+@pytest.mark.live_phase("CheckOperations", "add")
+def test_pn20_q6_whitespace_only_raises_at_all_three_sites(target_sandbox):
+    """
+    PN20 (lex-domain Q6 pin, whitespace-only branch, tasks.md T4, spec.md
+    C7): a whitespace-only string ("   ") now RAISES FP_ParameterError at
+    all three CheckOperations sites, via `_ValidateStringNotEmpty`'s
+    `if len(text.strip()) == 0: raise FP_ParameterError(...)` branch --
+    unlike the three Shape-B carve-out sites (C11(c)), Q6 explicitly rules
+    this loud for CheckOperations.
+
+    FindCheckType's own change is ALSO a RETURN-TO-RAISE change on the
+    whitespace-only branch, measured explicitly here: pre-fix,
+    FindCheckType("   ") coerced to "", matched nothing, and returned None
+    silently; post-fix it RAISES FP_ParameterError instead.
+
+    CreateCheckType and SetName are confirmed NOT to have persisted
+    anything on the raised path (check-type count unchanged for
+    CreateCheckType; the SetName seed's Name unchanged after the rejected
+    SetName("   ") attempt).
+
+    NOTE: requires _seed_valid_check_list() to work around an UNPLANNED,
+    unrelated, pre-existing bug discovered this cycle -- see that helper's
+    docstring. CreateCheckType raises AttributeError on every call without
+    this test-only workaround (zero flexicon/ lines touched).
+    """
+    from SIL.LCModel.Core.KernelInterfaces import ITsString
+
+    project = target_sandbox
+    whitespace_only = "   "
+
+    _seed_valid_check_list(project)
+
+    before_count = sum(1 for _ in project.Checks.GetAllCheckTypes())
+
+    _, create_exc = _safe(
+        lambda: project.Checks.CreateCheckType(whitespace_only), "PN20 CreateCheckType('   ')"
+    )
+    _, find_exc = _safe(
+        lambda: project.Checks.FindCheckType(whitespace_only), "PN20 FindCheckType('   ')"
+    )
+
+    seed_name = f"{TEST_PREFIX}Chk_SetName_WsOnly_Seed"
+    check, seed_exc = _safe(
+        lambda: project.Checks.CreateCheckType(seed_name), "PN20 seed CreateCheckType for SetName"
+    )
+    assert seed_exc is None, f"PN20: seed CreateCheckType raised: {seed_exc}"
+
+    _, setname_exc = _safe(
+        lambda: project.Checks.SetName(check, whitespace_only), "PN20 SetName('   ')"
+    )
+
+    print(
+        f"[TABLE][PN20] CreateCheckType('   ')->{create_exc!r} "
+        f"FindCheckType('   ')->{find_exc!r} SetName('   ')->{setname_exc!r}"
+    )
+    print(
+        "[VERDICT][PN20] predicted: all three = FP_ParameterError "
+        "(FindCheckType: RETURN-TO-RAISE change, pre-fix returned None silently)"
+    )
+
+    assert create_exc is not None and create_exc.startswith("FP_ParameterError"), (
+        f"PN20 MISS: CreateCheckType('   ') expected FP_ParameterError -- got {create_exc!r}"
+    )
+    assert find_exc is not None and find_exc.startswith("FP_ParameterError"), (
+        f"PN20 MISS: FindCheckType('   ') expected FP_ParameterError (RETURN-TO-RAISE "
+        f"change from pre-fix's silent None) -- got {find_exc!r}"
+    )
+    assert setname_exc is not None and setname_exc.startswith("FP_ParameterError"), (
+        f"PN20 MISS: SetName('   ') expected FP_ParameterError -- got {setname_exc!r}"
+    )
+
+    after_count = sum(1 for _ in project.Checks.GetAllCheckTypes())
+    print(
+        f"[TABLE][PN20] check-type count before={before_count} after={after_count} "
+        f"(+1 expected for the SetName seed only)"
+    )
+    assert after_count == before_count + 1, (
+        f"PN20 MISS: expected exactly ONE new check type (the SetName seed) "
+        f"-- count went {before_count} -> {after_count}"
+    )
+
+    wsHandle = project.project.DefaultAnalWs
+    seed_reread = ITsString(check.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN20] SetName seed's Name after rejected SetName('   '): {seed_reread!r}")
+    assert seed_reread == seed_name, (
+        f"PN20 MISS: SetName('   ') raised, but the check's name changed "
+        f"anyway -- got {seed_reread!r}, expected unchanged {seed_name!r}"
     )

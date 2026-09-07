@@ -193,8 +193,7 @@ class CheckOperations(BaseOperations):
 
         self._ValidateParam(name, "name")
 
-        name = name.strip() if isinstance(name, str) else ""
-        self._ValidateParam(name, "name")
+        self._ValidateStringNotEmpty(name, "name")
 
         # Check if check type with this name already exists
         if self.FindCheckType(name):
@@ -338,16 +337,15 @@ class CheckOperations(BaseOperations):
         """
         self._ValidateParam(name, "name")
 
-        name = name.strip() if isinstance(name, str) else ""
-        self._ValidateParam(name, "name")
+        self._ValidateStringNotEmpty(name, "name")
 
-        target = normalize_match_key(name, casefold=True)
+        target = normalize_match_key(name, casefold=True).strip()
         wsHandle = self.project.project.DefaultAnalWs
 
         # Search through all check types
         for check_type in self.GetAllCheckTypes():
             check_name = ITsString(check_type.Name.get_String(wsHandle)).Text
-            if check_name and normalize_match_key(check_name, casefold=True) == target:
+            if check_name and normalize_match_key(check_name, casefold=True).strip() == target:
                 return check_type
 
         return None
@@ -429,8 +427,7 @@ class CheckOperations(BaseOperations):
 
         self._ValidateParam(name, "name")
 
-        name = name.strip() if isinstance(name, str) else ""
-        self._ValidateParam(name, "name")
+        self._ValidateStringNotEmpty(name, "name")
 
         check_obj = self.__GetCheckObject(check_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
