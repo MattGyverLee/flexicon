@@ -13,7 +13,7 @@ corrected here (C27): it previously read "no behaviour change under
 only at cycle 1.** Behaviour changes HAVE landed. All 8 persist sites and
 all 3 comparison sites are fixed and committed by this feature, across
 four files:
-`flexicon/code/TextsWords/DiscourseOperations.py` (T1, `ab638aa`-adjacent),
+`flexicon/code/TextsWords/DiscourseOperations.py` (T1, `3eac4a0`),
 `flexicon/code/TextsWords/TextOperations.py` (T2, `db95230`),
 `flexicon/code/Notebook/AnthropologyOperations.py` (T3, `ab638aa`), and
 `flexicon/code/System/CheckOperations.py` (T4, `0ab9c60`). Docs landed at
