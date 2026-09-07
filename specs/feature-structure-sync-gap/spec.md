@@ -654,9 +654,16 @@ file. The #250 Defect 4 window opens **after T5's gate**, not after T4's.
       varying feature-struct property name; `FeatureStructureRA` on
       `IPhSimpleContextNC`/`IPhSimpleContextSeg` documented as a false-positive
       class; `CHANGELOG.md` entries.
-- [ ] **T16** Docs: **`CLAUDE.md` staleness fix** -- see section 7.
-- [ ] **T17** Append the three NC `SegmentsRC` rows to
-      `specs/233-basetype-cast-sweep/spec.md` section 2 (docs-only).
+- [x] **T16** DONE (commit `9e0f9710`, by `flexicon-cd`) Docs: **`CLAUDE.md`
+      staleness fix** -- see section 7.
+- [x] **T17** DONE (commit `4fc2b6bd`, by `flexicon-cd`) Append the three NC
+      `SegmentsRC` rows to `specs/233-basetype-cast-sweep/spec.md` section 2
+      (docs-only). Left an OPEN QUESTION for spec 233's owner, which this
+      campaign does NOT resolve: that spec's "All 16 CONFIRMED sites fixed"
+      definition-of-done becomes 19, which collides numerically with a
+      pre-existing "19 NEEDS RUNTIME" count in the same document. The
+      sweep-total arithmetic was deliberately left on the original 16 so it
+      still reconciles.
 
 ## 5.1 Measurement discipline (cycle-4 lead ruling -- BINDING from cycle 5 on)
 

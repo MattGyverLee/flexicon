@@ -965,3 +965,141 @@ it is spec 233's owner's call. Two knock-on facts they flagged:
 
 **This campaign does not resolve it and no agent here should.** Route to spec
 233's owner.
+
+---
+
+# Cycle 8 (spurt 7) -- the D4 verification GATE: **PASS on every leg**
+
+**CHECKPOINT D4 IS CLOSED.** The `#250` Defect-4 micro-spurt is finished and
+the live chain returns to this feature's own task list at **T6**.
+
+Two reports, both committed:
+
+- `specs/250-writingsystem-activation/reviews/cycle8-archivist-269b6a7-audit.md`
+- `specs/250-writingsystem-activation/reviews/cycle8-verification-D4-gate.md`
+
+## What the gate actually proved (mutation, not provenance)
+
+| Leg | Result |
+|---|---|
+| 1. `269b6a7` re-audited from git objects only | **PASS on all seven clauses** C-D4-1..C-D4-7. 0 FAIL, 0 CONCERN. `--stat` = one file (`BaseOperations.py`, 114+/1-), so acceptance criterion 6's auto-reject trigger never fires. |
+| 1. M-D4-1 / M-D4-2 / M-D4-3 | **PASS-KILLED** (14/21, 3-failed, 2-failed respectively). Every restore verified `git hash-object`-equal to `git rev-parse HEAD:<path>`. |
+| 2. M-T14a-2 / M-T14a-3 | **PASS-KILLED**, live. |
+| 3. Ratchet probe (4th resolution site) | **PASS-KILLED, tracked + hash-verified.** The failure message named `Shared/string_utils.py` as the 4th site, exactly as predicted. Restored via `git show HEAD:<path>`, not `checkout`. |
+| 4. Offline delta | **PASS.** `2 failed, 371 passed, 504 deselected`, run twice, identical both times, and the 2 failures are exactly the pinned foreign pair. |
+| 5. Live re-run as-committed | **PASS.** `2 passed, 1 skipped`, `run_mode: live`. |
+| 6. Artifact scan for false "D4-c live-verified" claims | **PASS, zero hits.** |
+| 7. D4-T7 `live_phase` markers | **PASS** (`c76c399`). `uncategorized_live_tests` no longer lists the three tests. |
+
+**No mutation stayed NOT-KILLED.** That is the whole basis for closing D4.
+
+## Consequence 1 -- **Checkpoint 2c HOLDS. It does NOT reopen.**
+
+Cycle 6 closed 2c on a *structural re-derivation* of T14a tests 2 and 3, and
+named that as weaker-than-mutation residue rather than hiding it. Cycle 8 paid
+that debt: M-T14a-2 (slot routing forced to `rows[0]`) and M-T14a-3 (the
+no-slot branch picking `rows[0]` instead of raising) **each killed their test,
+live**. T14a's coverage is genuine and non-tautological. The residue recorded
+in cycle-6 ruling 2 is discharged; nothing about 2c is now carried on
+structural argument alone.
+
+## Consequence 2 -- the possibly-circular convergence argument stays REJECTED
+
+The archivist was told to consider and rule on it, and did: `git commit --only`
+reads working-tree content regardless of staging, so byte-identical convergence
+between the two sessions and read-the-other-copy are indistinguishable from the
+repo alone. It is cited in the audit **only** to explain why it corroborates
+nothing. All seven PASSes settle from the blob text plus mutation kills.
+
+## Consequence 3 (BINDING, all future work) -- **worktree isolation is the DEFAULT for mutation testing**
+
+Cycle 7's hazard (rule 4) said "use a private worktree **or** sandbox copy" and
+read as a preference. It is now a **requirement**, and it is the direct answer
+to the holder-side hazard that destroyed an in-flight edit in cycle 7:
+
+> **Any agent that mutates a tracked file in order to measure a before/after --
+> mutation testing, ratchet probes, bisects, "does this test actually fail" --
+> MUST do it in a disposable `git worktree add <tmpdir> HEAD`. The shared
+> working tree is never mutated, not even with an intended restore.**
+
+Cycle 8 did exactly this and it worked: all of legs 1-4 ran in the worktree;
+gitignored `tests/fixtures/*.fwbackup` were copied in read-only so
+`target_sandbox` still worked; and the shared tree was touched **only** for
+leg 7's 3-line metadata patch (`c76c399`) and the report (`16692ef`). Every
+dispatch prompt from here on states this as a rule, not a suggestion.
+
+A `git hash-object`-verified restore is still required **inside** the
+worktree -- it proves the mutation was undone. It is not a substitute for the
+worktree; cycle 7 proved a correct restore can still clobber a concurrent
+writer.
+
+## Consequence 4 -- the amended git rule is now standing crew record
+
+Restated so no future prompt has to re-derive it:
+
+- **Modify a tracked file:** `git commit --only -F <msgfile> -- <exact path>`.
+  No staging at any point.
+- **Create a new file:** ONE invocation of
+  `git add -- <exact path> && git commit --only -F <msgfile> -- <exact path>`,
+  with the index verified empty immediately before and immediately after.
+- **Absolutely forbidden, always:** `git add -A`, `git add .`, `git add -u`,
+  `git commit -a`.
+
+## Filed since cycle 7 -- **flexicon#266 and #267**, both user-approved
+
+The cycle-7 draft is filed as two issues, correctly split rather than lumped:
+
+- **`#266`** -- `Grammar/PhonemeOperations.__ApplyBasicIPASymbol`. The genuine
+  one-line C-D4-7 substitution: route the lookup through `_resolve_ws_handle`.
+- **`#267`** -- `Lexicon/ExampleOperations`' `TranslationsOC` loop. Scoped as a
+  **CORRECTNESS change, not a substitution**, because the `ICmTranslation` is
+  created and attached **before** any writing system resolves; a naive one-line
+  swap leaves an **orphaned translation with zero alts** when the ambiguity
+  error fires mid-loop. `#267` therefore carries a regression-test requirement
+  for that orphan.
+
+Both issues record the ratchet consequence explicitly: **closing a resolution
+site turns the three-site ratchet red BY DESIGN. Update the frozen set in the
+same commit. Never disable the test.**
+
+The D4-T6 draft now cites `#266`/`#267` instead of restating them longhand
+(`18d6310`). **The D4-T6 comment on `#250` is still UNPOSTED** -- posting needs
+the user's approval and no agent may post it.
+
+## Also landed
+
+- `a67890e` -- corrected `spec.md` section 7's false "`flexlibs2/` does not
+  exist" premise. It **does** exist, as the inbound-only shim removed at
+  v5.0.0, and the error **understated** the finding: `#240`'s ratchet forbids
+  any internal reference, so the stale `CLAUDE.md` was instructing agents to
+  write exactly what that ratchet rejects.
+- **T16 (`9e0f9710`) and T17 (`4fc2b6bd`) are DONE**, by `flexicon-cd`.
+
+## Concurrency: **`flexicon-cd` has STOOD DOWN**
+
+It has released all locks, will not plan cycles, and will not touch campaign
+state. **This session holds the lead role and the live-pytest token outright.**
+The work-split clause is retained as history, not as a live constraint. The
+one-live-token-holder-at-a-time rule survives on its own merits.
+
+## Still not this campaign's problem
+
+Spec 233's `16 -> 19 CONFIRMED` definition-of-done. Flagged for spec 233's
+owner. No agent here resolves it.
+
+## Next pickup -- **cycle 9 = T6, `MSAOperations`, closes `flexicon#251`**
+
+New `GetSyncableProperties` / `ApplySyncableProperties` on
+`flexicon/code/Lexicon/MSAOperations.py`, `ClassName`-discriminated + cast, all
+four C1 rows (`MoStemMsa.MsFeaturesOA`, `MoInflAffMsa.InflFeatsOA`,
+`MoDerivAffMsa.FromMsFeaturesOA`/`ToMsFeaturesOA`).
+
+**The `#251` trap, which has now burned three prior attempts:** `hasattr` is
+False for **0 true / 2088 false** live MSAs through the base-interface view,
+because pythonnet resolves attributes against the **STATIC wrapper type**, not
+the runtime object. **A `hasattr`-gated fix is 100% dead code.** Discriminate on
+`.ClassName` and cast (`IMoStemMsa(obj)` etc.); a wrong cast raises `TypeError`
+loudly, which is acceptable and must not be swallowed.
+
+**Next checkpoint: Checkpoint 3a = T6 implemented + live-verified + gated.**
+T7/T8 stay closed behind it.

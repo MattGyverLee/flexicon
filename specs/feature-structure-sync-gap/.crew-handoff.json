@@ -1,15 +1,17 @@
 {
   "feature": "feature-structure-sync-gap",
   "status": "in_progress",
-  "last_cycle": 7,
-  "spurts_completed": 6,
+  "last_cycle": 8,
+  "spurts_completed": 7,
   "issues": [
     251,
     252,
     256,
     253,
     264,
-    265
+    265,
+    266,
+    267
   ],
   "tasks_done": [
     "cycle1-verification-live-probe-run_mode-live-8of8-evidence-live-cycle1-probe.md",
@@ -89,10 +91,28 @@
     "cycle7-flexicon-cd-LANE-FINISHED. Commits 4fc2b6bd (T17) and b3735f81 (the draft-only issue for the two resolution sites D4 does not reach). They released all their locks and now hold only CLAUDE.md, still deferred. T16/T17 are DONE and are not this session's work.",
     "cycle7-NON-SITE-RECORDED (do not re-derive). flexicon/code/Grammar/PhonemeOperations.py:1336 (all_ws = {ws.Id: ws.Handle ...}) LOOKS like a fourth resolution site and is NOT one: it is a GetSyncableProperties READ path feeding __ReadMultiString, enumerating SOURCE writing systems and resolving no target. It is one of the 13 protected map-build sites, correctly excluded from the frozen three-site set. flexicon-cd CHECKED rather than assumed. The three-site frozen set is CONFIRMED CORRECT.",
     "cycle7-PARTIAL-WRITE-HAZARD for whoever closes resolution site 2 (NOT cycle-8 work). In ExampleOperations.py's TranslationsOC loop, new_trans is created via ICmTranslationFactory and item.TranslationsOC.Add(new_trans) runs BEFORE per-writing-system resolution. Routing that loop through _resolve_ws_handle introduces an FP_ParameterError that can fire MID-LOOP, potentially leaving an ICmTranslation owned by the example with ZERO alts set. Whether the surrounding transaction rolls that back needs VERIFYING, not assuming. Recorded so it is not discovered the hard way.",
-    "cycle7-OPEN-QUESTION-FOR-SPEC-233-OWNER (this campaign does NOT resolve it). specs/233-basetype-cast-sweep/spec.md said 'All 16 CONFIRMED sites fixed'; T17's three appended SegmentsRC rows make it 19. flexicon-cd added the 3 to the criteria as the consistent default but explicitly did NOT decide it -- it is 233's owner's call. Knock-ons they flagged: the new '19 CONFIRMED' now COLLIDES NUMERICALLY with a pre-existing '19 NEEDS RUNTIME' count in the same document, and they left the sweep-total arithmetic (16+19+9+20=64) on the original 16 so it still reconciles. No agent in this campaign should resolve it."
+    "cycle7-OPEN-QUESTION-FOR-SPEC-233-OWNER (this campaign does NOT resolve it). specs/233-basetype-cast-sweep/spec.md said 'All 16 CONFIRMED sites fixed'; T17's three appended SegmentsRC rows make it 19. flexicon-cd added the 3 to the criteria as the consistent default but explicitly did NOT decide it -- it is 233's owner's call. Knock-ons they flagged: the new '19 CONFIRMED' now COLLIDES NUMERICALLY with a pre-existing '19 NEEDS RUNTIME' count in the same document, and they left the sweep-total arithmetic (16+19+9+20=64) on the original 16 so it still reconciles. No agent in this campaign should resolve it.",
+    "cycle8-GATE-PASS-checkpoint-D4-CLOSED-every-leg-green-no-mutation-left-NOT-KILLED",
+    "cycle8-archivist-269b6a7-audited-from-git-objects-only-PASS-all-seven-clauses-C-D4-1..C-D4-7-0-FAIL-0-CONCERN-single-file-blast-radius",
+    "cycle8-byte-identical-convergence-argument-CONSIDERED-and-REJECTED-as-possibly-circular-cited-only-to-explain-it-corroborates-nothing",
+    "cycle8-M-D4-1-M-D4-2-M-D4-3-all-PASS-KILLED-restores-git-hash-object-equal-to-HEAD",
+    "cycle8-M-T14a-2-and-M-T14a-3-PASS-KILLED-live-CHECKPOINT-2c-HOLDS-does-NOT-reopen-cycle6-ruling-2-residue-discharged",
+    "cycle8-ratchet-probe-PASS-KILLED-tracked-and-hash-verified-failure-message-named-Shared-string_utils.py-as-4th-site-exactly-as-predicted",
+    "cycle8-offline-delta-2-failed-371-passed-504-deselected-twice-identical-matches-pinned-foreign-pair-exactly",
+    "cycle8-live-re-run-as-committed-2-passed-1-skipped-run_mode-live",
+    "cycle8-artifact-scan-ZERO-false-D4-c-live-verified-claims",
+    "cycle8-D4-T7-live_phase-markers-committed-c76c399-uncategorized_live_tests-no-longer-lists-the-three-tests",
+    "cycle8-BINDING-worktree-isolation-is-now-the-DEFAULT-not-a-preference-for-ALL-mutation-testing-see-mutation_testing_isolation_rule",
+    "cycle8-issues-266-and-267-FILED-user-approved-266-PhonemeOperations-ApplyBasicIPASymbol-one-line-substitution-267-ExampleOperations-TranslationsOC-scoped-CORRECTNESS-not-substitution-orphan-translation-hazard-with-regression-test-requirement",
+    "cycle8-both-issues-record-that-closing-a-site-turns-the-three-site-ratchet-red-BY-DESIGN-update-frozen-set-in-same-commit-never-disable-the-test",
+    "cycle8-18d6310-D4-T6-draft-now-cites-266-267-instead-of-longhand-COMMENT-STILL-UNPOSTED-needs-user-approval",
+    "cycle8-a67890e-spec-section-7-false-flexlibs2-does-not-exist-premise-CORRECTED-it-does-exist-as-inbound-only-shim-removed-at-v5.0.0-and-the-error-UNDERSTATED-the-finding-240-ratchet-forbids-any-internal-reference",
+    "T16-DONE-9e0f9710-by-flexicon-cd",
+    "T17-DONE-4fc2b6bd-by-flexicon-cd",
+    "cycle8-flexicon-cd-has-STOOD-DOWN-all-locks-released-will-not-plan-cycles-or-touch-campaign-state-this-session-holds-lead-role-and-live-token-outright"
   ],
-  "next_checkpoint": "Checkpoint D4 CLOSES on the cycle-8 verification gate. Gate must be GREEN on all four legs: (1) 269b6a7 independently re-verified from scratch against C-D4-1..C-D4-7 as unreviewed third-party code, with the byte-identical-convergence argument explicitly considered and REJECTED as possibly circular, and falsifiability derived from MUTATION not provenance; (2) the two folded T14a mutations each KILL their test -- M-T14a-2 (break slot= routing in _ResolveFeatureStrucOwner, force the first table row regardless of slot) must make test_slot_disambiguates_from_and_to_through_makefeatstruc FAIL, and M-T14a-3 (make the ambiguous-ClassName-no-slot branch pick a row instead of raising) must make test_ambiguous_owner_without_slot_raises_through_makefeatstruc FAIL. IF EITHER TEST STAYS GREEN UNDER ITS MUTATION IT IS TAUTOLOGICAL, T14a IS NOT DONE, AND CHECKPOINT 2c REOPENS regardless of the D4 result; (3) the D4-T2 resolution-site ratchet's bites-when-mutated proof redone in TRACKED, hash-verified form; (4) D4-T7 live_phase markers landed and re-verified live, and no artifact describing D4-c as live-verified. The D4-T6 #250 comment is DRAFT-ONLY and unposted -- the user has NOT approved it. Closing Checkpoint D4 leaves T6 as the immediately next work.",
-  "next_entry": "START BY ACQUIRING THE LOCKS (concurrency_protocol.rule_1) -- do NOT start by reading this field. Cycle 8 = the Defect-4 verification GATE, two agents in PARALLEL, split by resource so neither can collide: (A) lex-archivist, NO live token, reads code ONLY from git objects (git show 269b6a7:<path>) and NEVER from the working tree -- because the other agent is mutating the working tree concurrently. It does the independent from-scratch contract audit of 269b6a7 against C-D4-1..C-D4-7, plus authors the D4-T6 #250 comment DRAFT (unposted). (B) lex-verification, HOLDS THE LIVE TOKEN, Bash-only so every report must be written by heredoc. It does the mutation-based falsifiability work: M-D4-1/M-D4-2 on the D4 fix itself, M-T14a-2/M-T14a-3 on the C3 live tests, the tracked hash-verified ratchet re-proof, the offline-delta re-measure against the CORRECTED 2-failure pinned baseline, and finally D4-T7 (live_phase markers) re-verified in the same live window AFTER all measurements. Cycle 9 = synthesis, close Checkpoint D4, then T6.",
+  "next_checkpoint": "Checkpoint 3a = T6 DONE. T6 = MSAOperations gains GetSyncableProperties + ApplySyncableProperties, ClassName-discriminated + cast, covering all four C1 MSA rows (MoStemMsa.MsFeaturesOA; MoInflAffMsa.InflFeatsOA; MoDerivAffMsa.FromMsFeaturesOA via slot='From' and ToMsFeaturesOA via slot='To'). Closes flexicon#251. Checkpoint 3a closes ONLY when: (1) the implementation routes through the EXISTING C5 helpers (_ResolveFeatureStrucOwner / _GetFeatureStruc / _ApplyFeatureStruc / _ResolveFsByGuid) and adds NO fifth copy of the resolver table; (2) ZERO hasattr gates on feature-struct properties anywhere in the new code -- enforced by grep, because hasattr is 0-true/2088-false through the base-interface view; (3) C2 holds -- the HVO/GUID resolve path CASTS before returning; (4) C6 holds -- key-presence gating, never truthiness, and the feature-struct keys are POPPED from props before super(), enforced by an explicit test not by convention; (5) C7 holds -- unresolvable GUIDs RAISE FP_ParameterError, on_unresolved='skip' is opt-in only; (6) live evidence on target_sandbox with run_mode: live, values RE-READ from the LCM after the write via a fresh re-fetch, written to specs/feature-structure-sync-gap/evidence/live-T6.md; (7) a verification gate with at least one mutation kill per C1 row family, run in a DISPOSABLE GIT WORKTREE; (8) the pinned-subset comparator shows the expected red set of 2, not 3, with any PASSED-count change explained.",
+  "next_entry": "START BY ACQUIRING THE LOCKS (concurrency_protocol.rule_1) -- do NOT start by reading this field. Cycle 9 = T6, the MSAOperations sync implementation that closes flexicon#251. Paths to lock: flexicon/code/Lexicon/MSAOperations.py, flexicon/code/Lexicon/MSAOperations.pyi, tests/operations/test_issue251_msa_feature_sync.py, specs/feature-structure-sync-gap/*. THE TRAP THAT HAS BURNED THREE PRIOR ATTEMPTS: hasattr(msa, <feat prop>) is False for 0 true / 2088 false live MSAs through the base-interface view (MoStemMsa 1951, MoInflAffMsa 134, MoDerivAffMsa 3), because pythonnet resolves attributes against the STATIC wrapper type, not the runtime object. A hasattr-gated fix is 100% DEAD CODE. Discriminate on .ClassName and CAST (IMoStemMsa(obj) etc.); a wrong cast raises TypeError loudly, which is acceptable and must NOT be swallowed. MSAOperations currently has ZERO sync methods -- this is net-new surface, not a repair. Reference implementations to copy the SHAPE of (not the wire format): Grammar/NaturalClassOperations.py:1039 and :1169. The C5 helpers all already exist on BaseOperations (T1-T5 landed): _ResolveFeatureStrucOwner :1717, _GetFeatureStruc :1884, _ResolveFsByGuid :2027, _ApplyFeatureStruc :2112, backed by FEATURE_STRUC_OWNER_TABLE in Shared/lcm_constants.py. Do NOT add a second resolver table. STANDING RULES, every prompt: lockout acquire before any edit (team flexicon-19, session 5b6c151f-877a-48a8-ba39-be2a3de5abdd); the AMENDED git rule (tracked = git commit --only; new file = single-invocation scoped add-and-commit with the index verified empty either side; never -A / . / -u / commit -a); DISPOSABLE GIT WORKTREE for all mutation testing; one live-pytest-token holder at a time; pinned-subset comparator expected red set is 2 failures, NOT 3.",
   "deferred": [
     "OUT of feature, needs USER APPROVAL to file: IWfiAnalysis.MsFeaturesOA never captured (WfiAnalysisOperations.py:335) -- cross-reference the unfiled InflClassRA draft at specs/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md, which touches the same file",
     "OUT of feature, needs USER APPROVAL to file: IFsFeatStruc.FeatureDisjunctionsOC never traversed by any reader (new capability, not a resolver defect)",
@@ -123,7 +143,7 @@
       "id": "250-defect-4",
       "contract": "specs/250-writingsystem-activation/spec.md (FROZEN at commit a26d39c; scope = Defect 4 ONLY, Defects 1-3 stay queued behind feature_complete)",
       "window": "AFTER the Checkpoint 2b gate (T4 AND T5) and BEFORE T6",
-      "window_state": "IMPLEMENTED at cycle 7 (spurt 6). D4-T1/T2/T3/T4/T5 all complete. CHECKPOINT D4 IS NOT YET CLOSED -- it closes on the cycle-8 verification gate, which must (a) re-verify 269b6a7 from scratch as unreviewed third-party code without citing the possibly-circular convergence argument, (b) kill the two folded T14a mutations M-T14a-2 and M-T14a-3, (c) redo the ratchet bites-when-mutated proof in tracked hash-verified form, and (d) confirm no artifact claims D4-c is live-verified.",
+      "window_state": "CLOSED at cycle 8. CHECKPOINT D4 IS CLOSED -- the verification gate returned PASS on every leg with NO mutation left NOT-KILLED. (a) 269b6a7 re-audited from git objects only: PASS on all seven clauses C-D4-1..C-D4-7, 0 FAIL, 0 CONCERN, single-file blast radius. (b) M-T14a-2 and M-T14a-3 both PASS-KILLED live, so Checkpoint 2c holds. (c) the ratchet probe was redone tracked and hash-verified and its failure message named Shared/string_utils.py as the 4th site exactly as predicted. (d) artifact scan found ZERO claims that D4-c is live-verified. Plus: offline delta 2 failed / 371 passed / 504 deselected twice identical; live re-run 2 passed / 1 skipped with run_mode: live; D4-T7 markers committed c76c399. Reports: specs/250-writingsystem-activation/reviews/cycle8-archivist-269b6a7-audit.md and .../cycle8-verification-D4-gate.md. Residue: the D4-T6 comment on #250 is still UNPOSTED and needs the user.",
       "why_not_open_yet": "spec.md defines Checkpoint 2b as T4-T5 and cycle 4's PASS was T4's task gate only. That spec's section 6.3 condition 3 requires that BaseOperations.py hold no uncommitted FS work -- and T5 puts the single generalized MakeFeatStruc into that same file. Letter and purpose agree: serialise. Cycle 3 already came within one 'git checkout --' of losing an uncommitted BaseOperations.py; serialising costs one spurt and removes the whole class of risk.",
       "opens_when": "OPENED. T5 committed 6643b483 and gate PASS reviews/cycle5-verification-T5.md.",
       "dispatch_conditions_all_three_must_hold": [
@@ -170,7 +190,7 @@
     "lex_doc": "has Write but NO Bash -- it can author a file and can NEVER commit it. Any plan using lex-doc must name the committer in the same response. Cost cycle 6 a manual rescue (6b54059 committed by the main session)."
   },
   "concurrency_protocol": {
-    "status": "IN FORCE from cycle 8. Supersedes 'read next_entry to start a spurt'.",
+    "status": "IN FORCE. Rule 1 (take the lock first) and rule 2 (one live-pytest token holder) still bind. Rule 4 is SUPERSEDED by the stronger mutation_testing_isolation_rule. Rule 3's replacement is mirrored in git_procedure_standing.",
     "rule_1_take_the_lock_first": "EVERY spurt in EITHER session BEGINS by acquiring locks via the lockout skill, NOT by reading next_entry. python ~/.claude/skills/lockout/lockout.py acquire <paths> --team <team> --session <session-id> --purpose '...' --ttl 60 --json. ON CONFLICT: STOP AND REPORT. NEVER WAIT-LOOP.",
     "locks_held_by_this_session": {
       "team": "flexicon-19",
@@ -186,14 +206,40 @@
     },
     "rule_2_the_binding_constraint_is_the_live_pytest_token": "NOT the file locks. Only ONE agent may run FLEXLIBS_REQUIRE_LIVE=1 against the shared FLEx projects at a time.",
     "work_split": {
-      "this_session_owns_the_live_chain": "cycle-8 D4 gate, then T6/T7/T8 (closes #251, #252), then T9 (closes #253)",
-      "flexicon_cd_owns_non_live": "COMPLETE. T16/T17 docs and the draft-only issue are DONE (commits 4fc2b6bd, b3735f81). All their locks are released; they hold only CLAUDE.md, still deferred.",
-      "binding": "DO NOT plan T16/T17 in this session's dispatch plans. They belong to flexicon-cd."
+      "flexicon_cd_status": "STOOD DOWN as of cycle 8. All locks released. It will not plan cycles and will not touch campaign state. T16 (9e0f9710) and T17 (4fc2b6bd) are DONE by them.",
+      "this_session": "Holds the lead role and the live-pytest token OUTRIGHT. Owns T6/T7/T8 (closes #251, #252) then T9 (closes #253).",
+      "retained_as_history_not_constraint": "The old two-lane split is history. The one-live-token-holder-at-a-time rule survives on its own merits, not because a second session exists."
     },
     "rule_3_never_git_add_against_the_shared_index": "WITHDRAWN AND REPLACED -- the blanket form was impossible to follow. See the cycle7-git-procedure-AMENDED entry in tasks_done for the binding procedure: tracked files use git commit --only with no staging; NEW files use a single-invocation 'git add -- <exact path> && git commit --only -F <msgfile> -- <exact path>' bracketed by empty-index checks; git add -A / git add . / git add -u / git commit -a remain absolutely forbidden.",
-    "rule_4_never_restore_a_shared_file_for_a_measurement": "Use a private git worktree or a sandbox copy. Restoring in the shared tree silently destroys another session's uncommitted edit -- this already happened once (the 269b6a7 vanish).",
+    "rule_4_never_restore_a_shared_file_for_a_measurement": "SUPERSEDED BY mutation_testing_isolation_rule (cycle 8): the disposable git worktree is now MANDATORY, not one of two options.",
     "frozen_files": {
-      "CLAUDE.md": "FROZEN until the cycle-8 gate returns. flexicon-cd holds the lock and has agreed to defer its T16 edit. No agent may edit it; no task may depend on it changing."
+      "CLAUDE.md": "UNFROZEN. The cycle-8 gate returned PASS and flexicon-cd released the lock; T16 landed as 9e0f9710. Normal locking applies."
     }
-  }
+  },
+  "mutation_testing_isolation_rule": {
+    "status": "BINDING from cycle 8. Supersedes concurrency_protocol.rule_4's softer 'worktree OR sandbox copy' phrasing, which read as a preference.",
+    "rule": "Any agent that mutates a TRACKED file in order to measure a before/after -- mutation testing, ratchet probes, bisects, 'does this test actually fail' -- MUST do it inside a disposable 'git worktree add <tmpdir> HEAD'. The shared working tree is NEVER mutated, not even with an intended restore.",
+    "why": "A correct git-hash-object-verified restore still destroyed an in-flight edit in cycle 7 (the 269b6a7 vanish). The no-git-add rule protects the committer, not the holder. Only physical isolation protects the holder.",
+    "hash_verify_still_required": "A 'git hash-object'-verified restore is still required INSIDE the worktree -- it proves the mutation was undone. It is not a substitute for the worktree.",
+    "fixtures": "gitignored tests/fixtures/*.fwbackup must be copied READ-ONLY into the worktree's own gitignored fixtures dir so target_sandbox still works. That is adding test input inside the worktree, not mutating the shared tree.",
+    "proven_at": "cycle 8: legs 1-4 all ran in a worktree; the shared tree was touched only for leg 7's 3-line metadata patch (c76c399) and the report (16692ef)."
+  },
+  "git_procedure_standing": {
+    "modify_tracked": "git commit --only -F <msgfile> -- <exact path>. No staging at any point.",
+    "create_new": "ONE invocation: git add -- <exact path> && git commit --only -F <msgfile> -- <exact path>, with the index verified EMPTY immediately before and immediately after.",
+    "absolutely_forbidden": [
+      "git add -A",
+      "git add .",
+      "git add -u",
+      "git commit -a"
+    ]
+  },
+  "issues_266_267": {
+    "status": "FILED and user-approved (by the flexicon-cd session, before it stood down).",
+    "266": "Grammar/PhonemeOperations.__ApplyBasicIPASymbol -- the genuine one-line C-D4-7 substitution: route the lookup through _resolve_ws_handle.",
+    "267": "Lexicon/ExampleOperations TranslationsOC loop -- scoped as a CORRECTNESS change, NOT a substitution. The ICmTranslation is created and attached BEFORE any writing system resolves, so a naive one-line fix leaves an ORPHANED translation with zero alts when the ambiguity error fires mid-loop. #267 carries a regression-test requirement for that orphan.",
+    "ratchet_consequence_recorded_on_both": "Closing a resolution site turns the three-site ratchet red BY DESIGN. Update the frozen set in the SAME commit. NEVER disable the test.",
+    "d4_t6_comment": "UNPOSTED. The draft (specs/250-writingsystem-activation/reviews/cycle8-D4-T6-comment-draft.md) now cites #266/#267 instead of restating them longhand (18d6310). Posting needs the USER's approval -- no agent may post it."
+  },
+  "checkpoint_2c": "CLOSED and it HOLDS -- it does NOT reopen. Cycle 6 closed it on a structural re-derivation of T14a tests 2 and 3 and named that as weaker-than-mutation residue. Cycle 8 paid the debt: M-T14a-2 (slot routing forced to rows[0]) and M-T14a-3 (no-slot branch picks rows[0] instead of raising) EACH KILLED their test, live. T14a's coverage is genuine and non-tautological. Cycle-6 ruling 2's residue is DISCHARGED."
 }
