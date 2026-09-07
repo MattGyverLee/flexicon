@@ -36,3 +36,10 @@ class MSAOperations(BaseOperations[Any]):
     # Remove orphaned MSAs (unreferenced by senses and morph bundles).
     # Returns a RemoveOrphanedResult namedtuple; see MSAOperations.py.
     def RemoveOrphaned(self, entry: Any = None, progress: Any = None) -> Any: ...
+
+    # Sync integration (issue #251): feature-struct capture/apply for the
+    # four C1 MSA rows (MsFeaturesOA / InflFeatsOA / From+ToMsFeaturesOA).
+    def GetSyncableProperties(self, item: Any) -> dict: ...
+    def ApplySyncableProperties(
+        self, item: Any, props: dict, ws_map: Any = None, fill_gaps: bool = False
+    ) -> None: ...
