@@ -31,8 +31,8 @@ promise, so it cannot exit the loop early.
 
 | # | status | slug | issues | why here |
 |---|--------|------|--------|----------|
-| 1 | **`active`** (no longer `needs_human` -- the user's coupled ruling landed as C20 at spurt 6; T8a+T8b LANDED spurt 6/7, the `SaveChanges()` guard is shipped and the owner's filed incident now measures 25/25; T7 (loudness log) and T5b (this docs pass) IN PROGRESS this cycle; one NEW narrower question opened under "Awaiting user approval" -- C25, does rollback actually discard anything) | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
-| 2 | `queued` | `242-paragraph-whitespace` | #242 | Cheap, self-contained, real corruption. Paragraph/Segment text writers silently strip leading/trailing whitespace. |
+| 1 | **`done` (crew sign-off, spurt 9 / cycle 9 -- `feature_complete`, APPROVED by `/lex-lead`)**. All five closure gates green: T7 live-verified; the C24 CHANGELOG correction landed and independently re-verified; QC score 90/100 with **P0 count 0** and BOTH P1s disposed (fail-open remedied by T9a/T9b, P-11 ruled no-action with a forward rule -- C28); the C26/C27 staleness sweep done; P-11 parked as a user-approval ask with its 25/25 pin intact. Live at closure: probe 11/11, abort-session 12/12, `run_mode: live`; offline 1292 passed / 475 deselected. **GitHub #243 is deliberately still OPEN -- the crew does not close issues, and C10's `.fwdata` half is unmeasured by design.** THREE items sit under "Awaiting user approval" (C25 rollback-discard audit, its C29 counter-measurement, the TRANSACTION_GUIDE gap) plus ONE ungated cleanup (C30, below). | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
+| 2 | **`active`** -- the pointer advanced here by item 1's closure (this file's own "tick it here, advance `active`, and stop" rule). **NOTHING has been done on it and item 1's sign-off authorised no work on it**; it needs its own dispatch, starting at spec + live probe. | `242-paragraph-whitespace` | #242 | Cheap, self-contained, real corruption. Paragraph/Segment text writers silently strip leading/trailing whitespace. |
 | 3 | `queued` | `feature-structure-sync-gap` | #251 #252 #253 #256 | **Already in flight** -- contract frozen (C1-C8), live ground truth captured, spurt 1 done. RESUME, do not re-plan. Biggest item (T1-T17). Ships data loss today: `Allomorph` and `POS` are live sync object types. |
 | 4 | `queued` | `250-writingsystem-activation` | #250 | Deliberately LAST: resolving it requires an **API-surface policy decision** (active-only `Exists` plus a separately-named whole-store predicate, vs. an `Ensure()` that activates a store-present WS). That is the item most likely to end `needs_human`, so everything landable unattended lands first. |
 
@@ -46,6 +46,16 @@ untouched items behind it.
 
 ### 1. `243-closeproject-save-guard` (#243)
 
+> **CLOSED 2026-09-07 (end of spurt 9, cycle 9): `done`.** `/lex-lead`
+> signed this item off as `feature_complete` / APPROVED. Everything below
+> this banner is the audit trail of how it got there -- read it as history.
+> The single most important sentence in it is C17's three-part statement,
+> which must always be said together: T3 fixed the P-3 path; nothing in
+> `CloseProject()` could ever have fixed the owner's real P-5 -> P-3 chain;
+> T8b, on the `SaveChanges()` side, has now fixed that chain too (25/25 in
+> memory and 25/25 on disk). **GitHub #243 remains OPEN by design** -- see
+> the campaign-log entry for spurt 9 and `spec.md` C10.
+>
 > **STATUS 2026-09-07 (end of spurt 8, cycle 8): `active`. The owner's
 > filed incident is FIXED, live-verified, 25/25.** The user's coupled
 > ruling (spurt 6) landed as `spec.md` **C20**: the `SaveChanges()` depth
@@ -498,6 +508,69 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   agent landing a spurt's docs task owns that spurt's staleness sweep.
   Full report: `specs/243-closeproject-save-guard/reviews/cycle8-doc.md`.
 
+- **2026-09-07 -- item 1, spurt 9 (cycle 9) COMPLETE: CP-CLOSE REACHED.
+  ITEM 1 IS CLOSED -- `/lex-lead` signed `243-closeproject-save-guard` off as
+  `feature_complete` (APPROVED). NO promise token was emitted: the campaign
+  promise is `TIER1 COMPLETE` and items 2-4 are untouched.** Crew:
+  `lex-programmer` (T9a/T9b) + `lex-doc` (C28/C29 + this file) in parallel.
+  **T9a** rewrote the `SaveChanges()` fail-open comment to describe the
+  `except Exception` catch the code actually has -- ANY depth-read exception
+  fails open per C21 -- labelled the measured-safe case as CODE INSPECTION
+  rather than a live probe, and named the un-measured residual per C10's
+  discipline (claimed neither safe nor a bug). **Zero executable-line change,
+  confirmed by diff.** **T9b** added the one offline test for that branch,
+  forcing `CurrentDepth` to raise a `RuntimeError` (deliberately not
+  `FP_ProjectError`) and asserting the WARNING fires, `SaveChanges()` does
+  not raise, and **`usm.Save()` is called exactly once** -- the third
+  assertion pins fail-open so a future silent flip to fail-closed cannot
+  pass green. Gates: collect-only 11 and 12 as predicted; live **11/11** and
+  **12/12**; `run_mode: live`; offline **1292 passed / 475 deselected**.
+  **Two prediction misses are on the record, reported rather than smoothed.**
+  (1) The dispatch brief predicted deselected 475 -> 476; it did not move and
+  could not -- a new test WITHOUT `requires_live_project` lands in the
+  `passed` bucket, while `deselected` counts only what the marker filter
+  excludes. The brief was wrong, the measurement is right, and the programmer
+  kept the measurement: C28's forward rule working as intended. (2) QC's
+  predicted `except Exception` narrowing did not happen because `/lex-lead`
+  ruled against it; T9 closed the code/comment mismatch from the comment
+  side instead. **Second finding, and it is `/lex-lead`'s own debt:** C26
+  addendum D's magic 6000-char source-slice window in
+  `tests/test_transaction_honesty.py` broke on T9a's first draft (6589
+  chars) -- an OFFLINE test outside T9's scope fence. The programmer
+  correctly refused to widen the fence and rewrote the comment compactly
+  (5735 chars, a **265-char margin**). Ruled as **`spec.md` C30**: not a
+  task in this feature (it touches neither #243's correctness, nor any
+  public claim, nor the trustworthiness of the record) but NOT left as a
+  silent P2 either -- it is now an explicit **ungated cleanup** above, with
+  the fix, the in-file precedent, and a trigger condition. Item 1 -> `done`;
+  the `active` pointer advances to **item 2 (`242-paragraph-whitespace`)**,
+  on which nothing has been done and nothing was authorised. No GitHub
+  issues filed or closed; **#243 stays open for the user's decision** (C10's
+  unmeasured `.fwdata` half).
+
+### Ungated cleanups (NO user approval needed -- just do them)
+
+- **NEW (item 1, spurt 9, cycle 9, 2026-09-07) -- bound
+  `tests/test_transaction_honesty.py`'s source-slice windows by the next
+  `def `, not by a magic width.** Ruled as `spec.md` **C30**. C26 addendum D
+  set `save_body = source[save_idx : save_idx + 6000]`; T9a's first
+  (accurate) comment draft pushed the measured distance to **6589 chars and
+  broke that OFFLINE test**, forcing a more compact rewrite that landed at
+  **5735 -- a 265-character margin**. That is not a margin: the next
+  docstring or comment edit near `SaveChanges()` breaks an unrelated offline
+  test, and the pressure it creates is to write a LESS ACCURATE comment to
+  fit a test's arbitrary width. **Fix (~6 lines):** bound `save_body` by the
+  index of the next `def ` after `save_idx`, and `refresh_body` likewise,
+  instead of `+ 6000` / `+ 4000`. There is an in-file precedent 20 lines
+  below in `TestOneShotWarningAtOpenProject`
+  (`source[open_idx:close_idx]`). **Do NOT widen 6000 to 8000** -- that
+  perpetuates the anti-pattern. **Trigger:** do this at the START of the
+  next spurt that edits `FLExProject.py`'s `SaveChanges()` or
+  `RefreshFromDisk()` region, before that spurt's own edits. Pure test
+  scaffolding: offline suite only, no live gate, no user decision, no public
+  surface. This trap is item 1's own creation, which is why it leaves
+  pre-ruled rather than as a discovery for the next reader.
+
 ### Awaiting user approval (do not file inside the loop)
 
 - (carried from the `feature-structure-sync-gap` handoff) `IWfiAnalysis.MsFeaturesOA`
@@ -639,6 +712,35 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   25/25 creation-survival measurement to property modifications or
   deletions), and gates neither T7 nor T8b's own completion -- #243's
   frozen contract never covered `UndoableOperation()` rollback semantics.
+- **NEW (item 1, spurt 9, cycle 9, 2026-09-07) -- the counter-measurement to
+  the item directly above, and it gets its own line rather than folding
+  into it.** The cycle-8 programmer, checking `transaction.py` per its
+  brief, found a live measurement at `flexicon/code/transaction.py`
+  lines ~146-153: a created POS VANISHED on clean exit under the
+  `helper.RollBack = False` assignment-bug (`UnitOfWorkHelper.Dispose()`
+  rolling back every unit of work, clean ones included, because pythonnet
+  silently accepts the plain-attribute write instead of reaching the
+  private-setter .NET property). Ruled per `spec.md` **C29**: this is a
+  TRUE RECORD of a live measurement, protected exactly as C10's
+  unexplained facts are -- do not edit it, do not "reconcile" it with
+  P-11. Same `Dispose()`-with-`RollBack`-effectively-`True` mechanism as
+  P-11 above, OPPOSITE outcome (POS vanished vs 25/25 survived), which is
+  exactly why it must not be generalised away: it is the one thing
+  preventing a future reader from reading P-11 as "rollback never
+  discards." **NO work happens on this until the user approves it.** The
+  discriminating variables that were not controlled between the two
+  measurements, and would need to be to reconcile them: object type (POS
+  vs LexEntry), helper class (`UnitOfWorkHelper` vs
+  `UndoableUnitOfWorkHelper`), exit path (clean exit vs an escaping
+  exception), and whether an outer envelope/stack was open. Not resolvable
+  inside #243's scope.
+- **NEW (item 1, spurt 9, cycle 9, 2026-09-07) -- `docs/TRANSACTION_GUIDE.md`
+  API-Reference gap, flagged by the cycle-8 doc agent as outside its
+  authorised scope, gated behind the same C25 ask (the two items directly
+  above).** Its correct wording depends on the answer to whether
+  `Dispose()`/`set_RollBack(True)` actually discards anything, so writing
+  it now would be guessing. No work happens on it until that question is
+  resolved.
 - Open issue **#259** (`InflClassRA` does not exist on `IWfiMorphBundle`) is
   Tier 2, NOT in this campaign -- but its draft lives at
   `specs/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md`

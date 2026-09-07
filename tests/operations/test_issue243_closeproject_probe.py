@@ -2061,3 +2061,72 @@ def test_c15_dispose_runs_in_finally_even_when_save_raises():
         "C15: del self.project must still run in the finally block even "
         "though usm.Save() raised."
     )
+
+
+# ===========================================================================
+# T9b -- SaveChanges() fail-open branch, MOCK/OFFLINE (NOT live verification)
+# ===========================================================================
+#
+# No @pytest.mark.requires_live_project on this test: it never opens a
+# real LCM project. Cycle-8 QC found the fail-open `except Exception` catch
+# (spec.md C21, FLExProject.py ~843-859) had NO test, live or offline,
+# exercising it at all -- this fills that gap. It forces the CurrentDepth
+# property to raise a RuntimeError (deliberately NOT FP_ProjectError, the
+# only raise the old comment named) to pin that the catch is genuinely
+# `except Exception`, not narrowed to one documented type. A mock pass
+# here is not a substitute for the live gate re-run this task also
+# performs -- see evidence/live-t9-failopen-coverage.md.
+
+def test_savechanges_failopen_depth_read_raises_reaches_usm_save(caplog):
+    """
+    MOCK/OFFLINE test (spec.md C21, cycle-8 QC follow-up). Forces the
+    `CurrentDepth` property itself to raise a non-`FP_ProjectError`
+    exception, then asserts all three of:
+      (a) a WARNING naming the depth-guard evaluation failure is emitted,
+      (b) no `FP_TransactionError` propagates out of `SaveChanges()`, and
+      (c) `usm.Save()` IS reached and called exactly once.
+    (c) is the point of the test: it pins the fail-open behaviour so a
+    future silent change to fail-closed cannot pass green.
+    """
+    import logging as _logging
+    from unittest.mock import Mock, PropertyMock, patch
+
+    from flexicon.code.FLExProject import FLExProject
+    from flexicon.code.exceptions import FP_TransactionError  # noqa: F401 (documents the type that must NOT be raised)
+
+    project = FLExProject()
+    project.writeEnabled = True
+    project._undoable = True
+    project.project = Mock(name="fake_lcm_cache")
+
+    fake_usm = Mock(name="fake_undo_stack_manager")
+    project.ObjectRepository = Mock(return_value=fake_usm)
+
+    with patch.object(
+        FLExProject,
+        "CurrentDepth",
+        new_callable=PropertyMock,
+        side_effect=RuntimeError(
+            "boom: depth read failed for a reason unrelated to "
+            "FP_ProjectError's missing-self.project check"
+        ),
+    ):
+        with caplog.at_level(_logging.WARNING, logger="flexicon.code.FLExProject"):
+            project.SaveChanges()  # must NOT raise FP_TransactionError (or anything else)
+
+    warning_records = [
+        r for r in caplog.records
+        if r.levelno == _logging.WARNING
+        and "could not evaluate the issue #243 depth" in r.message
+    ]
+    assert warning_records, (
+        "Expected a WARNING naming the depth-guard evaluation failure; "
+        f"got records: {[r.message for r in caplog.records]}"
+    )
+    assert any("RuntimeError" in r.message for r in warning_records), (
+        "The WARNING should name the actual exception type (RuntimeError "
+        "here) to prove the catch is `except Exception`, not narrowed to "
+        "FP_ProjectError."
+    )
+
+    fake_usm.Save.assert_called_once()

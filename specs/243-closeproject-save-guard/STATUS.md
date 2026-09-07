@@ -1,13 +1,28 @@
 # STATUS -- 243-closeproject-save-guard (flexicon#243)
 
-**Campaign:** `tier1-silent-data-loss`, queue item 1 of 4 (`active`).
-**Last updated:** 2026-09-07, end of spurt 8 (cycle 8).
-**Status:** `active`. **No longer `needs_human`** -- the user's coupled
-ruling landed as `spec.md` C20 at spurt 6, and the guard it approved
-shipped at T8a/T8b (spurt 6/7). T7 and T5b (this docs pass) are IN
-PROGRESS this cycle. **THE RALPH LOOP REMAINS CANCELLED** -- the Stop hook
-will not re-feed anything; each spurt since spurt 5 is a directed
-dispatch, not a loop iteration.
+**Campaign:** `tier1-silent-data-loss`, queue item 1 of 4 -- **`done`.**
+**Last updated:** 2026-09-07, end of spurt 9 (cycle 9) -- **CLOSING ENTRY.**
+**Status:** **`feature_complete` (APPROVED by `/lex-lead`, cycle 9).** No
+task remains open; every quality gate is green with live evidence on file.
+The user's coupled ruling landed as `spec.md` C20 at spurt 6, the guard it
+approved shipped at T8a/T8b (spurt 6/7), T7 and T5b landed at spurt 8, the
+QC gate ran at spurt 9 (score 90/100, **P0 count 0**) and **both of its P1s
+are now disposed** -- the fail-open one remedied by T9a/T9b this cycle, the
+P-11 one ruled no-action with a forward rule (C28). C30 rules the last P2
+(the pinned source-slice window) out of this feature and into QUEUE.md as
+an ungated cleanup. **THE RALPH LOOP REMAINS CANCELLED** -- the Stop hook
+will not re-feed anything; each spurt since spurt 5 is a directed dispatch,
+not a loop iteration.
+
+> **THE CAMPAIGN IS NOT COMPLETE.** Item 1 closing is not
+> `TIER1 COMPLETE`. Queue items 2 (#242), 3 (the feature-structure bundle
+> #251/#252/#253/#256) and 4 (#250) are untouched and still `queued`. No
+> promise token was emitted at this closure, by design.
+>
+> **GitHub #243 is deliberately still OPEN.** The crew does not file or
+> close issues; and per C10 the `.fwdata` file-swap half of the owner's
+> report is unmeasured and unexplained by design, so closing the issue is
+> the user's call, not a consequence of this sign-off.
 
 > ## THE ONE FACT THIS FEATURE TURNS ON (C17, measured at T6 -- NOW MET BY T8b)
 >
@@ -404,7 +419,7 @@ as a second pre-authorised unit -- the user's to greenlight, as T6 was.
 
 ---
 
-## What landed in spurts 6-8 (cycles 6-8) -- the blocker resolved, the guard shipped
+## What landed in spurts 6-9 (cycles 6-9) -- the blocker resolved, the guard shipped, closure gated on one small task
 
 **Spurt 6 (cycle 6):** the user ruled on the blocker directly, frozen as
 `spec.md` **C20** -- the `SaveChanges()` guard is APPROVED IN SUBSTANCE,
@@ -428,16 +443,49 @@ module's own rollback docstring; routed, not absorbed, per `spec.md` C25.
 succeeded, so T7's planned `FP_ProjectError` raise is WITHDRAWN; the
 ERROR-level log is the whole remaining remedy.
 
-**Spurt 8 (cycle 8, this pass):** `/lex-doc` closed out T5b --
+**Spurt 8 (cycle 8):** `/lex-doc` closed out T5b --
 `CHANGELOG.md` corrected (**C24**: the pre-existing "this does not fix the
 incident #243 was filed about" text was FALSE as of T8b and is replaced),
 `docs/TRANSACTION_GUIDE.md` corrected (inverted "no side effects" claim, an
 accuracy banner on the unverified Phase 1 rollback narrative, mode notes on
 both usage examples), Q4 CLOSED, C25's narrow routing recorded, a C22 table
-correction (**C26**), and a standing staleness-sweep rule (**C27**). T7 is
-landing in parallel via `/lex-programmer` this same cycle. See
-`specs/243-closeproject-save-guard/reviews/cycle8-doc.md` and
-`spec.md` C20-C27.
+correction (**C26**), and a standing staleness-sweep rule (**C27**). **T7
+landed the same cycle** via `/lex-programmer`: probe 11/11 live,
+`test_abort_session_live.py` 12/12, both `run_mode: live`; offline
+1291 passed (1290+1), deselected 475 unchanged. See
+`specs/243-closeproject-save-guard/reviews/cycle8-doc.md`,
+`reviews/cycle8-programmer.md` and `spec.md` C20-C27.
+
+**Spurt 9 (cycle 9): the cycle-8 QC gate ran, and its two P1s were ruled.**
+`lex-verification` audited T8b's shipped guard as a read-only
+claims-vs-evidence check, substituting for the unregistered `lex-qc` agent
+type -- a substitution `/lex-lead` accepted because the gate's content was
+delivered regardless of the agent name (`reviews/cycle8-qc.md`). Score
+90/100, **P0 count 0**. Two P1s: (1) `SaveChanges()`'s fail-open catch
+(`FLExProject.py:845-856`) is broader than its own justification -- it
+catches any exception from the depth read, but C21's reasoning covers only
+the one documented `FP_ProjectError` case, and no test exercised the
+fail-open branch at all; (2) the P-11 prediction-before-measurement claim
+cannot be proven from git history because T8b landed as one uncommitted
+diff. Ruled as **C28**: the catch is NOT narrowed and C21's fail-open
+policy is NOT reopened -- narrowing on unmeasured exceptions would itself
+be a new, speculative behaviour change, the same failure mode as
+C11/C12/C14. Instead the DOCUMENTED contract is broadened to match the
+code (**T9a**) and the missing offline test is added (**T9b**); the
+residual (an unmeasured exception where `ObjectRepository()` does NOT also
+raise) is named, not resolved. P-11's prediction claim: NO ACTION -- it
+triangulates from three independent sources (C21 frozen before T8b ran,
+`/lex-lead`'s own witnessed dispatch brief, and the P-11 test's
+dynamically-branching verdict), stronger than a git timestamp. A second
+finding -- the cycle-8 programmer's `transaction.py:146-153`
+counter-measurement, a live measurement where rollback DID discard a
+created POS, opposite of P-11's 25/25 survival -- was ruled as **C29**:
+protected as a true record like C10, not folded into C25's existing queue
+bullet, given its own "Awaiting user approval" line in the campaign
+`QUEUE.md` naming the uncontrolled variables (object type, helper class,
+exit path, envelope state). Full detail: `spec.md` C28/C29;
+`reviews/cycle9-doc.md`. **One task remains: T9** (`tasks.md` CP-CLOSE) --
+once it lands, item 1 is a candidate for `/lex-lead`'s final sign-off.
 
 ---
 
@@ -519,15 +567,57 @@ cycle (tracked in `tasks.md`, not here).
 C1-C10 (spurt 1), **C11** (spurt 2), **C12** (spurt 3, T2 dropped),
 **C13/C14/C15** (spurt 4), **C16/C17/C18/C19** (spurt 5), **C20/C21**
 (spurt 6, the user's ruling and the T8a guard-shape measurement),
-**C22/C23** (spurt 7, T8b's test blast radius and the T7 recut), and
-**C24/C25/C26/C27** (spurt 8, this pass -- the CHANGELOG correction, P-11
-routing, the C22 table correction, and the staleness-sweep rule). Do not
-reopen any of them; overturning any specific decision requires citing and
-overturning it explicitly. Note that **C18 supersedes C14 point 3**,
-**C16/C17 answer C13's "NOT frozen" paragraph**, and **C26 supersedes
-C22's table** (read those originals as history).
+**C22/C23** (spurt 7, T8b's test blast radius and the T7 recut),
+**C24/C25/C26/C27** (spurt 8, the CHANGELOG correction, P-11 routing, the
+C22 table correction, and the staleness-sweep rule), and **C28/C29**
+(spurt 9, this pass -- the cycle-8 QC gate's two P1s: the `SaveChanges()`
+fail-open catch's contract/coverage, and the `transaction.py`
+counter-measurement's own queue line). Do not reopen any of them;
+overturning any specific decision requires citing and overturning it
+explicitly. Note that **C18 supersedes C14 point 3**, **C16/C17 answer
+C13's "NOT frozen" paragraph**, and **C26 supersedes C22's table** (read
+those originals as history).
 
-## Next pickup -- ACTIVE, no longer blocked
+## Closure entry (spurt 9, cycle 9) -- what landed and what is NOT claimed
+
+**T9a** rewrote the `SaveChanges()` fail-open comment to describe the
+`except Exception` catch the code actually has (ANY depth-read exception
+fails open, per C21), labelled the measured-safe case as CODE INSPECTION
+rather than a live probe, and named the un-measured residual per C10's
+discipline -- claimed neither safe nor a bug. **Zero executable-line
+change, confirmed by diff.** **T9b** added the one offline test that
+exercises that branch, forcing `CurrentDepth` to raise a `RuntimeError`
+(deliberately not `FP_ProjectError`) and asserting the WARNING fires,
+`SaveChanges()` does not raise, and **`usm.Save()` is called exactly
+once** -- that third assertion is the point: it pins fail-open so a future
+silent flip to fail-closed cannot pass green.
+
+Gates at closure: collect-only 11 and 12 as predicted; live **11/11** and
+**12/12**; `tests/live_status.json` `"run_mode": "live"`; offline suite
+**1292 passed / 475 deselected**. One honest prediction miss is on the
+record and was reported rather than smoothed: the dispatch brief predicted
+the deselected count moving 475 -> 476. It did not, and could not -- a new
+test WITHOUT `requires_live_project` lands in the `passed` bucket, while
+`deselected` counts only what the marker filter excludes. **The brief's
+prediction was wrong; the measurement is right.** Kept visible as the C28
+forward rule working exactly as intended.
+
+**Still NOT claimed, at closure:** the `.fwdata` file-swap half of the
+owner's report (C10 -- out of scope, unexplained by design, never claimed
+fixed); the fail-open branch's un-measured residual (C28); and any
+generalisation of P-11 into "rollback never discards" (C29's
+counter-measurement is precisely what forbids it).
+
+## Next pickup -- NOT this feature
+
+**Item 1 is closed.** The next pickup is a CAMPAIGN-level decision, not a
+task here: queue item 2 (`242-paragraph-whitespace`) is next in
+`specs/tier1-silent-data-loss/QUEUE.md`, and **no work on it was authorised
+by this closure.** Do not reopen this feature to do it. The two items
+awaiting the user's approval (C25/P-11 and C29's counter-measurement) plus
+C30's ungated test-harness cleanup are all recorded in QUEUE.md.
+
+## Historical -- the blocker that was resolved at spurt 6
 
 **The blocker is RESOLVED.** The user ruled (C20, spurt 6); the guard the
 ruling approved shipped (T8a/T8b, spurt 6/7); the owner's filed incident
@@ -536,22 +626,24 @@ feature any more. **The ralph loop remains CANCELLED regardless** -- each
 spurt is still a directed dispatch, not an automatic re-entry; a human (or
 `/lex-lead`, dispatched by a human) drives the remaining steps.
 
-**Remaining work, this cycle (spurt 8):**
+**T7 and T5b LANDED at spurt 8.** The cycle-8 QC gate then ran (spurt 9,
+score 90/100, P0 count 0) and its two P1s are ruled as **C28/C29** (this
+pass). **Work done at spurt 9 -- CP-CLOSE / T9, now LANDED (read as history):**
 
-1. **T7** (`/lex-programmer`, in parallel with this docs pass) -- the
-   C23-recut loudness log inside `CloseProject()`'s Phase-1 branch.
-2. **T5b** (`/lex-doc`, this pass) -- CHANGELOG correction (C24),
-   `docs/TRANSACTION_GUIDE.md` corrections, Q4 closure. See
-   `specs/243-closeproject-save-guard/reviews/cycle8-doc.md`.
+1. **T9a** (docs/comment only, zero executable change) -- broaden the
+   `SaveChanges()` fail-open catch's documented contract to match the
+   shipped code, per C28.
+2. **T9b** (offline test) -- add the one missing test exercising the
+   fail-open branch, per C28.
 
 **Standing prohibitions, unchanged:** do NOT re-attempt T2 (C12); do NOT
-reopen C1-C23 without citing and overturning the specific decision; do NOT
-touch `SaveChanges()` outside T8b's already-landed diff; do NOT file GitHub
-issues inside the loop.
+reopen C1-C30 without citing and overturning the specific decision; do NOT
+touch `SaveChanges()`'s fail-open POLICY (only its documented contract and
+test coverage, per C28); do NOT file GitHub issues inside the loop.
 
-**Once T7 and T5b both land and are verified:** the feature is a candidate
-for `/lex-lead`'s final sign-off. Q2 and Q3 are already CLOSED (C15, and
-the Q3 ruling above); no open question remains that would prevent sign-off.
+**T9 landed and was verified, and `/lex-lead` signed the feature off at
+cycle 9 (APPROVED).** Q2, Q3, Q4 and Q5 were already CLOSED; no open
+question remained.
 
 ## Routed to the user (do not act on inside the loop)
 
@@ -566,3 +658,13 @@ the full history and the ONE genuinely new item spawned this cycle
 property modifications and deletions are unmeasured. That question is out
 of #243's scope and awaits its own user approval; nothing in this feature
 is blocked on it.
+
+**A SECOND item was spawned at cycle 9 (`spec.md` C29):** a counter-
+measurement at `transaction.py:146-153` where the same `Dispose()`-with-
+`RollBack`-effectively-`True` mechanism DID discard a created object (a
+POS vanished on clean exit), the opposite of P-11's 25/25 survival. It is
+protected as a true record (do not edit it) and given its own queue line
+rather than folded into the C25 bullet above, naming the discriminating
+variables (object type, helper class, exit path, envelope state) that
+would need controlling to reconcile the two. Nothing in this feature is
+blocked on it either.

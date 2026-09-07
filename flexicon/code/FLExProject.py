@@ -843,10 +843,18 @@ class FLExProject(object):
         try:
             depth = self.CurrentDepth
         except Exception as e:
-            # Fail OPEN (spec.md C21): an unreadable depth is never a
-            # reason to refuse a save that would otherwise have
-            # succeeded. Log loudly and fall through to usm.Save() below,
-            # exactly as this method behaved before the guard existed.
+            # Fail OPEN (C21): catches Exception, not only
+            # FP_ProjectError -- any depth-read exception falls through
+            # to usm.Save() below; an unreadable depth never justifies
+            # refusing a save that would otherwise succeed.
+            # Measured-safe (cycle-8 QC code inspection, not live): if
+            # self.project is absent, ObjectRepository() below shares
+            # that dependency and raises before usm.Save() is reached.
+            # Un-measured residual (C10 discipline): a depth-read
+            # exception with ObjectRepository()/usm.Save() still
+            # succeeding at depth > 0 would proceed blind into #243's
+            # incident. No such state is known; not claimed safe, not
+            # claimed a bug.
             log.warning(
                 "SaveChanges: could not evaluate the issue #243 depth "
                 "guard (CurrentDepth read raised %s: %s); proceeding to "

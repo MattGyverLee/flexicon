@@ -28,11 +28,15 @@ Done: T1, T3, T4, T6, **T8a, T8b**. Dropped: T2 (C12). **The user's coupled
 ruling landed as C20 (spurt 6) -- T7 is no longer blocked.** In progress
 THIS CYCLE: **T7** (the C23-recut loudness log, dispatched to
 `/lex-programmer` in parallel) and **T5b** (this docs pass, `/lex-doc`).
-T5a already landed as a pre-authorised unit (see Checkpoint 3). Contract is
-now **C1-C27**. Q2 CLOSED (C15); Q3 CLOSED (no capability token); **Q4
-CLOSED** (`/lex-doc`'s placement/wording call, this cycle); **Q5's detector
-half CLOSED (C18)**, its ruling half CLOSED (C20). **THE RALPH LOOP IS
-STILL CANCELLED** -- no Stop hook re-feeds anything; each spurt is a
+T5a already landed as a pre-authorised unit (see Checkpoint 3). **T7 and T5b
+LANDED at spurt 8** (see `STATUS.md`). Contract is
+now **C1-C30** (spurt 9, cycle 9: **C28/C29** on the cycle-8 QC audit's two
+P1 findings, plus **C30** at closure ruling the pinned source-slice window
+P2 out of this feature and into QUEUE.md as an ungated cleanup). **T9a/T9b
+LANDED at spurt 9 -- CP-CLOSE reached; item 1 is CLOSED.** Q2 CLOSED (C15); Q3 CLOSED (no capability token);
+**Q4 CLOSED** (spurt 8, `/lex-doc`'s placement/wording call); **Q5's
+detector half CLOSED (C18)**, its ruling half CLOSED (C20). **THE RALPH LOOP
+IS STILL CANCELLED** -- no Stop hook re-feeds anything; each spurt is a
 directed dispatch, not a loop iteration. **C17's ceiling still stands as
 written -- no `CloseProject()`-side change could ever fix the owner's
 filed incident -- but T8b has now DONE it from the `SaveChanges()` side
@@ -40,7 +44,9 @@ C17 said was the only possible route:** the full owner sequence (create,
 mid-session `SaveChanges()`, `CloseProject()`) re-measures **25/25 in
 memory and 25/25 on disk** (`evidence/live-t8b-savechanges-guard.md`), up
 from 0/25 pre-guard. T3's independent P-3 fix (0/25 -> 25/25) still stands
-as shipped. State all three facts together, not any one alone.
+as shipped. State all three facts together, not any one alone. **The only
+remaining task is T9** (below, CP-CLOSE) -- the last thing between item 1
+and closure.
 
 **New contract decision C11 (spec.md, ruled 2026-09-07 at the T1 review):**
 `HasOpenSessionTask()` reads depth BEFORE the `self._undoable` mode check,
@@ -729,3 +735,57 @@ disposition (Q1 is already CLOSED -- spec.md C9/C10). Q2 and Q3 may remain
 open going into sign-off per `spec.md`'s instruction not to silently decide
 them -- surface them explicitly in the handoff/report rather than closing
 the feature silently around them.
+
+**T7 and T5b LANDED at spurt 8 (cycle 8) -- see `STATUS.md`.** Both
+checkpoints above are now satisfied in full. The cycle-8 QC audit (run by
+`lex-verification`, substituting for the unregistered `lex-qc`, per
+`spec.md` C28's gate note) then found two P1s on the shipped `SaveChanges()`
+guard, neither blocking (P0 count 0), opening one more task below.
+
+---
+
+## Checkpoint CP-CLOSE -- T9: the fail-open catch's contract and coverage (spurt 9)
+
+Opened by the cycle-8 QC audit's P1 #1, ruled as `spec.md` **C28**. This is
+the ONLY task standing between item 1 and closure. `SaveChanges()`'s
+fail-open catch (`FLExProject.py:845-856`) is NOT changed in shape or
+policy -- C21's fail-open behaviour stands exactly as shipped. Touches
+docs/comments in `flexicon/code/FLExProject.py` (T9a) and one new offline
+test file (T9b) only; no other production code changes.
+
+- [x] **T9a** (DOCS-ONLY, comment/docstring, zero executable change)
+      Broaden the `SaveChanges()` docstring/inline comment around the
+      `except Exception as e:` fail-open catch (`FLExProject.py:845-856`)
+      so it states the ACTUAL contract instead of the narrower one C21
+      documented: the catch is intentionally broad (any exception from the
+      `CurrentDepth` read fails open, not only `FP_ProjectError`), and name
+      the one case verified safe by code inspection --
+      `ObjectRepository()` shares the identical `self.project` dependency
+      and raises first on a closed/never-opened project, so `usm.Save()` is
+      never reached either way. State the residual explicitly, per C28: if
+      any OTHER exception can leave `ObjectRepository()`/`usm.Save()` both
+      still reachable at `CurrentDepth > 0`, fail-open would proceed blind
+      into #243's own incident, and no such state has been found or
+      measured. Do not word this as "the branch is safe" -- only the one
+      checked case is.
+- [x] **T9b** (OFFLINE test, no live verification required -- this task
+      adds coverage for a code path that does not depend on live LCM state
+      beyond what existing doubles already provide) Add the one missing
+      test: force the `CurrentDepth` read inside `SaveChanges()` to raise
+      an exception OTHER than `FP_ProjectError` (e.g. patch/mock
+      `ActionHandlerAccessor.CurrentDepth` to raise a generic `Exception`
+      or a second, unrelated exception type) and assert `SaveChanges()`
+      logs a WARNING and falls through to attempt `usm.Save()` rather than
+      re-raising. Add to the existing offline suite (do not create a new
+      live probe file); confirm zero live markers on the new test and that
+      the full offline suite stays green plus this one addition.
+
+**Checkpoint CP-CLOSE: REACHED AND PASSED (spurt 9, cycle 9).** T9a and
+T9b both landed; offline suite **1292 passed / 475 deselected** including
+the new test; live gate re-run green (probe 11/11, abort-session 12/12,
+`run_mode: live`, `evidence/live-t9-failopen-coverage.md`); `spec.md`
+C28/C29 on file, plus **C30** at closure. **`/lex-lead` signed item 1 off
+as `feature_complete` (APPROVED) at cycle 9.** No task remains open on this
+feature. T2 stays DROPPED (C12) -- do not re-tick it as open work.
+GitHub #243 is deliberately left OPEN for the user's decision (C10's
+unmeasured `.fwdata` half); the crew does not close issues.

@@ -5,12 +5,12 @@
   "issues": [
     243
   ],
-  "status": "in_progress",
-  "last_cycle": 8,
-  "spurts_completed": 8,
-  "REBUILT_NOTE": "REWRITTEN 2026-09-07 by /lex-lead at cycle 8. The previous copy of this file was frozen at cycle 5 and asserted status=needs_human, C1-C19, 'T7 BLOCKED', 'DO NOT RESUME'. ALL OF THAT WAS STALE AND WRONG: the user's coupled ruling landed as C20 (spurt 6), T8a/T8b shipped the SaveChanges() depth guard (spurt 7), T7 and T5b landed (spurt 8). The old file also duplicated the whole frozen contract inline, which is exactly why it rotted. This version deliberately does NOT copy the contract -- spec.md is the single authority for C1-C29 and Q1-Q5. Read spec.md and STATUS.md, not this file, for anything other than orchestration state.",
-  "contract_authority": "specs/243-closeproject-save-guard/spec.md -- frozen C1-C27 as of cycle 8; C28/C29 being recorded in cycle 9. Do NOT reopen. Overturning any ruling requires citing it by number.",
-  "prose_status_authority": "specs/243-closeproject-save-guard/STATUS.md -- current through spurt 8.",
+  "status": "feature_complete",
+  "last_cycle": 9,
+  "spurts_completed": 9,
+  "REBUILT_NOTE": "REWRITTEN 2026-09-07 by /lex-lead at cycle 8. The previous copy of this file was frozen at cycle 5 and asserted status=needs_human, C1-C19, 'T7 BLOCKED', 'DO NOT RESUME'. ALL OF THAT WAS STALE AND WRONG: the user's coupled ruling landed as C20 (spurt 6), T8a/T8b shipped the SaveChanges() depth guard (spurt 7), T7 and T5b landed (spurt 8). The old file also duplicated the whole frozen contract inline, which is exactly why it rotted. This version deliberately does NOT copy the contract -- spec.md is the single authority for C1-C30 and Q1-Q5. Read spec.md and STATUS.md, not this file, for anything other than orchestration state.",
+  "contract_authority": "specs/243-closeproject-save-guard/spec.md -- FROZEN C1-C30 as of cycle 9 (C28/C29 recorded by the cycle-9 doc agent; C30 written by /lex-lead at closure). Do NOT reopen. Overturning any ruling requires citing it by number.",
+  "prose_status_authority": "specs/243-closeproject-save-guard/STATUS.md -- current through spurt 9 (its CLOSING entry).",
   "loop_status": "NO RALPH LOOP. Cancelled at spurt 5 and never restarted; the Stop hook is gone (.claude/ralph-loop.local.md deleted). Every spurt since 5 is a directed dispatch by a human via the main session. Nothing here resumes automatically. Campaign completion promise, when the campaign eventually runs as a loop, is TIER1 COMPLETE -- never FEATURE COMPLETE.",
   "tasks_done": [
     "T1",
@@ -21,16 +21,16 @@
     "T8a",
     "T8b",
     "T7",
-    "T5b"
+    "T5b",
+    "T9a",
+    "T9b"
   ],
   "tasks_dropped": [
     "T2 -- DROPPED, not deferred (spec.md C12). Do NOT re-attempt or re-tick as open work."
   ],
-  "tasks_open": [
-    "T9 -- cycle 9, the ONLY thing between this feature and closure. Two halves, both small: (a) broaden the documented contract on SaveChanges()'s fail-open catch to match the code it actually has (comment/docstring only, zero executable change) and name the un-measured residual; (b) add the one OFFLINE test that exercises the fail-open branch, which currently has zero coverage, live or offline. Ruled as C28. C21's fail-open POLICY is NOT reopened and the catch is NOT narrowed."
-  ],
-  "next_checkpoint": "CP-CLOSE -- item 1 (#243) closes after T9 lands plus C28/C29 are recorded in spec.md and QUEUE.md.",
-  "next_entry": "Dispatch cycle 9: lex-programmer (T9a+T9b) and lex-doc (C28/C29 + QUEUE.md) in parallel, then /lex-lead closes item 1 with a feature_complete handoff for ITEM 1 ONLY and NO promise token.",
+  "tasks_open": [],
+  "next_checkpoint": "NONE. CP-CLOSE reached and passed at cycle 9. This feature has no remaining checkpoint.",
+  "next_entry": "DO NOT RESUME THIS FEATURE. Item 1 is signed off. The campaign's `active` pointer advanced to item 2 (242-paragraph-whitespace) in specs/tier1-silent-data-loss/QUEUE.md, which has had NO work done on it and was NOT authorised by this closure -- it needs its own dispatch starting at spec + live probe.",
   "gates_state_at_cycle_8": {
     "i_t7_live_verified": "MET. probe 11/11 live + test_abort_session_live.py 12/12, run_mode: live. Offline 1291 passed (1290+1), deselected 475 unchanged.",
     "ii_changelog_correction": "MET and independently verified by the main session -- grep 'does not fix the incident' CHANGELOG.md returns nothing. The false claim that reached main is gone.",
@@ -44,7 +44,8 @@
     "real_target_touched": false,
     "restore_script_run": false,
     "latest_gate_cycle_8": "test_issue243_closeproject_probe.py 11/11 live (1 offline test correctly deselected); test_abort_session_live.py 12/12; run_mode live at 2026-09-07T17:01:58Z; offline suite 1291 passed / 475 deselected.",
-    "marker_count_rule": "Never name a live suite by filename. Derive the count with '-m requires_live_project --collect-only -q' and paste it into the evidence file. 'no tests collected' is a ZERO, never a pass. Never run bare pytest -- it executes ~322 requires_live_project tests in place."
+    "marker_count_rule": "Never name a live suite by filename. Derive the count with '-m requires_live_project --collect-only -q' and paste it into the evidence file. 'no tests collected' is a ZERO, never a pass. Never run bare pytest -- it executes ~322 requires_live_project tests in place.",
+    "latest_gate_cycle_9": "test_issue243_closeproject_probe.py 11/11 live (2 offline tests correctly deselected -- T9b added the second); test_abort_session_live.py 12/12; run_mode live; offline suite 1292 passed / 475 deselected (deselected UNCHANGED -- see prediction_misses_on_the_record). Evidence: evidence/live-t9-failopen-coverage.md."
   },
   "evidence_files": [
     "specs/243-closeproject-save-guard/evidence/live-cycle1-probe.md",
@@ -53,7 +54,8 @@
     "specs/243-closeproject-save-guard/evidence/live-t4-p0-guard-regression.md",
     "specs/243-closeproject-save-guard/evidence/live-t6-noop-save-mechanism.md",
     "specs/243-closeproject-save-guard/evidence/live-t8b-savechanges-guard.md",
-    "specs/243-closeproject-save-guard/evidence/live-t7-loud-close.md"
+    "specs/243-closeproject-save-guard/evidence/live-t7-loud-close.md",
+    "specs/243-closeproject-save-guard/evidence/live-t9-failopen-coverage.md"
   ],
   "code_diff_scope_cumulative": "flexicon/code/FLExProject.py (T1 depth-read surface, T3 CloseProject() End-guard, T7 loud-close + C15 finally, T8a/T8b SaveChanges() depth guard) and flexicon/code/undoable_operation.py (C25 caveat, docstring only). Tests: tests/operations/test_issue243_closeproject_probe.py, test_abort_session_live.py, test_transaction_honesty.py. Docs: CHANGELOG.md, docs/, specs/.",
   "public_surface_added": {
@@ -74,7 +76,23 @@
     "No GitHub issues filed from this feature.",
     "No work on campaign queue items 2 (#242), 3 (feature-structure bundle) or 4 (#250) from inside this feature.",
     "C17's TWO HALVES are always stated together. Half one alone undersells shipped work; half two alone is the C10-class overclaim.",
-    "C10 stands: the .fwdata file-swap detail is OUT OF SCOPE, unexplained by design, and must never be claimed as fixed."
+    "C10 stands: the .fwdata file-swap detail is OUT OF SCOPE, unexplained by design, and must never be claimed as fixed.",
+    "This feature is CLOSED. Do not reopen it to do campaign items 2-4, the C25/C29 approval asks, or the C30 cleanup -- each needs its own dispatch (and, for the approval asks, the user's ruling first)."
   ],
-  "updated": "2026-09-07"
+  "updated": "2026-09-07",
+  "closure_cycle_9": {
+    "decision": "APPROVED / feature_complete for ITEM 1 ONLY. No promise token emitted -- the campaign promise is TIER1 COMPLETE and items 2-4 are untouched.",
+    "t9a": "SaveChanges() fail-open comment rewritten to match the actual `except Exception` catch; measured-safe case labelled CODE INSPECTION not a live probe; un-measured residual named per C10 and claimed neither safe nor a bug. ZERO executable-line change, confirmed by diff.",
+    "t9b": "New OFFLINE test test_savechanges_failopen_depth_read_raises_reaches_usm_save: CurrentDepth raises RuntimeError (deliberately not FP_ProjectError); asserts the WARNING fires, SaveChanges() does not raise, and usm.Save() is called EXACTLY ONCE. That last assertion pins fail-open against a future silent flip to fail-closed.",
+    "gates": "probe 11/11 live, abort-session 12/12 live, run_mode live, offline 1292 passed / 475 deselected, QC 90/100 P0 count 0 with both P1s disposed.",
+    "prediction_misses_on_the_record": [
+      "The cycle-9 dispatch brief predicted offline deselected 475 -> 476. It did not move and COULD NOT: a new test without requires_live_project lands in the passed bucket, while deselected counts only what the marker filter excludes. The brief was wrong; the measurement stands. Reported, not smoothed.",
+      "QC's predicted `except Exception` narrowing did not happen because /lex-lead ruled against it (C21 policy not reopened); T9a closed the code/comment mismatch from the comment side instead."
+    ],
+    "c30": "The magic 6000-char source-slice window in tests/test_transaction_honesty.py (C26 addendum D) broke on T9a's first draft and now sits at a 265-char margin. Ruled NOT a task in this feature, but recorded as an UNGATED cleanup in QUEUE.md with the fix, an in-file precedent, and a trigger (do it at the start of the next spurt that edits SaveChanges()/RefreshFromDisk()). Do not widen 6000 to 8000.",
+    "github": "#243 deliberately left OPEN. The crew does not file or close issues, and C10's .fwdata file-swap half is unmeasured and unexplained BY DESIGN. Closing or splitting the issue is the user's action alone."
+  },
+  "ungated_cleanup_no_approval_needed": [
+    "C30: bound tests/test_transaction_honesty.py's save_body/refresh_body source slices by the next `def ` instead of `+6000`/`+4000`. In-file precedent: TestOneShotWarningAtOpenProject's source[open_idx:close_idx]. Do NOT widen 6000 to 8000. Trigger: start of the next spurt that edits FLExProject.py's SaveChanges()/RefreshFromDisk() region. Pure test scaffolding -- offline suite only, no live gate, no user decision. Recorded in QUEUE.md under 'Ungated cleanups'."
+  ]
 }

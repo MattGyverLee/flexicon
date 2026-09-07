@@ -46,11 +46,14 @@ Landed since: **T3+T4** (spurt 4, the P0 guard, CP-B PASSED), **T6**
 (spurt 5, the no-op-save mechanism probe -- zero `flexicon/` diff), and
 **T8a+T8b** (spurt 6/7, the `SaveChanges()` depth guard itself -- the
 owner's filed incident now measures 25/25, see the banner above). Contract
-is now **C1-C27**. Q2 CLOSED (C15). Q3 CLOSED (no capability token). Q4
-CLOSED (this cycle, `/lex-doc`'s placement/wording call). **Q5 fully
+is now **C1-C30**. Q2 CLOSED (C15). Q3 CLOSED (no capability token). Q4
+CLOSED (spurt 8, `/lex-doc`'s placement/wording call). **Q5 fully
 CLOSED** -- both its detector half (C18) and its ruling half (C20, the
-user's ruling landing spurt 6). T7 (the C23-recut loudness log) and T5b
-(this docs pass) are IN PROGRESS this cycle. **The ralph loop remains
+user's ruling landing spurt 6). **T7 and T5b (spurt 8's docs pass) LANDED**;
+**cycle 9 added C28/C29** on the cycle-8 QC audit's two P1 findings (the
+`SaveChanges()` fail-open catch, and the `transaction.py` counter-measurement
+to P-11) and opened **T9** (see `tasks.md` CP-CLOSE) as the one remaining
+task before item 1 can close. **The ralph loop remains
 CANCELLED** -- nothing resumes automatically; each spurt since spurt 5 has
 been a directed dispatch, not a loop iteration.
 Q1 RESOLVED 2026-09-07 by `/lex-lead` (see C9/C10) -- the owner's incident is
@@ -1180,6 +1183,152 @@ machine-readable orchestration state, normally written by whoever lands a
 spurt's checkpoint (`/lex-lead`/`/lex-archivist`), not prose documentation.
 Doc-agent staleness sweeps do not extend to it; a doc agent that finds it
 stale should flag it as a finding, not silently absorb its maintenance.
+
+### C28 -- the SaveChanges() fail-open catch: breadth accepted, contract broadened, coverage added
+
+Ruled 2026-09-07 (spurt 9, cycle 9) by `/lex-lead` on the cycle-8 QC audit's
+P1 #1. The audit found the fail-open catch at `FLExProject.py:845-856`
+(`except Exception as e: ... depth = 0`) is broader than its own
+justification: C21's reasoning covers exactly ONE documented raise --
+`FP_ProjectError` when `self.project` does not exist (C4/C5) -- but the code
+catches ANY exception from the depth read, and no test, live or offline,
+exercises the fail-open branch at all. P0 count was 0; this was a P1.
+
+**RULED: the catch is NOT narrowed, and C21's fail-open policy is NOT
+reopened.** Narrowing to `except FP_ProjectError` would require enumerating
+every exception `ActionHandlerAccessor.CurrentDepth` could throw on a live
+but degraded project object -- a set nobody has measured -- and would
+convert every UN-enumerated exception into a NEW exception propagating out
+of a public save method, on speculation about failure modes that have never
+been observed. That is the same class of error as **C12** (a contract
+invented for an unmeasured case) and **C11/C14** (behaviour changed off
+brief wording rather than evidence): all three penalise the unmeasured case
+by making a public method's behaviour worse on a guess.
+
+**RULED: the mismatch closes the OTHER way, via the audit's own
+alternative** -- broaden the DOCUMENTED contract to match the shipped code
+(**T9a**, comment/docstring only, zero executable change) and add the one
+missing OFFLINE test that exercises the branch (**T9b**). The code was
+already correct by design (fail open, per C21); the gap was that nothing
+said so precisely enough, and nothing proved it.
+
+**The residual is NAMED, not buried, per C10's discipline.** IF a state
+exists where the depth read raises while `ObjectRepository()` and
+`usm.Save()` both still succeed at `CurrentDepth > 0`, fail-open proceeds
+blind into #243's own incident. None has been found or measured. The one
+case the audit checked is non-destructive because `ObjectRepository()`
+shares the identical `self.project` dependency and raises FIRST --
+established by CODE INSPECTION, not a live probe. Do not upgrade that to
+"safe" -- it is "the one checked case is safe," not "the branch is safe."
+
+**On P-11's prediction-before-measurement (QC P1 #2): NO ACTION.** A
+git-history proof is impossible because T8b landed as one uncommitted
+change with no intermediate commits. The claim instead triangulates from
+three independent directions: **C21** froze the 0/25 rollback prediction in
+cycle 7, BEFORE the T8b task that measured it ever ran; `/lex-lead`'s own
+main session witnessed the prediction stated in the dispatch brief; and the
+P-11 test's printed VERDICT branches dynamically on the live count rather
+than hardcoding a contradiction string. That is stronger corroboration than
+a commit timestamp, which can be amended after the fact.
+
+**FORWARD RULE, not retroactive:** a task that states an a-priori
+prediction commits it to a durable artefact (a frozen contract decision, a
+dispatch brief, a dynamically-branching assertion) BEFORE the measuring
+run, so temporal order is provable from the record for free, without
+relying on git history.
+
+**GATE NOTE, recorded not waived:** `lex-qc` is not a registered agent type
+in this environment. The cycle-8 QC gate was executed by
+`lex-verification` as a read-only claims-vs-evidence audit, and `/lex-lead`
+ACCEPTED the substitution at cycle 8 because the gate's content -- P0/P1
+findings on the shipped guard, placement, exception type, message accuracy,
+test honesty -- was delivered regardless of which agent name ran it.
+
+### C29 -- transaction.py:146-153 is the record's only counter-measurement and gets its own queue line
+
+Ruled 2026-09-07 (spurt 9, cycle 9). The cycle-8 programmer, dispatched to
+check `transaction.py` per the brief, found -- and correctly did NOT edit --
+a rollback-discards claim at `flexicon/code/transaction.py` lines ~146-153:
+a live measurement on the Target sandbox in which a created POS VANISHED on
+clean exit under the `helper.RollBack = False` assignment-bug (pythonnet
+silently accepting a plain Python attribute write instead of reaching the
+private-setter .NET property, so `Dispose()` rolled back every unit of
+work, clean ones included).
+
+**RULED: it is a TRUE RECORD of a live measurement and is PROTECTED exactly
+as C10's unexplained facts are.** Do not edit it. Do not "reconcile" it
+with P-11.
+
+**RULED: it does NOT fold into C25's existing queue bullet.** It is the
+record's ONLY counter-measurement -- same mechanism as P-11 (`Dispose()`
+with `RollBack` effectively `True`), OPPOSITE outcome (POS vanished vs
+25/25 survived). Its value is that it is the single thing preventing a
+future reader from generalising P-11 into "rollback never discards." It
+therefore gets its OWN bullet in the queue ask, naming the discriminating
+variables that were not controlled between the two measurements: object
+type (POS vs LexEntry), helper class (`UnitOfWorkHelper` vs
+`UndoableUnitOfWorkHelper`), exit path (clean exit vs an escaping
+exception), and whether an outer envelope/stack was open at the time. None
+of that is resolvable inside #243's scope.
+
+The `docs/TRANSACTION_GUIDE.md` API-Reference gap flagged by the cycle-8
+doc agent as outside its authorised scope is ALSO routed to the queue,
+gated behind the same C25 ask: its wording depends on that answer, so
+writing it now would be guessing.
+
+### C30 -- the pinned 6000-char source-slice window: P2 UPGRADED to a recorded, ungated cleanup, NOT a task in this feature
+
+Ruled 2026-09-07 (spurt 9, cycle 9, at closure). C26 addendum D widened
+`tests/test_transaction_honesty.py`'s `save_body` source slice to a magic
+`source[save_idx : save_idx + 6000]` and `/lex-lead` logged a P2 at the time:
+bound those windows by the next `def ` rather than a magic width. **That P2
+bit within one cycle.** T9a's first (accurate) comment draft pushed the
+distance from `def SaveChanges(self):` to
+`self.ObjectRepository(IUndoStackManager)` from ~5240 to **6589 chars**,
+breaking that OFFLINE test -- a file outside T9's scope fence. The
+programmer correctly refused to edit out of scope and instead rewrote the
+comment more compactly, landing at **5735 chars: a 265-character margin.**
+
+**RULED, on three points.**
+
+1. **The programmer's choice was right and is the precedent.** When an
+   in-scope edit breaks an out-of-scope test, rewrite the in-scope edit or
+   stop and report -- never widen the scope fence mid-task.
+
+2. **The P2 does NOT become a task in this feature.** Applying this
+   record's own decision framework: the defect affects neither #243's
+   correctness, nor any public claim, nor the user's ability to trust the
+   record. It is test-harness hygiene. Holding a green feature open -- with
+   three untouched campaign items that ship data loss today -- for a magic
+   number in a test that pins an unrelated invariant (that both methods
+   resolve the same accessor) is the wrong prioritisation.
+
+3. **But it does NOT stay a silent P2 in a review file either.** A
+   265-char margin is not a margin: the next docstring or comment edit
+   anywhere near `SaveChanges()` breaks an unrelated offline test, and the
+   pressure that creates is to write a LESS ACCURATE comment to fit a
+   test's arbitrary width. In a feature whose entire character has been the
+   honesty of its record, leaving that incentive in place is unacceptable.
+   It is therefore recorded as an **explicit, UNGATED cleanup bullet** in
+   `specs/tier1-silent-data-loss/QUEUE.md` -- deliberately NOT under
+   "Awaiting user approval", because it needs no user decision: no
+   semantics, no public surface, no live gate (pure test scaffolding, per
+   CLAUDE.md's live-verification carve-out).
+
+**The fix, when someone takes it** (~6 lines, with an in-file precedent
+20 lines below at `TestOneShotWarningAtOpenProject`, which already bounds
+its slice correctly with `source[open_idx:close_idx]`): bound `save_body`
+by the index of the next `def ` after `save_idx`, and `refresh_body`
+likewise, instead of `+ 6000` / `+ 4000`. **Trigger: do it at the START of
+the next spurt that edits `FLExProject.py`'s `SaveChanges()` or
+`RefreshFromDisk()` region, before that spurt's own edits.** Do not widen
+6000 to 8000 -- that perpetuates the anti-pattern this ruling exists to
+end.
+
+**Whoever creates a trap owns defusing it** -- the sibling of C27's
+"whoever lands a spurt's docs task owns the sweep". This trap is this
+feature's own (C26 addendum D), which is why it leaves here fully
+described and pre-ruled rather than as a discovery for the next reader.
 
 ---
 
