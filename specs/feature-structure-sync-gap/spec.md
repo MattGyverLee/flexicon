@@ -511,8 +511,11 @@ shared helper + `MakeFeatStruc` generalization).
       NC/Phoneme live tests green. Also surfaced the E2 finding (only
       `PhNCFeatures`/`PhPhoneme` literally have `FeaturesOA`) and unlocked the
       `FeatureStructureDelete` clear-path side effect -- see D3/D3a.
-- [ ] **T2** `BaseOperations`: `_ResolveFeatureStrucOwner` + the C1 table (one copy).
-- [ ] **T3** `BaseOperations`: `_GetFeatureStruc` (recursive serialize, C4) and
+- [x] **T2** DONE (commit `cfc86af`) -- `BaseOperations._ResolveFeatureStrucOwner`
+      + the C1 table in exactly ONE copy
+      (`Shared/lcm_constants.py::FEATURE_STRUC_OWNER_TABLE`). Verification gate
+      PASS (`reviews/cycle3-verification-T2-T3.md`).
+- [x] **T3** DONE (commit `cfc86af`) -- `BaseOperations`: `_GetFeatureStruc` (recursive serialize, C4) and
       `_ResolveFsByGuid`.
       **Corollary (E5):** NC's and Phoneme's private `__ResolveByGuid` must
       survive T3 **untouched** -- de-duplication into `_ResolveFsByGuid`

@@ -1,9 +1,14 @@
 {
   "feature": "feature-structure-sync-gap",
   "status": "in_progress",
-  "last_cycle": 1,
-  "spurts_completed": 1,
-  "issues": [251, 252, 256, 253],
+  "last_cycle": 3,
+  "spurts_completed": 2,
+  "issues": [
+    251,
+    252,
+    256,
+    253
+  ],
   "tasks_done": [
     "cycle1-verification-live-probe-run_mode-live-8of8-evidence-live-cycle1-probe.md",
     "cycle1-verification-msa-hasattr-0-true-2088-false-base-interface-view",
@@ -24,10 +29,20 @@
     "cycle1-lead-ruling-D4-ifscomplexvalue-valueoa-ruled-CONFIRMED-live-evidence-outranks-stale-snapshot",
     "cycle1-lead-ruling-D5-252-vs-251-diagnoses-differ-a-single-copypaste-fix-would-be-wrong-in-two-directions",
     "cycle1-lead-ruling-nested-read-side-traversal-upgraded-to-P0-and-pulled-in-prerequisite-not-expansion",
-    "cycle1-contract-frozen-spec-md-C1-C8-plus-task-list-T1-T17"
+    "cycle1-contract-frozen-spec-md-C1-C8-plus-task-list-T1-T17",
+    "T1 DONE commit 1790fcc -- lcm_casting._interface_cache + 12 registrable feature-struct owner entries (13 corrected to 12: IPosFeatures does not exist, hardcoded None); full cast_to_concrete/_GetTypedOwner caller-delta table; gate PASS reviews/cycle2-verification-T1.md; offline 1277->1277 identical",
+    "T2 DONE commit cfc86af -- BaseOperations._ResolveFeatureStrucOwner + C1 table in ONE copy at Shared/lcm_constants.py::FEATURE_STRUC_OWNER_TABLE",
+    "T3 DONE commit cfc86af -- BaseOperations._GetFeatureStruc (recursive C4 serializer) + _ResolveFsByGuid; NC/Phoneme private __ResolveByGuid deliberately left untouched per E5 corollary",
+    "cycle3-gate PASS reviews/cycle3-verification-T2-T3.md -- offline 1277->1290, live new-file 16 passed, zero-delta set 9 passed identical; mutation test (cast deleted) failed 12/16 proving non-tautological coverage",
+    "cycle3-contract-amendment C4a -- _ApplyFeatureStruc MUST accept BOTH the C4 recursive dict AND the shipped legacy flat list of {FeatureGuid,ValueGuid}, normalising legacy->C4 internally",
+    "cycle3-contract-amendment C4b -- NC/Phoneme CAPTURE stays on the legacy flat list; migration to C4 is new task T9b; two concurrent wire formats is the accepted interim state",
+    "cycle3-measurement-closed -- NC/Phoneme feature structs DO NOT nest in live data (Ngoreme: NC complex=0/closed=76, Phoneme complex=0/closed=779, zero nesting across 855 specs); lowers T9b priority",
+    "cycle3-checkpoints-recut -- Checkpoint 2a = T1-T3 (DONE), Checkpoint 2b = T4-T5",
+    "spurt3-lead-ruling -- issue #250 is SEQUENTIAL AFTER this feature reaches feature_complete, NOT parallel; four reasons recorded in STATUS.md",
+    "spurt3-state-reconciliation -- STATUS.md/.crew-handoff.json/spec.md T2-T3 checkboxes were 2 cycles stale; corrected from committed evidence"
   ],
-  "next_checkpoint": "Checkpoint 2 -- shared resolver + serialize/apply pair landed (T1-T5), offline suite green, NC/Phoneme live tests unchanged",
-  "next_entry": "Start with T1 ALONE: add the 13 feature-struct owner classes (PhNCFeatures, PhNCSegments, PhPhoneme, PartOfSpeech, PosFeatures, FsComplexFeature, MoStemMsa, MoInflAffMsa, MoDerivAffMsa, MoAffixAllomorph, FsFeatStruc, FsComplexValue, FsClosedValue) to lcm_casting._interface_cache, enumerate the behaviour delta for EVERY cast_to_concrete / _GetTypedOwner caller (today they get the object back unchanged; afterwards a concrete cast), and get the full offline suite plus the NC/Phoneme live tests green BEFORE starting T2. Every other task in the feature depends on it. Then T2 (resolver + frozen C1 table, one copy), T3 (_GetFeatureStruc), T4 (_ApplyFeatureStruc, behaviour-preserving: NC passes on_unresolved=\"raise\", Phoneme passes \"skip\"), T5 (one generalized MakeFeatStruc).",
+  "next_checkpoint": "Checkpoint 2b -- T4 (_ApplyFeatureStruc extracted, NC+Phoneme re-pointed, ZERO runtime delta) and T5 (one generalized MakeFeatStruc, closes #256) landed; offline suite green; NC/Phoneme live tests green and unchanged",
+  "next_entry": "T4 ALONE first (same one-task discipline that worked for T1): extract BaseOperations._ApplyFeatureStruc per C5/C6/C7 AND the new C4a dual wire shape (recursive C4 dict OR legacy flat list of {FeatureGuid,ValueGuid}), then re-point NaturalClassOperations.__ApplyFeatures (on_unresolved='raise') and PhonemeOperations.__ApplyFeatures (on_unresolved='skip') at it. Behaviour-preserving means RUNTIME behaviour only. THE HAZARD: tests/operations/test_natural_class_feature_sync.py:77-160 holds inspect.getsource shape assertions against _NaturalClassOperations__ApplyFeatures, incl. src.index(\"feat_obj = self.__ResolveByGuid\") which raises ValueError when that literal moves -- migrate all of them 1:1 onto BaseOperations._ApplyFeatureStruc and enumerate assertion-by-assertion in the report; deleting or weakening any one is a QC rejection. De-duplicate NC/Phoneme __ResolveByGuid into _ResolveFsByGuid here (T3 deliberately left them). Remove Phoneme's dead fill_gaps param at the call-through. THEN T5: one generalized MakeFeatStruc (C3), Infl+Phon become call-throughs, recursive dict + flat-list alias + slot=. Closes #256.",
   "deferred": [
     "OUT of feature, needs USER APPROVAL to file: IWfiAnalysis.MsFeaturesOA never captured (WfiAnalysisOperations.py:335) -- cross-reference the unfiled InflClassRA draft at specs/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md, which touches the same file",
     "OUT of feature, needs USER APPROVAL to file: IFsFeatStruc.FeatureDisjunctionsOC never traversed by any reader (new capability, not a resolver defect)",
@@ -40,5 +55,16 @@
     "Repo-wide flexlibs2 -> flexicon import-alias sweep in code/tests stays deferred as its own PR (CLAUDE.md doc fix ships here as T16)",
     "Crew config: Explore and lex-domain have no Write tool, so cycle-1 reports were persisted by the main session. Grant write access to specs/<feature>/reviews/ or route report-writing through a write-capable agent"
   ],
-  "updated": "2026-09-07"
+  "updated": "2026-09-07",
+  "known_non_regression": "tests/.../test_apply_raises_on_type_mismatch_segments_target FAILS identically before and after every change so far (AttributeError: 'ICmObject' object has no attribute 'Name', NaturalClassOperations.py:1270). Pre-existing C2/HVO-cast symptom, expected to fall out of T10. Do NOT re-diagnose as a T4/T5 regression.",
+  "sequencing_ruling_250": {
+    "verdict": "sequential-after-feature_complete, NOT parallel",
+    "reasons": [
+      "shared strictening site: #250 Defect 3 is the silent continue at BaseOperations.py:360-364, the same line C6 routes around; C6's anti-regression tests across T6/T7/T8 must land first or a forgotten pop surfaces as a misattributed writing-system error",
+      "shared write path under live evidence: #250 changes what target_ws_by_id (BaseOperations.py:1306-1308) is built from and how it is keyed; that dict feeds every ApplySyncableProperties incl. the 5 new ones T6-T8 add, and mutating it mid-feature invalidates FS live evidence already captured",
+      "live Target contention: both need FLEXLIBS_REQUIRE_LIVE=1 against the single Target/target_sandbox",
+      "#250 is a contract decision not a bug fix: Exists's docstring and body disagree and fixing either side is defensible with opposite blast radii; needs its own freeze cycle"
+    ],
+    "carry_forward": "Defect 4 (case-normalization divergence en-US vs en-us) is NOT latent -- it fires today with no special project state -- and is separable from latent Defects 1-3. Open specs/250-writingsystem-activation/spec.md at that spurt; the dir exists but is empty."
+  }
 }
