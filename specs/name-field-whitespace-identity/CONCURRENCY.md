@@ -165,6 +165,46 @@ cannot. Skipping them is a protocol violation **regardless of whether the commit
 happened to come out clean** -- T3's incident is proof that a clean pre-`add`
 check predicts nothing about the index a moment later.
 
+
+## AMENDMENT 3 (2026-09-07, cycle 4) -- `git stash` is authorised ONLY with an explicit pathspec
+
+**Binding from T5 onward. Authored by `/lex-lead` at the cycle-4 checkpoint,
+mirroring `spec.md` C13(c). This CLOSES A GAP in the staging rule above; it
+does not contradict it.**
+
+The staging rule already forbids stashing **a path you did not author**. It did
+not say, in terms, that a **bare** `git stash` is forbidden -- and AMENDMENT 2
+step 5's "only two authorised forms" clause is scoped to `git reset` forms, not
+to `git stash`. A reader had to derive the prohibition. State it directly:
+
+- **`git stash push -- <your own path>` is the ONLY authorised stash form in
+  this clone.**
+- **A bare `git stash` is FORBIDDEN, at the same level as `git reset --hard`**,
+  as are `git stash -u`, `git stash --all`, and `git stash push` with no
+  pathspec. All of them operate on the WHOLE working tree, which here means the
+  other crew's uncommitted, unrecoverable in-flight work would be swept into a
+  stash they do not know exists.
+- Stash only paths you authored. Never stash, `git checkout`, or `git restore` a
+  path you did not author -- unchanged from the staging rule above.
+- After any stash, confirm **`git stash list` is EMPTY** before you finish, and
+  report that it is. Never carry a stash across a checkpoint or a handoff.
+- Do not use a stash to "tidy" the working tree. Its only authorised use here is
+  the narrow one in C13(d): recovering a correct pre-edit offline baseline after
+  an ordering slip, when the baseline was not taken first as required.
+
+Occasioned by T4 (cycle 4), which used a correctly pathspec'd stash to recover a
+genuine pre-edit baseline -- the safe form -- and self-disclosed it. The delta
+was accepted (`spec.md` C13(b)). This amendment exists so that the NEXT agent,
+reading only that a stash-based recovery was accepted, does not reach for the
+bare form.
+
+**Authorised destructive-adjacent git operations in this clone, consolidated:**
+`git reset --soft HEAD~1`; index-only `git reset HEAD -- <path>`;
+`git stash push -- <your own path>`. **Everything else is FORBIDDEN while the
+other crew is active** -- including `git reset --hard`, bare `git stash`,
+`git checkout`/`git restore` of any path, and any rewrite of a commit that is
+not yours.
+
 ## If you find yourself needing one of their files
 
 Stop and report `needs_human`. Do not edit it, do not work around it by copying code out

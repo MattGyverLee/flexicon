@@ -462,6 +462,127 @@ already rules its whitespace-only path loud, and Q6 governs there.
 Recorded as **Q-242D**, an UNAUTHORISED candidate awaiting user approval.
 T5's CHANGELOG entry must disclose it as a known remaining gap.
 
+### C12 -- CONCURRENCY.md AMENDMENT 2 is EVIDENCED, not merely retained; promotion into the campaign `hard_rules` is the MAIN SESSION's action
+
+**Ruled by `/lex-lead` at the cycle-4 close, on a real incident, one cycle after
+authoring the amendment it evaluates.**
+
+**(a) AMENDMENT 2 is RETAINED and remains binding on every remaining task of
+this feature, unchanged in wording.**
+
+**(b) It is now EVIDENCED, and the evidence is stronger than cycle 3's.** On
+T4's fourth commit, the step-3 check -- `git status --porcelain` re-run
+immediately BEFORE `git commit` -- found FIVE of the other crew's
+`specs/feature-structure-sync-gap/` files already sitting in the shared index
+with staged markers, placed there by their own `git add` in the window after
+T4's `git add`. T4 cleared them with an index-only `git reset HEAD -- <five
+paths>` (zero working-tree bytes), re-confirmed, then committed. `/lex-lead`
+independently confirms `f5291e9` contains exactly one file.
+
+The distinction between the two incidents is the whole point and must not be
+flattened in any later summary:
+- **Cycle 3 (T3)** -- the race was caught **AFTER** the bad commit, by step 4
+  (`git show --stat HEAD`), and required a `git reset --soft HEAD~1` rewind.
+- **Cycle 4 (T4)** -- the race was caught **BEFORE** the commit, by step 3, and
+  required no rewind at all.
+
+Step 3 is therefore not redundant belt-and-braces on step 4; it is the step
+that converts a post-hoc correction into a prevention. The amendment caught, at
+exactly its intended catch point, the exact failure that motivated it.
+
+**(c) Step 6's report-even-when-clean requirement is what surfaced this.** T4's
+disclosure is the only reason the save is on the record at all. The
+requirement stands and is not relaxable: a task that stays silent about steps 3
+and 4 has not performed them, regardless of how its commit turned out.
+
+**(d) PROMOTION RECOMMENDATION -- for campaign items 3 and 4, executed by the
+MAIN SESSION only.** AMENDMENT 2 should be copied **verbatim** into
+`specs/tier1-silent-data-loss/.crew-handoff.json`'s `hard_rules`, so that
+campaign queue items 3 and 4 inherit it without re-deriving it from this
+feature's incident history. This is recorded as a recommendation, not as work
+this feature performs.
+
+**No agent acting inside `name-field-whitespace-identity` -- including T5 and
+any archivist pass -- may edit `specs/tier1-silent-data-loss/.crew-handoff.json`
+to carry this out.** That file is fenced as the main session's to maintain (see
+this feature's standing hard constraints). The promotion is the main session's
+action, to be taken when it closes sub-item 2a. If the main session declines
+it, the recommendation stands on the record unactioned; it does not lapse and
+does not authorise anyone else to perform it.
+
+**(e) This item authorises no loosening.** AMENDMENT 2 having proven its worth
+is grounds for extending it, never for concluding that the underlying staging
+rule is now sufficient on its own.
+
+### C13 -- T4's offline-baseline order slip: the delta STANDS AS MEASURED, and the load-bearing outcome is the STASH PATHSPEC RULE
+
+**Ruled by `/lex-lead` at the cycle-4 close, on T4's own self-disclosure.**
+
+**(a) What happened.** T4 made its `CheckOperations.py` code edit BEFORE
+recording the "before" offline baseline, against the task's STEP 4 ordering. It
+recovered by stashing its own edit, measuring the true pre-edit tree, then
+restoring the edit with `git stash pop`.
+
+**(b) ACCEPTED. The reported offline delta `+0/+0/+5` stands as measured. No
+re-derivation is ordered.** Four independent grounds:
+1. The stash/measure/pop produced a genuine before/after pair at the same
+   `HEAD` -- a measurement, not a reconstruction from memory or from a prior
+   spurt's figures.
+2. The C28 predict-before-measure guarantee is INTACT: the predictions commit
+   `2d8bfc5` landed before the measuring run. C28 governs predictions versus
+   measurement, and was not breached; STEP 4 governs edit versus baseline, and
+   was.
+3. The `+5` is corroborated out-of-band, independently of the offline run, by
+   the live collect count moving 15 -> 20 -- exactly the five new
+   `requires_live_project` tests claimed.
+4. `git stash list` and the stash reflog were BOTH confirmed empty afterward, so
+   the pop was complete and nothing was left parked.
+
+The delta is additionally trustworthy only because the three known-foreign
+failures were unchanged by name and message across both measurements, with no
+fourth appearing. Under the DELTA rule a measurement taken while the other
+crew's uncommitted work sits in the tree is valid precisely because that noise
+is expected to be constant across the pair; **if the foreign failure set had
+moved between the "before" and "after" runs, the delta would have been VOID and
+acceptance would not have been available.**
+
+**(c) THE FORWARD RULE -- this, not the ordering slip, is the actual latent
+hazard.** A future agent reading only "the delta was accepted" would take
+entirely the wrong lesson. The dangerous artefact of what T4 did was not the
+order of operations; it was the recovery mechanism.
+
+**`git stash` with an explicit pathspec -- `git stash push -- <your own path>`
+-- is the ONLY authorised form in this clone. A BARE `git stash` (and likewise
+`git stash -u`, `git stash --all`, or `git stash push` with no pathspec) is
+FORBIDDEN, at the same level as `git reset --hard`.** A bare stash operates on
+the entire working tree, which in this shared clone means it would sweep the
+other crew's uncommitted, unrecoverable in-flight work into a stash they do not
+know exists -- the exact destruction the staging rule and AMENDMENT 2 exist to
+prevent, arrived at from a different direction. That it happened to be
+recoverable this time is luck, not design.
+
+Attendant obligations whenever a pathspec'd stash is used:
+- Stash ONLY paths you authored. Never stash, `checkout`, or `restore` a path
+  you did not author -- this restates the standing rule and does not soften it.
+- Confirm `git stash list` is EMPTY before finishing the task, and report that
+  it is.
+- Never use a stash to "tidy" or "clean" the working tree, and never carry a
+  stash across a checkpoint boundary or a handoff.
+
+**(d) Ordering preference, unchanged.** Measure the "before" offline baseline
+BEFORE the first edit. That is free, and it is still the required order; C13
+does not relax STEP 4. The pathspec'd stash is a RECOVERY for a slip already
+made, not a routine substitute for correct sequencing.
+
+**(e) If recovery is not cleanly available, the answer is not a
+reconstruction.** An agent that has slipped and cannot obtain a genuine
+pre-edit measurement with a pathspec'd stash must report the baseline as
+unmeasured -- `FAIL: unverified` on that gate, or `needs_human` -- and must NOT
+substitute a remembered figure, a prior spurt's absolute (already VOID under
+the DELTA rule), or a reconstruction. Honest self-disclosure of the slip, which
+T4 did, is what made acceptance possible here and is expected in every
+comparable case.
+
 ---
 
 ## 3. Recorded but not ruled -- an unrelated bug found in cycle 1
