@@ -503,6 +503,14 @@ zero runtime delta) -- T1 is now `[x]` DONE (commit `1790fcc0`; see D3
 correction above). **Checkpoint 2b = T4-T5** (re-pointing NC/Phoneme onto the
 shared helper + `MakeFeatStruc` generalization).
 
+**Checkpoint 2b is NOT closed by T4's gate (cycle-4 lead ruling).** Checkpoint 2b
+is **T4 AND T5**. Cycle 4's PASS was T4's *task* gate. Anything downstream that
+keys off "the Checkpoint 2b gate" -- specifically
+`specs/250-writingsystem-activation/spec.md` section 6.3, whose condition 3
+requires that `BaseOperations.py` hold no uncommitted FS work -- is **still
+gated**, because T5 puts the single generalized `MakeFeatStruc` into that same
+file. The #250 Defect 4 window opens **after T5's gate**, not after T4's.
+
 - [x] **T1** DONE (commit `1790fcc0`) -- `lcm_casting._interface_cache`: added
       the **12 registrable entries** (corrected from 13, D3/E1 --
       `IPosFeatures` does not exist), plus `PosFeatures` hardcoded to `None`
@@ -520,7 +528,8 @@ shared helper + `MakeFeatStruc` generalization).
       **Corollary (E5):** NC's and Phoneme's private `__ResolveByGuid` must
       survive T3 **untouched** -- de-duplication into `_ResolveFsByGuid`
       happens in T4, not here.
-- [ ] **T4** `BaseOperations`: `_ApplyFeatureStruc` (recursive apply, C5/C6/C7);
+- [x] **T4** DONE (commits `4aca74a` production / `61e0f87` live tests / `e17cd7d`
+      evidence) -- `BaseOperations`: `_ApplyFeatureStruc` (recursive apply, C5/C6/C7);
       re-point NC (`on_unresolved="raise"`) and Phoneme (`"skip"`) at it.
       **Behaviour-preserving -- zero delta.**
       **Hazard (E5, cycle 3):** `tests/operations/test_natural_class_feature_sync.py:77-160`
@@ -533,6 +542,38 @@ shared helper + `MakeFeatStruc` generalization).
       `BaseOperations._ApplyFeatureStruc`, enumerated assertion-by-assertion in
       the T4 report. Deleting or weakening any one of the five is a QC
       rejection.
+      **Outcome:** all 6 assertions (spec's "five") migrated 1:1, zero deleted,
+      zero weakened -- independently re-enumerated at `a26d39c` by the gate.
+      Also landed: `_ApplyFeatureStrucSpecMap` (C4 dict recursion), the three
+      `_CastFs*` testability seams (`SIL.LCModel` is a CLR namespace and
+      REJECTS `monkeypatch.setattr` -- record for every future fake-object test
+      of LCM-casting code in `BaseOperations`), NC/Phoneme `__ResolveByGuid`
+      de-duplicated onto `_ResolveFsByGuid`, Phoneme's dead `fill_gaps` dropped.
+      Gate PASS (`reviews/cycle4-verification-T4.md`): zero runtime delta
+      measured on both sides, plus TWO mutation tests (legacy raise-branch and
+      nested recursion) that each produced real failures and were restored
+      `git hash-object`-identical.
+- [ ] **T18** = **`flexicon#264`** (FILED, user-approved -- **DEFERRED, does NOT
+      gate T5**) **Guard the SLDR double-init in `tests/conftest.py:135`.**
+      Tracked at https://github.com/MattGyverLee/flexicon/issues/264. Note for
+      that issue: the marker asymmetry is **11 unmarked modules**, not one --
+      all of `flexicon/sync/tests/` except `test_duplicate_operations.py`, plus
+      `flexicon/tests/test_FLExInit.py` and `test_FLExProject.py`; only 2
+      modules in those trees set `pytestmark`. That line calls
+      `Sldr.Initialize(True)` **unguarded**, while the production path it is
+      bootstrapping (`flexicon/code/FLExInit.py:66-71`) wraps the identical call
+      in `try/except` + warning. The asymmetry is unambiguous and pre-existing
+      (identical at `a26d39c`, orthogonal to T4).
+      **Do NOT land it while a second crew is active.** `tests/conftest.py` is a
+      SHARED harness that neither crew owns, the other crew is measuring deltas
+      against it, and their protocol
+      (`specs/name-field-whitespace-identity/CONCURRENCY.md`) instructs them to
+      **STOP and report** if a fourth failure appears. Perturbing their baseline
+      to tidy ours is not a trade we get to make unilaterally. Land it when
+      only one crew is active, or escalate `needs_human` for a coordinated
+      window.
+      **What actually unblocks measurement is procedural and costs nothing --
+      see section 5.1 below; adopt it in cycle 5 without waiting for T18.**
 - [ ] **T5** `MakeFeatStruc` generalization (C3) -- one implementation; Infl and
       Phon become call-throughs; recursive dict + flat-list alias; `slot=`.
       Closes **#256**.
@@ -579,6 +620,112 @@ shared helper + `MakeFeatStruc` generalization).
 - [ ] **T16** Docs: **`CLAUDE.md` staleness fix** -- see section 7.
 - [ ] **T17** Append the three NC `SegmentsRC` rows to
       `specs/233-basetype-cast-sweep/spec.md` section 2 (docs-only).
+
+## 5.1 Measurement discipline (cycle-4 lead ruling -- BINDING from cycle 5 on)
+
+**Measure a DELTA between your own two runs in the same shell. An absolute
+offline pass count is not evidence and must not be quoted as a gate.**
+
+This is not a preference; it is forced by measurement. Three agents measured the
+same offline suite at effectively the same commit and got three different
+answers:
+
+| Who | Result |
+|---|---|
+| T4 implementer (disposable `git worktree`) | 1494 -> **1495 passed**, 0 failed, 627 deselected |
+| Cycle-4 verification gate | **225 passed, 1273 errors** |
+| The other crew, at committed HEAD (`specs/name-field-whitespace-identity/reviews/cycle2-baseline.md`) | **1292 passed, 3 failed, 498 deselected, 0 errors** |
+
+**Two of the three were clean, so "the suite is broken" is the wrong
+conclusion.** And the `deselected` counts (627 vs 498) prove the three runs did
+not even *collect the same set* -- so no `conftest.py` guard could have made
+those numbers agree. The dominant variable is an **unpinned invocation** (rootdir,
+`-m` filter, worktree vs clone, stale `__pycache__`, whether FLEx/SLDR was
+already initialised in that shell), with SLDR order-dependence sitting
+underneath it. T18 addresses the second; only this rule addresses the first.
+
+Binding rules, adopted from the other crew's protocol (which derived them
+independently against the same repo -- convergent, not borrowed):
+
+1. Record counts **immediately before** your first edit, in the shell you will
+   use for the after-run. Change. Re-run. **Only the delta between your own two
+   runs is yours.** Report both raw numbers *and* the delta.
+2. Expected delta for a correct change: `passed` unchanged or up by the offline
+   tests you added; `deselected` up by exactly the `requires_live_project` tests
+   you added.
+3. Quote the **exact command** with the run, every time. A count without its
+   command is unfalsifiable.
+4. A failure in a file you did not touch, on the known-foreign list, is named as
+   foreign and passed over. A failure in a file you did not touch that is **not**
+   on that list -- **STOP and report**.
+5. `--collect-only` marker counts still bind: **no tests collected is a ZERO,
+   never a pass.** Live runs are unaffected -- sandbox fixtures are per-test
+   tempdir copies, so `run_mode: live` stays trustworthy.
+
+### The comparator T5 (and every later task) is measured against -- FROZEN
+
+**Ruled cycle 4, after `flexicon#264` was filed.** The bare full-suite offline
+count is **retired as a gate**. It is not merely noisy -- it is invalid on its
+own terms, and `#264`'s conftest guard would not repair it:
+
+`python -m pytest -m "not requires_live_project"` collects **11 modules that
+require a live FLEx and are not marked** -- all of `flexicon/sync/tests/`
+except `test_duplicate_operations.py`, plus `flexicon/tests/test_FLExInit.py`
+and `test_FLExProject.py`. Only **2** modules in those two trees carry
+`pytestmark = pytest.mark.requires_live_project`. So the "offline" set drags in
+live init, and whichever of those 11 reaches SLDR first decides whether
+`tests/conftest.py:135` raises. Marker hygiene is `#264`'s suggested-fix item 2
+-- a **separate** change from the guard. **Waiting for `#264` therefore buys T5
+nothing.**
+
+T5's acceptance is measured against these four, in this order of authority:
+
+1. **PRIMARY -- live subset, both sides, same shell.** At T5's parent commit and
+   at T5's HEAD, with `FLEXLIBS_REQUIRE_LIVE=1` and `run_mode: live` confirmed
+   in `tests/live_status.json` on **every** run:
+   `tests/operations/test_phon_features.py test_phonemes.py test_natural_classes.py test_natural_class_feature_sync.py test_feature_struc_resolver.py test_apply_feature_struc.py test_issue251_252_256_feature_struct_probe.py -m requires_live_project`.
+   Expected: identical on both sides **except** the #256 probe assertions
+   flipping FAIL -> PASS. Any other status change must be explained or the gate
+   fails.
+2. **SECONDARY -- a PINNED offline subset, delta only, never an absolute.**
+   `python -m pytest tests/operations tests/contract -m "not requires_live_project" -q -p no:cacheprovider`.
+   Pinned by explicit directory, explicitly **excluding** `flexicon/sync/tests`
+   and `flexicon/tests` (the 11 mis-marked modules above). Run before the first
+   edit and after, **in the same shell**. Report both raw numbers **and** the
+   delta; only the delta is evidence.
+3. **DETERMINISM CHECK, attached to the run rather than to `#264`.** Run the
+   pinned subset twice in the same shell and once in a fresh shell. If the three
+   counts disagree, the comparator is not yet valid: report **`FAIL:
+   unfalsifiable`** with the three numbers -- never a bare count. This is cheap
+   (offline, subset) and converts "the instrument might be broken" from an
+   assumption into a per-cycle measured fact.
+4. **FALSIFIABILITY -- the mutation test, which is what actually carries the
+   claim.** A "zero delta" is only meaningful if something could have made it
+   non-zero. Cycles 3 and 4 both established this: cycle 3 deleted a cast and 12
+   of 16 live tests went red; cycle 4 ran two mutations and each produced real
+   failures. **The offline count never was the falsifier** -- it only ever
+   detected collateral breakage elsewhere, which (2) now covers for the
+   directories we actually touch. T5's gate **must** therefore break the
+   generalized `MakeFeatStruc`'s owner resolution, show the live subset go red,
+   restore, and verify `git hash-object` identical to the committed blob.
+
+**`#264` must NOT be fixed inside T5's commit** -- `tests/conftest.py` is a
+shared harness the other crew is measuring deltas against. If a stable pinned
+subset proves unobtainable without touching it, **STOP and hand off
+`needs_human`**; do not widen the task.
+
+### Known-foreign red set (expected; do NOT fix, do NOT re-diagnose)
+
+- `tests/operations/test_transaction_rollback.py::TestPhase2JoinOrOpen::test_rollback_flag_set_true_on_exception`
+- `tests/operations/test_transaction_rollback.py::TestPhase2JoinOrOpen::test_depth_restored_on_exception`
+- `tests/test_flexlibs2_alias_ratchet.py::TestFlexlibs2AliasIsInboundOnly::test_no_executable_flexlibs2_imports_outside_alias_package`
+  (rename fallout from `ec54432`; T16's territory at most, not T5's)
+- **Live, ours:** `test_apply_raises_on_type_mismatch_segments_target`
+  (`AttributeError: 'ICmObject' object has no attribute 'Name'`,
+  `NaturalClassOperations.py:1270`) -- pre-existing C2/HVO-cast symptom, expected
+  to fall out of **T10**.
+
+---
 
 ## 6. Definition of done
 
