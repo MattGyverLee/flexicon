@@ -22,6 +22,18 @@ token.** `flexicon/__init__.py` and
 every task below. Only **Q2** (decided at T3) and **Q4** (`/lex-doc`'s call
 at T5) remain genuinely open.
 
+**STATE AS OF SPURT 5 (cycle 5, 2026-09-07) -- READ BEFORE ANY TASK BELOW.**
+Done: T1, T3, T4, **T6**. Dropped: T2 (C12). Remaining: **T7 (BLOCKED on the
+user's coupled ruling)**, **T5a (separable, ruling-independent,
+RECOMMENDED)**, **T5b (gated behind T7 + the ruling)**. Contract is now
+**C1-C19**. Q2 CLOSED (C15); **Q5's detector half CLOSED (C18)**; Q4 open at
+T5b. **THE RALPH LOOP IS CANCELLED** -- no Stop hook will re-feed anything,
+so nothing below resumes automatically; a human must restart it (see
+`STATUS.md` -> "How a human restarts this"). **The single most important
+fact, frozen as C17:** no `CloseProject()`-side change can ever fix the
+owner's filed incident -- only the `SaveChanges()` fourth ask can -- **and**
+T3's P-3 fix (0/25 -> 25/25) stands as shipped. State both halves.
+
 **New contract decision C11 (spec.md, ruled 2026-09-07 at the T1 review):**
 `HasOpenSessionTask()` reads depth BEFORE the `self._undoable` mode check,
 because C4's closed/never-opened `FP_ProjectError` has no mode carve-out and
@@ -353,7 +365,29 @@ Opened by the CP-B ruling (spurt 4). Both tasks arise from `spec.md`
 C13/C14/Q5. `SaveChanges()` remains untouchable throughout -- T6 only
 OBSERVES it, T7 does not modify it.
 
-- [ ] **T6** (LIVE, probe-only -- **safe to run WITHOUT the user's ruling**)
+- [x] **T6** (LIVE, probe-only -- **safe to run WITHOUT the user's ruling**)
+      **DONE 2026-09-07 (spurt 5, cycle 5). Run as a one-shot on the user's
+      greenlight, NOT inside the loop -- the ralph loop is CANCELLED.**
+      Outcome summary (full ruling in `spec.md` **C16/C17/C18**; verified by
+      `/lex-lead`, not taken on report): **mechanism (ii) CONFIRMED,
+      mechanism (i) RULED OUT, (iii) indistinguishable from (ii) and left
+      unresolved by design.** P-7 read **0/25** from the STILL-OPEN project
+      before `CloseProject()` was ever entered -> **this settles #243's
+      ceiling (C17): no `CloseProject()`-side change can EVER fix the
+      owner's P-5 -> P-3 sequence; only the `SaveChanges()` fourth ask can.
+      T3's P-3 fix (0/25 -> 25/25) is untouched and stands as shipped.**
+      P-8: a fresh envelope after the failure committed 1/1, so the
+      `UnitOfWorkService` is not globally poisoned. P-9: `HasUnsavedChanges`
+      exists but is **INDISTINGUISHABLE** read after `Save()` -> C18
+      re-scopes T7's detector (below). CP-B defect 2 CLOSED (`close_exc_msg`
+      now asserted at probe line 575; `[PROBE][P5]` lines quoted verbatim).
+      Probe 6 -> **9** live tests, all green, `run_mode: live`; offline
+      1290 passed with deselected 470 -> 473 (exactly the +3 new live
+      tests); **`git diff --stat -- flexicon/` EMPTY** -- independently
+      re-verified, so T6 stayed ruling-independent as designed.
+      Evidence: `evidence/live-t6-noop-save-mechanism.md`.
+      Report: `reviews/cycle5-programmer.md`.
+      Original task text follows for the record.
       Extend `tests/operations/test_issue243_closeproject_probe.py` in place
       with three probes that settle C13's open mechanism question and find
       T7's detector. Sandbox fixture (`target_sandbox_path`) ONLY; no
@@ -393,27 +427,87 @@ OBSERVES it, T7 does not modify it.
       (2) `CloseProject()` still always attempts `usm.Save()`, then raises
       `FP_ProjectError` when the save cannot be trusted, saying explicitly
       that the session's changes may not have been written to disk;
-      (3) use the detector T6/P-9 found, preferring the direct
-      `IUndoStackManager` read over the envelope-missing heuristic;
+      (3) **DETECTOR -- RE-SCOPED 2026-09-07 (spurt 5) by `spec.md` C18,
+      which SUPERSEDES this point's original wording.** The original text
+      said "preferring the direct `IUndoStackManager` read over the
+      envelope-missing heuristic". **That is now measured to be WRONG and is
+      withdrawn:** T6/P-9 showed `HasUnsavedChanges` reads `False`
+      immediately after `usm.Save()` in BOTH the real-save (25/25) and no-op
+      (0/25) cases -- **indistinguishable**, therefore unusable as a
+      post-save detector. The binding shape is:
+      - **PRIMARY, required:** the Phase-1-envelope-missing anomaly
+        (`writeEnabled and not _undoable` and `HasOpenSessionTask()` is
+        `False`), computable from T1's P1 surface. It is anomalous by
+        construction (C14), so it is a sound trigger.
+      - **OPTIONAL, diagnostic only:** a *pre*-`Save()` `HasUnsavedChanges`
+        read, logged as a value inside that already-anomalous branch. It
+        **MUST NOT** gate the raise and **MUST NOT** introduce a second code
+        path. It is not independent information -- P-9 read `True` only
+        after a *successful* `End`, so it is a proxy for "did an End just
+        succeed", which `CloseProject()` already knows first-hand from its
+        own End attempt.
+      - **DO NOT OVER-CLAIM (this is the point of the re-scope).** Do not
+        word `HasUnsavedChanges == False` as *"there is nothing pending to
+        save"*. Proven false-negative: in P-9's no-op shape it read `False`
+        while all 25 entries still existed in memory. The property means "a
+        completed-but-unsaved unit of work is registered", not "dirty data
+        exists".
+      - **Do not describe the raise as recovering data.** Per **C17** it
+        cannot: the change set is gone before `CloseProject()` is entered.
+        T7 restores LOUDNESS, not DATA.
       (4) move `Dispose()` / `del self.project` into a `finally` per
       **C15**; (5) re-point T4's P-5 assertions at the new contract
-      (`CloseProject()` RAISES; survivors stay 0/25). Do NOT touch
+      (`CloseProject()` RAISES; survivors stay 0/25 -- and per C17 that 0/25
+      is now the *ceiling*, not a pending improvement). Do NOT touch
       `SaveChanges()`. Evidence: `evidence/live-t7-loud-close.md`.
-      **Why blocked:** C14's raise is a public-behaviour change in the same
-      failure path as the unruled `SaveChanges()` fourth ask, and the two
-      interact -- if `SaveChanges()` is approved to fail fast the raise
-      becomes near-unreachable defensive code; if declined it is the only
-      signal the owner gets. Building it on one branch of that coin is the
-      wrong sequence.
+      **Why blocked -- SHARPENED by T6 (spurt 5):** C14's raise is a
+      public-behaviour change in the same failure path as the unruled
+      `SaveChanges()` fourth ask, and the two interact -- if `SaveChanges()`
+      is approved to fail fast the raise becomes near-unreachable defensive
+      code; if declined it is the only signal the owner gets. **C17 raises
+      the stakes of the decline branch specifically:** the fourth ask is now
+      measured to be the ONLY thing that can fix the filed incident, so
+      declining it makes T7's loudness the entire, permanent remedy. Building
+      T7 on one branch of that coin is still the wrong sequence.
 
-**Checkpoint:** T6's three probes green and its evidence file naming which
-rival mechanism (i)/(ii)/(iii) holds plus the detector verdict; then, after
-the user's ruling, T7 landed with the full live gate green. Only then does
-CP-C (T5) open.
+**Checkpoint -- HALF REACHED 2026-09-07 (spurt 5).** T6 is DONE: three
+probes green (probe file 9/9, `run_mode: live`), mechanism named
+((ii) confirmed / (i) ruled out / (iii) undetermined -- `spec.md` C16),
+ceiling frozen (C17), detector verdict ruled (C18), CP-B defect 2 closed,
+zero `flexicon/` diff. **The other half, T7, remains BLOCKED on the user's
+coupled ruling and the loop is CANCELLED -- nothing resumes it
+automatically.** CP-C (T5b) stays gated behind T7; **T5a is now separable
+and recommended -- see C19 and Checkpoint 3 below.**
 
 ---
 
-## Checkpoint 3 -- P2: CHANGELOG entry (T5)
+## Checkpoint 3 -- P2: CHANGELOG entry (T5, now SPLIT into T5a / T5b)
+
+**SPLIT 2026-09-07 (spurt 5) by `spec.md` C19.** "Defer all of T5" was
+re-costed and found NOT to be neutral: `CHANGELOG.md` has a live
+`[Unreleased]` section, and T3 is **already committed to `main` inside that
+window with no entry at all**. If a version were cut today, consumers would
+get a behaviour change to a shipped public method -- including C14's
+observability regression -- entirely undocumented. So:
+
+- **T5a -- minimal `[Unreleased]` stub. RULING-INDEPENDENT. RECOMMENDED.**
+  Notes **T3 only**, scoped per C17's two halves: the P-3 path is fixed
+  (0/25 -> 25/25); the `SaveChanges()`-at-depth>0 path is **NOT** fixed and
+  `CloseProject()` currently **returns normally** there. That is a
+  description of *shipped behaviour*, so it takes no position on the fourth
+  ask, and it discloses nothing public issue #243 does not already state.
+  **Churn cost is zero** -- it sits under `[Unreleased]`, so if T7 later
+  flips that path to raise, the entry is edited before any version cut and
+  nothing published ever churns. Constraints: C10 (no `.fwdata` claim), C14
+  (loudness not data), C17 (state BOTH halves). Docs-only, live-exempt.
+  **Offered as a second pre-authorised, ruling-independent unit, exactly as
+  T6 was -- the USER greenlights it or not. Do not run it inside any loop.**
+- **T5b -- the prominent P2 release note + the `SaveChanges()` docstring
+  correction + Q4's placement/wording. STAYS GATED** behind the user's
+  ruling AND T7, unchanged. Its wording depends on both, and the docstring
+  correction must tell callers what to do instead -- which depends on
+  whether `SaveChanges()` is getting a guard. The T5 task text below is
+  T5b's.
 
 **RE-GATED 2026-09-07 (spurt 4): T5 is now LAST, after T6 and T7.** It was
 originally third of three; the CP-B ruling inserted Checkpoint 2c ahead of

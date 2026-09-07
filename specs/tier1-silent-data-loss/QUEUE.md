@@ -2,7 +2,13 @@
 
 **Repo:** flexicon (`main`). **Started:** 2026-09-07.
 **Scope:** the four Tier 1 (silent data loss / silent corruption) open issues.
-**Driver:** ralph-loop in-session Stop hook + `/lex-lead` spurt mode.
+**Driver:** ralph-loop in-session Stop hook + `/lex-lead` spurt mode --
+**CANCELLED as of spurt 5 (2026-09-07). Nothing resumes automatically.**
+The Stop hook is gone (`.claude/ralph-loop.local.md` deleted in the working
+tree), so this campaign is now human-driven until someone restarts it. See
+`specs/243-closeproject-save-guard/STATUS.md` -> **"How a human restarts
+this"**. The campaign promise is still `TIER1 COMPLETE`, never
+`FEATURE COMPLETE`.
 
 This is a **campaign**, not a feature. Each queue item is its own feature with its
 own `spec.md` / `tasks.md` / `STATUS.md` / `.crew-handoff.json` under its own
@@ -25,7 +31,7 @@ promise, so it cannot exit the loop early.
 
 | # | status | slug | issues | why here |
 |---|--------|------|--------|----------|
-| 1 | **`needs_human`** (CP-A closed; **CP-B/T3+T4 done and PASSED**; blocked at T6/T7 -- see the escalated `SaveChanges()` item under "Awaiting user approval") | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
+| 1 | **`needs_human`** (CP-A closed; CP-B/T3+T4 done and PASSED; **T6 DONE spurt 5 -- the ceiling is now MEASURED**; blocked at T7 -- see the escalated `SaveChanges()` item under "Awaiting user approval", which is now the ONLY thing that can fix the filed incident) | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
 | 2 | `queued` | `242-paragraph-whitespace` | #242 | Cheap, self-contained, real corruption. Paragraph/Segment text writers silently strip leading/trailing whitespace. |
 | 3 | `queued` | `feature-structure-sync-gap` | #251 #252 #253 #256 | **Already in flight** -- contract frozen (C1-C8), live ground truth captured, spurt 1 done. RESUME, do not re-plan. Biggest item (T1-T17). Ships data loss today: `Allomorph` and `POS` are live sync object types. |
 | 4 | `queued` | `250-writingsystem-activation` | #250 | Deliberately LAST: resolving it requires an **API-surface policy decision** (active-only `Exists` plus a separately-named whole-store predicate, vs. an `Ensure()` that activates a store-present WS). That is the item most likely to end `needs_human`, so everything landable unattended lands first. |
@@ -40,18 +46,29 @@ untouched items behind it.
 
 ### 1. `243-closeproject-save-guard` (#243)
 
-> **STATUS 2026-09-07 (end of spurt 4): `needs_human`. Do not resume this
-> item autonomously except for T6.** CP-B is done and passed -- the P0 guard
-> is landed and live-verified and P-3 is fixed 0/25 -> 25/25. But the owner's
-> actual sequence (P-5) still measures **0/25**, and `spec.md` C14 found the
-> guard makes that path *silent* where it previously raised. The remaining
-> work (T7) is a public-behaviour change coupled to the still-unruled
-> `SaveChanges()` depth guard, so **both must be ruled by the user together**
-> -- see the escalated item under "Awaiting user approval" below.
+> **STATUS 2026-09-07 (end of spurt 5): `needs_human`, and there is now NO
+> pre-authorised work left.** T6 -- the one exception -- is **DONE** (run as
+> a one-shot on the user's greenlight, not in the loop; zero `flexicon/`
+> diff). CP-B remains done and passed: the P0 guard is landed, live-verified,
+> and P-3 is fixed 0/25 -> 25/25.
+>
+> **What T6 settled -- `spec.md` C16/C17.** P-7 read **0/25 from the
+> STILL-OPEN project before `CloseProject()` was ever entered**, so the
+> change set never survives that far: **no `CloseProject()`-side change --
+> T3's shipped guard, T7, or any future guard there -- can EVER fix the
+> owner's filed incident. Only the `SaveChanges()` fourth ask can.** That ask
+> is therefore no longer "would also help"; it is the only possible fix. **And
+> T3's P-3 fix stands as shipped, unqualified** -- state both halves.
+>
+> T7 is still a public-behaviour change coupled to that unruled ask, so
+> **both must be ruled by the user together** -- see the escalated item under
+> "Awaiting user approval" below.
 > `specs/243-closeproject-save-guard/.crew-handoff.json` `blocker` is
-> authoritative. Task order is now **T6 -> T7 -> T5**; T5 (CHANGELOG) is LAST.
-> **T6 alone is pre-authorised** (probe-only, sandbox fixture, no `flexicon/`
-> behaviour change) and sharpens the ruling itself.
+> authoritative. Task order: **T7 -> T5b**. **T5 was SPLIT (C19): T5a, a
+> minimal `[Unreleased]` CHANGELOG stub scoped to C17's two halves, is
+> ruling-independent, zero-churn and RECOMMENDED -- offered as a second
+> pre-authorised unit for the USER to greenlight, exactly as T6 was. It does
+> not unblock T7 or T5b.**
 
 
 **Spec+probe checkpoint DONE (spurt 1, 2026-09-07).** `spec.md` (contract
@@ -335,6 +352,73 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   filed; the `SaveChanges()` guard was not implemented, prototyped or planned
   around. Items 2, 3 and 4 untouched.
 
+- **2026-09-07 -- item 1, spurt 5 (cycle 5): T6 DONE, the ceiling is MEASURED,
+  and the ralph loop is CANCELLED.** Not a loop iteration: the user greenlit
+  **T6 and only T6** (the pre-authorised probe) after spurt 4's `needs_human`
+  handoff, and the main session ran it as a **one-shot** rather than
+  restarting the loop, precisely so nothing could drift into T7 or T5. Crew:
+  `lex-programmer` alone. **`git diff --stat -- flexicon/` is EMPTY**
+  (re-verified by `/lex-lead`) -- zero behaviour change, so T6 stayed
+  ruling-independent exactly as designed. Probe file **6 -> 9** live tests,
+  all green with `run_mode: live`; `test_undoable_mode_live.py` 33/33;
+  `test_target_live_smoke.py` 3/3; offline **1290 passed** with deselected
+  470 -> 473 (exactly the +3 new live tests). **CP-B defect 2 CLOSED** --
+  `test_p5_save_before_forced_end` now asserts `close_exc_msg is None` and
+  the `[PROBE][P5]` lines are quoted verbatim, so C13 fact 3 is a measurement
+  rather than prose. Four rulings, all frozen in `spec.md`:
+
+  - **C16 -- the mechanism question is ANSWERED, with its limit recorded
+    honestly.** **(ii) CONFIRMED**: P-7 re-read the 25 entries from the
+    STILL-OPEN project immediately after `SaveChanges()` raised at depth 1 --
+    **0/25**, already gone. **(i) RULED OUT**: P-8's fresh post-failure
+    envelope committed **1/1**, so the `UnitOfWorkService` is not globally
+    poisoned -- which also *contradicts* the cycle-4 report's asserted
+    "cannot commit after a failed `CheckReadyForCommit`" wording. **(iii) is
+    NOT separately distinguishable from (ii)** by anything measured and is
+    **left unresolved by design** -- the report volunteered that limit itself
+    instead of guessing, which is the correct outcome and is recorded that
+    way rather than tidied into false certainty.
+  - **C17 -- #243's CEILING, now a contract item, and the most consequential
+    fact in the feature.** Because the change set never survives as far as
+    `CloseProject()`, **no `CloseProject()`-side change can EVER recover the
+    owner's real P-5 -> P-3 sequence -- T3's guard, T7, or any future guard
+    there. Only the `SaveChanges()` fourth ask can.** C14 said "loudness, not
+    data" from an inference; C16 is the measurement that proves it. **Second,
+    equally binding half: T3 IS a genuine, shipped, live-verified fix for the
+    independent P-3 path (0/25 -> 25/25) and C17 does not weaken it.** Any
+    summary must state both halves.
+  - **C18 -- T7's detector re-scoped so it cannot be over-claimed;
+    supersedes C14 point 3.** `HasUnsavedChanges` read *after* `usm.Save()`
+    is `False` in BOTH the real-save (25/25) and no-op (0/25) cases --
+    **indistinguishable**, so C14's preferred direct post-save read is
+    **void**. The programmer's prose-only recommendation (envelope-missing
+    heuristic primary; pre-`Save()` read only to sharpen the message) is
+    **ACCEPTED**, with two additions `/lex-lead` took from the evidence
+    rather than the report: the pre-`Save()` read is **not independent
+    information** (it read `True` only *after a successful `End`*, so it is a
+    proxy for "did an End just succeed" -- a fact `CloseProject()` already
+    holds first-hand), and the suggested wording **"there is nothing pending
+    to save" is REJECTED as a proven false-negative** (it read `False` before
+    the trigger `SaveChanges()` while all 25 entries still existed in
+    memory). `tasks.md` T7 point 3 was rewritten accordingly.
+  - **C19 -- T5 SPLIT; deferring all of it was re-costed and found not to be
+    neutral.** `CHANGELOG.md` has a live `[Unreleased]` section and **T3 is
+    already on `main` inside it with no entry at all**, so a version cut
+    today would ship an undocumented public behaviour change including C14's
+    observability regression. **T5a** (minimal `[Unreleased]` stub, T3 only,
+    scoped to C17's two halves) is ruling-independent, zero-churn and
+    **RECOMMENDED**; **T5b** (the prominent note + the `SaveChanges()`
+    docstring correction + Q4) stays gated behind T7 and the ruling.
+
+  **Item 1 stays `needs_human` and the ralph loop is CANCELLED** -- no Stop
+  hook will re-feed anything, so the campaign is human-driven from here. The
+  blocker is restated on the sharpened facts: the user is no longer deciding
+  whether to approve an extra improvement, but **whether flexicon fixes
+  #243's incident at all, or ships #243 documenting it as unfixed.** No
+  GitHub issues filed; `SaveChanges()` untouched, unprototyped, unplanned.
+  Items 2, 3 and 4 untouched, and `specs/feature-structure-sync-gap/` was not
+  opened.
+
 ### Awaiting user approval (do not file inside the loop)
 
 - (carried from the `feature-structure-sync-gap` handoff) `IWfiAnalysis.MsFeaturesOA`
@@ -379,14 +463,43 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   Nothing in item 1 can be honestly closed before this ruling: T5's release
   note would have to either claim a fix that does not hold for the filed
   incident, or publicly document that it is unfixed -- and the latter commits
-  the project to a position on this ask. **Pre-authorised without the ruling:
-  item 1's T6 only** (probe-only, sandbox fixture, no `flexicon/` behaviour
-  change); it sharpens this very decision by settling whether the data is
-  already gone before `CloseProject()` is entered. Note that **all three rival
-  mechanisms in C13 imply the same shape for this ask** (refuse `usm.Save()`
-  at `CurrentDepth > 0`, failing fast before any damage), so the open
-  mechanism question does not block the decision -- it only bounds what #243
-  may claim without it.
+  the project to a position on this ask.
+
+  **SHARPENED 2026-09-07 (spurt 5) BY T6 -- read this before deciding.** T6
+  ran (probe-only, zero `flexicon/` diff) and **settled the mechanism
+  question in the decisive direction**: `spec.md` **C16** confirms the change
+  set is **already gone from the still-open project before `CloseProject()`
+  is ever entered** (P-7: 0/25 in memory), and **C17** turns that into
+  #243's ceiling. Consequences for this decision:
+
+  - **This ask is no longer "would also help" -- it is the ONLY thing that
+    can fix the incident #243 was filed about.** No `CloseProject()`-side
+    change can reach 25/25 for the owner's sequence, at any price. So the
+    question is not whether to approve an extra improvement; it is **whether
+    flexicon fixes #243's incident at all, or ships #243 documenting it as
+    unfixed.**
+  - **The decline branch is now permanent, by measurement rather than by
+    effort.** T7's ERROR + raise becomes the entire remedy the owner ever
+    gets, which is why its severity and wording matter a great deal.
+  - **Still true and still good news: the shape of the ask is unaffected by
+    the residual (ii)-vs-(iii) uncertainty** -- refuse `usm.Save()` at
+    `CurrentDepth > 0`, failing fast before any damage. The mechanism
+    question never blocked this decision and now does not exist.
+  - **One observation, NOT a fifth ask.** C16 places the loss *inside*
+    `SaveChanges()`, so even T7's raise reports it **late**. If the "fail
+    fast / prevent" shape is declined, the honest maximum available is "loud
+    at close, already lost at `SaveChanges()`" -- so whether this same ask
+    should have a *minimum* shape (report loudly at the point of loss) is
+    part of the ruling about that one method. Nothing may implement,
+    prototype or plan it; `SaveChanges()` stays untouchable.
+
+  **No pre-authorised work remains on item 1** -- T6, the one exception, is
+  DONE. `/lex-lead` now **offers a second, separable one** for the user to
+  greenlight if they wish: **T5a**, a minimal `[Unreleased]` CHANGELOG stub
+  noting T3 only and scoped to C17's two halves (`spec.md` **C19**). It is
+  docs-only, ruling-independent, discloses nothing public issue #243 does not
+  already state, and has **zero churn cost** because it can be edited before
+  any version cut. It does **not** unblock T7 or T5b.
 - Open issue **#259** (`InflClassRA` does not exist on `IWfiMorphBundle`) is
   Tier 2, NOT in this campaign -- but its draft lives at
   `specs/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md`

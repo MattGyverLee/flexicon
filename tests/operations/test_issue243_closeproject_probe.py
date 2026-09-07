@@ -567,6 +567,20 @@ def test_p5_save_before_forced_end(target_sandbox_path):
     finally:
         _dispose_if_open(project, "P5")
 
+    # CP-B defect 2 (tasks.md T6, spec.md C13 fact 3): this assertion was
+    # missing here even though test_p3_p6_reproduction_and_symptom asserts
+    # it (line ~434). C13 fact 3 -- "usm.Save() returned successfully having
+    # persisted nothing" -- depends on CloseProject() NOT raising; without
+    # this assertion that dependency was prose, not a measurement. Pin it.
+    assert close_exc_msg is None, (
+        f"CloseProject() raised even with the T3 guard in place: "
+        f"{close_exc_msg!r} -- the guard should have found "
+        "HasOpenSessionTask() False (SaveChanges()'s own failure already "
+        "collapsed the envelope, and the forced manual End above found "
+        "nothing to end), skipped EndNonUndoableTask(), and still reached "
+        "usm.Save()."
+    )
+
     reopen_project = FLExProject()
     reopen_project.OpenProject(str(fwdata_path), writeEnabled=False)
     try:
@@ -651,3 +665,567 @@ def test_p5_save_before_forced_end(target_sandbox_path):
         "finding -- do not silently adjust this assertion to match; "
         "report the new count, it is P0-severity either way."
     )
+
+
+# ===========================================================================
+# T6 -- P-7 / P-8 / P-9: the no-op-save mechanism probe (spec.md C13/C14/Q5)
+#
+# T3's guard (P0) is NOT re-litigated by anything below -- C13 fact 1
+# already disproved the "guard skipped an End that should have run"
+# hypothesis, by measurement inside the SAME run (the forced End still
+# raised "Cannot end task that has not been started." under the T3 guard).
+# These three probes instead settle which of C13's three RIVAL MECHANISMS
+# for the measured 0/25 post-guard result actually holds, and find T7's
+# detector. No file under flexicon/ is touched here: SaveChanges() and
+# CloseProject() are only ever OBSERVED, never modified, never reordered.
+# ===========================================================================
+
+@pytest.mark.live_phase("FLExProject", "modify")
+def test_p7_data_survives_failed_savechanges_in_memory(target_sandbox_path):
+    """
+    T6 / P-7 (spec.md C13, tasks.md T6): distinguishes rival mechanism (ii)
+    -- "SaveChanges()'s failure path DISCARDED the pending change set
+    outright, so the loss already happened before CloseProject() was ever
+    entered" -- from (i)/(iii), under which the change set survives in
+    memory and only the COMMIT path is broken.
+
+    Flow: run the P-5 setup (create N_ENTRIES TEST_ entries, call
+    SaveChanges() while CurrentDepth == 1, which raises the owner's exact
+    "Commit at wrong place." string and collapses depth 1 -> 0 as a side
+    effect -- both already measured live in cycle 1 / T4). Then, WITHOUT
+    closing or reopening the project, re-read the 25 TEST_ entries from the
+    project object that is STILL OPEN.
+
+    Verdict:
+    - Present (25/25 in-memory) => mechanism (ii) is RULED OUT: the change
+      set survived SaveChanges()'s failure. Whatever destroys it (measured
+      0/25 at T4 after a real reopen) happens at or after the commit step
+      CloseProject() reaches, not before CloseProject() is even entered.
+    - Absent (0/25 in-memory) => mechanism (ii) is CONFIRMED. THIS SETTLES
+      #243's CEILING: no CloseProject()-side change could ever reach 25/25
+      for the owner's real P-5 -> P-3 sequence, because the data is already
+      gone one step earlier than CloseProject() even runs.
+    """
+    from flexicon.code.FLExProject import FLExProject
+
+    fwdata_path = pathlib.Path(target_sandbox_path)
+    prefix = f"{TEST_PREFIX}p7_"
+
+    project = FLExProject()
+    project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=False)
+    close_exc_msg = None
+    in_memory_count = None
+    try:
+        created = _create_test_entries(project, prefix, N_ENTRIES)
+        print(f"[PROBE][P7] created {len(created)} entries with prefix {prefix!r}")
+
+        depth_before_save = _depth(project)
+        print(f"[PROBE][P7] CurrentDepth before SaveChanges(): {depth_before_save}")
+
+        _, save_exc_msg = _safe(project.SaveChanges, "P7 SaveChanges() while envelope still open")
+        assert save_exc_msg is not None and "Commit at wrong place." in save_exc_msg, (
+            f"Expected SaveChanges() to raise the owner's exact symptom "
+            f"string at CurrentDepth > 0 (spec.md C9); got: {save_exc_msg!r}"
+        )
+
+        depth_after_save = _safe(lambda: _depth(project), "P7 CurrentDepth after SaveChanges()")[0]
+        print(f"[PROBE][P7] CurrentDepth after SaveChanges() raised: {depth_after_save}")
+
+        # THE MEASUREMENT: re-read from the STILL-OPEN in-memory project,
+        # before CloseProject() is ever called.
+        in_memory_count = _count_prefixed_entries(project, prefix)
+        print(
+            f"[PROBE][P7] TEST_ entries still visible in the STILL-OPEN "
+            f"project after SaveChanges() raised: {in_memory_count} / {N_ENTRIES}"
+        )
+
+        if in_memory_count == N_ENTRIES:
+            print(
+                "[PROBE][P7] VERDICT: mechanism (ii) RULED OUT -- the "
+                "change set survived SaveChanges()'s failure into the "
+                "still-open project. The eventual loss (0/25 measured at "
+                "T4 after a real reopen) happens at or after the commit "
+                "step CloseProject() reaches, not before CloseProject() is "
+                "even entered."
+            )
+        elif in_memory_count == 0:
+            print(
+                "[PROBE][P7] VERDICT: mechanism (ii) CONFIRMED -- "
+                "SaveChanges()'s failure path discarded the pending change "
+                "set outright. THIS SETTLES #243's CEILING: no "
+                "CloseProject()-side change can ever reach 25/25 for the "
+                "owner's real P-5 -> P-3 sequence, because the data is "
+                "already gone before CloseProject() is ever entered."
+            )
+        else:
+            print(
+                f"[PROBE][P7] VERDICT: PARTIAL in-memory survival "
+                f"({in_memory_count}/{N_ENTRIES}) -- neither a clean "
+                "rule-out nor a clean confirmation of (ii). Reported as-is."
+            )
+
+        # Also close/reopen so the T4 result (0/25 after a real reopen) is
+        # re-confirmed inside this same probe, tying both measurements
+        # together for the evidence file.
+        _, close_exc_msg = _safe(project.CloseProject, "P7 CloseProject (expected to succeed under T3 guard)")
+    finally:
+        _dispose_if_open(project, "P7")
+
+    assert close_exc_msg is None, (
+        f"CloseProject() raised even with the T3 guard in place: {close_exc_msg!r}"
+    )
+
+    reopen_project = FLExProject()
+    reopen_project.OpenProject(str(fwdata_path), writeEnabled=False)
+    try:
+        surviving_count = _count_prefixed_entries(reopen_project, prefix)
+        print(f"[PROBE][P7] TEST_ entries surviving a real reopen, re-read from LCM: {surviving_count} / {N_ENTRIES}")
+    finally:
+        _safe(reopen_project.CloseProject, "P7 reopen CloseProject")
+        _dispose_if_open(reopen_project, "P7 reopen")
+
+    print(
+        f"[PROBE][P7] SUMMARY: in-memory (still-open) count={in_memory_count}/{N_ENTRIES}, "
+        f"post-reopen count={surviving_count}/{N_ENTRIES}"
+    )
+
+    # Setup sanity: reconfirm the T4 finding (0/25 after a real reopen) is
+    # reproduced by this probe's own replication of the P-5 sequence, so
+    # the in-memory measurement above is known to be measuring the same
+    # scenario C13 was frozen from, not a drifted variant of it.
+    assert surviving_count == 0, (
+        f"Expected the T4/C13 P-5 result (0/{N_ENTRIES} after reopen) to "
+        f"reproduce here; got {surviving_count}/{N_ENTRIES}. If this "
+        "assertion is failing, the underlying P-5 behaviour has CHANGED -- "
+        "report the new count, do not silently adjust this assertion."
+    )
+
+
+# ===========================================================================
+# P-8 -- GLOBALLY POISONED, OR ONLY THE EXISTING DIRTY SET? (spec.md C13 (i) vs (ii)/(iii))
+# ===========================================================================
+
+@pytest.mark.live_phase("FLExProject", "modify")
+def test_p8_fresh_entry_after_failed_savechanges(target_sandbox_path):
+    """
+    T6 / P-8 (spec.md C13, tasks.md T6): distinguishes rival mechanism (i)
+    -- the UnitOfWorkService / UndoStack is poisoned and refuses to commit
+    for the REST OF THE SESSION -- from (ii)/(iii), under which only the
+    pre-existing, already-dirty change set is unusable while the SERVICE
+    itself still works for new writes.
+
+    Flow: run the P-5 setup (25 TEST_ entries, SaveChanges() raises at
+    CurrentDepth == 1, envelope collapses to 0), THEN open a FRESH
+    BeginNonUndoableTask() envelope, create exactly ONE new TEST_ entry
+    under a distinct prefix, End that fresh envelope, CloseProject(),
+    reopen read-only, and count both prefixes.
+
+    Verdict:
+    - The new entry persists (1/1) => NOT globally poisoned: a fresh
+      envelope commits fine after the failure, so mechanism (i) is RULED
+      OUT and (ii)/(iii) are favoured.
+    - Nothing persists (0/1) => mechanism (i) CONFIRMED: the UOW is
+      poisoned session-wide; no post-failure write of any kind can ever
+      commit again in that process.
+    """
+    from flexicon.code.FLExProject import FLExProject
+
+    fwdata_path = pathlib.Path(target_sandbox_path)
+    setup_prefix = f"{TEST_PREFIX}p8setup_"
+    fresh_prefix = f"{TEST_PREFIX}p8fresh_"
+
+    project = FLExProject()
+    project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=False)
+    close_exc_msg = None
+    try:
+        created = _create_test_entries(project, setup_prefix, N_ENTRIES)
+        print(f"[PROBE][P8] created {len(created)} setup entries with prefix {setup_prefix!r}")
+
+        _, save_exc_msg = _safe(project.SaveChanges, "P8 SaveChanges() while envelope still open")
+        assert save_exc_msg is not None and "Commit at wrong place." in save_exc_msg, (
+            f"Expected SaveChanges() to raise the owner's exact symptom "
+            f"string at CurrentDepth > 0 (spec.md C9); got: {save_exc_msg!r}"
+        )
+        depth_after_save = _safe(lambda: _depth(project), "P8 CurrentDepth after SaveChanges()")[0]
+        print(f"[PROBE][P8] CurrentDepth after SaveChanges() raised: {depth_after_save}")
+
+        # Open a FRESH envelope -- distinct from the collapsed one above --
+        # and create exactly one new TEST_ entry inside it.
+        _safe(project.project.MainCacheAccessor.BeginNonUndoableTask, "P8 fresh BeginNonUndoableTask")
+        depth_after_fresh_begin = _safe(lambda: _depth(project), "P8 CurrentDepth after fresh Begin")[0]
+        print(f"[PROBE][P8] CurrentDepth after fresh BeginNonUndoableTask(): {depth_after_fresh_begin}")
+
+        fresh_created = _create_test_entries(project, fresh_prefix, 1)
+        print(f"[PROBE][P8] created {len(fresh_created)} fresh entry with prefix {fresh_prefix!r}")
+
+        _, end_exc_msg = _safe(project.project.MainCacheAccessor.EndNonUndoableTask, "P8 fresh EndNonUndoableTask")
+        depth_after_fresh_end = _safe(lambda: _depth(project), "P8 CurrentDepth after fresh End")[0]
+        print(f"[PROBE][P8] CurrentDepth after fresh EndNonUndoableTask(): {depth_after_fresh_end}")
+
+        assert end_exc_msg is None, (
+            f"The freshly-opened envelope's own End raised unexpectedly: "
+            f"{end_exc_msg!r} -- P-8 needs a clean fresh envelope to isolate "
+            "the poisoning question from the End-mirror question T3 already "
+            "fixed."
+        )
+
+        _, close_exc_msg = _safe(project.CloseProject, "P8 CloseProject (expected to succeed under T3 guard)")
+    finally:
+        _dispose_if_open(project, "P8")
+
+    assert close_exc_msg is None, (
+        f"CloseProject() raised even with the T3 guard in place: {close_exc_msg!r}"
+    )
+
+    reopen_project = FLExProject()
+    reopen_project.OpenProject(str(fwdata_path), writeEnabled=False)
+    try:
+        setup_surviving = _count_prefixed_entries(reopen_project, setup_prefix)
+        fresh_surviving = _count_prefixed_entries(reopen_project, fresh_prefix)
+        print(f"[PROBE][P8] setup entries surviving (pre-existing dirty set): {setup_surviving} / {N_ENTRIES}")
+        print(f"[PROBE][P8] fresh entry surviving (post-failure envelope): {fresh_surviving} / 1")
+    finally:
+        _safe(reopen_project.CloseProject, "P8 reopen CloseProject")
+        _dispose_if_open(reopen_project, "P8 reopen")
+
+    if fresh_surviving == 1:
+        print(
+            "[PROBE][P8] VERDICT: NOT globally poisoned -- a freshly-opened "
+            "envelope created AFTER the failed SaveChanges() commits fine. "
+            "Mechanism (i) (session-wide UOW poisoning) is RULED OUT; "
+            "(ii)/(iii) (only the pre-existing dirty set is unusable) are "
+            "favoured over (i)."
+        )
+    elif fresh_surviving == 0:
+        print(
+            "[PROBE][P8] VERDICT: globally poisoned -- mechanism (i) "
+            "CONFIRMED. No write of any kind, old or new, can commit again "
+            "in this process once the first commit check has failed."
+        )
+    else:
+        print(f"[PROBE][P8] VERDICT: unexpected fresh_surviving={fresh_surviving} (not 0 or 1) -- reported as-is.")
+
+    print(f"[PROBE][P8] SUMMARY: setup={setup_surviving}/{N_ENTRIES} fresh={fresh_surviving}/1")
+
+    # Setup sanity: the pre-existing dirty set must reproduce the T4/C13
+    # finding (0/25) so this probe's fresh-entry measurement is known to be
+    # layered on top of the same scenario C13 was frozen from.
+    assert setup_surviving == 0, (
+        f"Expected the pre-existing dirty set to reproduce the T4/C13 "
+        f"result (0/{N_ENTRIES}); got {setup_surviving}/{N_ENTRIES}. If "
+        "this assertion is failing, the underlying P-5 behaviour has "
+        "CHANGED -- report the new count, do not silently adjust this "
+        "assertion."
+    )
+    # Headline claim: exactly one of {persisted, did not persist} for the
+    # fresh, post-failure envelope. Assert on the observed value rather
+    # than assuming it, per the task's "measure, do not pick on
+    # plausibility" instruction.
+    assert fresh_surviving in (0, 1), (
+        f"fresh_surviving={fresh_surviving} is neither 0 nor 1 -- a "
+        "partial-write anomaly for a single entry, itself worth reporting "
+        "prominently."
+    )
+
+
+# ===========================================================================
+# P-9 -- THE DETECTOR, AND CP-B DEFECT 2 (spec.md C13 fact 3, C14 point 3, Q5)
+# ===========================================================================
+
+@pytest.mark.live_phase("FLExProject", "modify")
+def test_p9_iundostackmanager_detector(target_sandbox_path):
+    """
+    T6 / P-9 (spec.md C13/C14/Q5, tasks.md T6): reflects over the live
+    IUndoStackManager to record what T7's detector would read, then
+    measures whether that read distinguishes a REAL save (P-4 shape) from
+    the NO-OP save (P-5 shape) that C13 fact 3 infers but never directly
+    measured.
+
+    Reflection: records the actual member list of the live
+    IUndoStackManager (obtained via
+    project.ObjectRepository(IUndoStackManager)) via both Python's dir()
+    and .NET Type.GetProperties()/GetMethods(), looking for a "has
+    unsaved / pending changes" style read.
+
+    Measurement:
+
+    - NO-OP shape (mirrors P-5): in one open project, create entries, call
+      SaveChanges() once (the TRIGGER -- raises "Commit at wrong place.",
+      collapses depth 1 -> 0), force the manual End (already collapsed, so
+      this itself raises unchanged from P-3/P-5), then read the detector
+      immediately BEFORE a SECOND SaveChanges() call -- this second call is
+      the exact usm.Save() shape CloseProject() reaches once the T3 guard
+      skips the already-collapsed envelope's End (same two lines,
+      ObjectRepository(IUndoStackManager) + usm.Save(), same depth) -- call
+      it, read the detector immediately AFTER. Reopen and confirm 0/25
+      persisted (reconfirms this really was the no-op shape).
+    - REAL-save shape (mirrors P-4, the control): in a FRESH project/session
+      (no prior failed commit check), create entries, END THE REAL,
+      still-open envelope (mirrors CloseProject()'s own unforced Phase-1
+      End), read the detector immediately BEFORE usm.Save(), call it, read
+      the detector immediately AFTER. Then finish the lifecycle via the
+      real, unmodified CloseProject() (its guard sees the envelope already
+      ended and skips the redundant End). Reopen and confirm N_ENTRIES/25
+      persisted (reconfirms this really was a real save).
+
+    Both shapes call usm.Save() manually from the test (via SaveChanges()
+    or directly) rather than only through CloseProject() -- this is what
+    lets the test read the detector on BOTH sides of the exact call, and
+    it changes no flexicon/ code: CloseProject() is still called,
+    unmodified, to finish each project's lifecycle.
+
+    Reports whether the AFTER value in the no-op case is distinguishable
+    from the AFTER value in the real-save case. If both read the same, the
+    direct-read detector CANNOT by itself tell a no-op save from a real
+    one, constraining T7 to the Phase-1-envelope-missing heuristic named as
+    the fallback in spec.md C14 point 3 -- recorded plainly rather than
+    assumed.
+    """
+    from flexicon.code.FLExProject import FLExProject
+    from SIL.LCModel import IUndoStackManager
+
+    fwdata_path = pathlib.Path(target_sandbox_path)
+
+    # =====================================================================
+    # REFLECTION + NO-OP SHAPE, in one open project (mirrors P-5).
+    # =====================================================================
+    prefix_noop = f"{TEST_PREFIX}p9noop_"
+
+    project = FLExProject()
+    project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=False)
+    noop_close_exc_msg = None
+    detector_before_trigger = detector_after_trigger = None
+    detector_before_noop = detector_after_noop = None
+    has_detector = False
+    try:
+        usm = project.ObjectRepository(IUndoStackManager)
+
+        dir_members = sorted(set(dir(usm)))
+        print(f"[PROBE][P9] IUndoStackManager dir() members: {dir_members}")
+
+        clr_type = usm.GetType()
+        print(f"[PROBE][P9] IUndoStackManager concrete .NET type: {clr_type.FullName}")
+        clr_properties = sorted(str(p.Name) for p in clr_type.GetProperties())
+        clr_methods = sorted(
+            str(m.Name) for m in clr_type.GetMethods()
+            if not str(m.Name).startswith(("get_", "set_", "add_", "remove_"))
+        )
+        print(f"[PROBE][P9] IUndoStackManager .NET GetProperties(): {clr_properties}")
+        print(f"[PROBE][P9] IUndoStackManager .NET GetMethods() (accessors filtered): {clr_methods}")
+
+        pending_change_candidates = sorted(
+            m for m in set(dir_members) | set(clr_properties) | set(clr_methods)
+            if any(kw in m for kw in ("Unsaved", "Pending", "Dirty", "HasChange", "NeedsSave", "IsSaved"))
+        )
+        print(f"[PROBE][P9] candidate 'has unsaved / pending changes' members: {pending_change_candidates}")
+
+        has_detector = hasattr(usm, "HasUnsavedChanges")
+        print(f"[PROBE][P9] HasUnsavedChanges present on the live usm object: {has_detector}")
+
+        created_noop = _create_test_entries(project, prefix_noop, N_ENTRIES)
+        print(f"[PROBE][P9] (no-op shape) created {len(created_noop)} entries with prefix {prefix_noop!r}")
+
+        if has_detector:
+            detector_before_trigger = _safe(lambda: usm.HasUnsavedChanges, "P9 HasUnsavedChanges before TRIGGER SaveChanges()")[0]
+        print(f"[PROBE][P9] (no-op shape) HasUnsavedChanges before the TRIGGER SaveChanges(): {detector_before_trigger}")
+
+        _, save_exc_msg = _safe(project.SaveChanges, "P9 TRIGGER SaveChanges() while envelope still open")
+        assert save_exc_msg is not None and "Commit at wrong place." in save_exc_msg, (
+            f"Expected the TRIGGER SaveChanges() to raise the owner's exact "
+            f"symptom string; got: {save_exc_msg!r}"
+        )
+
+        if has_detector:
+            detector_after_trigger = _safe(lambda: usm.HasUnsavedChanges, "P9 HasUnsavedChanges after TRIGGER SaveChanges()")[0]
+        print(f"[PROBE][P9] (no-op shape) HasUnsavedChanges after the TRIGGER SaveChanges() raised: {detector_after_trigger}")
+
+        _safe(project.project.MainCacheAccessor.EndNonUndoableTask, "P9 forced manual EndNonUndoableTask (post-trigger)")
+        depth_before_noop_save = _safe(lambda: _depth(project), "P9 CurrentDepth before the no-op Save()")[0]
+        print(f"[PROBE][P9] (no-op shape) CurrentDepth before the no-op Save(): {depth_before_noop_save}")
+
+        if has_detector:
+            detector_before_noop = _safe(lambda: usm.HasUnsavedChanges, "P9 HasUnsavedChanges immediately BEFORE the no-op usm.Save()")[0]
+        print(f"[PROBE][P9] (no-op shape) HasUnsavedChanges BEFORE the no-op usm.Save(): {detector_before_noop}")
+
+        # This SECOND SaveChanges() call is the exact usm.Save() shape
+        # CloseProject() reaches once the T3 guard skips the already-
+        # collapsed envelope's End -- same two lines
+        # (ObjectRepository(IUndoStackManager); usm.Save()), same `usm`
+        # object, same depth (0). Calling it directly here (rather than via
+        # CloseProject()) is what lets this test read the detector on both
+        # sides of exactly that call.
+        _, noop_save_exc_msg = _safe(project.SaveChanges, "P9 NO-OP SaveChanges() (mirrors CloseProject()'s guarded usm.Save())")
+        print(f"[PROBE][P9] (no-op shape) second SaveChanges() call raised: {noop_save_exc_msg}")
+
+        if has_detector:
+            detector_after_noop = _safe(lambda: usm.HasUnsavedChanges, "P9 HasUnsavedChanges immediately AFTER the no-op usm.Save()")[0]
+        print(f"[PROBE][P9] (no-op shape) HasUnsavedChanges AFTER the no-op usm.Save(): {detector_after_noop}")
+
+        _, noop_close_exc_msg = _safe(project.CloseProject, "P9 no-op-shape CloseProject")
+    finally:
+        _dispose_if_open(project, "P9 no-op-shape")
+
+    assert noop_close_exc_msg is None, (
+        f"CloseProject() raised in the no-op shape even with the T3 guard "
+        f"in place: {noop_close_exc_msg!r}"
+    )
+
+    reopen_noop = FLExProject()
+    reopen_noop.OpenProject(str(fwdata_path), writeEnabled=False)
+    try:
+        noop_surviving = _count_prefixed_entries(reopen_noop, prefix_noop)
+        print(f"[PROBE][P9] (no-op shape) entries surviving reopen (confirms this really was a no-op save): {noop_surviving} / {N_ENTRIES}")
+    finally:
+        _safe(reopen_noop.CloseProject, "P9 no-op-shape reopen CloseProject")
+        _dispose_if_open(reopen_noop, "P9 no-op-shape reopen")
+
+    assert noop_surviving == 0, (
+        f"Expected the no-op shape to reproduce the T4/C13 result "
+        f"(0/{N_ENTRIES} after reopen); got {noop_surviving}/{N_ENTRIES}. "
+        "If this assertion is failing, the underlying P-5 behaviour has "
+        "CHANGED -- report the new count, do not silently adjust this "
+        "assertion."
+    )
+
+    # =====================================================================
+    # REAL-SAVE (P-4) SHAPE, in a FRESH project/session so the
+    # UnitOfWorkService has no prior failed commit check to carry forward.
+    # =====================================================================
+    prefix_real = f"{TEST_PREFIX}p9real_"
+    control_project = FLExProject()
+    control_project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=False)
+    real_close_exc_msg = None
+    detector_before_real = detector_after_real = None
+    has_detector_control = False
+    try:
+        control_usm = control_project.ObjectRepository(IUndoStackManager)
+        has_detector_control = hasattr(control_usm, "HasUnsavedChanges")
+
+        created_real = _create_test_entries(control_project, prefix_real, N_ENTRIES)
+        print(f"[PROBE][P9] (real-save shape) created {len(created_real)} entries with prefix {prefix_real!r}")
+
+        depth_before_real_end = _depth(control_project)
+        print(f"[PROBE][P9] (real-save shape) CurrentDepth before ending the real envelope: {depth_before_real_end}")
+
+        # End the REAL, still-open session envelope -- mirrors
+        # CloseProject()'s own Phase-1 End call under the normal, unforced
+        # P-4 shape (no forcing anywhere in this shape).
+        _, real_end_exc_msg = _safe(control_project.project.MainCacheAccessor.EndNonUndoableTask, "P9 real envelope EndNonUndoableTask")
+        assert real_end_exc_msg is None, (
+            f"The REAL, still-open envelope's End raised unexpectedly: "
+            f"{real_end_exc_msg!r} -- the P-4 control shape needs a clean "
+            "End to isolate the real-save measurement."
+        )
+
+        if has_detector_control:
+            detector_before_real = _safe(lambda: control_usm.HasUnsavedChanges, "P9 HasUnsavedChanges immediately BEFORE the real usm.Save()")[0]
+        print(f"[PROBE][P9] (real-save shape) HasUnsavedChanges BEFORE usm.Save(): {detector_before_real}")
+
+        control_usm.Save()
+
+        if has_detector_control:
+            detector_after_real = _safe(lambda: control_usm.HasUnsavedChanges, "P9 HasUnsavedChanges immediately AFTER the real usm.Save()")[0]
+        print(f"[PROBE][P9] (real-save shape) HasUnsavedChanges AFTER usm.Save(): {detector_after_real}")
+
+        # Finish the lifecycle via the real, unmodified CloseProject(): the
+        # guard sees HasOpenSessionTask() False (already ended above) and
+        # skips the redundant End, reaching a second, idempotent Save().
+        _, real_close_exc_msg = _safe(control_project.CloseProject, "P9 real-save-shape CloseProject")
+    finally:
+        _dispose_if_open(control_project, "P9 real-save-shape")
+
+    assert real_close_exc_msg is None, (
+        f"CloseProject() raised in the real-save control shape: {real_close_exc_msg!r}"
+    )
+
+    reopen_real = FLExProject()
+    reopen_real.OpenProject(str(fwdata_path), writeEnabled=False)
+    try:
+        real_surviving = _count_prefixed_entries(reopen_real, prefix_real)
+        print(f"[PROBE][P9] (real-save shape) entries surviving reopen (confirms this really was a real save): {real_surviving} / {N_ENTRIES}")
+    finally:
+        _safe(reopen_real.CloseProject, "P9 real-save-shape reopen CloseProject")
+        _dispose_if_open(reopen_real, "P9 real-save-shape reopen")
+
+    assert real_surviving == N_ENTRIES, (
+        f"Expected the real-save control shape to persist all {N_ENTRIES} "
+        f"entries; got {real_surviving}/{N_ENTRIES} -- if this fails, the "
+        "control itself is broken and the no-op/real comparison below is "
+        "not meaningful."
+    )
+
+    # =====================================================================
+    # DISTINGUISHABILITY VERDICT
+    # =====================================================================
+    print(
+        f"[PROBE][P9] SUMMARY -- detector present: {has_detector}. "
+        f"no-op shape: before_trigger={detector_before_trigger} "
+        f"after_trigger={detector_after_trigger} "
+        f"before_noop_save={detector_before_noop} after_noop_save={detector_after_noop} "
+        f"(reopen confirmed {noop_surviving}/{N_ENTRIES} persisted). "
+        f"real-save shape: before_real={detector_before_real} after_real={detector_after_real} "
+        f"(reopen confirmed {real_surviving}/{N_ENTRIES} persisted)."
+    )
+
+    if has_detector and has_detector_control:
+        assert detector_after_noop is not None and detector_after_real is not None, (
+            "HasUnsavedChanges is present on the live usm object but a read "
+            "of it returned None (an exception was swallowed by _safe) -- "
+            "the detector exists but is not reliably readable at the "
+            "moment T7 would need it."
+        )
+        # Two separate comparisons -- the task asks whether "the two"
+        # (the P-4 control measurement and the P-5 sequence measurement)
+        # are distinguishable, which is the FULL before/after pair, not
+        # only the after-value in isolation. Report both explicitly: the
+        # after-only comparison is what a post-Save() read alone would see;
+        # the before-value comparison is what T7 would see if it read the
+        # detector on entry to CloseProject()'s anomalous branch, before
+        # ever calling usm.Save().
+        after_only_distinguishable = detector_after_noop != detector_after_real
+        before_value_distinguishable = detector_before_noop != detector_before_real
+        print(
+            f"[PROBE][P9] AFTER-ONLY comparison: no-op AFTER={detector_after_noop!r} "
+            f"vs real AFTER={detector_after_real!r} -- "
+            f"{'DISTINGUISHABLE' if after_only_distinguishable else 'INDISTINGUISHABLE'}."
+        )
+        print(
+            f"[PROBE][P9] BEFORE-value comparison: no-op BEFORE={detector_before_noop!r} "
+            f"vs real BEFORE={detector_before_real!r} -- "
+            f"{'DISTINGUISHABLE' if before_value_distinguishable else 'INDISTINGUISHABLE'}."
+        )
+        if not after_only_distinguishable:
+            print(
+                "[PROBE][P9] HasUnsavedChanges read immediately AFTER "
+                "usm.Save() CANNOT by itself tell a no-op save from a real "
+                "one -- both read False once Save() has returned, whether "
+                "or not anything was actually persisted."
+            )
+        if before_value_distinguishable:
+            print(
+                "[PROBE][P9] However, HasUnsavedChanges read immediately "
+                "BEFORE usm.Save() DOES distinguish the two shapes here: "
+                "True in the real-save shape (a successful End registered "
+                "the pending edits as an unsaved-but-committed unit of "
+                "work) vs False in the no-op shape (the forced End never "
+                "succeeded, so the pending edits were never registered as "
+                "unsaved work in the first place -- consistent with "
+                "mechanism (ii)/P-7's in-memory-loss finding). This is a "
+                "CANDIDATE pre-Save() detector for T7: read "
+                "HasUnsavedChanges on entry to the anomalous "
+                "HasOpenSessionTask()==False branch; False there means "
+                "usm.Save() is about to be a no-op. Not proven "
+                "mechanism-independent (P-8 ruled out mechanism (i) here, "
+                "so this signal was only observed under (ii)/(iii); a "
+                "future spurt would need to re-check it against a case "
+                "that isolates (i) if one is ever found) -- but it is a "
+                "real, measured, distinguishing signal, unlike the "
+                "after-Save() read."
+            )
+    else:
+        print(
+            "[PROBE][P9] No 'has unsaved/pending changes' member was found "
+            "on the live IUndoStackManager in one or both shapes -- T7 has "
+            "no direct-read detector available and must use the "
+            "Phase-1-envelope-missing heuristic."
+        )

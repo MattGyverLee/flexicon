@@ -3,6 +3,23 @@
 **Repo:** flexicon, branch `main`
 **Issue:** #243 (`CloseProject()` unguarded `EndNonUndoableTask()` risks total
 session loss)
+
+> ## READ THIS FIRST -- #243's CEILING (frozen as C17, measured at T6)
+>
+> **The owner's filed incident CANNOT be fixed by anything in this feature's
+> scope, at any price.** T6/P-7 measured the 25 entries as *already absent
+> from the still-open project* immediately after `SaveChanges()` raised --
+> one full step **before** `CloseProject()` is ever entered. So no
+> `CloseProject()`-side change -- not T3's shipped guard, not T7, not any
+> future guard in that method -- can ever recover that data. Only the
+> still-unruled `SaveChanges()` depth guard (the campaign's fourth ask) can.
+>
+> **And, separately and unqualified: T3 IS a real fix for the P-3 path**
+> (intact change set, stray/forced `End`): 0/25 -> 25/25, live-verified,
+> shipped, untouched by the above. Both halves are true. Do not collapse
+> either into the other. Full reasoning: **C16** (mechanism) and **C17**
+> (ceiling).
+
 **Status:** CONTRACT FROZEN. Cycle-1 live probe complete. **T1 LANDED and
 live-verified (spurt 2, cycle 2, 2026-09-07)** -- `flexicon/code/FLExProject.py`
 now exposes the P1 depth-read surface (`_ReadActionHandlerDepth()`,
@@ -11,6 +28,14 @@ now exposes the P1 depth-read surface (`_ReadActionHandlerDepth()`,
 `SaveChanges()` are provably untouched. T2 is deliberately deferred to its own
 gated sub-checkpoint (CP-A2) and CP-A is therefore only half done.
 Q3 is now CLOSED (see Q3 below); Q2 and Q4 remain open.
+**AS OF SPURT 5 (cycle 5, 2026-09-07) this paragraph is out of date on
+progress -- read it as history and take the current state from below.**
+Landed since: **T3+T4** (spurt 4, the P0 guard, CP-B PASSED) and **T6**
+(spurt 5, the no-op-save mechanism probe -- zero `flexicon/` diff). Contract
+is now **C1-C19**. Q2 CLOSED (C15). **Q5's detector half CLOSED (C18).**
+Q4 open (at T5b). Q5's remaining half is the USER's coupled ruling -- the
+feature is `needs_human` and the ralph loop is **CANCELLED**, so nothing
+resumes automatically.
 Q1 RESOLVED 2026-09-07 by `/lex-lead` (see C9/C10) -- the owner's incident is
 a P-5 -> P-3 chain and the frozen C6 guard covers it, so implementation is
 unblocked and needs no owner input.
@@ -481,6 +506,18 @@ Three facts are frozen below; one asserted mechanism is explicitly NOT.
    `close_exc_msg is None`. **T6 must close that gap before T7's remedy is
    built on it.**
 
+**SUPERSEDED IN PART, 2026-09-07 (spurt 5, cycle 5): the "NOT frozen"
+paragraph below has been ANSWERED by T6 and is now frozen as C16, and its
+scope consequence as C17.** Read the paragraph below as the historical
+statement of the open question, and **C16/C17 as the answer**. What survives
+unchanged: the three FROZEN facts above, and the ban on citing the cycle-4
+report's own asserted internals mechanism (*"the `UnitOfWorkService` cannot
+commit after a failed `CheckReadyForCommit`"*) -- that specific wording is
+still not established, because C16 confirms mechanism (ii)/(iii)'s *loss
+point*, not the cycle-4 claim about the service's post-failure commit
+capability, which P-8 in fact **contradicts** (a fresh envelope commits
+fine).
+
 **NOT frozen -- do NOT cite as settled:** *"the `UnitOfWorkService` cannot
 commit after a failed `CheckReadyForCommit`."* That is a claim about liblcm
 INTERNALS inferred from a single black-box survivor count. At least three
@@ -573,6 +610,172 @@ emitted at that point must not leak the live LCM handle, so
 as a consequence of C14, not deferred a fourth time. The probe harness's
 hand-rolled `_dispose_if_open()` teardown (cited in Q2's original text)
 becomes belt-and-braces rather than load-bearing -- leave it in place.
+
+### C16 -- C13's mechanism question is ANSWERED: (ii) CONFIRMED, (i) RULED OUT, (iii) INDISTINGUISHABLE from (ii) and left unresolved BY DESIGN
+
+Ruled 2026-09-07 (spurt 5, cycle 5) by `/lex-lead` on T6. Evidence:
+`evidence/live-t6-noop-save-mechanism.md`; report:
+`reviews/cycle5-programmer.md`. T6 changed **zero** lines of `flexicon/`
+(`git diff --stat -- flexicon/` empty, independently re-verified), so this
+verdict is ruling-independent, as designed.
+
+**(ii) is CONFIRMED -- by measurement, not inference.** P-7 re-read the 25
+`TEST_p7_` entries from the **STILL-OPEN** project immediately after
+`SaveChanges()` raised at `CurrentDepth == 1`, *before* `CloseProject()` was
+ever called: **0/25.** The pending change set was not merely uncommitted --
+it was already absent from `LexEntry.GetAll()` one full step before
+`CloseProject()`'s own code runs.
+
+**(i) is RULED OUT.** P-8 opened a **fresh** `BeginNonUndoableTask()` /
+`EndNonUndoableTask()` pair *after* the failure, created one entry inside it,
+and that entry persisted (**1/1**) in the same process, same `usm`, same
+session, while the pre-existing dirty set stayed at 0/25. The
+`UnitOfWorkService` is **not** globally poisoned. Note this also
+**contradicts** the cycle-4 report's asserted wording that the service
+"cannot commit after a failed `CheckReadyForCommit`" -- it can; only the
+change set in flight at the moment of failure is unrecoverable.
+
+**(iii) is NOT separately distinguishable from (ii), and that is recorded as
+unresolved -- not tidied into certainty.** P-7's observation ("the objects
+are gone from `LexEntry.GetAll()`") is equally consistent with "the change
+set was discarded" (ii) and "the objects were unregistered from any
+commitable unit of work" (iii). Both name the **same loss point** (inside or
+immediately after the failed `SaveChanges()`, before `CloseProject()` is
+entered) and therefore the **same scope conclusion** (C17), so nothing in
+this campaign turns on the difference. The T6 report said so itself rather
+than guessing, which is the correct outcome and is accepted as such.
+
+**Binding on future readers:** cite this as "(ii) confirmed, (i) ruled out,
+(ii)-vs-(iii) undetermined and decision-irrelevant." Do **not** upgrade it to
+"(ii) proven and (iii) excluded". Splitting (ii) from (iii) would require
+instrumentation **inside liblcm**, which is outside this project's reach; if
+anyone ever wants it, that is a new issue against liblcm, not a task here
+(same disposition as C10's `.fwdata` swap).
+
+### C17 -- #243's CEILING: no `CloseProject()`-side change can EVER fix the owner's incident. Only the `SaveChanges()` fourth ask can
+
+Ruled 2026-09-07 (spurt 5, cycle 5). **This is the single most important fact
+in this feature.** It is stated in the spec header as well, deliberately
+duplicated so a context reset cannot miss it.
+
+**The consequence of C16's (ii)/(iii) loss point:** on the owner's real
+P-5 -> P-3 chain (C9), the session's change set **never survives as far as
+`CloseProject()`**. Therefore:
+
+- **T3's shipped guard cannot recover that data.** Not a defect in T3 --
+  C13 fact 1 already disproved the "the guard skipped an `End` that should
+  have run" hypothesis by measurement, and C1/C6/C7 all still stand.
+- **T7 cannot recover it either**, nor can any future guard, wrapper,
+  retry, reorder or `try/finally` placed anywhere inside `CloseProject()`.
+  The data is gone before that method is entered. T7 restores **loudness,
+  not data** (C14) -- and C16 is now the *measured* proof of that, where
+  C14 only had an inference.
+- **The only place a fix for the filed incident can live is
+  `SaveChanges()`** -- i.e. the campaign's still-unruled fourth ask
+  (`QUEUE.md` -> "Awaiting user approval"). It is no longer a
+  "would-also-help" improvement; it is the **only** thing that can fix the
+  incident #243 was filed about.
+
+**AND, equally binding, the other half:** **T3 is a genuine, complete,
+shipped fix for the P-3 path** -- an intact change set plus a stray or forced
+`End` -- measured 0/25 -> 25/25 with no raise, live, at CP-B. C17 does not
+qualify, weaken or reopen that in any way. Anyone summarising this feature
+must state **both** halves: *the P-3 loss mechanism is fixed; the owner's own
+P-5 -> P-3 sequence is not fixable here at all.* Stating either alone is a
+misrepresentation -- the first alone overclaims (C10's failure mode), the
+second alone undersells shipped, verified work.
+
+### C18 -- T7's DETECTOR: the envelope-missing anomaly is primary and required; `HasUnsavedChanges` is diagnostic-only and MUST NOT be over-claimed
+
+Ruled 2026-09-07 (spurt 5, cycle 5) on T6/P-9, **resolving Q5's genuinely
+open part**. This **supersedes C14 point 3**, which said to "prefer a live
+`IUndoStackManager` still-has-unsaved-changes read taken after `Save()`
+(mechanism-independent)". That preference is now measured to be **wrong** and
+is withdrawn.
+
+**What P-9 measured (all verbatim in the evidence file):** the live
+`IUndoStackManager` (concrete `SIL.LCModel.Infrastructure.Impl.UnitOfWorkService`)
+does expose `HasUnsavedChanges` (bool property). Read **immediately after**
+`usm.Save()` it is `False` in BOTH the real-save case (25/25 persisted) and
+the no-op case (0/25 persisted) -- **INDISTINGUISHABLE**. Read **immediately
+before** the save it is `True` (real) vs `False` (no-op) --
+**distinguishable**.
+
+**The ruling, which accepts the T6 report's recommendation and then goes
+further than it:**
+
+1. **The post-`Save()` read is REJECTED as a detector.** Measured
+   indistinguishable. C14 point 3's preference for it is void.
+2. **T7's primary detector is the Phase-1-envelope-missing anomaly**, already
+   computable from T1's `HasOpenSessionTask()` surface -- exactly as the T6
+   report recommends. **ACCEPTED.** In Phase 1
+   (`writeEnabled and not _undoable`) a `False` there is anomalous by
+   construction (C14), so it is a sound trigger.
+3. **A pre-`Save()` `HasUnsavedChanges` read is permitted ONLY as a logged
+   diagnostic value inside that already-anomalous branch. It MUST NOT gate
+   the raise and MUST NOT create a second code path.** Two reasons, both
+   from the measurements themselves:
+   - **It is not independent information.** In the real-save shape it read
+     `True` *only after a successful `EndNonUndoableTask()`* (the probe ends
+     the envelope immediately before the read); in the no-op shape the End
+     never succeeded. So pre-`Save()` `HasUnsavedChanges` is a proxy for
+     *"did an End just succeed?"* -- a fact `CloseProject()` already knows
+     **first-hand**, from the outcome of the End attempt it made itself. It
+     adds no knowledge T7 does not already hold locally.
+   - **It is not proven mechanism-independent**, as the report itself says:
+     (i) was ruled out in this very run, so the signal was only ever
+     observed under (ii)/(iii).
+4. **The report's suggested message wording is REJECTED.**
+   `HasUnsavedChanges == False` must **NOT** be worded as *"and there is
+   nothing pending to save"*. **Proven false-negative in this run:** in the
+   no-op shape `HasUnsavedChanges` read `False` **before the trigger
+   `SaveChanges()`**, at a moment when all 25 entries demonstrably still
+   existed in memory (P-7 measures them present until `SaveChanges()`
+   raises). The property means *"a completed-but-unsaved unit of work is
+   registered"*, **not** *"dirty data exists"*. Wording it the other way
+   would tell a user their data was never at risk at the exact moment they
+   lost 25 objects -- the same category of overclaim C10 and C14 exist to
+   prevent.
+
+`tasks.md` T7 point 3 is re-scoped to match, so an implementer arriving after
+a context reset cannot over-claim the detector.
+
+### C19 -- T5 stays gated on the ruling, but is SPLIT: a minimal `[Unreleased]` stub (T5a) is separable and recommended NOW; the prominent release note (T5b) waits
+
+Ruled 2026-09-07 (spurt 5, cycle 5), answering "is T5 still correctly gated
+last?" with **yes for T5b, no for the whole of T5**.
+
+**The costing that forces the split.** `CHANGELOG.md` carries a live
+`[Unreleased]` section that already accumulates breaking behavioural changes
+(e.g. #254) until a version cut. T3 is **already committed to `main`** and
+therefore already inside that unreleased window **with no entry at all**.
+That is the *worst* of the available states: if a version were cut today,
+consumers would receive a behaviour change to a shipped public method --
+including C14's observability regression -- entirely undocumented. "Defer all
+of T5" is not a neutral hold; it is an active choice to leave a shipped
+data-loss-adjacent change unnoted.
+
+- **T5a -- minimal `[Unreleased]` stub, RECOMMENDED, ruling-independent.**
+  Note T3 only, scoped exactly per C17's two halves: the P-3 path is fixed
+  (0/25 -> 25/25), the `SaveChanges()`-at-depth>0 path is **not** fixed and
+  `CloseProject()` currently **returns normally** there. This is a
+  description of **shipped behaviour**, so it commits the project to no
+  position on the fourth ask -- and it discloses nothing that public issue
+  #243 does not already state. **Churn cost is zero:** the entry sits under
+  `[Unreleased]`, so if T7 later flips that path to raise, the entry is
+  edited before any version cut and nothing published ever churns.
+  Constraints: C10 (no `.fwdata` claim), C17 (both halves), C14 (loudness
+  not data). **Offered as a second pre-authorised, ruling-independent unit
+  -- the user's to greenlight, exactly as T6 was.**
+- **T5b -- the prominent P2 release note + the `SaveChanges()` docstring
+  correction + Q4's placement/wording, STAYS GATED** behind the user's
+  ruling and T7. Unchanged reasoning: its wording depends on both, and the
+  docstring correction must tell callers what to do instead -- which depends
+  on whether `SaveChanges()` is getting a guard.
+
+**Not ruled here, and deliberately so:** whether T5a is *done* is the user's
+call, not the loop's. This decision only establishes that it is *separable*
+and that deferring it has a real, named cost.
 
 ---
 
@@ -686,24 +889,45 @@ instead of sharing Q2's.
 
 Already decided and NOT open here: the established facts are frozen as
 **C13**; the severity ruling (this is a new silent-loss surface) and the
-remedy shape are frozen as **C14**; the internals mechanism is routed to
-**T6** (probes P-7/P-8/P-9) and must not be cited as settled until T6
-reports.
+remedy shape are frozen as **C14**; the internals mechanism was routed to
+**T6** and is now frozen as **C16**, with its scope consequence as **C17**.
 
-**What is genuinely open:** the DETECTOR. Does the live `IUndoStackManager`
-expose a usable "still has unsaved/pending changes" read that would let
-`CloseProject()` detect a no-op save DIRECTLY, rather than inferring it from
-the Phase-1-envelope-missing anomaly? T6/P-9 answers that; T7 implements
-whichever answer comes back. A direct read is strongly preferred because it
-is mechanism-independent -- it catches any no-op save, not only the one
-rival mechanism we happened to measure.
+**The DETECTOR half is RESOLVED 2026-09-07 (spurt 5) as C18.** T6/P-9
+measured it: a post-`Save()` `HasUnsavedChanges` read is
+**INDISTINGUISHABLE** between a real save and a no-op save, so C14 point 3's
+preference for a direct post-save read is **void**. The
+Phase-1-envelope-missing anomaly is T7's primary detector; a pre-`Save()`
+`HasUnsavedChanges` read is diagnostic-only, must not gate the raise, and
+must not be worded as "there is nothing pending to save" (a proven
+false-negative). See **C18**.
 
-**Also blocked on the USER** -- see the `needs_human` blocker in
-`.crew-handoff.json`. C14's new raise is a public-behaviour change to
-`CloseProject()` in the same failure path as the still-unruled
-`SaveChanges()` depth-guard (the campaign's fourth ask), and the two must be
-ruled together: if `SaveChanges()` is approved to fail fast, the envelope is
-never collapsed, the P-5 chain never forms, and C14's raise becomes
-near-unreachable defensive code; if it is declined, C14's raise is the only
-thing standing between the owner and silent total loss, and its wording and
-severity matter a great deal.
+**What remains open under Q5 is ONLY the user's ruling** -- see the
+`needs_human` blocker in `.crew-handoff.json`. C14's new raise is a
+public-behaviour change to `CloseProject()` in the same failure path as the
+still-unruled `SaveChanges()` depth guard (the campaign's fourth ask), and
+the two must be ruled together:
+
+- **Approve the `SaveChanges()` guard** -> the envelope is never collapsed,
+  the change set is never discarded, the P-5 chain never forms, the owner's
+  sequence can reach 25/25, and C14's raise becomes near-unreachable
+  defensive code (still worth having; low-stakes wording).
+- **Decline it** -> **C17 makes this branch permanent**: the incident #243
+  was filed about becomes unfixable, by measurement and not by choice of
+  effort, and T7's ERROR + raise is the *entire* remedy the owner ever
+  gets -- so its severity and wording matter a great deal.
+
+**Sharpened by T6 (this is the change the user asked for):** before T6 the
+fourth ask read as "would also help". After C16/C17 it is **the only thing
+that can fix the filed incident.** The user is no longer deciding whether to
+approve an extra improvement; they are deciding whether flexicon fixes #243's
+incident at all, or ships #243 documenting it as unfixed.
+
+**One observation for that decision, NOT a new ask and NOT a task.** C16
+places the loss *inside* `SaveChanges()`. So even T7's raise reports the loss
+**late** -- at close, long after the data went. If the fourth ask is
+declined in its "fail fast / prevent" shape, the honest maximum this project
+can offer is "loud at close, already lost at `SaveChanges()`". Whether the
+same fourth ask should therefore have a *minimum* shape ("at least report
+loudly at the point of loss") is part of what the user is deciding about that
+one method -- it is **not** a fifth ask, and nothing here may implement,
+prototype or plan it. `SaveChanges()` remains untouchable.
