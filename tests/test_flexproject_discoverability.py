@@ -52,7 +52,7 @@ def _try_open_project():
     they correctly skip.
     """
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -118,7 +118,7 @@ class TestFLExProjectDiscoverability:
         Cache must be exposed as a real `property` descriptor on the class so
         that `dir(FLExProject)` and IDE auto-complete surface it.
         """
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
 
         assert "Cache" in dir(FLExProject), (
             "Cache property is not visible via dir(FLExProject)"
@@ -136,7 +136,7 @@ class TestFLExProjectDiscoverability:
         `dir(project)` and tab-completion surface them. This is the core
         discoverability guarantee.
         """
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
 
         names = dir(FLExProject)
         expected = [
@@ -311,7 +311,7 @@ class TestGetFactory:
         GetFactory must be exposed as a callable method (not a property)
         taking a single positional `interface_type` argument besides self.
         """
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
 
         assert "GetFactory" in dir(FLExProject), (
             "GetFactory not visible via dir(FLExProject)"
@@ -338,8 +338,8 @@ class TestGetFactory:
         touching the ServiceLocator — input validation is the first
         thing to fire.
         """
-        from flexlibs2.code.exceptions import FP_NullParameterError
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.exceptions import FP_NullParameterError
+        from flexicon.code.FLExProject import FLExProject
 
         # We don't need a live project for this — the guard runs before
         # any LCM access. Use a sentinel object as `self` to make sure

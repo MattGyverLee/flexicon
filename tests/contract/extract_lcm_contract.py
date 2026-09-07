@@ -2,8 +2,8 @@
 #   extract_lcm_contract.py
 #
 #   Static AST-based extractor that discovers every LCM type, method,
-#   and property that flexlibs2 depends on. Produces the "expected
-#   contract" -- what flexlibs2 *needs* from liblcm.
+#   and property that flexicon depends on. Produces the "expected
+#   contract" -- what flexicon *needs* from liblcm.
 #
 #   Runs anywhere (no FieldWorks/pythonnet required).
 #
@@ -12,9 +12,9 @@
 #
 
 """
-Extract the LCM API contract that flexlibs2 depends on.
+Extract the LCM API contract that flexicon depends on.
 
-This module walks the flexlibs2 source tree, parses each Python file's AST,
+This module walks the flexicon source tree, parses each Python file's AST,
 and extracts:
 
   1. **Imports**: Every ``from SIL.LCModel... import X`` statement
@@ -306,11 +306,11 @@ def main():
     """CLI entry point: extract and save the contract."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Extract LCM API contract from flexlibs2 source.")
+    parser = argparse.ArgumentParser(description="Extract LCM API contract from flexicon source.")
     parser.add_argument(
         "--source-root",
         default=None,
-        help="Path to flexlibs2/code/ (auto-detected if omitted)",
+        help="Path to flexicon/code/ (auto-detected if omitted)",
     )
     parser.add_argument(
         "--output",

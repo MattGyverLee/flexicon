@@ -43,7 +43,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Grammar.prohibition_collection import ProhibitionCollection
+    from flexicon.code.Grammar.prohibition_collection import ProhibitionCollection
 
     # GetAllAdhocCoProhibitions() now returns ProhibitionCollection
     prohibitions = morphRuleOps.GetAllAdhocCoProhibitions()

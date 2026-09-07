@@ -115,14 +115,14 @@ class TestContextCollection:
 
     def test_collection_initialization_empty(self):
         """Test creating empty ContextCollection."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         collection = ContextCollection()
         assert len(collection) == 0
 
     def test_collection_initialization_with_items(self):
         """Test creating ContextCollection with items."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         context = MockPhonologicalContext("PhSimpleContextSeg")
         collection = ContextCollection([context])
@@ -130,7 +130,7 @@ class TestContextCollection:
 
     def test_collection_iteration(self):
         """Test iterating over ContextCollection."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [MockPhonologicalContext("PhSimpleContextSeg") for _ in range(3)]
         collection = ContextCollection(contexts)
@@ -142,7 +142,7 @@ class TestContextCollection:
 
     def test_collection_indexing(self):
         """Test indexing ContextCollection."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [MockPhonologicalContext("PhSimpleContextSeg") for _ in range(3)]
         collection = ContextCollection(contexts)
@@ -152,7 +152,7 @@ class TestContextCollection:
 
     def test_collection_slicing(self):
         """Test slicing ContextCollection."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [MockPhonologicalContext("PhSimpleContextSeg") for _ in range(5)]
         collection = ContextCollection(contexts)
@@ -163,7 +163,7 @@ class TestContextCollection:
 
     def test_collection_str_shows_type_breakdown(self):
         """Test that __str__ shows type breakdown."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
@@ -180,7 +180,7 @@ class TestContextCollection:
 
     def test_collection_str_empty(self):
         """Test __str__ on empty collection."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         collection = ContextCollection()
         str_repr = str(collection)
@@ -188,7 +188,7 @@ class TestContextCollection:
 
     def test_by_type_filter(self):
         """Test filtering by concrete type."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
@@ -203,7 +203,7 @@ class TestContextCollection:
 
     def test_filter_where_custom_predicate(self):
         """Test filtering with custom predicate."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
@@ -218,7 +218,7 @@ class TestContextCollection:
 
     def test_simple_contexts_convenience_filter(self):
         """Test simple_contexts() convenience method."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
@@ -234,7 +234,7 @@ class TestContextCollection:
 
     def test_simple_context_seg_convenience_filter(self):
         """Test simple_context_seg() convenience method."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
@@ -250,7 +250,7 @@ class TestContextCollection:
 
     def test_simple_context_nc_convenience_filter(self):
         """Test simple_context_nc() convenience method."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
@@ -266,7 +266,7 @@ class TestContextCollection:
 
     def test_complex_contexts_convenience_filter(self):
         """Test complex_contexts() convenience method."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhComplexContextSeg"),
@@ -282,7 +282,7 @@ class TestContextCollection:
 
     def test_complex_context_seg_convenience_filter(self):
         """Test complex_context_seg() convenience method."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhComplexContextSeg"),
@@ -296,7 +296,7 @@ class TestContextCollection:
 
     def test_complex_context_nc_convenience_filter(self):
         """Test complex_context_nc() convenience method."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhComplexContextSeg"),
@@ -310,7 +310,7 @@ class TestContextCollection:
 
     def test_boundary_contexts_convenience_filter(self):
         """Test boundary_contexts() convenience method."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),
@@ -326,7 +326,7 @@ class TestContextCollection:
 
     def test_filter_chaining(self):
         """Test chaining multiple filters."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg", "word_initial"),
@@ -343,7 +343,7 @@ class TestContextCollection:
 
     def test_repr(self):
         """Test string representation of collection."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [MockPhonologicalContext("PhSimpleContextSeg") for _ in range(5)]
         collection = ContextCollection(contexts)
@@ -354,7 +354,7 @@ class TestContextCollection:
 
     def test_append(self):
         """Test appending to collection."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         collection = ContextCollection()
         context = MockPhonologicalContext("PhSimpleContextSeg")
@@ -365,7 +365,7 @@ class TestContextCollection:
 
     def test_extend(self):
         """Test extending collection."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         collection = ContextCollection()
         contexts = [MockPhonologicalContext("PhSimpleContextSeg") for _ in range(3)]
@@ -375,7 +375,7 @@ class TestContextCollection:
 
     def test_clear(self):
         """Test clearing collection."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [MockPhonologicalContext("PhSimpleContextSeg") for _ in range(3)]
         collection = ContextCollection(contexts)
@@ -385,7 +385,7 @@ class TestContextCollection:
 
     def test_filter_name_contains(self):
         """Test filtering by name contains."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg", "word_initial"),
@@ -399,7 +399,7 @@ class TestContextCollection:
 
     def test_filter_multiple_context_types(self):
         """Test filtering mixed context types."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg", "voiceless"),
@@ -417,7 +417,7 @@ class TestContextCollection:
 
     def test_filter_all_types_in_breakdown(self):
         """Test type breakdown display with all context types."""
-        from flexlibs2.code.System.context_collection import ContextCollection
+        from flexicon.code.System.context_collection import ContextCollection
 
         contexts = [
             MockPhonologicalContext("PhSimpleContextSeg"),

@@ -11,7 +11,7 @@
 #     property raises System.NullReferenceException from deep inside LCM
 #     (e.g. LcmSet.Remove -> CmObject.DeleteObject). ICmObject exposes
 #     IsValidObject, which is False once the object is deleted. Prior to
-#     this fix flexlibs2 had zero defensive use of IsValidObject and a
+#     this fix flexicon had zero defensive use of IsValidObject and a
 #     stale reference passed into any operation NPE'd opaquely.
 #
 #     The fix adds a framework-wide guard at the operation entry point

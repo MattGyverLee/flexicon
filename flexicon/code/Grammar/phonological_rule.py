@@ -44,7 +44,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Grammar.phonological_rule import PhonologicalRule
+    from flexicon.code.Grammar.phonological_rule import PhonologicalRule
 
     # Wrap a rule from GetAll()
     rule = phonRuleOps.GetAll()[0]  # Typed as IPhSegmentRule

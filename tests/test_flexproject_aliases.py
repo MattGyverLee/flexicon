@@ -19,7 +19,7 @@ import warnings
 
 import pytest
 
-from flexlibs2.code._op_aliases import (
+from flexicon.code._op_aliases import (
     OP_NAMESPACE_ALIASES,
     install_op_namespace_aliases,
     make_op_namespace_alias,
@@ -144,10 +144,10 @@ class TestLiveFLExProjectAliases:
     def _flexproject(self):
         if "SIL.LCModel" not in sys.modules:
             try:
-                from flexlibs2.code.FLExProject import FLExProject
+                from flexicon.code.FLExProject import FLExProject
             except Exception:
                 pytest.skip("Requires SIL.LCModel (FieldWorks installed)")
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
 
         return FLExProject
 

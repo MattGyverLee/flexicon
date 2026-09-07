@@ -45,7 +45,7 @@ def _make_phase1_project(mark_return="mark-token-1"):
     # project.Transaction(label) is called by _NestingAwareTransaction.
     # We return a real _FLExTransaction wired to our mark/rollback doubles.
     def _make_flex_transaction(label="transaction"):
-        from flexlibs2.code.transaction import _FLExTransaction
+        from flexicon.code.transaction import _FLExTransaction
         return _FLExTransaction(project, label, mark_mock, rollback_mock)
 
     project.Transaction = Mock(side_effect=_make_flex_transaction)
@@ -63,7 +63,7 @@ def _make_phase1_project_no_mark():
     project, _, _ = _make_phase1_project()
 
     def _make_flex_transaction_no_mark(label="transaction"):
-        from flexlibs2.code.transaction import _FLExTransaction
+        from flexicon.code.transaction import _FLExTransaction
         return _FLExTransaction(project, label, None, None)
 
     project.Transaction = Mock(side_effect=_make_flex_transaction_no_mark)
@@ -199,7 +199,7 @@ class TestPhase1Rollback:
         Entering _TransactionCM (Phase 1) and raising inside the body
         must invoke RollbackToMark with the mark token returned by Mark().
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, mark_mock, rollback_mock = _make_phase1_project(
             mark_return="sentinel-mark"
@@ -216,7 +216,7 @@ class TestPhase1Rollback:
         When no exception is raised, RollbackToMark must NOT be called.
         This is the normal commit path.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, mark_mock, rollback_mock = _make_phase1_project()
 
@@ -230,7 +230,7 @@ class TestPhase1Rollback:
         __enter__ must call Mark() so a rollback point exists before
         any mutations run.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, mark_mock, rollback_mock = _make_phase1_project()
 
@@ -244,7 +244,7 @@ class TestPhase1Rollback:
         _FLExTransaction must not suppress the original exception even
         after a successful rollback.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, _, _ = _make_phase1_project()
 
@@ -278,7 +278,7 @@ class TestPhase1NoMarkAPI:
         With (None, None) mark API on a write-enabled project, entering the
         transaction must NOT raise; it degrades to no-rollback and runs the body.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase1_project_no_mark()
         body_ran = []
@@ -293,7 +293,7 @@ class TestPhase1NoMarkAPI:
         Even without a mark, a body exception must propagate (no silent
         swallow). This exercises the no-mark branch of __exit__.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase1_project_no_mark()
 
@@ -328,7 +328,7 @@ class TestPhase2JoinOrOpen:
         _FakeUndoableUnitOfWorkHelper,
     )
     def test_outermost_opens_new_unit_of_work(self):
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase2_project(current_depth=0)
         action_handler = project.project.ActionHandlerAccessor
@@ -351,7 +351,7 @@ class TestPhase2JoinOrOpen:
         Regression lock for #233: the helper must be constructed with the
         action handler AND both undo/redo strings -- never a single string.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase2_project(current_depth=0)
 
@@ -372,7 +372,7 @@ class TestPhase2JoinOrOpen:
         (i.e. the outer block's helper already bumped it) must NOT
         construct a second UndoableUnitOfWorkHelper.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase2_project(current_depth=0)
 
@@ -395,9 +395,23 @@ class TestPhase2JoinOrOpen:
         (the ctor default) at Dispose() time -- i.e. NOT cleared -- so
         liblcm's Dispose() rolls back rather than committing.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase2_project(current_depth=0)
+
+        with _NestingAwareTransaction(project, "outer"):
+            assert project._transaction_depth == 1
+
+        assert project._transaction_depth == 0
+
+    def test_depth_restored_on_exception(self):
+        """
+        _transaction_depth must return to 0 even when the body raises.
+        The depth counter must not leak across calls.
+        """
+        from flexicon.code.transaction import _NestingAwareTransaction
+
+        project = _make_phase2_project()
 
         with pytest.raises(RuntimeError, match="boom"):
             with _NestingAwareTransaction(project, "outer-raises"):
@@ -416,7 +430,7 @@ class TestPhase2JoinOrOpen:
         When the (joined, no-op) inner block raises, the outer helper must
         still see the exception at its own __exit__ and roll back.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase2_project(current_depth=0)
 
@@ -442,7 +456,7 @@ class TestPhase2JoinOrOpen:
         current_depth=1 directly (as if some other code already opened a
         task) and confirm no helper is constructed.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project = _make_phase2_project(current_depth=1)
 
@@ -490,7 +504,7 @@ class TestPhase1Nesting:
         Entering two nested _NestingAwareTransaction blocks (Phase 1)
         must enter and exit without error at any depth.
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, mark_mock, rollback_mock = _make_phase1_project()
 
@@ -503,7 +517,7 @@ class TestPhase1Nesting:
         Two nested Phase 1 blocks each open their own _FLExTransaction,
         so Mark() is called twice (once per block).
         """
-        from flexlibs2.code.transaction import _NestingAwareTransaction
+        from flexicon.code.transaction import _NestingAwareTransaction
 
         project, mark_mock, rollback_mock = _make_phase1_project()
 
@@ -538,8 +552,8 @@ class TestFLExUndoableOperation:
         return project
 
     def test_raises_if_not_write_enabled(self):
-        from flexlibs2.code.undoable_operation import _FLExUndoableOperation
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.undoable_operation import _FLExUndoableOperation
+        from flexicon.code.FLExProject import FP_ReadOnlyError
 
         project = self._make_project(write_enabled=False)
         op = _FLExUndoableOperation(project, "label")
@@ -549,8 +563,8 @@ class TestFLExUndoableOperation:
                 pass
 
     def test_raises_if_not_undoable(self):
-        from flexlibs2.code.undoable_operation import _FLExUndoableOperation
-        from flexlibs2.code.FLExProject import FP_TransactionError
+        from flexicon.code.undoable_operation import _FLExUndoableOperation
+        from flexicon.code.FLExProject import FP_TransactionError
 
         project = self._make_project(undoable=False)
         op = _FLExUndoableOperation(project, "label")
@@ -565,7 +579,7 @@ class TestFLExUndoableOperation:
     )
     def test_opens_helper_with_both_undo_and_redo_text(self):
         """Regression lock for #233 at the UndoableOperation() entry point."""
-        from flexlibs2.code.undoable_operation import _FLExUndoableOperation
+        from flexicon.code.undoable_operation import _FLExUndoableOperation
 
         project = self._make_project(current_depth=0)
 
@@ -583,7 +597,7 @@ class TestFLExUndoableOperation:
         _FakeUndoableUnitOfWorkHelper,
     )
     def test_joins_when_current_depth_positive(self):
-        from flexlibs2.code.undoable_operation import _FLExUndoableOperation
+        from flexicon.code.undoable_operation import _FLExUndoableOperation
 
         project = self._make_project(current_depth=1)
 
@@ -597,7 +611,7 @@ class TestFLExUndoableOperation:
         _FakeUndoableUnitOfWorkHelper,
     )
     def test_rollback_on_exception(self):
-        from flexlibs2.code.undoable_operation import _FLExUndoableOperation
+        from flexicon.code.undoable_operation import _FLExUndoableOperation
 
         project = self._make_project(current_depth=0)
 

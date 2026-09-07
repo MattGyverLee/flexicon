@@ -74,7 +74,7 @@ class PublicationOperations(PossibilityItemOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject
+        from flexicon import FLExProject
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)

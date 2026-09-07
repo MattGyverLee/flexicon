@@ -6,9 +6,9 @@ import sys
 sys.path.insert(0, ".")
 
 from unittest.mock import Mock
-from flexlibs2.code.transaction import _FLExTransaction
-from flexlibs2.code.undoable_operation import _FLExUndoableOperation
-from flexlibs2.code.FLExProject import FP_TransactionError, FP_ReadOnlyError
+from flexicon.code.transaction import _FLExTransaction
+from flexicon.code.undoable_operation import _FLExUndoableOperation
+from flexicon.code.FLExProject import FP_TransactionError, FP_ReadOnlyError
 
 
 def test_transaction_success_no_rollback():

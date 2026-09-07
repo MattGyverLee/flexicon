@@ -14,7 +14,7 @@ Version: 2.3.0
 # For backward compatibility, singular aliases are also available (e.g., Agent, WritingSystem).
 # Both project.Overlay and project.Overlays refer to the same operations class.
 
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
 
 def demo_overlay_crud():

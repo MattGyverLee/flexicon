@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SegmentOperations Demo - flexlibs2
+SegmentOperations Demo - flexicon
 
 Demonstrates the SegmentOperations public API introduced in issues #172 / #174.
 
@@ -25,7 +25,7 @@ Requirements:
   - Python.NET runtime
 """
 
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
 _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 

@@ -68,7 +68,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 def _try_open_writable_project():
     """Open one of the standard test projects in write mode, or None."""
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -143,7 +143,7 @@ class TestAnthropologyOCMCatalog:
         descriptor, so we reach through .func to inspect the real
         signature (mirrors the Phase 6b SemDom approach).
         """
-        from flexlibs2.code.Notebook.AnthropologyOperations import (
+        from flexicon.code.Notebook.AnthropologyOperations import (
             AnthropologyOperations,
         )
 
@@ -201,7 +201,7 @@ class TestAnthropologyOCMCatalog:
         Skipped if AnthroListOA is empty (the guard cannot fire in
         that state, and we won't seed via force=True).
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         existing_count = _anthro_count(writable_project)
         with capsys.disabled():
@@ -233,7 +233,7 @@ class TestAnthropologyOCMCatalog:
         Skipped if AnthroListOA is empty -- we deliberately do not
         seed via force=True (see module docstring).
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         existing_count = _anthro_count(writable_project)
         with capsys.disabled():
@@ -283,7 +283,7 @@ class TestAnthropologyFrameCatalog:
         ImportFrameCatalog must be on the class and expose force /
         progress kwargs. Pure static introspection; no LCM required.
         """
-        from flexlibs2.code.Notebook.AnthropologyOperations import (
+        from flexicon.code.Notebook.AnthropologyOperations import (
             AnthropologyOperations,
         )
 
@@ -317,7 +317,7 @@ class TestAnthropologyFrameCatalog:
         FP_ParameterError. Skipped when the list is empty (no way to
         exercise the guard without seeding, which is a pollution risk).
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         if _anthro_count(writable_project) == 0:
             pytest.skip(
@@ -334,7 +334,7 @@ class TestAnthropologyFrameCatalog:
         commit: the catalog_file kwarg routing. No live project needed.
         (issue #81)
         """
-        from flexlibs2.code.Notebook.AnthropologyOperations import (
+        from flexicon.code.Notebook.AnthropologyOperations import (
             AnthropologyOperations,
         )
 

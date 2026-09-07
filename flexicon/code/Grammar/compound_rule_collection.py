@@ -39,7 +39,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+    from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
     # GetAll() now returns CompoundRuleCollection
     rules = morphRuleOps.GetAll()

@@ -36,7 +36,7 @@ _test_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.dirname(_test_dir)
 sys.path.insert(0, _project_root)
 
-from flexlibs2.code.Shared.wrapper_base import LCMObjectWrapper
+from flexicon.code.Shared.wrapper_base import LCMObjectWrapper
 
 
 # =============================================================================
@@ -102,7 +102,7 @@ def mock_cast_to_concrete(mock_base_interface, mock_concrete_interface, monkeypa
             return mock_concrete_interface
         return obj
 
-    monkeypatch.setattr("flexlibs2.code.Shared.wrapper_base.cast_to_concrete", _cast)
+    monkeypatch.setattr("flexicon.code.Shared.wrapper_base.cast_to_concrete", _cast)
     return _cast
 
 
@@ -187,7 +187,7 @@ class TestLCMObjectWrapperGetAttr:
         def _cast_limited(obj):
             return mock_concrete_limited
 
-        import flexlibs2.code.Shared.wrapper_base as wrapper_module
+        import flexicon.code.Shared.wrapper_base as wrapper_module
 
         original_cast = wrapper_module.cast_to_concrete
         wrapper_module.cast_to_concrete = _cast_limited
@@ -496,7 +496,7 @@ class TestLCMObjectWrapperEdgeCases:
         def _cast(o):
             return concrete
 
-        import flexlibs2.code.Shared.wrapper_base as wrapper_module
+        import flexicon.code.Shared.wrapper_base as wrapper_module
 
         original_cast = wrapper_module.cast_to_concrete
         wrapper_module.cast_to_concrete = _cast
@@ -591,7 +591,7 @@ class TestLCMObjectWrapperLcmObject:
 
     def test_lcm_object_none_when_obj_is_none(self, monkeypatch):
         """If the wrapper was constructed with None, lcm_object reflects that."""
-        monkeypatch.setattr("flexlibs2.code.Shared.wrapper_base.cast_to_concrete", lambda obj: obj)
+        monkeypatch.setattr("flexicon.code.Shared.wrapper_base.cast_to_concrete", lambda obj: obj)
         wrapper = LCMObjectWrapper(None)
         assert wrapper.lcm_object is None
 
@@ -618,9 +618,9 @@ class TestLCMObjectWrapperAsICmObject:
     def test_as_icmobject_raises_fp_null_parameter_error_when_obj_is_none(self, monkeypatch):
         """AsICmObject() must raise FP_NullParameterError (not a raw TypeError) when there is
         no underlying LCM object to cast."""
-        monkeypatch.setattr("flexlibs2.code.Shared.wrapper_base.cast_to_concrete", lambda obj: obj)
+        monkeypatch.setattr("flexicon.code.Shared.wrapper_base.cast_to_concrete", lambda obj: obj)
 
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         wrapper = LCMObjectWrapper(None)
 

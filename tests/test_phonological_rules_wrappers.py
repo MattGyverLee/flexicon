@@ -97,14 +97,14 @@ class TestRuleCollection:
 
     def test_collection_initialization_empty(self):
         """Test creating empty RuleCollection."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         collection = RuleCollection()
         assert len(collection) == 0
 
     def test_collection_initialization_with_items(self):
         """Test creating RuleCollection with items."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rule = MockPhonologicalRule("PhRegularRule")
         collection = RuleCollection([rule])
@@ -112,7 +112,7 @@ class TestRuleCollection:
 
     def test_collection_iteration(self):
         """Test iterating over RuleCollection."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [MockPhonologicalRule("PhRegularRule") for _ in range(3)]
         collection = RuleCollection(rules)
@@ -124,7 +124,7 @@ class TestRuleCollection:
 
     def test_collection_indexing(self):
         """Test indexing RuleCollection."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [MockPhonologicalRule("PhRegularRule") for _ in range(3)]
         collection = RuleCollection(rules)
@@ -134,7 +134,7 @@ class TestRuleCollection:
 
     def test_collection_slicing(self):
         """Test slicing RuleCollection."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [MockPhonologicalRule("PhRegularRule") for _ in range(5)]
         collection = RuleCollection(rules)
@@ -145,7 +145,7 @@ class TestRuleCollection:
 
     def test_collection_str_shows_type_breakdown(self):
         """Test that __str__ shows type breakdown."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [
             MockPhonologicalRule("PhRegularRule"),
@@ -162,7 +162,7 @@ class TestRuleCollection:
 
     def test_collection_str_empty(self):
         """Test __str__ on empty collection."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         collection = RuleCollection()
         str_repr = str(collection)
@@ -170,7 +170,7 @@ class TestRuleCollection:
 
     def test_by_type_filter(self):
         """Test filtering by concrete type."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [
             MockPhonologicalRule("PhRegularRule"),
@@ -185,7 +185,7 @@ class TestRuleCollection:
 
     def test_filter_by_direction(self):
         """Test filtering by direction."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [
             MockPhonologicalRule("PhRegularRule", direction=0),
@@ -199,7 +199,7 @@ class TestRuleCollection:
 
     def test_filter_where_custom_predicate(self):
         """Test filtering with custom predicate."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [
             MockPhonologicalRule("PhRegularRule"),
@@ -214,7 +214,7 @@ class TestRuleCollection:
 
     def test_regular_rules_convenience_filter(self):
         """Test regular_rules() convenience method."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [
             MockPhonologicalRule("PhRegularRule"),
@@ -230,7 +230,7 @@ class TestRuleCollection:
 
     def test_metathesis_rules_convenience_filter(self):
         """Test metathesis_rules() convenience method."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [
             MockPhonologicalRule("PhRegularRule"),
@@ -246,7 +246,7 @@ class TestRuleCollection:
 
     def test_redup_rules_convenience_filter(self):
         """Test redup_rules() convenience method."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [
             MockPhonologicalRule("PhRegularRule"),
@@ -262,7 +262,7 @@ class TestRuleCollection:
 
     def test_filter_chaining(self):
         """Test chaining multiple filters."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [
             MockPhonologicalRule("PhRegularRule", direction=0),
@@ -279,7 +279,7 @@ class TestRuleCollection:
 
     def test_repr(self):
         """Test string representation of collection."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [MockPhonologicalRule("PhRegularRule") for _ in range(5)]
         collection = RuleCollection(rules)
@@ -290,7 +290,7 @@ class TestRuleCollection:
 
     def test_append(self):
         """Test appending to collection."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         collection = RuleCollection()
         rule = MockPhonologicalRule("PhRegularRule")
@@ -301,7 +301,7 @@ class TestRuleCollection:
 
     def test_extend(self):
         """Test extending collection."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         collection = RuleCollection()
         rules = [MockPhonologicalRule("PhRegularRule") for _ in range(3)]
@@ -311,7 +311,7 @@ class TestRuleCollection:
 
     def test_clear(self):
         """Test clearing collection."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [MockPhonologicalRule("PhRegularRule") for _ in range(3)]
         collection = RuleCollection(rules)
@@ -321,7 +321,7 @@ class TestRuleCollection:
 
     def test_filter_name_contains(self):
         """Test filtering by name contains."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [
             MockPhonologicalRule("PhRegularRule", name="Voicing Assimilation"),
@@ -335,7 +335,7 @@ class TestRuleCollection:
 
     def test_filter_multiple_criteria(self):
         """Test filtering with multiple criteria."""
-        from flexlibs2.code.Grammar.rule_collection import RuleCollection
+        from flexicon.code.Grammar.rule_collection import RuleCollection
 
         rules = [
             MockPhonologicalRule("PhRegularRule", name="Voicing", direction=0),

@@ -30,7 +30,7 @@ Date: 2025
 """
 
 import sys
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 
 def demo_wordform_basics(project):

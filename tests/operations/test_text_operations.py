@@ -46,13 +46,13 @@ class TestTextOperationsImport:
 
     def test_import_text_operations(self):
         """Test importing TextOperations class."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         assert TextOperations is not None
 
     def test_instantiate_with_mock_project(self, mock_flex_project):
         """Test instantiating TextOperations with mock project."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(mock_flex_project)
         assert ops is not None
@@ -64,14 +64,14 @@ class TestTextOperationsInheritance:
 
     def test_inherits_from_base_operations(self):
         """Test that TextOperations inherits from BaseOperations."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
-        from flexlibs2.code.BaseOperations import BaseOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.BaseOperations import BaseOperations
 
         assert issubclass(TextOperations, BaseOperations)
 
     def test_has_all_reordering_methods(self, mock_flex_project):
         """Test that TextOperations has all reordering methods."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(mock_flex_project)
         assert_has_reordering_methods(ops)
@@ -82,7 +82,7 @@ class TestTextOperationsCRUDMethods:
 
     def test_has_getall_method(self, mock_flex_project):
         """Test that GetAll method exists and is callable."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(mock_flex_project)
         assert hasattr(ops, "GetAll")
@@ -90,7 +90,7 @@ class TestTextOperationsCRUDMethods:
 
     def test_has_create_method(self, mock_flex_project):
         """Test that Create method exists and is callable."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(mock_flex_project)
         assert hasattr(ops, "Create")
@@ -98,7 +98,7 @@ class TestTextOperationsCRUDMethods:
 
     def test_has_delete_method(self, mock_flex_project):
         """Test that Delete method exists and is callable."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(mock_flex_project)
         assert hasattr(ops, "Delete")
@@ -106,7 +106,7 @@ class TestTextOperationsCRUDMethods:
 
     def test_has_find_method(self, mock_flex_project):
         """Test that Find method exists and is callable."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(mock_flex_project)
         assert hasattr(ops, "Find")
@@ -118,7 +118,7 @@ class TestTextOperationsPropertyGetters:
 
     def test_has_gettitle_method(self, mock_flex_project):
         """Test that GetTitle method exists."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(mock_flex_project)
         assert hasattr(ops, "GetTitle")
@@ -126,7 +126,7 @@ class TestTextOperationsPropertyGetters:
 
     def test_has_getgenre_method(self, mock_flex_project):
         """Test that GetGenre method exists."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(mock_flex_project)
         # Genre may be accessed differently
@@ -138,7 +138,7 @@ class TestTextOperationsPropertySetters:
 
     def test_has_settitle_method(self, mock_flex_project):
         """Test that SetTitle method exists."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(mock_flex_project)
         assert hasattr(ops, "SetTitle")
@@ -150,7 +150,7 @@ class TestTextOperationsParagraphMethods:
 
     def test_has_addparagraph_method(self, mock_flex_project):
         """Test that AddParagraph method exists."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(mock_flex_project)
         # Check for paragraph-related methods
@@ -169,7 +169,7 @@ class TestTextOperationsMockBehavior:
 
     def test_getall_with_mock_repository(self, mock_flex_project):
         """Test GetAll returns iterator from mock repository."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         # Setup mock to return test texts
         mock_texts = [MockLCMObject(hvo=4000 + i) for i in range(2)]
@@ -187,7 +187,7 @@ class TestTextOperationsMockBehavior:
         `project.Texts.GetAll()` must support `len()` and indexing
         directly, not just `for text in project.Texts.GetAll(): ...`.
         """
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         mock_texts = [MockLCMObject(hvo=4000 + i) for i in range(2)]
 
@@ -205,8 +205,8 @@ class TestTextOperationsValidation:
 
     def test_create_requires_write_enabled(self, mock_flex_project):
         """Test that Create raises error when project is read-only."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.FLExProject import FP_ReadOnlyError
 
         # Set project to read-only
         mock_flex_project.writeEnabled = False
@@ -249,9 +249,9 @@ class TestTextOperationsIntegration:
         FLExInitialize() / FLExCleanup() here would tear down state
         shared with the rest of the live-DB suite.
         """
-        pytest.importorskip("flexlibs2")
+        pytest.importorskip("flexicon")
 
-        from flexlibs2 import FLExProject
+        from flexicon import FLExProject
 
         project = FLExProject()
         for name in _CANDIDATE_PROJECTS:
@@ -281,13 +281,13 @@ class TestTextOperationsIntegration:
         and left ``Test Text 123`` behind, delete it first so this test
         is idempotent against project state.
         """
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(flex_project)
 
         if ops.Exists("Test Text 123"):
             for stale in list(ops.GetAll()):
-                from flexlibs2.code.Shared.string_utils import best_analysis_text
+                from flexicon.code.Shared.string_utils import best_analysis_text
                 if best_analysis_text(stale.Name) == "Test Text 123":
                     ops.Delete(stale)
                     break
@@ -303,7 +303,7 @@ class TestTextOperationsIntegration:
 
     def test_getall_returns_texts(self, flex_project):
         """Integration test: GetAll returns texts."""
-        from flexlibs2.code.TextsWords.TextOperations import TextOperations
+        from flexicon.code.TextsWords.TextOperations import TextOperations
 
         ops = TextOperations(flex_project)
         texts = list(ops.GetAll())

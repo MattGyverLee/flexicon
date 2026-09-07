@@ -37,7 +37,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Notebook.annotation import Annotation
+    from flexicon.code.Notebook.annotation import Annotation
 
     # Wrap an annotation from GetAll()
     anno = noteOps.GetAll(entry)[0]  # Typed as ICmBaseAnnotation

@@ -34,7 +34,7 @@ class SyncEngine:
     to determine whether to show diffs (readonly) or execute syncs (write).
 
     Usage:
-        >>> from flexlibs2.sync import SyncEngine, GuidMatchStrategy
+        >>> from flexicon.sync import SyncEngine, GuidMatchStrategy
         >>>
         >>> # Create engine
         >>> sync = SyncEngine(

@@ -36,7 +36,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Grammar.affix_template import AffixTemplate
+    from flexicon.code.Grammar.affix_template import AffixTemplate
 
     # Wrap a template from GetAll()
     template = morphRuleOps.GetAllAffixTemplates()[0]

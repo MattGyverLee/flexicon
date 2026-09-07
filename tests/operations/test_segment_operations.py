@@ -27,7 +27,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 
 def _try_open_writable_project():
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
     project = FLExProject()
@@ -233,7 +233,7 @@ class TestAppendSentence:
         """
         AppendSentence must raise FP_ParameterError when text is empty.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         text, para = _make_throwaway_text(writable_project, "zz_append_empty_text")
         try:
@@ -246,7 +246,7 @@ class TestAppendSentence:
         """
         AppendSentence must raise FP_NullParameterError when paragraph is None.
         """
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         with pytest.raises(FP_NullParameterError):
             writable_project.Segments.AppendSentence(None, "Some text.")
@@ -306,7 +306,7 @@ class TestSplitSegment:
         """
         offset_within_segment=0 is invalid; must raise FP_ParameterError.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         text, para, seg = self._make_para_with_one_segment(writable_project)
         try:
@@ -319,7 +319,7 @@ class TestSplitSegment:
         """
         offset_within_segment >= seg length is invalid; must raise FP_ParameterError.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         sentence = "Short."
         text, para, seg = self._make_para_with_one_segment(writable_project, sentence)
@@ -332,7 +332,7 @@ class TestSplitSegment:
 
     def test_SplitSegment_raises_on_none_segment(self, writable_project):
         """SplitSegment must raise FP_NullParameterError when segment is None."""
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         with pytest.raises(FP_NullParameterError):
             writable_project.Segments.SplitSegment(None, 5)
@@ -400,7 +400,7 @@ class TestMergeSegments:
         policy='reject' must raise FP_ParameterError when seg2 has a
         non-empty FreeTranslation.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         text, para, seg1, seg2 = self._make_para_with_two_segments(writable_project)
         try:
@@ -416,7 +416,7 @@ class TestMergeSegments:
         """
         Merging non-adjacent segments must raise FP_ParameterError.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         text, para = _make_throwaway_text(writable_project, "zz_merge_nonadj")
         try:
@@ -435,7 +435,7 @@ class TestMergeSegments:
         """
         Merging segments from different paragraphs must raise FP_ParameterError.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         text1, para1 = _make_throwaway_text(writable_project, "zz_merge_diff_para_A")
         text2, para2 = _make_throwaway_text(writable_project, "zz_merge_diff_para_B")
@@ -557,7 +557,7 @@ class TestReparseParagraph:
 
     def test_ReparseParagraph_raises_on_none_paragraph(self, writable_project):
         """ReparseParagraph must raise FP_NullParameterError when paragraph is None."""
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         with pytest.raises(FP_NullParameterError):
             writable_project.Segments.ReparseParagraph(None)
@@ -584,7 +584,7 @@ class TestReadOnlyGuard:
         test_lexentry_operations.py::TestLexEntryOperationsExceptionHandling.
         """
         from unittest.mock import Mock
-        from flexlibs2.code.TextsWords.SegmentOperations import SegmentOperations
+        from flexicon.code.TextsWords.SegmentOperations import SegmentOperations
 
         mock_project = Mock()
         mock_project.writeEnabled = False
@@ -597,7 +597,7 @@ class TestReadOnlyGuard:
 
     def test_AppendSentence_raises_on_readonly(self, readonly_ops):
         """AppendSentence must raise FP_ReadOnlyError when project is read-only."""
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.FLExProject import FP_ReadOnlyError
         from unittest.mock import Mock
 
         mock_para = Mock()
@@ -606,7 +606,7 @@ class TestReadOnlyGuard:
 
     def test_ReparseParagraph_raises_on_readonly(self, readonly_ops):
         """ReparseParagraph must raise FP_ReadOnlyError when project is read-only."""
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.FLExProject import FP_ReadOnlyError
         from unittest.mock import Mock
 
         mock_para = Mock()
@@ -629,7 +629,7 @@ class TestMergeSegmentsNullAndPolicy:
     def writable_ops(self):
         """Return a SegmentOperations instance backed by a write-enabled mock project."""
         from unittest.mock import Mock
-        from flexlibs2.code.TextsWords.SegmentOperations import SegmentOperations
+        from flexicon.code.TextsWords.SegmentOperations import SegmentOperations
 
         mock_project = Mock()
         mock_project.writeEnabled = True
@@ -641,7 +641,7 @@ class TestMergeSegmentsNullAndPolicy:
 
     def test_MergeSegments_raises_on_none_survivor(self, writable_ops):
         """MergeSegments must raise FP_NullParameterError when seg1 is None."""
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
         from unittest.mock import Mock
 
         with pytest.raises(FP_NullParameterError):
@@ -649,7 +649,7 @@ class TestMergeSegmentsNullAndPolicy:
 
     def test_MergeSegments_raises_on_none_victim(self, writable_ops):
         """MergeSegments must raise FP_NullParameterError when seg2 is None."""
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
         from unittest.mock import Mock
 
         with pytest.raises(FP_NullParameterError):
@@ -661,7 +661,7 @@ class TestMergeSegmentsNullAndPolicy:
         is not one of the three valid string constants.  Verifies the
         stringly-typed guard added in P1-5.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
         from unittest.mock import Mock
 
         mock_seg1 = Mock()
@@ -741,7 +741,7 @@ class TestSegmentAnalysesRSWriteMethods:
         is selected instead of Phase 2 (``project.UndoableOperation``).
         """
         from unittest.mock import MagicMock, Mock
-        from flexlibs2.code.TextsWords.SegmentOperations import SegmentOperations
+        from flexicon.code.TextsWords.SegmentOperations import SegmentOperations
 
         mock_project = MagicMock()
         mock_project.writeEnabled = True
@@ -756,7 +756,7 @@ class TestSegmentAnalysesRSWriteMethods:
     def readonly_ops(self):
         """Return a SegmentOperations instance backed by a read-only mock project."""
         from unittest.mock import Mock
-        from flexlibs2.code.TextsWords.SegmentOperations import SegmentOperations
+        from flexicon.code.TextsWords.SegmentOperations import SegmentOperations
 
         mock_project = Mock()
         mock_project.writeEnabled = False
@@ -784,27 +784,27 @@ class TestSegmentAnalysesRSWriteMethods:
         assert list(seg.AnalysesRS) == [new_tok, "other"]
 
     def test_SetAnalysis_raises_on_out_of_range_index(self, writable_ops):
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         seg = self._make_segment(["only"])
         with pytest.raises(FP_ParameterError):
             writable_ops.SetAnalysis(seg, 5, object())
 
     def test_SetAnalysis_raises_on_none_segment(self, writable_ops):
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         with pytest.raises(FP_NullParameterError):
             writable_ops.SetAnalysis(None, 0, object())
 
     def test_SetAnalysis_raises_on_none_analysis(self, writable_ops):
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         seg = self._make_segment(["only"])
         with pytest.raises(FP_NullParameterError):
             writable_ops.SetAnalysis(seg, 0, None)
 
     def test_SetAnalysis_raises_on_readonly(self, readonly_ops):
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.FLExProject import FP_ReadOnlyError
 
         seg = self._make_segment(["only"])
         with pytest.raises(FP_ReadOnlyError):
@@ -821,28 +821,28 @@ class TestSegmentAnalysesRSWriteMethods:
         assert list(seg.AnalysesRS) == ["a", new_tok, "b"]
 
     def test_ReplaceAnalysis_raises_when_old_not_found(self, writable_ops):
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         seg = self._make_segment(["a", "b"])
         with pytest.raises(FP_ParameterError):
             writable_ops.ReplaceAnalysis(seg, object(), object())
 
     def test_ReplaceAnalysis_raises_on_none_old(self, writable_ops):
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         seg = self._make_segment(["a"])
         with pytest.raises(FP_NullParameterError):
             writable_ops.ReplaceAnalysis(seg, None, object())
 
     def test_ReplaceAnalysis_raises_on_none_new(self, writable_ops):
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         seg = self._make_segment(["a"])
         with pytest.raises(FP_NullParameterError):
             writable_ops.ReplaceAnalysis(seg, "a", None)
 
     def test_ReplaceAnalysis_raises_on_readonly(self, readonly_ops):
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.FLExProject import FP_ReadOnlyError
 
         seg = self._make_segment(["a"])
         with pytest.raises(FP_ReadOnlyError):
@@ -868,21 +868,21 @@ class TestSegmentAnalysesRSWriteMethods:
         assert list(seg.AnalysesRS) == ["a", new_tok]
 
     def test_InsertAnalysis_raises_on_out_of_range_index(self, writable_ops):
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         seg = self._make_segment(["a"])
         with pytest.raises(FP_ParameterError):
             writable_ops.InsertAnalysis(seg, 5, object())
 
     def test_InsertAnalysis_raises_on_negative_index(self, writable_ops):
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         seg = self._make_segment(["a"])
         with pytest.raises(FP_ParameterError):
             writable_ops.InsertAnalysis(seg, -1, object())
 
     def test_InsertAnalysis_raises_on_readonly(self, readonly_ops):
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.FLExProject import FP_ReadOnlyError
 
         seg = self._make_segment(["a"])
         with pytest.raises(FP_ReadOnlyError):
@@ -899,7 +899,7 @@ class TestSegmentAnalysesRSWriteMethods:
         assert list(seg.AnalysesRS) == ["a", "b", new_tok]
 
     def test_AppendAnalysis_raises_on_readonly(self, readonly_ops):
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.FLExProject import FP_ReadOnlyError
 
         seg = self._make_segment([])
         with pytest.raises(FP_ReadOnlyError):
@@ -915,20 +915,20 @@ class TestSegmentAnalysesRSWriteMethods:
         assert list(seg.AnalysesRS) == ["a", "c"]
 
     def test_RemoveAnalysis_raises_on_out_of_range_index(self, writable_ops):
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         seg = self._make_segment(["a"])
         with pytest.raises(FP_ParameterError):
             writable_ops.RemoveAnalysis(seg, 5)
 
     def test_RemoveAnalysis_raises_on_none_segment(self, writable_ops):
-        from flexlibs2.code.FLExProject import FP_NullParameterError
+        from flexicon.code.FLExProject import FP_NullParameterError
 
         with pytest.raises(FP_NullParameterError):
             writable_ops.RemoveAnalysis(None, 0)
 
     def test_RemoveAnalysis_raises_on_readonly(self, readonly_ops):
-        from flexlibs2.code.FLExProject import FP_ReadOnlyError
+        from flexicon.code.FLExProject import FP_ReadOnlyError
 
         seg = self._make_segment(["a"])
         with pytest.raises(FP_ReadOnlyError):

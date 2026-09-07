@@ -19,12 +19,12 @@ import unittest
 import sys
 import os
 
-# Add parent directory to sys.path to allow importing flexlibs2
+# Add parent directory to sys.path to allow importing flexicon
 _test_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.join(_test_dir, "..", "..", "..")
 sys.path.insert(0, _project_root)
 
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
 
 # ============================================================================

@@ -2,7 +2,7 @@
 #
 # verify_lcm_calls.py
 #
-# Systematically extract and verify all LCM function calls in flexlibs2
+# Systematically extract and verify all LCM function calls in flexicon
 # This tool identifies every method/property called on LCM types
 #
 
@@ -13,7 +13,7 @@ import json
 
 
 class LCMCallAnalyzer:
-    """Analyze all LCM method/property calls in flexlibs2."""
+    """Analyze all LCM method/property calls in flexicon."""
 
     def __init__(self):
         self.calls = defaultdict(list)  # type -> [(method, file, line)]
@@ -26,7 +26,7 @@ class LCMCallAnalyzer:
 
     def extract_lcm_calls(self, codebase_path):
         """Extract all LCM method and property calls."""
-        print("Scanning flexlibs2 for LCM calls...")
+        print("Scanning flexicon for LCM calls...")
         print("=" * 80)
 
         ops_files = list(Path(codebase_path).rglob("*Operations.py"))
@@ -139,7 +139,7 @@ class LCMCallAnalyzer:
                 print(f"\n  [OK] {call}")
                 print(f"    Used in {len(locations)} location(s):")
                 for file_path, line_num, code in locations[:2]:  # Show first 2
-                    short_path = str(file_path).replace("d:\\Github\\flexlibs2\\", "")
+                    short_path = str(file_path).replace("d:\\Github\\flexicon\\", "")
                     print(f"      - {short_path}:{line_num}")
                     print(f"        {code[:70]}")
                 if len(locations) > 2:
@@ -188,7 +188,7 @@ def main():
     analyzer = LCMCallAnalyzer()
 
     # Analyze codebase
-    codebase_path = Path("flexlibs2/code")
+    codebase_path = Path("flexicon/code")
     analyzer.extract_lcm_calls(codebase_path)
 
     # Print report

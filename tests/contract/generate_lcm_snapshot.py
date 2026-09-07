@@ -16,7 +16,7 @@
 Generate a snapshot of what the installed liblcm actually provides.
 
 This module loads the SIL.LCModel assemblies via pythonnet and introspects
-every type that flexlibs2 depends on, recording which properties and methods
+every type that flexicon depends on, recording which properties and methods
 actually exist.
 
 Usage::
@@ -267,7 +267,7 @@ def _introspect_type(type_name, namespace_hint=None):
 def generate_snapshot(expected_contract):
     """
     Generate a snapshot of the installed liblcm, checking every type
-    that flexlibs2 expects.
+    that flexicon expects.
 
     Args:
         expected_contract: The contract dict from extract_lcm_contract.
@@ -277,7 +277,7 @@ def generate_snapshot(expected_contract):
     """
     # Initialize FLEx/pythonnet
     try:
-        from flexlibs2.code.FLExInit import FLExInitialize
+        from flexicon.code.FLExInit import FLExInitialize
 
         FLExInitialize()
     except ImportError:

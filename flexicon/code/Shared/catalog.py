@@ -132,13 +132,13 @@ def find_catalog_file(filename, subdir="Templates"):
 
     Raises:
         RuntimeError: If FLExGlobals.FWCodeDir has not been initialised
-                      (caller must have imported flexlibs2 first).
+                      (caller must have imported flexicon first).
         FileNotFoundError: If the file does not exist at the expected path.
     """
     if FLExGlobals.FWCodeDir is None:
         raise RuntimeError(
             "FLExGlobals.FWCodeDir is not set; "
-            "import flexlibs2 (or call FLExGlobals.InitialiseFWGlobals()) first."
+            "import flexicon (or call FLExGlobals.InitialiseFWGlobals()) first."
         )
 
     # Normalize slashes in subdir so callers can pass "a/b/c" portably.

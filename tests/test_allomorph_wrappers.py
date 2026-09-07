@@ -85,14 +85,14 @@ class TestAllomorphCollection:
 
     def test_collection_initialization_empty(self):
         """Test creating empty AllomorphCollection."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         collection = AllomorphCollection()
         assert len(collection) == 0
 
     def test_collection_initialization_with_items(self):
         """Test creating AllomorphCollection with items."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorph = MockAllomorph("MoStemAllomorph")
         collection = AllomorphCollection([allomorph])
@@ -100,7 +100,7 @@ class TestAllomorphCollection:
 
     def test_collection_iteration(self):
         """Test iterating over AllomorphCollection."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [MockAllomorph("MoStemAllomorph") for _ in range(3)]
         collection = AllomorphCollection(allomorphs)
@@ -112,7 +112,7 @@ class TestAllomorphCollection:
 
     def test_collection_indexing(self):
         """Test indexing AllomorphCollection."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [MockAllomorph("MoStemAllomorph") for _ in range(3)]
         collection = AllomorphCollection(allomorphs)
@@ -122,7 +122,7 @@ class TestAllomorphCollection:
 
     def test_collection_slicing(self):
         """Test slicing AllomorphCollection."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [MockAllomorph("MoStemAllomorph") for _ in range(5)]
         collection = AllomorphCollection(allomorphs)
@@ -133,7 +133,7 @@ class TestAllomorphCollection:
 
     def test_collection_str_shows_type_breakdown(self):
         """Test that __str__ shows type breakdown."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [
             MockAllomorph("MoStemAllomorph"),
@@ -150,7 +150,7 @@ class TestAllomorphCollection:
 
     def test_collection_str_empty(self):
         """Test __str__ on empty collection."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         collection = AllomorphCollection()
         str_repr = str(collection)
@@ -158,7 +158,7 @@ class TestAllomorphCollection:
 
     def test_by_type_filter(self):
         """Test filtering by concrete type."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [
             MockAllomorph("MoStemAllomorph"),
@@ -173,7 +173,7 @@ class TestAllomorphCollection:
 
     def test_filter_form_contains(self):
         """Test filtering by form contains."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [
             MockAllomorph("MoStemAllomorph", form="walk"),
@@ -187,7 +187,7 @@ class TestAllomorphCollection:
 
     def test_filter_where_custom_predicate(self):
         """Test filtering with custom predicate."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [
             MockAllomorph("MoStemAllomorph"),
@@ -202,7 +202,7 @@ class TestAllomorphCollection:
 
     def test_stem_allomorphs_convenience_filter(self):
         """Test stem_allomorphs() convenience method."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [
             MockAllomorph("MoStemAllomorph"),
@@ -218,7 +218,7 @@ class TestAllomorphCollection:
 
     def test_affix_allomorphs_convenience_filter(self):
         """Test affix_allomorphs() convenience method."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [
             MockAllomorph("MoStemAllomorph"),
@@ -234,7 +234,7 @@ class TestAllomorphCollection:
 
     def test_filter_chaining(self):
         """Test chaining multiple filters."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [
             MockAllomorph("MoStemAllomorph", form="walk"),
@@ -251,7 +251,7 @@ class TestAllomorphCollection:
 
     def test_repr(self):
         """Test string representation of collection."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [MockAllomorph("MoStemAllomorph") for _ in range(5)]
         collection = AllomorphCollection(allomorphs)
@@ -262,7 +262,7 @@ class TestAllomorphCollection:
 
     def test_append(self):
         """Test appending to collection."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         collection = AllomorphCollection()
         allomorph = MockAllomorph("MoStemAllomorph")
@@ -273,7 +273,7 @@ class TestAllomorphCollection:
 
     def test_extend(self):
         """Test extending collection."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         collection = AllomorphCollection()
         allomorphs = [MockAllomorph("MoStemAllomorph") for _ in range(3)]
@@ -283,7 +283,7 @@ class TestAllomorphCollection:
 
     def test_clear(self):
         """Test clearing collection."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [MockAllomorph("MoStemAllomorph") for _ in range(3)]
         collection = AllomorphCollection(allomorphs)
@@ -293,7 +293,7 @@ class TestAllomorphCollection:
 
     def test_filter_environment(self):
         """Test filtering by environment."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         env1 = MockEnvironment("guid-1")
         env2 = MockEnvironment("guid-2")
@@ -311,7 +311,7 @@ class TestAllomorphCollection:
 
     def test_filter_multiple_criteria(self):
         """Test filtering with multiple criteria."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [
             MockAllomorph("MoStemAllomorph", form="walking"),
@@ -327,7 +327,7 @@ class TestAllomorphCollection:
 
     def test_collection_with_mixed_types(self):
         """Test collection with mixed allomorph types."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [
             MockAllomorph("MoStemAllomorph", form="walk"),
@@ -346,7 +346,7 @@ class TestAllomorphCollection:
 
     def test_filter_returns_new_collection(self):
         """Test that filter returns new collection without modifying original."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [
             MockAllomorph("MoStemAllomorph", form="walk"),
@@ -365,7 +365,7 @@ class TestAllomorphCollection:
 
     def test_where_with_complex_predicate(self):
         """Test where() with complex predicates."""
-        from flexlibs2.code.Lexicon.allomorph_collection import AllomorphCollection
+        from flexicon.code.Lexicon.allomorph_collection import AllomorphCollection
 
         allomorphs = [
             MockAllomorph("MoStemAllomorph", form="walk"),  # length 4
