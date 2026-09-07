@@ -1,7 +1,7 @@
 #
 #   compare_contracts.py
 #
-#   Diff engine that compares the expected contract (what flexlibs2
+#   Diff engine that compares the expected contract (what flexicon
 #   needs) against a liblcm snapshot (what liblcm provides).
 #   Produces a structured report of breakage, regressions, and changes.
 #
@@ -12,7 +12,7 @@
 #
 
 """
-Compare flexlibs2's expected LCM contract against a liblcm snapshot.
+Compare flexicon's expected LCM contract against a liblcm snapshot.
 
 This is the core of the contract test: it answers "which of my ~1400
 functions will break with this version of liblcm?"
@@ -42,9 +42,9 @@ def compare(expected_contract, liblcm_snapshot):
 
     Returns:
         dict with:
-        - missing_types: Types flexlibs2 needs but liblcm doesn't have
+        - missing_types: Types flexicon needs but liblcm doesn't have
         - missing_members: Per-type members that are expected but absent
-        - affected_files: Which flexlibs2 files are impacted by each gap
+        - affected_files: Which flexicon files are impacted by each gap
         - summary: Counts and severity assessment
     """
     snapshot_types = liblcm_snapshot.get("types", {})

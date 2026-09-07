@@ -43,7 +43,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Lexicon.msa_collection import MSACollection
+    from flexicon.code.Lexicon.msa_collection import MSACollection
 
     # entry.MorphoSyntaxAnalysesOC already wrapped by LexEntryOperations
     msas = entry_ops.GetMorphoSyntaxAnalyses(entry)

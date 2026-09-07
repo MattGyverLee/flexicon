@@ -35,7 +35,7 @@ The Solution:
 
 Example::
 
-    from flexlibs2.code.Shared.smart_collection import SmartCollection
+    from flexicon.code.Shared.smart_collection import SmartCollection
 
     class RuleCollection(SmartCollection):
         def filter(self, **criteria):

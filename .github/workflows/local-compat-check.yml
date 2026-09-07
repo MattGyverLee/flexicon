@@ -58,7 +58,7 @@ jobs:
           import os
 
           # Add flexlibs to path
-          sys.path.insert(0, os.path.join(os.getcwd(), 'flexlibs2', 'code'))
+          sys.path.insert(0, os.path.join(os.getcwd(), 'flexicon', 'code'))
 
           print("Testing module structure and imports (without .NET dependencies)...")
 
@@ -69,7 +69,7 @@ jobs:
           import ast
           from pathlib import Path
 
-          code_dir = Path('flexlibs2/code')
+          code_dir = Path('flexicon/code')
           python_files = list(code_dir.rglob('*.py'))
 
           print(f"\nFound {len(python_files)} Python files")
@@ -106,15 +106,15 @@ jobs:
           print("Verifying Operations classes structure...")
 
           operations_dirs = [
-              'flexlibs2/code/Lexicon',
-              'flexlibs2/code/Grammar',
-              'flexlibs2/code/TextsWords',
-              'flexlibs2/code/Lists',
-              'flexlibs2/code/System',
-              'flexlibs2/code/Shared',
-              'flexlibs2/code/Discourse',
-              'flexlibs2/code/Notebook',
-              'flexlibs2/code/Scripture',
+              'flexicon/code/Lexicon',
+              'flexicon/code/Grammar',
+              'flexicon/code/TextsWords',
+              'flexicon/code/Lists',
+              'flexicon/code/System',
+              'flexicon/code/Shared',
+              'flexicon/code/Discourse',
+              'flexicon/code/Notebook',
+              'flexicon/code/Scripture',
           ]
 
           total_classes = 0
@@ -165,7 +165,7 @@ jobs:
           # Track what we import from SIL namespaces
           sil_imports = defaultdict(set)
 
-          code_dir = Path('flexlibs2/code')
+          code_dir = Path('flexicon/code')
           for py_file in code_dir.rglob('*.py'):
               try:
                   with open(py_file, 'r', encoding='utf-8') as f:
@@ -230,7 +230,7 @@ jobs:
           print("Validating expected public API methods exist...")
 
           # Check FLExProject.py has expected structure
-          flex_project = Path('flexlibs2/code/FLExProject.py')
+          flex_project = Path('flexicon/code/FLExProject.py')
 
           if not flex_project.exists():
               print("✗ FLExProject.py not found!")

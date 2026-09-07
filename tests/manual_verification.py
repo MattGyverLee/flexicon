@@ -25,7 +25,7 @@ sys.path.insert(0, _project_root)
 
 # Import FLEx modules
 try:
-    from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+    from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
     # Core exceptions are in core module at project root
     try:
@@ -42,7 +42,7 @@ try:
         DuplicateObjectError = None
         OperationFailedError = None
 except ImportError as e:
-    print(f"[ERROR] Failed to import flexlibs2: {e}")
+    print(f"[ERROR] Failed to import flexicon: {e}")
     sys.exit(1)
 
 
@@ -592,7 +592,7 @@ def run_phase_0_verification():
         except Exception as e:
             print(f"  [ERROR] Cannot open Test project: {e}")
             print("  [INFO] Available projects:")
-            from flexlibs2.flexlibs2.code.FLExLCM import GetListOfProjects
+            from flexicon.flexicon.code.FLExLCM import GetListOfProjects
 
             try:
                 projects = GetListOfProjects()

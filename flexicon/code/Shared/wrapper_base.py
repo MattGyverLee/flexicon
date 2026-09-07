@@ -35,8 +35,8 @@ The Solution:
 
 Example::
 
-    from flexlibs2.code.Shared.wrapper_base import LCMObjectWrapper
-    from flexlibs2.code.lcm_casting import cast_to_concrete
+    from flexicon.code.Shared.wrapper_base import LCMObjectWrapper
+    from flexicon.code.lcm_casting import cast_to_concrete
 
     # Wrap an LCM object
     rule = phonRuleOps.GetAll()[0]  # Typed as IPhSegmentRule

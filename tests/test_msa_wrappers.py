@@ -94,7 +94,7 @@ class TestMSACollection:
 
     def test_collection_initialization_empty(self):
         """Test creating empty MSACollection."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         collection = MSACollection()
         assert len(collection) == 0
@@ -102,7 +102,7 @@ class TestMSACollection:
 
     def test_collection_initialization_with_items(self):
         """Test creating MSACollection with items."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         msa1 = MockMorphosyntaxAnalysis("MoStemMsa")
         msa2 = MockMorphosyntaxAnalysis("MoDerivAffMsa")
@@ -114,7 +114,7 @@ class TestMSACollection:
 
     def test_collection_iteration(self):
         """Test iterating over MSACollection."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         msa1 = MockMorphosyntaxAnalysis("MoStemMsa")
         msa2 = MockMorphosyntaxAnalysis("MoDerivAffMsa")
@@ -129,7 +129,7 @@ class TestMSACollection:
 
     def test_collection_indexing(self):
         """Test indexing into MSACollection."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         msa1 = MockMorphosyntaxAnalysis("MoStemMsa")
         msa2 = MockMorphosyntaxAnalysis("MoDerivAffMsa")
@@ -143,7 +143,7 @@ class TestMSACollection:
 
     def test_collection_slicing(self):
         """Test slicing MSACollection."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         msa1 = MockMorphosyntaxAnalysis("MoStemMsa")
         msa2 = MockMorphosyntaxAnalysis("MoDerivAffMsa")
@@ -158,7 +158,7 @@ class TestMSACollection:
 
     def test_collection_str_empty(self):
         """Test string representation of empty collection."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         collection = MSACollection()
         output = str(collection)
@@ -166,7 +166,7 @@ class TestMSACollection:
 
     def test_collection_str_with_items(self):
         """Test string representation shows type breakdown."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         msa1 = MockMorphosyntaxAnalysis("MoStemMsa")
         msa2 = MockMorphosyntaxAnalysis("MoStemMsa")
@@ -184,7 +184,7 @@ class TestMSACollection:
 
     def test_stem_msas_filter(self):
         """Test filtering to only stem MSAs."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         msa1 = MockMorphosyntaxAnalysis("MoStemMsa")
         msa2 = MockMorphosyntaxAnalysis("MoDerivAffMsa")
@@ -198,7 +198,7 @@ class TestMSACollection:
 
     def test_deriv_aff_msas_filter(self):
         """Test filtering to only derivational affix MSAs."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         msa1 = MockMorphosyntaxAnalysis("MoStemMsa")
         msa2 = MockMorphosyntaxAnalysis("MoDerivAffMsa")
@@ -213,7 +213,7 @@ class TestMSACollection:
 
     def test_infl_aff_msas_filter(self):
         """Test filtering to only inflectional affix MSAs."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         msa1 = MockMorphosyntaxAnalysis("MoStemMsa")
         msa2 = MockMorphosyntaxAnalysis("MoInflAffMsa")
@@ -227,7 +227,7 @@ class TestMSACollection:
 
     def test_unclassified_aff_msas_filter(self):
         """Test filtering to only unclassified affix MSAs."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         msa1 = MockMorphosyntaxAnalysis("MoStemMsa")
         msa2 = MockMorphosyntaxAnalysis("MoUnclassifiedAffixMsa")
@@ -241,7 +241,7 @@ class TestMSACollection:
 
     def test_filter_by_has_pos_true(self):
         """Test filtering MSAs that have POS."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         pos_mock = Mock()
         pos_mock.Guid = "test-guid"
@@ -258,7 +258,7 @@ class TestMSACollection:
 
     def test_filter_by_has_pos_false(self):
         """Test filtering MSAs that don't have POS."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         pos_mock = Mock()
         pos_mock.Guid = "test-guid"
@@ -275,7 +275,7 @@ class TestMSACollection:
 
     def test_filter_by_pos_main(self):
         """Test filtering MSAs by specific POS."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         pos1 = Mock()
         pos1.Guid = "pos1-guid"
@@ -295,7 +295,7 @@ class TestMSACollection:
 
     def test_filter_chaining(self):
         """Test chaining filters together."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         pos_mock = Mock()
         pos_mock.Guid = "test-guid"
@@ -316,7 +316,7 @@ class TestMSACollection:
 
     def test_filter_with_where_custom_predicate(self):
         """Test filtering with custom predicate."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         pos1 = Mock()
         pos1.Guid = "pos1-guid"
@@ -337,7 +337,7 @@ class TestMSACollection:
 
     def test_by_type_filter(self):
         """Test filtering by ClassName."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         msa1 = MockMorphosyntaxAnalysis("MoStemMsa")
         msa2 = MockMorphosyntaxAnalysis("MoDerivAffMsa")
@@ -351,7 +351,7 @@ class TestMSACollection:
 
     def test_collection_returns_new_instance(self):
         """Test that filters return new collections, not modifying original."""
-        from flexlibs2.code.Lexicon.msa_collection import MSACollection
+        from flexicon.code.Lexicon.msa_collection import MSACollection
 
         msa1 = MockMorphosyntaxAnalysis("MoStemMsa")
         msa2 = MockMorphosyntaxAnalysis("MoDerivAffMsa")
@@ -372,10 +372,10 @@ class TestMorphosyntaxAnalysisWrapper:
 
     def test_wrapper_type_checks(self):
         """Test type checking properties on wrapper."""
-        from flexlibs2.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
+        from flexicon.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
 
         # Mock the LCMObjectWrapper init
-        with patch("flexlibs2.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
+        with patch("flexicon.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
             msa = MorphosyntaxAnalysis.__new__(MorphosyntaxAnalysis)
             msa._obj = Mock()
             msa._obj.ClassName = "MoStemMsa"
@@ -388,9 +388,9 @@ class TestMorphosyntaxAnalysisWrapper:
 
     def test_wrapper_as_stem_msa(self):
         """Test as_stem_msa method."""
-        from flexlibs2.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
+        from flexicon.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
 
-        with patch("flexlibs2.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
+        with patch("flexicon.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
             msa = MorphosyntaxAnalysis.__new__(MorphosyntaxAnalysis)
             msa._obj = Mock()
             msa._obj.ClassName = "MoStemMsa"
@@ -401,9 +401,9 @@ class TestMorphosyntaxAnalysisWrapper:
 
     def test_wrapper_as_deriv_aff_msa(self):
         """Test as_deriv_aff_msa method."""
-        from flexlibs2.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
+        from flexicon.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
 
-        with patch("flexlibs2.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
+        with patch("flexicon.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
             msa = MorphosyntaxAnalysis.__new__(MorphosyntaxAnalysis)
             msa._obj = Mock()
             msa._obj.ClassName = "MoDerivAffMsa"
@@ -419,9 +419,9 @@ class TestMorphosyntaxAnalysisWrapper:
 
     def test_wrapper_as_infl_aff_msa(self):
         """Test as_infl_aff_msa method."""
-        from flexlibs2.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
+        from flexicon.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
 
-        with patch("flexlibs2.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
+        with patch("flexicon.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
             msa = MorphosyntaxAnalysis.__new__(MorphosyntaxAnalysis)
             msa._obj = Mock()
             msa._obj.ClassName = "MoInflAffMsa"
@@ -432,9 +432,9 @@ class TestMorphosyntaxAnalysisWrapper:
 
     def test_wrapper_as_unclassified_aff_msa(self):
         """Test as_unclassified_aff_msa method."""
-        from flexlibs2.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
+        from flexicon.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
 
-        with patch("flexlibs2.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
+        with patch("flexicon.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
             msa = MorphosyntaxAnalysis.__new__(MorphosyntaxAnalysis)
             msa._obj = Mock()
             msa._obj.ClassName = "MoUnclassifiedAffixMsa"
@@ -445,9 +445,9 @@ class TestMorphosyntaxAnalysisWrapper:
 
     def test_wrapper_concrete_property(self):
         """Test concrete property returns _concrete."""
-        from flexlibs2.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
+        from flexicon.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
 
-        with patch("flexlibs2.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
+        with patch("flexicon.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
             msa = MorphosyntaxAnalysis.__new__(MorphosyntaxAnalysis)
             msa._obj = Mock()
             msa._obj.ClassName = "MoStemMsa"
@@ -457,9 +457,9 @@ class TestMorphosyntaxAnalysisWrapper:
 
     def test_wrapper_repr(self):
         """Test wrapper string representations."""
-        from flexlibs2.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
+        from flexicon.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
 
-        with patch("flexlibs2.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
+        with patch("flexicon.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
             msa = MorphosyntaxAnalysis.__new__(MorphosyntaxAnalysis)
             msa._obj = Mock()
             msa._obj.ClassName = "MoStemMsa"
@@ -471,10 +471,10 @@ class TestMorphosyntaxAnalysisWrapper:
 
     def test_wrapper_str_without_pos(self):
         """Test wrapper string representation without POS."""
-        from flexlibs2.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
+        from flexicon.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
 
-        with patch("flexlibs2.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
-            with patch("flexlibs2.code.Lexicon.morphosyntax_analysis.get_pos_from_msa", return_value=None):
+        with patch("flexicon.code.Lexicon.morphosyntax_analysis.LCMObjectWrapper.__init__"):
+            with patch("flexicon.code.Lexicon.morphosyntax_analysis.get_pos_from_msa", return_value=None):
                 msa = MorphosyntaxAnalysis.__new__(MorphosyntaxAnalysis)
                 msa._obj = Mock()
                 msa._obj.ClassName = "MoStemMsa"

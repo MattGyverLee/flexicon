@@ -36,7 +36,7 @@ class EnvironmentOperations(BaseOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject, EnvironmentOperations
+        from flexicon import FLExProject, EnvironmentOperations
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)

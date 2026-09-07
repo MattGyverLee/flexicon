@@ -2,7 +2,7 @@
 """
 validate_lcm_properties.py
 
-Validates that property/method accesses on LibLCM objects in FlexLibs2 code
+Validates that property/method accesses on LibLCM objects in flexicon code
 actually exist in the LibLCM API. Catches typos like:
   - HumanApprovedAnalysesRS (wrong) vs HumanApprovedAnalyses (correct)
 
@@ -12,7 +12,7 @@ Usage:
     python tools/validate_lcm_properties.py --verbose
 
 This tool:
-1. Scans FlexLibs2 Python files for property/method accesses
+1. Scans flexicon Python files for property/method accesses
 2. Identifies accesses on known LibLCM interface types
 3. Cross-references against the LibLCM API index
 4. Reports any properties that don't exist (potential typos)
@@ -370,18 +370,18 @@ def is_suspicious_pattern(prop_name: str) -> bool:
     return False
 
 
-def scan_flexlibs2_code(flexlibs2_path: Path) -> List[Tuple[str, str, int, str]]:
+def scan_flexicon_code(flexicon_path: Path) -> List[Tuple[str, str, int, str]]:
     """
-    Scan FlexLibs2 Python code for property accesses.
+    Scan flexicon Python code for property accesses.
 
     Returns:
         List of (variable_name, property_name, line_number, filename)
     """
     all_accesses = []
-    code_path = flexlibs2_path / "flexlibs2" / "code"
+    code_path = flexicon_path / "flexicon" / "code"
 
     if not code_path.exists():
-        print(f"[ERROR] FlexLibs2 code directory not found: {code_path}")
+        print(f"[ERROR] flexicon code directory not found: {code_path}")
         return all_accesses
 
     for py_file in code_path.rglob("*.py"):
@@ -396,7 +396,7 @@ def scan_flexlibs2_code(flexlibs2_path: Path) -> List[Tuple[str, str, int, str]]
             # Filter to likely LCM variable accesses
             for var_name, prop_name, line in visitor.accesses:
                 if is_likely_lcm_variable(var_name):
-                    rel_path = py_file.relative_to(flexlibs2_path)
+                    rel_path = py_file.relative_to(flexicon_path)
                     all_accesses.append((var_name, prop_name, line, str(rel_path)))
 
         except SyntaxError as e:
@@ -410,9 +410,9 @@ def scan_flexlibs2_code(flexlibs2_path: Path) -> List[Tuple[str, str, int, str]]
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Validate LibLCM property accesses in FlexLibs2")
+    parser = argparse.ArgumentParser(description="Validate LibLCM property accesses in flexicon")
     parser.add_argument(
-        "--flexlibs2-path", type=Path, default=Path(__file__).parent.parent, help="Path to FlexLibs2 repository"
+        "--flexicon-path", type=Path, default=Path(__file__).parent.parent, help="Path to flexicon repository"
     )
     parser.add_argument(
         "--lcm-index",
@@ -426,7 +426,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 60)
-    print("FlexLibs2 LibLCM Property Validator")
+    print("flexicon LibLCM Property Validator")
     print("=" * 60)
     print()
 
@@ -436,9 +436,9 @@ def main():
     print(f"[INFO] Loaded {len(all_properties)} unique property/method names")
     print()
 
-    # Scan FlexLibs2 code
-    print(f"[INFO] Scanning FlexLibs2 code: {args.flexlibs2_path}")
-    accesses = scan_flexlibs2_code(args.flexlibs2_path)
+    # Scan flexicon code
+    print(f"[INFO] Scanning flexicon code: {args.flexicon_path}")
+    accesses = scan_flexicon_code(args.flexicon_path)
     print(f"[INFO] Found {len(accesses)} property accesses on LCM-like variables")
     print()
 

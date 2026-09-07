@@ -13,7 +13,7 @@ Version: 2.3.0
 # NOTE: project.ProjectSettings has no plural alias -- ProjectSettings is the
 # singleton handle for the project's settings, not a collection.
 
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
 
 def demo_projectsettings_crud():

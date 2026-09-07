@@ -66,7 +66,7 @@ _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 def _try_open_writable_project():
     """Open one of the standard test projects in write mode, or None."""
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception:
         return None
 
@@ -155,7 +155,7 @@ class TestBasicIPACatalog:
         descriptor, so we reach through .func to inspect the real
         signature.
         """
-        from flexlibs2.code.Grammar.PhonemeOperations import PhonemeOperations
+        from flexicon.code.Grammar.PhonemeOperations import PhonemeOperations
 
         # OperationsMethod is a descriptor; the raw function lives at .func.
         descriptor = PhonemeOperations.__dict__["ImportCatalog"]
@@ -205,7 +205,7 @@ class TestBasicIPACatalog:
         Skipped if the project's PhonFeats are already populated (a
         common pollution state from earlier verification runs).
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         feat_count = _phon_feature_count(writable_project)
         if feat_count > 0:
@@ -255,7 +255,7 @@ class TestBasicIPACatalog:
         with 0 phonemes). We never call force=True here because that
         would dump 245 phonemes into the shared test project.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         phoneme_count = _phoneme_count(writable_project)
         if phoneme_count == 0:
@@ -307,7 +307,7 @@ class TestBasicIPACatalog:
         SUCCEED and import 245 phonemes — which we must not do. Skip
         in that case.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         feat_count = _phon_feature_count(writable_project)
         phoneme_count = _phoneme_count(writable_project)

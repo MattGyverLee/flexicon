@@ -5,10 +5,9 @@ Author: FlexTools Development Team
 """
 
 import unittest
-
 import pytest
 
-from flexlibs2 import FLExProject, AllProjectNames, FP_FileLockedError, FLExInitialize
+from flexicon import FLExProject, AllProjectNames, FP_FileLockedError, FLExInitialize
 
 
 # Test constants

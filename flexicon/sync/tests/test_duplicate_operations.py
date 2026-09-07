@@ -25,8 +25,8 @@ _test_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.join(_test_dir, "..", "..", "..")
 sys.path.insert(0, _project_root)
 
-from flexlibs2.code.FLExProject import FLExProject
-from flexlibs2.code.FLExInit import FLExInitialize, FLExCleanup
+from flexicon.code.FLExProject import FLExProject
+from flexicon.code.FLExInit import FLExInitialize, FLExCleanup
 
 # This module opens a REAL FLEx project ("Sena 3") in setUpModule() below
 # and performs live Duplicate()/Delete() round-trips against it. Without

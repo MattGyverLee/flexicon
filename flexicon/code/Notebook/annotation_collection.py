@@ -36,7 +36,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.Notebook.annotation_collection import AnnotationCollection
+    from flexicon.code.Notebook.annotation_collection import AnnotationCollection
 
     # GetAll() returns AnnotationCollection
     annos = noteOps.GetAll(entry)

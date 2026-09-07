@@ -23,7 +23,7 @@
 #   test_annotation_wrappers.py, test_prohibition_wrappers.py) stub
 #   sys.modules["SIL"] = MagicMock() at module scope; conftest.py:41-52
 #   documents that this stub poisons the real CLR SIL namespace for any
-#   later real import of flexlibs2/flexicon modules in the same
+#   later real import of flexicon/flexicon modules in the same
 #   process (that's why those three files are in collect_ignore there).
 #   To stay import-safe regardless of test run order/composition, and
 #   without requiring a real FieldWorks install, this file never

@@ -1,7 +1,7 @@
 #
 #   __init__.pyi
 #
-#   Type stubs for flexlibs2.code module
+#   Type stubs for flexicon.code module
 #
 
 from .FLExProject import (

@@ -24,7 +24,7 @@ class TestEnsureWriteEnabledFix:
         Verifies that the method correctly checks the FLExProject.writeEnabled
         property instead of calling a non-existent CanModify() method.
         """
-        from flexlibs2.code.BaseOperations import BaseOperations
+        from flexicon.code.BaseOperations import BaseOperations
 
         # Create a mock project with writeEnabled property
         mock_project = Mock()

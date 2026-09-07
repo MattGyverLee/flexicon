@@ -17,7 +17,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from flexlibs2.code.Shared.rule_patterns import Seg, NC, Boundary
+from flexicon.code.Shared.rule_patterns import Seg, NC, Boundary
 
 
 class TestSegDataclass:
@@ -94,14 +94,12 @@ class TestTopLevelImports:
         """The flexicon package's __init__.py exposes Seg, NC, Boundary.
 
         Notes:
-            Following the flexlibs2 -> flexicon rename, the real package
-            lives at ``flexicon/__init__.py``; ``flexlibs2/__init__.py`` is
-            now only a thin deprecated compatibility alias (a meta-path
-            finder that redirects to the already-imported ``flexicon``
-            module -- it has no ``ImportFrom`` nodes of its own for us to
-            inspect). We verify the public-API export by parsing the real
-            package's __init__.py source so we don't depend on pytest's
-            import resolution.
+            The project has a root-level ``__init__.py`` (legacy
+            ``__version__ = "2.4.0-dev"`` stub) that pytest treats as the
+            package ``flexicon`` during test collection — masking the real
+            package at ``flexicon/__init__.py``. We verify the
+            public-API export by parsing the real package's __init__.py
+            source so we don't depend on pytest's import resolution.
         """
         import ast
         import os
@@ -119,8 +117,7 @@ class TestTopLevelImports:
         tree = ast.parse(source)
 
         # Collect all names imported at module level (these are the public
-        # API symbols available via `from flexicon import X`, which is also
-        # what `from flexlibs2 import X` resolves to via the alias).
+        # API symbols available via `from flexicon import X`).
         top_level_names = set()
         for node in tree.body:
             if isinstance(node, ast.ImportFrom):

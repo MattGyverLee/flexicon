@@ -1,5 +1,5 @@
 """
-Demo script for Discourse Analysis Operations in flexlibs2.
+Demo script for Discourse Analysis Operations in flexicon.
 
 This script demonstrates the complete workflow for constituent chart analysis
 in FieldWorks Language Explorer projects using the flexlibs library.
@@ -18,7 +18,7 @@ Requirements:
 - Write access to project
 """
 
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 
 def demo_constituent_charts(project):

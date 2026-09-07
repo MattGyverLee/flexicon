@@ -1,12 +1,12 @@
-# FlexLibs2 v2.3.0 - Demo Files and Examples
+# flexicon v2.3.0 - Demo Files and Examples
 
-This directory contains comprehensive demonstration files showcasing the FlexLibs2 API for working with FieldWorks Language Explorer (FLEx) projects.
+This directory contains comprehensive demonstration files showcasing the flexicon API for working with FieldWorks Language Explorer (FLEx) projects.
 
 ## Quick Start
 
 ```python
 #!/usr/bin/env python3
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
 FLExInitialize()
 project = FLExProject()
@@ -169,7 +169,7 @@ All operation demos follow this consistent structure:
 #!/usr/bin/env python3
 """Full CRUD Demo: [Operation]Operations for flexlibs"""
 
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
 def demo_[operation]_crud():
     FLExInitialize()
@@ -249,7 +249,7 @@ For questions or issues:
 1. Check the CHANGELOG.md in the root directory for API changes
 2. Review the docstrings in individual demo files
 3. Check `docs/USAGE_*.md` for domain-specific guides
-4. Consult the FlexLibs2 API documentation
+4. Consult the flexicon API documentation
 
 ## Contributing
 
@@ -261,5 +261,5 @@ To add new demos or update existing ones:
 
 ---
 
-**FlexLibs2 v2.3.0 Examples**
+**flexicon v2.3.0 Examples**
 **Updated: 2026-02-28**

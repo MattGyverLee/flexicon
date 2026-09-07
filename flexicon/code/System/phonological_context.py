@@ -46,7 +46,7 @@ Solution:
 
 Example::
 
-    from flexlibs2.code.System.phonological_context import PhonologicalContext
+    from flexicon.code.System.phonological_context import PhonologicalContext
 
     # Wrap a context from a rule's input contexts
     context = rule.input_contexts[0]  # Typed as IPhPhonContext

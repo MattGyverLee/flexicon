@@ -24,7 +24,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from flexlibs2.code.TextsWords.SegmentOperations import SegmentOperations
+from flexicon.code.TextsWords.SegmentOperations import SegmentOperations
 
 
 # ---------------------------------------------------------------------------

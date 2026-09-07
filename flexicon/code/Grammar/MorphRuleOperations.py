@@ -68,7 +68,7 @@ class MorphRuleOperations(BaseOperations):
 
     Usage::
 
-        from flexlibs2 import FLExProject, MorphRuleOperations
+        from flexicon import FLExProject, MorphRuleOperations
 
         project = FLExProject()
         project.OpenProject("my project", writeEnabled=True)

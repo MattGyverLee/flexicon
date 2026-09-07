@@ -11,8 +11,8 @@ import unittest
 import os
 import tempfile
 from unittest.mock import Mock
-from flexlibs2.sync.engine import SyncResult
-from flexlibs2.sync.merge_ops import SyncChange, SyncError
+from flexicon.sync.engine import SyncResult
+from flexicon.sync.merge_ops import SyncChange, SyncError
 
 
 class TestSyncResultInit(unittest.TestCase):

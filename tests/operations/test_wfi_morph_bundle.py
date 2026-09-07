@@ -40,7 +40,7 @@ class TestWfiMorphBundleGlossContract:
         AttributeError for the wrong reason (e.g. method renamed). A
         callable that explicitly refuses is the documented contract.
         """
-        from flexlibs2.code.TextsWords.WfiMorphBundleOperations import (
+        from flexicon.code.TextsWords.WfiMorphBundleOperations import (
             WfiMorphBundleOperations,
         )
 
@@ -70,7 +70,7 @@ class TestWfiMorphBundleGlossContract:
         refusal -- not FP_ParameterError, since no argument the caller
         could pass would make this call valid. (issue #109)
         """
-        from flexlibs2.code.TextsWords.WfiMorphBundleOperations import (
+        from flexicon.code.TextsWords.WfiMorphBundleOperations import (
             WfiMorphBundleOperations,
         )
 
@@ -101,7 +101,7 @@ class TestWfiMorphBundleGlossContract:
         This guards against a partial fix that forwards to SenseRA
         without a None-guard.
         """
-        from flexlibs2.code.TextsWords.WfiMorphBundleOperations import (
+        from flexicon.code.TextsWords.WfiMorphBundleOperations import (
             WfiMorphBundleOperations,
         )
 
@@ -185,7 +185,7 @@ class TestWfiMorphBundleDuplicate:
         class. (issue #107)
         """
         import inspect
-        from flexlibs2.code.TextsWords.WfiMorphBundleOperations import (
+        from flexicon.code.TextsWords.WfiMorphBundleOperations import (
             WfiMorphBundleOperations,
         )
 

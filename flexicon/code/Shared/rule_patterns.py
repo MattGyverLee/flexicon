@@ -22,7 +22,7 @@ level. The composer translates them into LCM simple-context objects.
 
 Usage::
 
-    from flexlibs2 import Seg, NC, Boundary
+    from flexicon import Seg, NC, Boundary
 
     # Build context elements
     seg_t = Seg(phoneme_t)

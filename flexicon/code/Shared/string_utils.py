@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#   flexlibs2.code.Shared.string_utils
+#   flexicon.code.Shared.string_utils
 #
 #   String utility functions for FlexLibs2.
 #
@@ -30,7 +30,7 @@ def normalize_text(text):
         The original text if it has content, or "" if None/empty/``***``
 
     Example:
-        >>> from flexlibs2.code.Shared.string_utils import normalize_text
+        >>> from flexicon.code.Shared.string_utils import normalize_text
         >>> normalize_text("***")
         ''
         >>> normalize_text(None)
@@ -107,7 +107,7 @@ def normalize_ws_handle(ws):
             ``.Handle`` attribute.
 
     Example:
-        >>> from flexlibs2.code.Shared.string_utils import normalize_ws_handle
+        >>> from flexicon.code.Shared.string_utils import normalize_ws_handle
         >>> normalize_ws_handle(123)
         123
         >>> normalize_ws_handle(None) is None
@@ -140,7 +140,7 @@ def is_empty_text(text):
         True if the text represents an empty/unset value
 
     Example:
-        >>> from flexlibs2.code.Shared.string_utils import is_empty_text
+        >>> from flexicon.code.Shared.string_utils import is_empty_text
         >>> is_empty_text("***")
         True
         >>> is_empty_text(None)

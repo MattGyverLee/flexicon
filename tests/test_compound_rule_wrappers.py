@@ -95,14 +95,14 @@ class TestCompoundRuleCollection:
 
     def test_collection_initialization_empty(self):
         """Test creating empty CompoundRuleCollection."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         collection = CompoundRuleCollection()
         assert len(collection) == 0
 
     def test_collection_initialization_with_items(self):
         """Test creating CompoundRuleCollection with items."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rule = MockCompoundRule("MoEndoCompound")
         collection = CompoundRuleCollection([rule])
@@ -110,7 +110,7 @@ class TestCompoundRuleCollection:
 
     def test_collection_iteration(self):
         """Test iterating over CompoundRuleCollection."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [MockCompoundRule("MoEndoCompound") for _ in range(3)]
         collection = CompoundRuleCollection(rules)
@@ -122,7 +122,7 @@ class TestCompoundRuleCollection:
 
     def test_collection_indexing(self):
         """Test indexing CompoundRuleCollection."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [MockCompoundRule("MoEndoCompound") for _ in range(3)]
         collection = CompoundRuleCollection(rules)
@@ -132,7 +132,7 @@ class TestCompoundRuleCollection:
 
     def test_collection_slicing(self):
         """Test slicing CompoundRuleCollection."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [MockCompoundRule("MoEndoCompound") for _ in range(5)]
         collection = CompoundRuleCollection(rules)
@@ -143,7 +143,7 @@ class TestCompoundRuleCollection:
 
     def test_collection_str_shows_type_breakdown(self):
         """Test that __str__ shows type breakdown."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound"),
@@ -160,7 +160,7 @@ class TestCompoundRuleCollection:
 
     def test_collection_str_empty(self):
         """Test __str__ on empty collection."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         collection = CompoundRuleCollection()
         str_repr = str(collection)
@@ -168,7 +168,7 @@ class TestCompoundRuleCollection:
 
     def test_by_type_filter(self):
         """Test filtering by concrete type."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound"),
@@ -183,7 +183,7 @@ class TestCompoundRuleCollection:
 
     def test_filter_by_name_contains(self):
         """Test filtering by name."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound", name="VerbCompound"),
@@ -197,7 +197,7 @@ class TestCompoundRuleCollection:
 
     def test_filter_by_head_dependency(self):
         """Test filtering by head dependency."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound", head_dependency=0),
@@ -211,7 +211,7 @@ class TestCompoundRuleCollection:
 
     def test_filter_where_custom_predicate(self):
         """Test filtering with custom predicate."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound"),
@@ -226,7 +226,7 @@ class TestCompoundRuleCollection:
 
     def test_endo_compounds_convenience_filter(self):
         """Test endo_compounds() convenience method."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound"),
@@ -242,7 +242,7 @@ class TestCompoundRuleCollection:
 
     def test_exo_compounds_convenience_filter(self):
         """Test exo_compounds() convenience method."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound"),
@@ -258,7 +258,7 @@ class TestCompoundRuleCollection:
 
     def test_filter_chaining(self):
         """Test chaining multiple filters."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound", name="VerbN", head_dependency=0),
@@ -275,7 +275,7 @@ class TestCompoundRuleCollection:
 
     def test_filter_chaining_with_head_dependency(self):
         """Test chaining filters with head dependency."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound", name="Verb", head_dependency=0),
@@ -291,7 +291,7 @@ class TestCompoundRuleCollection:
 
     def test_repr(self):
         """Test string representation of collection."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [MockCompoundRule("MoEndoCompound") for _ in range(5)]
         collection = CompoundRuleCollection(rules)
@@ -302,7 +302,7 @@ class TestCompoundRuleCollection:
 
     def test_append(self):
         """Test appending to collection."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         collection = CompoundRuleCollection()
         rule = MockCompoundRule("MoEndoCompound")
@@ -312,7 +312,7 @@ class TestCompoundRuleCollection:
 
     def test_extend(self):
         """Test extending collection."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         collection = CompoundRuleCollection()
         rules = [
@@ -325,7 +325,7 @@ class TestCompoundRuleCollection:
 
     def test_clear(self):
         """Test clearing collection."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [MockCompoundRule("MoEndoCompound") for _ in range(3)]
         collection = CompoundRuleCollection(rules)
@@ -336,7 +336,7 @@ class TestCompoundRuleCollection:
 
     def test_filter_with_contexts(self):
         """Test filtering by context presence."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         left_ctx = Mock()
         rules = [
@@ -352,7 +352,7 @@ class TestCompoundRuleCollection:
 
     def test_filter_empty_result(self):
         """Test filtering that results in empty collection."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound", name="Verb"),
@@ -367,7 +367,7 @@ class TestCompoundRuleCollection:
 
     def test_filter_all_criteria_together(self):
         """Test filtering with multiple criteria."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound", name="VerbN", head_dependency=0),
@@ -387,7 +387,7 @@ class TestCompoundRuleWrapper:
 
     def test_wrapper_initialization(self):
         """Test initializing CompoundRule wrapper."""
-        from flexlibs2.code.Grammar.compound_rule import CompoundRule
+        from flexicon.code.Grammar.compound_rule import CompoundRule
 
         rule = MockCompoundRule("MoEndoCompound", name="TestRule")
         wrapped = CompoundRule(rule)
@@ -397,7 +397,7 @@ class TestCompoundRuleWrapper:
 
     def test_wrapper_name_property(self):
         """Test accessing name through wrapper."""
-        from flexlibs2.code.Grammar.compound_rule import CompoundRule
+        from flexicon.code.Grammar.compound_rule import CompoundRule
 
         rule = MockCompoundRule("MoEndoCompound", name="TestRule")
         # Note: Direct property access won't work in tests without LCM
@@ -407,7 +407,7 @@ class TestCompoundRuleWrapper:
 
     def test_wrapper_is_endo_compound(self):
         """Test is_endo_compound property."""
-        from flexlibs2.code.Grammar.compound_rule import CompoundRule
+        from flexicon.code.Grammar.compound_rule import CompoundRule
 
         endo = MockCompoundRule("MoEndoCompound")
         exo = MockCompoundRule("MoExoCompound")
@@ -421,7 +421,7 @@ class TestCompoundRuleWrapper:
 
     def test_wrapper_as_endo_compound(self):
         """Test as_endo_compound() method."""
-        from flexlibs2.code.Grammar.compound_rule import CompoundRule
+        from flexicon.code.Grammar.compound_rule import CompoundRule
 
         endo = MockCompoundRule("MoEndoCompound")
         wrapped = CompoundRule(endo)
@@ -432,7 +432,7 @@ class TestCompoundRuleWrapper:
 
     def test_wrapper_as_exo_compound(self):
         """Test as_exo_compound() method."""
-        from flexlibs2.code.Grammar.compound_rule import CompoundRule
+        from flexicon.code.Grammar.compound_rule import CompoundRule
 
         exo = MockCompoundRule("MoExoCompound")
         wrapped = CompoundRule(exo)
@@ -443,7 +443,7 @@ class TestCompoundRuleWrapper:
 
     def test_wrapper_as_wrong_compound_returns_none(self):
         """Test as_*_compound() returns None for wrong type."""
-        from flexlibs2.code.Grammar.compound_rule import CompoundRule
+        from flexicon.code.Grammar.compound_rule import CompoundRule
 
         endo = MockCompoundRule("MoEndoCompound")
         wrapped = CompoundRule(endo)
@@ -454,7 +454,7 @@ class TestCompoundRuleWrapper:
 
     def test_wrapper_concrete_property(self):
         """Test accessing concrete property."""
-        from flexlibs2.code.Grammar.compound_rule import CompoundRule
+        from flexicon.code.Grammar.compound_rule import CompoundRule
 
         rule = MockCompoundRule("MoEndoCompound")
         wrapped = CompoundRule(rule)
@@ -464,7 +464,7 @@ class TestCompoundRuleWrapper:
 
     def test_wrapper_repr(self):
         """Test string representation of wrapper."""
-        from flexlibs2.code.Grammar.compound_rule import CompoundRule
+        from flexicon.code.Grammar.compound_rule import CompoundRule
 
         rule = MockCompoundRule("MoEndoCompound", name="TestRule")
         wrapped = CompoundRule(rule)
@@ -475,7 +475,7 @@ class TestCompoundRuleWrapper:
 
     def test_wrapper_str(self):
         """Test human-readable string."""
-        from flexlibs2.code.Grammar.compound_rule import CompoundRule
+        from flexicon.code.Grammar.compound_rule import CompoundRule
 
         rule = MockCompoundRule("MoEndoCompound", name="TestRule")
         wrapped = CompoundRule(rule)
@@ -489,7 +489,7 @@ class TestCompoundRuleEdgeCases:
 
     def test_collection_with_mixed_types(self):
         """Test collection with mixed endo and exo compounds."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound"),
@@ -506,7 +506,7 @@ class TestCompoundRuleEdgeCases:
 
     def test_filter_preserves_collection_type(self):
         """Test that filtering returns the correct collection type."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [MockCompoundRule("MoEndoCompound") for _ in range(5)]
         collection = CompoundRuleCollection(rules)
@@ -519,7 +519,7 @@ class TestCompoundRuleEdgeCases:
 
     def test_where_with_complex_predicate(self):
         """Test where() with complex predicates."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         left_ctx = Mock()
         right_ctx = Mock()
@@ -536,7 +536,7 @@ class TestCompoundRuleEdgeCases:
 
     def test_multiple_filter_chains(self):
         """Test multiple chained filters."""
-        from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+        from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
         rules = [
             MockCompoundRule("MoEndoCompound", name="VerbN", head_dependency=0),
