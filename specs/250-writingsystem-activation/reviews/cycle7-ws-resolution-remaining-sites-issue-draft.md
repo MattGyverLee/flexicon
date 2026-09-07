@@ -1,6 +1,18 @@
-# DRAFT ISSUE — NOT FILED
+# ISSUE DRAFT — FILED 2026-09-07
 
-**Status: awaiting user approval. Do NOT post this to GitHub without it.**
+**Status: APPROVED by the user and FILED as TWO issues, per this draft's own
+recommendation.**
+
+- **flexicon#266** — `PhonemeOperations.__ApplyBasicIPASymbol` (site 1). The
+  genuine one-line C-D4-7 substitution.
+- **flexicon#267** — `ExampleOperations` `TranslationsOC` loop (site 2).
+  Scoped as a correctness change, not a substitution, because the
+  `ICmTranslation` is created and attached before any writing system is
+  resolved.
+
+Cross-linked in both directions. This file is retained as the drafting
+record; **the issues are now canonical** — make further changes there, not
+here.
 
 Drafted 2026-09-07 by session `flexicon-cd`, cycle 7, under the crew split
 agreed with session `flexicon-19` (which holds the live-pytest token and the
