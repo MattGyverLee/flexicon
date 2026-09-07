@@ -3,9 +3,12 @@
 **Campaign:** `tier1-silent-data-loss`, spun-out sub-item **2a** (between
 queue item 2, `242-paragraph-whitespace`, and queue item 3,
 `feature-structure-sync-gap`) -- **`active`**.
-**Last updated:** 2026-09-07, **end of cycle 4 (spurt 4)**. Checkpoint 1 DONE;
-**Checkpoint 2 DONE -- 8 of 8 sites landed** (T1, T2, T3, T4). Only
-**Checkpoint 3 (T5, docs)** remains.
+**Last updated:** 2026-09-07, **end of cycle 6 -- SUB-ITEM 2a COMPLETE**.
+Checkpoint 1 DONE; **Checkpoint 2 DONE -- 8 of 8 sites landed** (T1, T2, T3,
+T4); **Checkpoint 3 DONE** (T5 docs, plus the cycle-6 micro-fix). **No tasks
+remain. `/lex-lead` APPROVED at cycle 6 and emitted `FEATURE COMPLETE` for
+sub-item 2a only -- the `tier1-silent-data-loss` campaign remains OPEN with
+items 3 and 4 unauthorised.**
 **Status:** Contract items **C1-C13 FROZEN** -- C12 and C13 were ruled by
 `/lex-lead` at the cycle-4 close and are recorded in the "Cycle 4 close"
 section below; their verbatim transcription into `spec.md` is PENDING and
@@ -376,3 +379,100 @@ harness.
    2-line summary and nothing else.
 6. Optionally an archivist pass to transcribe **C12 and C13** into `spec.md`
    verbatim; that transcription is outstanding either way.
+
+---
+
+## Cycles 5-6 close -- APPROVED, sub-item 2a COMPLETE (AUTHORITATIVE final state)
+
+**`/lex-lead` verdict: APPROVED.** All quality gates green, no P0 or P1 open.
+`FEATURE COMPLETE` was emitted for **sub-item 2a only**; the campaign promise
+`TIER1 COMPLETE` is NOT satisfied and was NOT emitted.
+
+### What landed
+
+- **T5** (`90cfce7`, six files): two separate `[Unreleased]` `### Changed`
+  entries per C6, both led `**BREAKING (behavioural):**`; docstring Notes on
+  all 11 touched methods; `AnthropologyOperations.Exists` correctly NOT
+  documented as changed; `FindCheckType`'s self-contradictory docstring
+  RESOLVED (not appended to), with the correction narrated so the diff stays
+  legible; the same false `Raises` shape additionally caught and corrected at
+  `CreateCheckType` and `SetName` -- sites the dispatch brief had not named.
+  Q-242D and Q-DISC1 disclosed in both CHANGELOG and docstrings; **8/8 was
+  never claimed**; no GitHub issues filed.
+- **C12 / C13 / AMENDMENT 3** transcribed verbatim (`ab494d4`).
+- **Cycle-6 micro-fix** (`5c161e1`, four files): the three proven-false
+  `Raises` blocks at `AnthropologyOperations.Create`, `.CreateSubitem`, and
+  `TextOperations.SetName` corrected to describe today's actual behaviour --
+  `None` raises `FP_NullParameterError`; **empty OR whitespace-only** is NOT
+  rejected and persists literally (Q-242D named, Q-242C named as owner);
+  non-`str` raises `AttributeError` from the throwaway `.strip()`, annotated
+  "retained per C7(b); not a deliberate type check". `parent_item` /
+  `text_or_hvo` halves untouched, as scoped. **C12(f)** appended verbatim.
+  `spec.md`'s own stale header corrected on the main session's initiative --
+  RATIFIED (see below).
+
+### Verified by /lex-lead at closure (not taken on report)
+
+- **`90cfce7` and `5c161e1` between them changed ZERO executable lines.** Every
+  removed line across all four Operations files is a docstring line; both sets
+  were listed and read in full. The offline invariant (`passed` unchanged at
+  1292, same three known-foreign failures, no fourth) therefore holds **by
+  construction**, and a re-run was explicitly declined as proving nothing.
+- **No HTML entity artefact** survived into `spec.md`, `CONCURRENCY.md`,
+  `CHANGELOG.md`, or either Operations file, across two transcription rounds.
+- **C12(f) is verbatim** as ruled, placed after C12(e) with C13 still following.
+- The three corrected `Raises` blocks say exactly what was specified, including
+  the widened "empty **or** whitespace-only" scope.
+
+### The one defect found at closure -- a citation error, carried not blocked
+
+`spec.md`'s corrected header attributes T1 (`DiscourseOperations`) to
+"**`ab638aa`-adjacent**". `ab638aa` is **T3's** commit
+(`fix(anthropology-operations)`). **T1's actual commit is `3eac4a0`**
+(`fix(discourse-operations): T1 -- persist caller's original name bytes, not
+the stripped local`), verified at closure. T2 (`db95230`), T3 (`ab638aa`) and
+T4 (`0ab9c60`) are all cited correctly.
+
+Ruled **P3, clerical** -- it does not touch a gate and does not delay the
+close, but it MUST be repaired in the already-scheduled campaign-closure
+commit. Exact replacement, one line:
+
+    `flexicon/code/TextsWords/DiscourseOperations.py` (T1, `3eac4a0`),
+
+### Judgement calls ruled at closure
+
+- **The `spec.md` header correction: RATIFIED.** A status header that
+  contradicts the record is a C27 defect, and the fix is squarely in-scope for
+  a closing commit -- it is a state summary, not a contract item, and nothing
+  in it decides anything. Marking it as a correction rather than silently
+  rewriting is the right instinct and is precisely how contract-adjacent prose
+  should be amended: staleness made legible, not erased. Correct call, correct
+  execution, one wrong hash.
+- **`docs/MANIFEST.md` absence: RATIFIED as flagged-not-fixed.** Declining to
+  bootstrap a repo-wide artefact from a narrowly-dispatched task is right.
+  Carried to campaign level as an observation.
+- **Cycle 5's "declined to fix three docstrings" call: OVERTURNED IN PART at
+  cycle 5, discharged at cycle 6.** The scope instinct was sound; the stated
+  reasoning ("correcting docs without code creates a new mismatch in the
+  opposite direction") was not, and is REJECTED as precedent -- documenting
+  today's behaviour removes a mismatch, it cannot create one. Recorded so no
+  future agent cites it.
+
+### Outstanding, all UNAUTHORISED and all owned above this feature
+
+`Q-CHK1`, `Q-DISC1`, `Q-242C`, `Q-242D`. **Q-242C now has TWO dependents** --
+Q-242D, and the three `Raises` blocks corrected at cycle 6, which will need
+re-correcting if and when Q-242C adds the rejection. Sequence Q-242C ahead of
+both.
+
+### Known limitation shipped, deliberately and on the record
+
+`DiscourseOperations.CreateChart`'s persist half is **`FAIL: unverified`**
+(Q-DISC1): inspection-correct, unreachable through its own public API, blocked
+by two pre-existing unrelated defects. **This feature never claimed 8/8
+verified**, in STATUS.md, in `spec.md`, or in the CHANGELOG.
+
+### Next pickup
+
+**None for this feature.** Remaining work is campaign-level and belongs to the
+main session -- see `.crew-handoff.json` -> `next_entry`.
