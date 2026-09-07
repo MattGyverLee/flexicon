@@ -1217,3 +1217,122 @@ ruling against.
   reflexive delete: the project rule is that write operations check
   `writeEnabled` first, so an unused import may be the symptom of a **missing
   write guard** rather than dead code. Decide which, then act.
+
+---
+
+# Cycles 9-10 (spurt 8) -- T6 lands, gate PASSES. **Checkpoint 3a is CLOSED.**
+
+T6 is DONE and gated. `MSAOperations` now has
+`GetSyncableProperties`/`ApplySyncableProperties`, `ClassName`-discriminated and
+cast, covering all four in-scope C1 MSA rows. Six commits: `04b50407`
+(production), `941a29eb` (.pyi), `23227b64` (tests), `f7ab3a69` (CHANGELOG),
+`e356670e` + `e022a783` (live evidence). Gate artifacts committed at `f062a460`.
+
+- Implementer report: `reviews/cycle9-programmer-T6.md` (now carries a LEAD
+  CORRECTION block appended at the end)
+- Gate report: `reviews/cycle10-verification-T6-gate.md` -- **GATE: PASS**
+- Gate evidence: `evidence/live-cycle10-T6-gate.md`
+
+## The central #251 question is ANSWERED YES
+
+This is the finding that matters, and it is the one three prior attempts got
+wrong. The discrimination **holds against genuine base-interface views**: three
+live tests call `sandbox.Object(hvo)` -- a bare `ICmObject` obtained via
+`ServiceLocator.GetObject` -- before `GetSyncableProperties`, and all three
+round-trip. Entry paths are genuine re-fetches, never the factory handle held at
+write time. **#251's trap is not repeated.** T6 is substantively correct and
+nothing about it is reverted.
+
+Also verified clean: the offline suite is substantially falsifiable (9 of 21 go
+red under forced dispatch, so it is not decorative); R3 holds
+(`_MSA_PROP_BY_CLASS_AND_SLOT` is test-only, never referenced from `flexicon/`);
+the comparator reproduces at 392 passed / 2 failed / 510 deselected across two
+independent runs with the pinned foreign pair unchanged; `run_mode: live`
+throughout; every mutation ran in a disposable worktree with hash-verified
+reverts and the shared tree untouched.
+
+## RULING on the P0 -- the dead C2 cast: **KEEP it, TEST it, and correct the claim.**
+
+The gate mutated `__GetMsaObject`'s ClassName cast away entirely and **all six
+live tests stayed green**, including the one built to prove C2. NOT-KILLED.
+`_ResolveFeatureStrucOwner` re-derives `.ClassName` and re-casts independently,
+so the eager cast cannot change an observable outcome on any path this module
+currently exercises.
+
+**Do NOT delete it.** Three reasons:
+
+1. **C2 is a family-wide clause**, not a local optimisation: "every
+   `__Get<X>Object` resolver in this feature's blast radius must cast before
+   returning." Deleting MSA's compliance because a second layer currently
+   compensates would make `MSAOperations` the one class in the family that
+   violates C2.
+2. It is one refactor from load-bearing. The moment any code reads a
+   subtype-only member directly rather than through `_ResolveFeatureStrucOwner`,
+   the cast is what stands between us and #251's exact failure mode.
+3. The defect here was never the cast. **The defect was the claim.** Removing
+   working defensive code to resolve a documentation error is the wrong lever.
+
+**But unexercised code must not stay unexercised** -- that is how it rots or gets
+deleted by a future reader with less context. T6b adds a DIRECT,
+mutation-resistant test on `__GetMsaObject` for both the HVO(int) and GUID(str)
+paths, and that test must be verified to DIE when the cast is removed.
+
+**Credit where it is due:** `__GetMsaObject`'s own docstring already says this
+module "avoids that specific failure mode by routing all subtype access through
+`_ResolveFeatureStrucOwner` (which casts internally regardless)" and justifies
+the eager cast on symmetry with the sibling C2 fix sites. The evidence file was
+equally candid. **The code and the evidence were honest; the summary was not.**
+The caveat was dropped exactly once, at the report layer, and became
+"Live-proven". That is the cheapest failure mode in this whole campaign to
+repeat, and it is why the correction is appended to the report itself rather
+than quietly noted here.
+
+## RULING on the tautological clauses: **non-blocking, but they do NOT ride quietly.**
+
+Four claims are narrower than written -- C7-offline (mocks the thing it tests),
+C6-presence-gate (fixture Guid is truthy, so presence and truthiness coincide),
+R2-live (structurally undecidable), and the zero-`hasattr` AST test (inspects
+neither function where discrimination actually lives). Each is recorded in the
+LEAD CORRECTION appended to `reviews/cycle9-programmer-T6.md`.
+
+They do not block Checkpoint 3a: in every case the clause **is** enforced, just
+by a different test than the report credited (C7 by the live test, C6 and R2 by
+the static AST tests). No contract is actually unenforced.
+
+**But they are fixed BEFORE T7, not after.** T7 (`POSOperations`) and T8
+(`AllomorphOperations`) will copy T6's test patterns -- that is the point of
+having a template. Letting three decorative patterns replicate into two more
+modules and sweeping them later is precisely the trade spec section 6.3 rejected
+when it sequenced #250 Defect 4 *before* T6 rather than after T8. Same argument,
+same answer. **T6b runs first.**
+
+## Leg 7 resolved -- and the flag was over-weighted
+
+The `ChangeAffixVariant` `hasattr` gates at `:545`/`:550`/`:555` are **not** a
+trap repeat. `deriv_src` at `:541` is already `concrete_src = IMoDerivAffMsa(msa)`
+from `:526`, so those gates run against a concrete cast; confirmed live, all
+three return `True` on a real `MoDerivAffMsa`. Redundant, not data-dropping. **No
+follow-up issue is warranted and none should be filed.** Recorded so nobody
+re-derives it. The main session flagged it and then reported its own flag as
+over-weighted once the gate settled it -- that self-correction is the behaviour
+this crew wants, and it cost one cheap leg to buy certainty.
+
+## #250 -- the D4-T6 comment is POSTED
+
+Posted verbatim per the lead ruling, at
+`issues/250#issuecomment-5576611010`. **#250 confirmed still OPEN**; body, title
+and labels untouched; nothing else on GitHub changed.
+
+## #251 is NOT closed on GitHub, deliberately
+
+It is fixed on the merits and closeable, but closure waits on T6b so the closing
+comment can state accurate coverage rather than restate the withdrawn C2 claim.
+Closure also needs its **own** user authorisation -- the delegation the user gave
+for the #250 comment was specific to that comment and does not generalise to
+closing issues.
+
+## Next pickup -- **T6b, then T7**
+
+`next_checkpoint` = Checkpoint 3b = T6b landed and gated. T7/T8 stay closed
+behind it. T6b is small, test-only, and needs the live token for item 1's
+mutation check.

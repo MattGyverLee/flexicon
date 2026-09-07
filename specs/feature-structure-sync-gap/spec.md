@@ -597,8 +597,47 @@ file. The #250 Defect 4 window opens **after T5's gate**, not after T4's.
       `MakeFeatStruc` generalization (C3) -- one implementation; Infl and
       Phon become call-throughs; recursive dict + flat-list alias; `slot=`.
       Closes **#256**.
-- [ ] **T6** `MSAOperations`: new `GetSyncableProperties`/`ApplySyncableProperties`,
-      `ClassName`-discriminated + cast, all four properties. Closes **#251**.
+- [x] **T6** DONE (commits `04b50407` production, `941a29eb` .pyi, `23227b64`
+      tests, `f7ab3a69` CHANGELOG, `e356670e`/`e022a783` live evidence; gate PASS
+      `reviews/cycle10-verification-T6-gate.md`) -- `MSAOperations`: new
+      `GetSyncableProperties`/`ApplySyncableProperties`, `ClassName`-discriminated
+      + cast, all four properties. Fixes **#251**.
+      **The central question is answered YES:** the discrimination holds against
+      genuine base-interface views -- three live tests fetch via
+      `sandbox.Object(hvo)` (a bare `ICmObject` from `ServiceLocator.GetObject`)
+      before `GetSyncableProperties` and all three round-trip. Entry paths are
+      genuine re-fetches, never the factory handle held at write time. #251's
+      trap is NOT repeated. **#251 is not CLOSED on GitHub yet** -- closure waits
+      on T6b so the closing comment states accurate coverage, and closure needs
+      its own user authorisation (the #250 posting delegation was specific to
+      that comment and does not generalise).
+- [ ] **T6b** **Coverage-honesty follow-up to T6. Runs BEFORE T7.** The cycle-10
+      gate proved four T6 coverage claims are narrower than written. The code is
+      correct; the tests are what need work. Sequenced before T7 for the same
+      reason section 6.3 sequenced #250 Defect 4 before T6: T7/T8 will copy T6's
+      test patterns, and shipping three more instances of decorative coverage
+      then sweeping it later is the exact trade that argument rejected.
+      1. `__GetMsaObject`'s C2 cast is **dead code by mutation** -- removing it
+         left all 6 live tests green. **KEEP the cast** (see the ruling in
+         STATUS.md) and add a DIRECT, mutation-resistant test that asserts the
+         returned object is concrete on both the HVO(int) and GUID(str) paths --
+         e.g. that a subtype-only member is reachable on the result. Verify the
+         new test DIES when the cast is removed.
+      2. `TestMSASyncApplyRaisesOnUnresolvedGuid` mocks the thing it tests
+         (`_make_apply_spy` raises unconditionally on `raise_guid`, never reading
+         `on_unresolved`). Either make it exercise the real `on_unresolved`, or
+         rename it to what it actually covers (raise-propagation through the
+         public surface). C7's real lock is the live test.
+      3. `TestMSASyncApplyPresenceGate` cannot separate presence from truthiness
+         because the fixture's Guid value is truthy. Add a **falsy-but-present**
+         value so the two come apart.
+      4. Extend the zero-`hasattr` AST test to inspect `__GetMsaObject`. Note
+         `_ResolveFeatureStrucOwner` lives in `BaseOperations` -- either cover it
+         there or state the boundary explicitly in the test's docstring.
+      5. **R2 needs no new test.** Behavioural coverage is structurally
+         impossible (the `if/elif` dispatch excludes `MoUnclassifiedAffixMsa`
+         regardless). Record that in the test docstring; the two static AST tests
+         are the real lock. Do NOT chase a test that cannot exist.
 - [ ] **T7** `POSOperations`: capture + apply `DefaultFeaturesOA` and
       `InherFeatValOA` (coverage-gap fix, no hasattr gate -- D5). Closes **#252**.
 - [ ] **T8** `AllomorphOperations`: capture + apply `MsEnvFeaturesOA` (unfiled P0).

@@ -35,8 +35,9 @@ neither a feature-struct gate.
 - **C2** (`MSAOperations.py:__GetMsaObject`): casts to
   `IMoStemMsa`/`IMoInflAffMsa`/`IMoDerivAffMsa`/`IMoUnclassifiedAffixMsa`
   by `ClassName` before returning, for both HVO (int) and GUID (str)
-  entry paths. Live-proven by `test_hvo_and_guid_entry_paths_capture_feature_keys`
-  (6/6 live PASS).
+  entry paths. ~~Live-proven by `test_hvo_and_guid_entry_paths_capture_feature_keys`
+  (6/6 live PASS).~~ **[CORRECTED -- see LEAD CORRECTION at the end of this
+  file. That test does NOT prove this cast.]**
 - **C6**: `__FEATURE_STRUC_KEYS` filters the 8 keys out of `base_props`
   BEFORE `super().ApplySyncableProperties(...)`; behaviourally locked by
   `TestMSASyncApplyPopBeforeSuper` (spies on the real
@@ -106,3 +107,82 @@ no-conflict) -- process gap, not a substantive issue, named per the
 `specs/250-writingsystem-activation/reviews/cycle8-D4-T6-comment-draft.md`
 during this task's live run; left untouched, not committed by me, no
 conflict with my locked paths.
+
+---
+
+# LEAD CORRECTION (cycle 10, after the verification gate)
+
+Appended rather than rewritten, so the original claim and its correction both
+stay on the record. Gate:
+`specs/feature-structure-sync-gap/reviews/cycle10-verification-T6-gate.md`.
+
+## The C2 claim above is WITHDRAWN. It is not supportable.
+
+The gate mutated `__GetMsaObject`'s ClassName cast away entirely -- returning
+the bare object -- and **all six live tests stayed GREEN**, including
+`test_hvo_and_guid_entry_paths_capture_feature_keys`, the test this report cited
+as proving C2. **NOT-KILLED.**
+
+The mechanism is benign and the production code is not wrong:
+`BaseOperations._ResolveFeatureStrucOwner` independently re-derives `.ClassName`
+and re-casts whatever it is handed, so `__GetMsaObject`'s eager cast cannot
+change any observable outcome on any path this module currently exercises. The
+cast is **redundant defence, not load-bearing logic**.
+
+What the cited test actually proves is narrower and still worth having: that the
+HVO(int) and GUID(str) entry paths capture feature keys correctly. It proves that
+**via `_ResolveFeatureStrucOwner`**, and it cannot distinguish `__GetMsaObject`'s
+cast from a no-op.
+
+**Note in the implementer's favour:** `__GetMsaObject`'s own docstring is
+accurate and candid -- it explicitly says this module "avoids that specific
+failure mode by routing all subtype access through `_ResolveFeatureStrucOwner`
+(which casts internally regardless)", and justifies the eager cast on symmetry
+with the sibling `__GetNaturalClassObject`/`__GetPhonemeObject` C2 fix sites.
+The evidence file was equally candid ("reached regardless of whether
+`__GetMsaObject`'s own eager cast fires first"). **This report is where the
+caveat got dropped and "Live-proven" got attached.** The code and the evidence
+were honest; the summary was not. That is the failure mode worth naming, because
+it is the cheapest one to repeat.
+
+## Three further coverage claims are narrower than written
+
+- **C7 offline.** `TestMSASyncApplyRaisesOnUnresolvedGuid` does NOT verify C7.
+  Its `_make_apply_spy` raises unconditionally on `raise_guid` and never reads
+  `on_unresolved`, so it mocks the very thing it claims to test. Mutating
+  `on_unresolved="raise"` to `"skip"` left it green. **Real C7 enforcement rests
+  on the LIVE test alone**, which did go red -- so C7 holds, but on one leg, not
+  two.
+- **C6 presence-gate.** Mutating the gate from key-presence to truthiness left
+  the behavioural `TestMSASyncApplyPresenceGate` **green**, because the fixture's
+  Guid value is itself truthy, so presence and truthiness coincide there. Only
+  the static AST test caught it. (Gate mutation 3 -- a third instance of the same
+  pattern, additional to the two the gate's main report discusses.)
+- **R2 live.** `test_unclassified_affix_msa_capture_and_apply_do_not_raise`
+  cannot distinguish presence from absence of either short-circuit -- the
+  surrounding `if/elif` dispatch structurally excludes `MoUnclassifiedAffixMsa`
+  regardless. Removing BOTH short-circuits left it green; only the two static AST
+  tests caught it. This one is **structurally impossible to cover behaviourally**,
+  so the correct response is to state that plainly, not to chase a test that
+  cannot exist.
+- **The zero-hasattr AST test** inspects `GetSyncableProperties`,
+  `ApplySyncableProperties`, `__CaptureFeatureStrucProp` and
+  `__ApplyFeatureStrucProp` -- it does **not** inspect `__GetMsaObject` or
+  `_ResolveFeatureStrucOwner`, i.e. not the functions where discrimination
+  actually lives. Its green result is narrower than it reads.
+
+## What is NOT withdrawn
+
+**The central #251 question is answered YES and T6 is substantively correct.**
+The discrimination the tests do exercise holds against genuine base-interface
+views: three live tests call `sandbox.Object(hvo)` -- a bare `ICmObject` via
+`ServiceLocator.GetObject` -- before `GetSyncableProperties`, and all three
+round-trip. Entry paths are genuine re-fetches, never the factory handle held at
+write time. **#251's trap is not repeated.** Also verified clean: the offline
+suite is substantially falsifiable (9 of 21 red under forced dispatch), R3 holds
+(`_MSA_PROP_BY_CLASS_AND_SLOT` is test-only, never referenced from `flexicon/`),
+the comparator reproduces at 392/2/510 twice, and CHANGELOG's "closes #251" is
+not an overclaim.
+
+The remedial work is tracked as **T6b** (see STATUS.md). No T6 commit is
+reverted.
