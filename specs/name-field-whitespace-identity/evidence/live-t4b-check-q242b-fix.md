@@ -112,16 +112,91 @@ identical figure to T4A -- same test file).
 ## RESULTS (filled in AFTER the live measuring run; predictions above were
 not edited)
 
-_To be filled in after the live run below._
+**Diff proof:** `git show --stat 0ab9c606` (same commit as T4A) --
+`flexicon/code/System/CheckOperations.py` (13 changed lines) and
+`tests/operations/test_name_field_identity_probe.py` (572 changed lines)
+only.
+
+**Collect count:** **20 tests collected** (same figure as T4A -- same test
+file, same commit).
+
+**Live run:** `20 passed, 72 warnings in 9.32s`. `tests/live_status.json`
+confirms `"run_mode": "live"`, `"run_timestamp": "2026-09-07T21:05:56Z"`.
+
+**T4B-P1 (CreateCheckType non-str) -- MATCHED exactly, PN5 (flip) and PN19:**
+```
+[PROBE] PN5 CreateCheckType(non-str): RAISED TypeError: name must be a string, got _NonStrPayload
+[TABLE][PN5] check-type count before=0 after=0 (PREDICTED unchanged -- no silent persist on the raised path)
+[PROBE] PN19 CreateCheckType(non-str): RAISED TypeError: name must be a string, got _NonStrPayload
+```
+No check type was created on either raised path -- confirmed by count.
+
+**T4B-P2 (CreateCheckType whitespace-only) -- MATCHED exactly, PN6 (flip)
+and PN20:**
+```
+[PROBE] PN6 CreateCheckType('   '): RAISED FP_ParameterError: name cannot be empty or contain only whitespace
+[TABLE][PN6] check-type count before=0 after=0 (PREDICTED unchanged -- no silent persist on the raised path)
+[PROBE] PN20 CreateCheckType('   '): RAISED FP_ParameterError: name cannot be empty or contain only whitespace
+```
+
+**T4B-P3 (FindCheckType return-to-raise, non-str) -- MATCHED exactly, PN19:**
+```
+[PROBE] PN19 FindCheckType(non-str): RAISED TypeError: name must be a string, got _NonStrPayload
+```
+Confirmed: pre-fix `FindCheckType(<non-str>)` returned `None` silently
+(cycle-1 measurement, PN4's pre-fix design); post-fix it RAISES `TypeError`.
+This is the RETURN-TO-RAISE change, measured directly and not merely
+inferred.
+
+**T4B-P4 (FindCheckType return-to-raise, whitespace-only) -- MATCHED
+exactly, PN20:**
+```
+[PROBE] PN20 FindCheckType('   '): RAISED FP_ParameterError: name cannot be empty or contain only whitespace
+```
+Same return-to-raise change confirmed on the whitespace-only branch.
+
+**T4B-P5 (SetName non-str / whitespace-only, no partial mutation) --
+MATCHED exactly, PN19/PN20:**
+```
+[PROBE] PN19 SetName(non-str): RAISED TypeError: name must be a string, got _NonStrPayload
+[TABLE][PN19] SetName seed's Name after rejected SetName(non-str): 'TEST_NF_Chk_SetName_NonStr_Seed'
+[PROBE] PN20 SetName('   '): RAISED FP_ParameterError: name cannot be empty or contain only whitespace
+[TABLE][PN20] SetName seed's Name after rejected SetName('   '): 'TEST_NF_Chk_SetName_WsOnly_Seed'
+```
+Both rejected `SetName` attempts raised BEFORE any write reached the LCM --
+the seed check's `Name` re-read unchanged in both cases (genuine re-query,
+not a re-assertion of the value set at seed time).
+
+**Exact exception messages, pinned live (matches `_ValidateStringNotEmpty`'s
+body read at HEAD):**
+- Non-str: `TypeError: name must be a string, got _NonStrPayload`
+- Whitespace-only: `FP_ParameterError: name cannot be empty or contain only whitespace`
 
 ## OFFLINE DELTA
 
-_To be filled in after the live run below._
+Identical figures to `live-t4a-check-q242a-fix.md`'s OFFLINE DELTA section
+(same commit, same run): `+0` passed, `+0` failed (same three known-foreign
+tests, same messages, no fourth), `+5` deselected (PN16-PN20).
 
 ## CONTRACT CONTRADICTIONS FOUND
 
-_To be filled in after the live run below._
+None in C1-C11. Same process deviation disclosed in T4A's evidence file
+(code edit made before the offline baseline was recorded, corrected via
+stash-based re-measurement) -- not repeated here to avoid duplication; see
+`live-t4a-check-q242a-fix.md`'s CONTRACT CONTRADICTIONS FOUND section for
+the full account. No contract item specific to Q-242B (C7, C9, C10(b)) was
+contradicted.
 
 ## WHAT WAS NOT EXERCISED
 
-_To be filled in after the live run below (C10a mandatory section)._
+None -- every pin half named for this file's Q-242B scope was exercised
+live: `CreateCheckType` non-str (PN5, PN19) and whitespace-only (PN6, PN20)
+both RAISE and persist nothing; `FindCheckType`'s return-to-raise change on
+BOTH branches (PN19, PN20), measured directly rather than inferred from the
+shared validator; `SetName`'s non-str and whitespace-only rejection with no
+partial mutation (PN19, PN20). The dead `if text is None` branch inside
+`_ValidateStringNotEmpty` (unreachable because the leading `_ValidateParam`
+already excludes `None`) was confirmed by CODE INSPECTION ONLY, per C7a --
+it is explicitly not exercisable through the public API (the leading guard
+always fires first for a `None` payload), and fixing or removing it is
+shared-code and out of this feature's scope.

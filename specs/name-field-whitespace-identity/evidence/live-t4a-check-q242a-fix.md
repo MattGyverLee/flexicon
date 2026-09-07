@@ -141,16 +141,104 @@ public API.
 ## RESULTS (filled in AFTER the live measuring run; predictions above were
 not edited)
 
-_To be filled in after the live run below._
+**Diff proof:** `git show --stat 0ab9c606` -- `flexicon/code/System/CheckOperations.py`
+(13 changed lines) and `tests/operations/test_name_field_identity_probe.py`
+(572 changed lines) only.
+
+**Collect count:**
+```
+python -m pytest tests/operations/test_name_field_identity_probe.py --collect-only -q -m requires_live_project
+```
+-> **20 tests collected** (15 existing, PN4/PN5/PN6 modified in place +
+PN16-PN20 added). Nonzero.
+
+**Live run:**
+```
+$env:FLEXLIBS_REQUIRE_LIVE = "1"
+python -m pytest tests/operations/test_name_field_identity_probe.py -m requires_live_project -q -s
+```
+-> `20 passed, 72 warnings in 9.32s`. `tests/live_status.json` confirms
+`"run_mode": "live"`, `"run_timestamp": "2026-09-07T21:05:56Z"`, and lists
+`CheckOperations` add/modify/read all `"status": "pass"`, including PN4,
+PN16, PN17, PN18.
+
+**T4A-P1 (CreateCheckType persist) -- MATCHED, confirmed directly by PN16:**
+```
+[TABLE][PN16] first check stored Name (direct read, before duplicate attempt): 'TEST_NF_Chk '
+```
+and, after the rejected duplicate attempt, re-read again as `'TEST_NF_Chk '`
+(see T4A-P4 below) -- byte-identical, trailing space intact.
+
+**T4A-P2 (SetName persist) -- MATCHED exactly, PN17:**
+```
+[TABLE][PN17] check stored Name (direct read): 'TEST_NF_Chk_Renamed '
+[VERDICT][PN17] SetName('TEST_NF_Chk_Renamed ') stored Name -> 'TEST_NF_Chk_Renamed ' (PREDICTED byte-identical to 'TEST_NF_Chk_Renamed ')
+```
+
+**T4A-P3 (FindCheckType comparison symmetry) -- MATCHED exactly, both PN4
+(layer-B bypass) and PN18 (real public API):**
+```
+[TABLE][PN4] raw stored Name (direct read): 'TEST_NF_Check_Raw '
+[PROBE] PN4 FindCheckType(unpadded): OK -> <SIL.LCModel.ICmPossibility object ...>
+[PROBE] PN4 FindCheckType(padded): OK -> <SIL.LCModel.ICmPossibility object ...>
+[PROBE] PN18 FindCheckType(unpadded): OK -> <SIL.LCModel.ICmPossibility object ...>
+[PROBE] PN18 FindCheckType(padded): OK -> <SIL.LCModel.ICmPossibility object ...>
+```
+Both the unpadded and padded needle now find the padded haystack in both
+tests -- the exact opposite of cycle 1's measured PN4 result, confirming
+T4's `FindCheckType` fix landed correctly, both via a bypass-written
+haystack and via a real end-to-end `CreateCheckType` write.
+
+**T4A-P4 (duplicate rejection -- THE C8 pin, CreateCheckType) -- MATCHED
+exactly, BOTH halves.** Live output:
+```
+[TABLE][PN16] first check stored Name (direct read, before duplicate attempt): 'TEST_NF_Chk '
+[PROBE] PN16 CreateCheckType #2 (padded, duplicate): RAISED FP_ParameterError: A check type with the name 'TEST_NF_Chk ' already exists
+[TABLE][PN16] first check stored Name, re-read after the rejected duplicate attempt: 'TEST_NF_Chk '
+[SUMMARY][PN16] check types matching 'TEST_NF_Chk ' post-fix (stripped comparison): [('b408fb13-ec90-4370-82e5-c3ecdc9a4784', 'TEST_NF_Chk ')]
+```
+- **C8 pin half 1 (second call raises "already exists"):** CONFIRMED --
+  `FP_ParameterError: A check type with the name 'TEST_NF_Chk ' already exists`.
+- **C8 pin half 2 (first check re-reads byte-identical):** CONFIRMED --
+  re-read (not re-asserted against the value passed in) as `'TEST_NF_Chk '`,
+  trailing space intact, GUID `b408fb13-ec90-4370-82e5-c3ecdc9a4784`.
+- Exactly ONE `ICmPossibility` check type matches the name post-fix -- no
+  duplicate was persisted by the rejected second call.
 
 ## OFFLINE DELTA
 
-_To be filled in after the live run below._
+| | passed | failed | deselected |
+|---|---|---|---|
+| Before | 1292 | 3 | 505 |
+| After | 1292 | 3 | 510 |
+| Delta | +0 | +0 | +5 |
+
+Deselected rose by exactly 5, matching the 5 new `requires_live_project`
+tests added (PN16-PN20). `3 failed` before AND after are the SAME three
+known-foreign tests, same messages, confirmed by name:
+`test_transaction_rollback.py::TestPhase2JoinOrOpen::test_rollback_flag_set_true_on_exception`,
+`::test_depth_restored_on_exception`,
+`test_flexlibs2_alias_ratchet.py::...::test_no_executable_flexlibs2_imports_outside_alias_package`.
+No fourth failure at any point.
 
 ## CONTRACT CONTRADICTIONS FOUND
 
-_To be filled in after the live run below._
+None in C1-C11. One process deviation, disclosed plainly: this task's code
+edit was made BEFORE the offline baseline was recorded (out of the
+prescribed STEP-4 order), rather than after. Corrected by stashing the
+task's own uncommitted `CheckOperations.py` edit (author-owned path,
+`git stash push`), measuring the true pre-edit baseline, then `git stash
+pop` to restore -- so the reported "before" figure is a genuine pre-edit
+measurement, not a reconstruction. No contract item was affected by this
+ordering deviation. See the programmer report's OFFLINE DELTA / STAGING
+CHECK sections for the full staging-safety audit around this sequence.
 
 ## WHAT WAS NOT EXERCISED
 
-_To be filled in after the live run below (C10a mandatory section)._
+None -- every pin half named for this file's Q-242A scope was exercised
+live: `CreateCheckType` persist (PN16), `SetName` persist (PN17),
+`FindCheckType` comparison symmetry both directions via both a layer-B
+bypass haystack (PN4) and a real public-API-written haystack (PN18), and
+the C8 pin's both halves for `CreateCheckType` (PN16). The Q-242B half
+(non-str/whitespace-only raises) is tracked and exercised in
+`live-t4b-check-q242b-fix.md`, not duplicated here.
