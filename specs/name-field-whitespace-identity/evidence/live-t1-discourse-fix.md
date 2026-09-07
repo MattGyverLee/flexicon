@@ -85,8 +85,82 @@ not edited after the fact even if a prediction misses)
 
 ## LIVE EVIDENCE
 
-(filled in after the live run, second commit)
+**Diff proof:** `git diff -- flexicon/code/TextsWords/DiscourseOperations.py`
+shows exactly the two authorised removals -- `name = name.strip()` deleted
+at the old `:327` (inside `CreateChart`) and at the old `:482` (inside
+`SetChartName`) -- and nothing else. `_ValidateStringNotEmpty` calls at
+`:320`/`:481` are byte-for-byte unchanged.
+
+**Collect count:**
+```
+python -m pytest tests/operations/test_name_field_identity_probe.py --collect-only -q -m requires_live_project
+```
+-> **11 tests collected** (PN1-PN8 pre-existing + PN9/PN10/PN11 new for T1).
+Nonzero.
+
+**Live run:**
+```
+$env:FLEXLIBS_REQUIRE_LIVE = "1"
+python -m pytest tests/operations/test_name_field_identity_probe.py -m requires_live_project -q -s
+```
+-> `11 passed, 52 warnings in 7.64s`. `tests/live_status.json` confirms
+`"run_mode": "live"`, `"run_timestamp": "2026-09-07T20:06:17Z"`, and lists
+`DiscourseOperations` add/modify/read all `"status": "pass"` for
+PN9/PN10/PN11 respectively.
+
+**T1-P2 (SetChartName) -- FULLY VERIFIED, PASS:** a chart was constructed
+via the CORRECT LCM ownership path (`LangProject.DiscourseDataOA.ChartsOC`
+-- see "CONTRACT CONTRADICTIONS FOUND" below for why the public
+`CreateChart` could not be used to seed it), then `Discourse.SetChartName(
+chart, "TEST_NF_Chart_Renamed ")` was called through the REAL public API.
+Re-read directly from the LCM afterward:
+`ITsString(chart.Name.get_String(wsHandle)).Text` -> `'TEST_NF_Chart_Renamed '`,
+**byte-identical** to the caller's argument, trailing space included.
+Prediction T1-P2 MATCHED exactly.
+
+**T1-P1 (CreateChart) -- BLOCKED, NOT independently live-verifiable via
+its own public entry point; reported honestly, not smoothed over:**
+`Discourse.CreateChart(text, "TEST_NF_Chart_Raw ")` (padded) and
+`Discourse.CreateChart(text, "TEST_NF_Chart_Raw_Unpadded")` (unpadded)
+both raised the IDENTICAL exception,
+`FP_ParameterError: Text contents does not support charts`, proving the
+blocker is unrelated to T1's own edit (see CONTRACT CONTRADICTIONS FOUND
+for the two unrelated, pre-existing bugs discovered this cycle: an
+already-broken `IConstChartFactory` NameError, PLUS a second, deeper,
+unrelated bug -- CreateChart's collection check queries the wrong LCM
+interface for chart ownership, so it can never succeed for ANY payload,
+today, independent of whitespace). **T1's own code change at that
+persist line is confirmed correct by direct inspection** -- `name` now
+flows unmodified into `TsStringUtils.MakeString(name, wsHandle)` -- but
+this specific half of the anti-regression pin is reported as
+`FAIL: unverified` at the live level, exactly as CLAUDE.md's Live LCM
+Verification section requires when live verification of one path is
+genuinely blocked: reported plainly, not silently downgraded to a pass.
+
+**T1-P3 (no dedup regression) -- CONFIRMED, non-binding, informational
+only (no test needed):** `DiscourseOperations` still has no comparison
+method; nothing in this task added one.
+
+**T1-P4 (whitespace-only rejection unaffected) -- MATCHED:**
+`Discourse.CreateChart(text, "   ")` raised
+`FP_ParameterError: chart name cannot be empty or contain only whitespace`,
+confirming the unchanged `_ValidateStringNotEmpty` guard at `:320` still
+fires correctly after the rebinding was removed.
 
 ## OFFLINE DELTA
 
-(filled in after the live run, second commit)
+| | passed | failed | deselected |
+|---|---|---|---|
+| Before (stable baseline, second run -- see WHAT CHANGED for the transient first run) | 1292 | 3 | 498 |
+| After | 1292 | 3 | 501 |
+| Delta | +0 | +0 | **+3** |
+
+`3 failed` after the edit are the SAME three known-foreign tests, same
+messages, confirmed by name:
+`test_transaction_rollback.py::TestPhase2JoinOrOpen::test_rollback_flag_set_true_on_exception`,
+`::test_depth_restored_on_exception`,
+`test_flexlibs2_alias_ratchet.py::...::test_no_executable_flexlibs2_imports_outside_alias_package`.
+`passed` unchanged (T1 added zero new OFFLINE tests -- PN9/PN10/PN11 are
+all `requires_live_project`). `deselected` up by exactly 3, matching the
+3 new live tests added. This is the expected delta shape for a correct
+change per `CONCURRENCY.md`/`tasks.md`'s DELTA rule.

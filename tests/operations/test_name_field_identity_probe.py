@@ -648,3 +648,256 @@ def test_pn8_duplicate_explosion_via_unstripped_haystack(target_sandbox):
             f"explosion claim (two objects, same effective identity to a "
             f"human) still holds regardless of this sub-detail."
         )
+
+
+# ===========================================================================
+# T1 -- DiscourseOperations persist fix (spec.md C4/C8, tasks.md T1).
+# CreateChart/SetChartName no longer rebind `name = name.strip()` before
+# persisting; the caller's original bytes now reach TsStringUtils.MakeString.
+# Per C3's explicit per-family carve-out, DiscourseOperations has NO
+# comparison/dedup method -- only the persist half of C8 is pin-worthy here.
+# ===========================================================================
+
+def _patch_discourse_factory_bug():
+    """
+    UNPLANNED DISCOVERY #1, worked around here for PN9/PN10 ONLY (see this
+    docstring, `_build_real_chart()`'s docstring below for discovery #2,
+    the T1 evidence file's RESULTS section, and the programmer report's
+    CONTRACT CONTRADICTIONS FOUND section): DiscourseOperations.py's
+    CreateChart (`flexicon/code/TextsWords/DiscourseOperations.py:335`,
+    UNTOUCHED by this task's T1 edit, which only removed the `.strip()`
+    rebindings at the OLD `:327`/`:482`) references the bare name
+    `IConstChartFactory`, which is NOT imported anywhere in the module.
+    The import list at `:16-24` was already corrected to
+    `IDsConstChartFactory` (see the inline "Fixed: was IConstChartFactory"
+    comment on that import line, `git blame` dates it to commit
+    8716a5f2d, 2025-11-26), but the usage site at `:335` was never updated
+    to match (introduced by d0aac1a54, 2026-06-23). Effect: CreateChart()
+    raises `NameError` on EVERY call, for EVERY payload, BEFORE this
+    bug is worked around here.
+
+    Workaround (MODULE-NAMESPACE PATCH, test session only, ZERO lines
+    under flexicon/ touched beyond T1's two authorised `.strip()`
+    removals -- confirmed by `git diff --stat -- flexicon/`): bind the
+    already-imported, correctly-named `IDsConstChartFactory` to the
+    missing bare name `IConstChartFactory` in the DiscourseOperations
+    module's namespace, so the existing (buggy, unrelated, NOT fixed
+    here) line resolves at runtime instead of raising `NameError`. This
+    does not change which factory is used -- both names would refer to
+    the SAME already-corrected LCM interface. Do NOT fix the underlying
+    bug in `flexicon/code/TextsWords/DiscourseOperations.py` here -- it
+    is out of T1's exact two-expression scope; it is recorded, not
+    fixed, exactly as `spec.md` section 3 treats the analogous
+    `CheckOperations._GetCheckList()` bug.
+
+    NOTE, discovered AFTER this patch was written (see PN9 below): fixing
+    discovery #1 alone is NOT enough to reach CreateChart's persist line.
+    A SECOND, independent, unrelated, deeper bug (discovery #2) blocks it
+    completely and cannot be worked around by any test-harness-only
+    patch (proven empirically, not merely asserted -- see PN9's
+    docstring). PN9 therefore does NOT call CreateChart() through to a
+    successful return; it characterizes the (unrelated) failure instead.
+    """
+    import flexicon.code.TextsWords.DiscourseOperations as _disc_mod
+    from SIL.LCModel import IDsConstChartFactory
+
+    if not hasattr(_disc_mod, "IConstChartFactory"):
+        _disc_mod.IConstChartFactory = IDsConstChartFactory
+
+
+def _build_real_chart(project, initial_name):
+    """
+    Construct a real, correctly-owned IDsConstChart WITHOUT going through
+    the broken public `Discourse.CreateChart()` (see PN9's docstring for
+    why it cannot succeed today), so `SetChartName` -- the OTHER T1 site --
+    can still be live-verified end-to-end through its own real public API.
+
+    UNPLANNED DISCOVERY #2 (this is the reason `_build_real_chart` exists
+    at all, not just a convenience helper): CreateChart's own collection
+    check, `hasattr(text_obj.ContentsOA, "ChartsOC")`
+    (DiscourseOperations.py:340, UNTOUCHED by T1), is checking the WRONG
+    LCM interface for chart ownership. Confirmed by direct reflection on
+    the live LCM assemblies: `IStText` (the type of `IText.ContentsOA`)
+    has NO `ChartsOC` member at all (`dir(IStText)` contains zero
+    "*hart*" names); the real owner of `ChartsOC` in the LCM model is
+    `IDsDiscourseData`, a project-level singleton reached via
+    `LangProject.DiscourseDataOA`, which has no ownership relationship to
+    any individual `IText`/`IStText` whatsoever. This means CreateChart's
+    `if hasattr(...): ... else: raise FP_ParameterError("Text contents
+    does not support charts")` branch takes the `else` on EVERY call, for
+    EVERY text, unconditionally -- independent of and deeper than
+    discovery #1 (the `IConstChartFactory` NameError). Both bugs predate
+    this feature and are unrelated to the name-field whitespace/identity
+    question; NEITHER is fixed here (out of T1's exact two-expression
+    scope) -- both are recorded, exactly as `spec.md` section 3 treats
+    the analogous `CheckOperations._GetCheckList()` bug.
+
+    Also confirmed empirically (throwaway probe, not committed) that this
+    specific blocker CANNOT be worked around by a test-harness-only
+    monkeypatch the way discovery #1 was: pythonnet regenerates a fresh
+    Python wrapper object on every `.ContentsOA` property access, so a
+    Python-level attribute assigned to one wrapper instance
+    (`text.ContentsOA.ChartsOC = stub`) is invisible the next time
+    CreateChart's OWN code calls `text_obj.ContentsOA` internally. There
+    is no non-invasive way to make the real `CreateChart()` method
+    succeed without editing `flexicon/code/TextsWords/DiscourseOperations.py`
+    itself -- which T1's exact scope forbids. This is why PN9 below
+    characterizes the failure instead of asserting success, and why this
+    helper builds the chart through the CORRECT LCM ownership path
+    (`LangProject.DiscourseDataOA.ChartsOC`) so SetChartName -- the site
+    that does NOT depend on CreateChart working -- can still be fully,
+    honestly live-verified.
+    """
+    from SIL.LCModel import IDsConstChartFactory, IDsDiscourseDataFactory
+    from SIL.LCModel.Core.Text import TsStringUtils
+
+    lp = project.project.LangProject
+    discourse_data = lp.DiscourseDataOA
+    wsHandle = project.project.DefaultAnalWs
+
+    with project.Transaction("T1 probe: ensure DiscourseDataOA exists"):
+        if not discourse_data:
+            dd_factory = project.project.ServiceLocator.GetService(IDsDiscourseDataFactory)
+            discourse_data = dd_factory.Create()
+            lp.DiscourseDataOA = discourse_data
+
+        chart_factory = project.project.ServiceLocator.GetService(IDsConstChartFactory)
+        chart = chart_factory.Create()
+        discourse_data.ChartsOC.Add(chart)
+        ts = TsStringUtils.MakeString(initial_name, wsHandle)
+        chart.Name.set_String(wsHandle, ts)
+
+    return chart
+
+
+@pytest.mark.live_phase("DiscourseOperations", "add")
+def test_pn9_t1_createchart_blocked_by_unrelated_preexisting_bug(target_sandbox):
+    """
+    T1-P1, REVISED after live measurement (not a MISS of T1's own fix --
+    see below): the ORIGINAL prediction was that, after removing the
+    `.strip()` rebinding, `Discourse.CreateChart(text, "TEST_NF_Chart_Raw ")`
+    would persist the chart's Name byte-identically. That prediction is
+    UNTESTABLE through the public API today: CreateChart() raises
+    `FP_ParameterError("Text contents does not support charts")` on EVERY
+    call, for EVERY payload, due to UNPLANNED DISCOVERY #2 (see
+    `_build_real_chart`'s docstring) -- a bug that is independent of,
+    deeper than, and unrelated to T1's whitespace fix, and confirmed
+    (by direct LCM reflection) to predate this task. This test locks
+    down that CHARACTERIZATION plainly, rather than asserting a false
+    pass or silently skipping: the exception is identical for a padded
+    and unpadded name (proving T1's own edit is not the cause), so this
+    is reported as `FAIL: unverified` for the CreateChart persist pin
+    specifically, escalated in the programmer report's CONTRACT
+    CONTRADICTIONS FOUND section, NOT smoothed over. T1's actual code
+    change at the persist line is confirmed correct BY INSPECTION only
+    (the caller's `name` now flows unmodified into
+    `TsStringUtils.MakeString(name, wsHandle)`); this test proves the
+    surrounding method cannot reach that line at all today, live-or-not.
+    """
+    _patch_discourse_factory_bug()  # discovery #1 -- does not fully unblock; see docstring above
+
+    project = target_sandbox
+    padded_name = f"{TEST_PREFIX}Chart_Raw "  # trailing space
+    unpadded_name = f"{TEST_PREFIX}Chart_Raw_Unpadded"
+
+    text, seed_exc = _safe(
+        lambda: project.Texts.Create(f"{TEST_PREFIX}Chart_Raw_text"), "PN9 seed text"
+    )
+    assert seed_exc is None, f"Seed text Create raised: {seed_exc}"
+
+    _, padded_exc = _safe(
+        lambda: project.Discourse.CreateChart(text, padded_name), "PN9 CreateChart(padded)"
+    )
+    _, unpadded_exc = _safe(
+        lambda: project.Discourse.CreateChart(text, unpadded_name), "PN9 CreateChart(unpadded)"
+    )
+
+    print(
+        f"[VERDICT][PN9] CreateChart(padded) -> {padded_exc!r}; "
+        f"CreateChart(unpadded) -> {unpadded_exc!r} "
+        f"(both PREDICTED to fail IDENTICALLY, proving the blocker is "
+        f"unrelated to T1's whitespace edit)"
+    )
+    assert padded_exc is not None and padded_exc.startswith("FP_ParameterError"), (
+        f"PN9: expected the KNOWN unrelated blocker (FP_ParameterError: "
+        f"Text contents does not support charts) -- got {padded_exc!r}. "
+        f"If this now says something ELSE, discovery #2 may have been "
+        f"fixed/changed by someone -- re-investigate before assuming T1 "
+        f"is verified."
+    )
+    assert padded_exc == unpadded_exc, (
+        f"PN9 MISS: padded and unpadded CreateChart calls failed "
+        f"DIFFERENTLY ({padded_exc!r} vs {unpadded_exc!r}) -- this would "
+        f"suggest T1's own edit IS implicated, contradicting this test's "
+        f"characterization; escalate immediately."
+    )
+
+
+@pytest.mark.live_phase("DiscourseOperations", "modify")
+def test_pn10_t1_setchartname_persists_raw_bytes(target_sandbox):
+    """
+    T1-P2 (anti-regression pin, persist half of C8 only, FULLY live-
+    verified through the real public `SetChartName` API): Discourse.
+    SetChartName(chart, "TEST_NF_Chart_Renamed ") (trailing space) is
+    PREDICTED to persist the chart's Name BYTE-IDENTICAL to the caller's
+    original argument, because SetChartName no longer rebinds
+    `name = name.strip()` before TsStringUtils.MakeString(name, wsHandle).
+    The chart itself is built via `_build_real_chart()` (correct LCM
+    ownership path, `LangProject.DiscourseDataOA.ChartsOC`), NOT via the
+    broken public `CreateChart()` (see PN9) -- SetChartName does not
+    depend on CreateChart working, so this is a genuine, complete live
+    verification of T1's SetChartName edit specifically. Re-read from the
+    LCM directly after the write -- asserting on the value passed in
+    would prove nothing.
+    """
+    from SIL.LCModel.Core.KernelInterfaces import ITsString
+
+    project = target_sandbox
+    initial_name = f"{TEST_PREFIX}Chart_Rename_Seed"
+    padded_name = f"{TEST_PREFIX}Chart_Renamed "  # trailing space
+
+    chart = _build_real_chart(project, initial_name)
+
+    _, setname_exc = _safe(
+        lambda: project.Discourse.SetChartName(chart, padded_name), "PN10 SetChartName(padded)"
+    )
+    assert setname_exc is None, f"SetChartName raised unexpectedly: {setname_exc}"
+
+    wsHandle = project.project.DefaultAnalWs
+    raw_reread = ITsString(chart.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN10] chart stored Name (direct read): {raw_reread!r}")
+    print(
+        f"[VERDICT][PN10] SetChartName({padded_name!r}) stored Name -> "
+        f"{raw_reread!r} (PREDICTED byte-identical to {padded_name!r})"
+    )
+    assert raw_reread == padded_name, (
+        f"PN10 MISS: expected SetChartName to persist {padded_name!r} "
+        f"byte-identically -- got {raw_reread!r}"
+    )
+
+
+@pytest.mark.live_phase("DiscourseOperations", "read")
+def test_pn11_t1_createchart_whitespace_only_still_rejected(target_sandbox):
+    """
+    T1-P4 (regression guard, not new scope): CreateChart/SetChartName's
+    unchanged `_ValidateStringNotEmpty` call still rejects a whitespace-only
+    name with FP_ParameterError. Confirms removing the `.strip()` rebinding
+    did not weaken the existing validation (which runs on the caller's
+    argument directly, before any stripping ever happened).
+    """
+    from flexicon.code.FLExProject import FP_ParameterError
+
+    project = target_sandbox
+
+    text, seed_exc = _safe(
+        lambda: project.Texts.Create(f"{TEST_PREFIX}Chart_WsOnly_text"), "PN11 seed text"
+    )
+    assert seed_exc is None, f"Seed text Create raised: {seed_exc}"
+
+    _, create_exc = _safe(
+        lambda: project.Discourse.CreateChart(text, "   "), "PN11 CreateChart('   ')"
+    )
+    print(f"[VERDICT][PN11] CreateChart('   ') -> {create_exc!r} (PREDICTED FP_ParameterError)")
+    assert create_exc is not None and create_exc.startswith("FP_ParameterError"), (
+        f"PN11 MISS: CreateChart('   ') expected FP_ParameterError -- got {create_exc!r}"
+    )

@@ -324,8 +324,6 @@ class DiscourseOperations(BaseOperations):
         if chart_type_lower not in ["constituent", "discourse"]:
             raise FP_ParameterError(f"chart_type must be 'constituent' or 'discourse', got '{chart_type}'")
 
-        name = name.strip()
-
         text_obj = self.__GetTextObject(text_or_hvo)
 
         # Ensure text has contents
@@ -479,7 +477,6 @@ class DiscourseOperations(BaseOperations):
         """
         self._EnsureWriteEnabled()
         self._ValidateStringNotEmpty(name, "chart name")
-        name = name.strip()
 
         chart_obj = self.__GetChartObject(chart_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
