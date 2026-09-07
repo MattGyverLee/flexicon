@@ -1429,7 +1429,7 @@ class PhonemeOperations(BaseOperations):
             self.__ApplyBasicIPASymbol(phoneme, basic_ipa, ws_map, fill_gaps)
 
         if features:
-            self.__ApplyFeatures(phoneme, features, fill_gaps)
+            self.__ApplyFeatures(phoneme, features)
 
     def __ApplyBasicIPASymbol(self, item, ws_values, ws_map, fill_gaps):
         """
@@ -1451,86 +1451,48 @@ class PhonemeOperations(BaseOperations):
                 continue
             self.SetBasicIPASymbol(phoneme, text, tgt_handle)
 
-    def __ApplyFeatures(self, item, specs, fill_gaps):
+    def __ApplyFeatures(self, item, specs):
         """
-        Rewire a phoneme's FeaturesOA feature-value specs from a list of
-        ``{"FeatureGuid", "ValueGuid"}`` dicts, resolving each feature/value
-        against the target project by GUID.
+        Thin call-through to ``BaseOperations._ApplyFeatureStruc`` (spec
+        feature-structure-sync-gap, T4): rewires a phoneme's FeaturesOA
+        feature-value specs from a list of ``{"FeatureGuid", "ValueGuid"}``
+        dicts, resolving each feature/value against the target project by
+        GUID.
 
-        A missing FeaturesOA is created (ownership-first). Specs are matched
-        by (FeatureGuid, ValueGuid) so re-application is idempotent; specs
-        whose feature/value GUID does not resolve in the target are skipped.
+        A missing FeaturesOA is created (ownership-first). Specs are
+        matched by (FeatureGuid, ValueGuid) so re-application is
+        idempotent; specs whose feature/value GUID does not resolve in
+        the target are skipped (``on_unresolved="skip"`` -- unlike
+        ``NaturalClassOperations.__ApplyFeatures``, which raises; see T9
+        for the upcoming policy flip, D1).
+
+        Note: ``struct_guid`` is passed as ``None`` here, not a
+        ``FeaturesGuid`` read from ``props`` -- ``ApplySyncableProperties``
+        (above) has never extracted/threaded ``props.get("FeaturesGuid")``
+        through to this method, so there is no source GUID available to
+        preserve yet. This is the pre-existing "Phoneme struct-GUID not
+        preserved" gap (spec D2); T4 does not fix it (that lands in T9,
+        together with the ``:1351``/``:1431`` fixes that make a GUID
+        reach here in the first place) -- passing ``struct_guid=None``
+        keeps this call-through's behaviour identical to the pre-T4 bare
+        ``factory.Create()`` (``_CreateWithGuid(..., guid=None)`` is
+        defined to be exactly that).
+
+        Args:
+            item: Target IPhPhoneme (already created + owned + GUID-assigned
+                by the caller).
+            specs: list of ``{"FeatureGuid": str, "ValueGuid": str}`` dicts,
+                as produced by GetSyncableProperties.
         """
         phoneme = self.__GetPhonemeObject(item)
-
-        struct = phoneme.FeaturesOA
-        if struct is None:
-            factory = self.project.project.ServiceLocator.GetService(
-                IFsFeatStrucFactory
-            )
-            # Ownership-first: attach to FeaturesOA before populating specs
-            # (LCM accessors NPE on free-floating IFsFeatStruc objects).
-            # The `is None` guard stays outside so an already-initialised
-            # structure remains a true no-op.
-            with self._TransactionCM("Create phoneme feature structure"):
-                new_struct = factory.Create()
-                phoneme.FeaturesOA = new_struct
-            struct = phoneme.FeaturesOA
-        struct = IFsFeatStruc(struct)
-
-        # Existing (feature, value) GUID pairs for idempotency.
-        existing_pairs = set()
-        for raw in struct.FeatureSpecsOC:
-            try:
-                cv = IFsClosedValue(raw)
-                if cv.FeatureRA is not None and cv.ValueRA is not None:
-                    existing_pairs.add(
-                        (str(cv.FeatureRA.Guid).lower(),
-                         str(cv.ValueRA.Guid).lower())
-                    )
-            except Exception:
-                continue
-
-        cv_factory = self.project.project.ServiceLocator.GetService(
-            IFsClosedValueFactory
+        self._ApplyFeatureStruc(
+            phoneme,
+            "FeaturesOA",
+            specs,
+            struct_guid=None,
+            on_unresolved="skip",
+            label="phoneme",
         )
-        for spec in specs:
-            if not isinstance(spec, dict):
-                continue
-            feat_guid = spec.get("FeatureGuid")
-            val_guid = spec.get("ValueGuid")
-            if not feat_guid or not val_guid:
-                continue
-            if (feat_guid.lower(), val_guid.lower()) in existing_pairs:
-                continue  # already present (fill_gaps and normal both keep it)
-
-            feat_obj = self.__ResolveByGuid(feat_guid)
-            val_obj = self.__ResolveByGuid(val_guid)
-            if feat_obj is None or val_obj is None:
-                # Target feature system lacks this feature/value; skip. The
-                # feature system must be synced before phonemes are rewired.
-                continue
-
-            # Every skip guard above stays outside: a spec that resolves to
-            # nothing must not open an empty named undo entry.
-            with self._TransactionCM("Add phoneme feature value"):
-                closed_value = cv_factory.Create()
-                struct.FeatureSpecsOC.Add(closed_value)
-                cv = IFsClosedValue(closed_value)
-                cv.FeatureRA = feat_obj
-                cv.ValueRA = val_obj
-
-            existing_pairs.add((feat_guid.lower(), val_guid.lower()))
-
-    def __ResolveByGuid(self, guid_str):
-        """
-        Resolve a GUID string to an LCM object in this (target) project,
-        returning None if it does not exist rather than raising.
-        """
-        try:
-            return self.project.Object(guid_str)
-        except Exception:
-            return None
 
     def __ReadMultiString(self, obj, prop_name, all_ws):
         """

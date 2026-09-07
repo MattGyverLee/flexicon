@@ -1960,6 +1960,430 @@ class BaseOperations:
             )
             return None
 
+    def _CastFsFeatStruc(self, obj):
+        """
+        Cast ``obj`` to the concrete ``IFsFeatStruc`` LCM interface.
+
+        Isolated into its own one-line method -- rather than an inline
+        ``IFsFeatStruc(obj)`` -- purely as a TEST SEAM. ``SIL.LCModel`` is
+        a pythonnet CLR namespace, not a regular Python module, and
+        rejects ``setattr`` outright (``AttributeError: type does not
+        support setting attributes``), so a fake-object unit test cannot
+        monkeypatch ``SIL.LCModel.IFsFeatStruc`` the way
+        ``NaturalClassOperations``'s own MODULE-LEVEL import of the same
+        name CAN be monkeypatched (a plain Python module's ``__dict__``
+        *does* support ``setattr``). Routing the cast through a
+        ``BaseOperations`` method gives fake-object tests the same seam
+        already used for ``_TransactionCM``/``_CreateWithGuid``
+        (``monkeypatch.setattr(BaseOperations, "_CastFsFeatStruc", ...)``).
+        Production callers are unaffected -- this performs exactly the
+        cast the inline call used to.
+        """
+        from SIL.LCModel import IFsFeatStruc
+        return IFsFeatStruc(obj)
+
+    def _CastFsClosedValue(self, obj):
+        """Cast ``obj`` to the concrete ``IFsClosedValue`` LCM interface.
+        See ``_CastFsFeatStruc`` for why this one-line cast is its own
+        method (test-seam, since ``SIL.LCModel`` rejects ``setattr``)."""
+        from SIL.LCModel import IFsClosedValue
+        return IFsClosedValue(obj)
+
+    def _CastFsComplexValue(self, obj):
+        """Cast ``obj`` to the concrete ``IFsComplexValue`` LCM interface.
+        See ``_CastFsFeatStruc`` for why this one-line cast is its own
+        method (test-seam, since ``SIL.LCModel`` rejects ``setattr``)."""
+        from SIL.LCModel import IFsComplexValue
+        return IFsComplexValue(obj)
+
+    def _ApplyFeatureStruc(self, owner, prop_name, spec_dict, struct_guid=None,
+                            on_unresolved="raise", label=None):
+        """
+        Rewrite ``owner``'s ``prop_name``-owned ``IFsFeatStruc`` from a
+        wire-format spec, resolving every feature/value/type GUID against
+        THIS (target) project's feature system, RECURSIVELY.
+
+        Spec ``feature-structure-sync-gap``, contract C5/C6/C7 (+ C4a).
+        Single generalized implementation of the algorithm that used to
+        be duplicated verbatim as
+        ``NaturalClassOperations.__ApplyFeatures`` and
+        ``PhonemeOperations.__ApplyFeatures`` -- both are now thin
+        call-throughs to this method (T4). It also de-duplicates the two
+        private ``__ResolveByGuid`` twins into ``_ResolveFsByGuid`` (T3).
+
+        Args:
+            owner: The target object ALREADY CAST to the concrete LCM
+                interface that declares ``prop_name`` (e.g. an
+                ``IPhNCFeatures``, an ``IPhPhoneme``) -- callers resolve
+                this themselves via ``_ResolveFeatureStrucOwner`` (C1) or,
+                for NC/Phoneme's own dispatch, their existing
+                ``ClassName``-driven cast. This method does not re-derive
+                ``prop_name`` from ``owner`` -- see ``prop_name``.
+            prop_name: The LCM atomic-owning ('OA') property name on
+                ``owner`` that holds the ``IFsFeatStruc`` (e.g.
+                ``"FeaturesOA"``, ``"MsFeaturesOA"``). Read via
+                ``getattr(owner, prop_name)``, written via
+                ``setattr(owner, prop_name, new_struct)``.
+            spec_dict: The feature-value specs to apply. C4a (FROZEN):
+                accepts BOTH wire shapes --
+                (a) the C4 RECURSIVE DICT emitted by ``_GetFeatureStruc``:
+                    ``{"TypeGuid": ..., "specs": {featGuid: valGuid |
+                    {...nested C4 dict...}}}``; and
+                (b) the LEGACY FLAT LIST shipped by
+                    ``NaturalClassOperations``/``PhonemeOperations``:
+                    ``[{"FeatureGuid": ..., "ValueGuid": ...}, ...]``.
+                The shape is detected by ``isinstance(spec_dict, dict)``
+                -- a list (or ``None``, treated as ``[]``) is handled as
+                legacy; a dict is handled as C4. Legacy is NOT rewritten
+                into a C4 dict as a preprocessing pass -- it is applied by
+                an equivalent single-level algorithm so that per-item
+                malformed/unresolved handling stays IDENTICAL to the
+                original NC/Phoneme code (including partial application
+                before a mid-list raise -- see Notes).
+            struct_guid: Optional ``str`` GUID of the source
+                ``IFsFeatStruc``, used to preserve identity when a new
+                struct must be created on ``owner``. ``None`` reproduces
+                the historical Phoneme behaviour (bare ``factory.Create()``,
+                no GUID preserved) via ``_CreateWithGuid(..., guid=None)``,
+                which is defined to be exactly the old no-arg
+                ``Create()``.
+            on_unresolved: ``"raise"`` (default) or ``"skip"``.
+                ``"raise"``: an unresolved feature/value/type GUID, or a
+                malformed legacy list entry, raises ``FP_ParameterError``
+                naming the offending GUID/entry and ``label`` (contract
+                C7 -- the NaturalClassOperations policy). ``"skip"``: the
+                same conditions are silently skipped (the historical
+                PhonemeOperations policy, D1). ``"skip"`` remains a fully
+                supported, explicit opt-in -- it is just no caller's
+                default after T9's flip.
+            label: Human-readable description of ``owner`` used ONLY in
+                raised error messages (e.g. ``"natural class 'Nasals'"``).
+                Defaults to ``owner.ClassName`` when omitted.
+
+        Returns:
+            IFsFeatStruc: ``owner``'s (possibly newly-created)
+            ``prop_name``-owned feature structure, cast to the concrete
+            ``IFsFeatStruc`` interface.
+
+        Raises:
+            FP_ParameterError: If ``on_unresolved == "raise"`` and a
+                feature, value, or (C4 only) feature-structure-type GUID
+                does not resolve in the target project, or (legacy shape
+                only) a list entry is malformed (not a dict, or missing
+                ``FeatureGuid``/``ValueGuid``). If ``on_unresolved ==
+                "skip"``, all of the above are silently skipped instead.
+
+        Notes:
+            - Ownership-first (C5 invariant, at EVERY nesting level): a
+              missing ``prop_name`` is created and attached to ``owner``
+              BEFORE its ``FeatureSpecsOC`` is populated or even read --
+              a free-floating ``IFsFeatStruc``'s own ``FeatureSpecsOC``
+              getter raises ``NullReferenceException`` (probe evidence).
+            - Idempotency: existing ``(feature_guid, value_guid)`` pairs
+              (legacy shape) / existing feature GUIDs (C4 shape, per
+              level) are read ONCE before the loop and updated as each
+              new spec is added, so re-applying the same
+              ``ApplySyncableProperties`` call twice is a no-op the
+              second time. This also fixes NC's original in-call
+              duplicate-spec double-insert (the pre-T4 code re-scanned
+              ``FeatureSpecsOC`` fresh each iteration; this method
+              maintains one ``existing_*`` set/dict across the whole
+              loop).
+            - All guards (malformed entry, unresolved GUID) are evaluated
+              OUTSIDE any ``_TransactionCM`` block, so a spec that fails
+              to resolve never opens an empty named undo entry -- only
+              the actual mutation (struct creation, spec insertion) is
+              wrapped.
+            - For the LEGACY list shape, items are applied ONE AT A TIME,
+              in order, exactly like the original NC/Phoneme loops: a
+              ``"raise"``-mode failure partway through the list leaves
+              every ALREADY-PROCESSED prior item's mutation committed --
+              this method does not validate the whole list up front. This
+              is a deliberate byte-for-byte behavioural match, not an
+              oversight.
+            - For the C4 dict shape, every read-back of a nested
+              ``IFsComplexValue.ValueOA`` gets its own explicit
+              ``IFsFeatStruc(...)`` cast (mirrors ``_GetFeatureStruc``);
+              nested application is delegated to
+              ``_ApplyFeatureStrucSpecMap`` (a private recursion helper,
+              not part of the C5 frozen surface).
+            - Transaction labels used by this method ("Create feature
+              structure" / "Add feature value") are intentionally
+              OWNER-AGNOSTIC -- the pre-T4 NC/Phoneme code used
+              owner-specific undo-stack text ("Create natural class
+              feature structure" / "Create phoneme feature structure").
+              No test locks that exact wording (only the RAISED
+              ``FP_ParameterError`` messages are ever asserted on, and
+              those still carry ``label``), so this is a cosmetic-only
+              change to the FLEx Ctrl+Z menu entry text, not a functional
+              behaviour change.
+            - C4a's dual-shape support is exercised end-to-end for the
+              legacy shape by the existing NC/Phoneme live tests (T4);
+              the C4 dict shape (needed by future T6-T8 callers) has its
+              own dedicated tests but is not yet driven by any NC/Phoneme
+              call site -- ``_GetFeatureStruc`` always emits C4, but
+              NC/Phoneme capture stays on the legacy list until T9b (C4b).
+        """
+        if on_unresolved not in ("raise", "skip"):
+            raise FP_ParameterError(
+                f"_ApplyFeatureStruc: on_unresolved must be 'raise' or "
+                f"'skip', got {on_unresolved!r}."
+            )
+        if label is None:
+            label = getattr(owner, "ClassName", None) or "object"
+
+        from SIL.LCModel import (
+            IFsFeatStrucFactory,
+            IFsClosedValueFactory,
+        )
+
+        struct = getattr(owner, prop_name)
+        if struct is None:
+            factory = self.project.project.ServiceLocator.GetService(
+                IFsFeatStrucFactory
+            )
+            # Ownership-first: attach to prop_name before populating specs
+            # (LCM accessors NPE on free-floating IFsFeatStruc objects).
+            with self._TransactionCM("Create feature structure"):
+                new_struct = self._CreateWithGuid(
+                    factory, guid=struct_guid, kind="feature structure",
+                )
+                setattr(owner, prop_name, new_struct)
+            struct = getattr(owner, prop_name)
+        struct = self._CastFsFeatStruc(struct)
+
+        if isinstance(spec_dict, dict):
+            cv_factory = self.project.project.ServiceLocator.GetService(
+                IFsClosedValueFactory
+            )
+            self._ApplyFeatureStrucSpecMap(
+                struct, spec_dict, on_unresolved, label, cv_factory,
+            )
+            return struct
+
+        # --- Legacy flat list of {"FeatureGuid", "ValueGuid"} dicts (C4a) ---
+        specs = spec_dict or []
+
+        # Existing (feature, value) GUID pairs for idempotency.
+        existing_pairs = set()
+        for raw in struct.FeatureSpecsOC:
+            try:
+                cv = self._CastFsClosedValue(raw)
+                if cv.FeatureRA is not None and cv.ValueRA is not None:
+                    existing_pairs.add(
+                        (str(cv.FeatureRA.Guid).lower(),
+                         str(cv.ValueRA.Guid).lower())
+                    )
+            except Exception:
+                continue
+
+        cv_factory = self.project.project.ServiceLocator.GetService(
+            IFsClosedValueFactory
+        )
+        for spec in specs:
+            if not isinstance(spec, dict):
+                if on_unresolved == "raise":
+                    raise FP_ParameterError(
+                        f"ApplySyncableProperties: {label} Features entry "
+                        f"is not a dict: {spec!r}"
+                    )
+                continue
+            feat_guid = spec.get("FeatureGuid")
+            val_guid = spec.get("ValueGuid")
+            if not feat_guid or not val_guid:
+                if on_unresolved == "raise":
+                    raise FP_ParameterError(
+                        f"ApplySyncableProperties: {label} has a Features "
+                        f"spec missing FeatureGuid/ValueGuid: {spec!r}"
+                    )
+                continue
+            if (feat_guid.lower(), val_guid.lower()) in existing_pairs:
+                continue  # already present (fill_gaps and normal both keep it)
+
+            if on_unresolved == "raise":
+                feat_obj = self._ResolveFsByGuid(feat_guid, kind="feature")
+                if feat_obj is None:
+                    raise FP_ParameterError(
+                        f"ApplySyncableProperties: {label} references "
+                        f"feature GUID {feat_guid} which does not exist "
+                        f"in the target project. The feature system must "
+                        f"be synced before this item is rewired; "
+                        f"silently dropping this spec would leave the "
+                        f"target's feature structure incomplete with no "
+                        f"visible error."
+                    )
+                val_obj = self._ResolveFsByGuid(val_guid, kind="value")
+                if val_obj is None:
+                    raise FP_ParameterError(
+                        f"ApplySyncableProperties: {label} references "
+                        f"value GUID {val_guid} (feature {feat_guid}) "
+                        f"which does not exist in the target project. "
+                        f"The feature system must be synced before this "
+                        f"item is rewired; silently dropping this spec "
+                        f"would leave the target's feature structure "
+                        f"incomplete with no visible error."
+                    )
+            else:
+                feat_obj = self._ResolveFsByGuid(feat_guid, kind="feature")
+                val_obj = self._ResolveFsByGuid(val_guid, kind="value")
+                if feat_obj is None or val_obj is None:
+                    # Target feature system lacks this feature/value; skip.
+                    continue
+
+            # Every guard above stays outside the transaction: a spec that
+            # fails to resolve raises/continues before any transaction
+            # opens, so no empty named undo entry is ever created.
+            with self._TransactionCM("Add feature value"):
+                closed_value = cv_factory.Create()
+                struct.FeatureSpecsOC.Add(closed_value)
+                cv = self._CastFsClosedValue(closed_value)
+                cv.FeatureRA = feat_obj
+                cv.ValueRA = val_obj
+
+            existing_pairs.add((feat_guid.lower(), val_guid.lower()))
+
+        return struct
+
+    def _ApplyFeatureStrucSpecMap(self, struct, spec, on_unresolved, label,
+                                   cv_factory):
+        """
+        Apply a single C4-dict LEVEL onto an already-attached
+        ``IFsFeatStruc`` ``struct``, recursing into any nested
+        ``IFsComplexValue.ValueOA`` level.
+
+        Private recursion helper for ``_ApplyFeatureStruc``'s C4 dict-shape
+        branch (C4a) -- not part of the C5 frozen surface. Mirrors
+        ``_GetFeatureStruc``'s traversal in reverse: a scalar ``specs``
+        value becomes an ``IFsClosedValue``; a nested-dict value becomes an
+        ``IFsComplexValue`` whose ``ValueOA`` is populated by recursing.
+
+        Args:
+            struct: The ``IFsFeatStruc`` at THIS level (already attached to
+                its owner -- ownership-first, per C5).
+            spec: A C4-shaped dict for THIS level: ``{"TypeGuid": ...,
+                "specs": {featGuid: valGuid | {...nested...}}}``.
+            on_unresolved: ``"raise"`` | ``"skip"`` -- see
+                ``_ApplyFeatureStruc``.
+            label: Human-readable description used in raised messages.
+            cv_factory: An ``IFsClosedValueFactory`` service instance,
+                threaded through from the top-level call so every
+                recursion level shares one factory lookup.
+
+        Raises:
+            FP_ParameterError: Mirrors ``_ApplyFeatureStruc``'s Raises
+                section, for an unresolved feature/value/type GUID when
+                ``on_unresolved == "raise"``.
+        """
+        from SIL.LCModel import (
+            IFsComplexValueFactory,
+            IFsFeatStrucFactory,
+        )
+
+        type_guid = spec.get("TypeGuid")
+        if type_guid:
+            type_obj = self._ResolveFsByGuid(
+                type_guid, kind="feature structure type"
+            )
+            if type_obj is None:
+                if on_unresolved == "raise":
+                    raise FP_ParameterError(
+                        f"ApplySyncableProperties: {label} references "
+                        f"feature structure type GUID {type_guid} which "
+                        f"does not exist in the target project."
+                    )
+            else:
+                with self._TransactionCM("Set feature structure type"):
+                    struct.TypeRA = type_obj
+
+        # Existing closed-value (feature -> IFsClosedValue) and complex-value
+        # (feature -> IFsComplexValue) entries, keyed by lower-cased feature
+        # GUID, for idempotency -- read ONCE before the loop (mirrors the
+        # legacy-shape existing_pairs set in _ApplyFeatureStruc).
+        existing_closed = {}
+        existing_complex = {}
+        for raw in struct.FeatureSpecsOC:
+            spec_class_name = raw.ClassName
+            if spec_class_name == "FsClosedValue":
+                cv = self._CastFsClosedValue(raw)
+                if cv.FeatureRA is not None and cv.ValueRA is not None:
+                    existing_closed[str(cv.FeatureRA.Guid).lower()] = cv
+            elif spec_class_name == "FsComplexValue":
+                cx = self._CastFsComplexValue(raw)
+                if cx.FeatureRA is not None:
+                    existing_complex[str(cx.FeatureRA.Guid).lower()] = cx
+
+        for feat_guid, value in (spec.get("specs") or {}).items():
+            feat_obj = self._ResolveFsByGuid(feat_guid, kind="feature")
+            if feat_obj is None:
+                if on_unresolved == "raise":
+                    raise FP_ParameterError(
+                        f"ApplySyncableProperties: {label} references "
+                        f"feature GUID {feat_guid} which does not exist "
+                        f"in the target project. The feature system must "
+                        f"be synced before this item is rewired; "
+                        f"silently dropping this spec would leave the "
+                        f"target's feature structure incomplete with no "
+                        f"visible error."
+                    )
+                continue
+
+            if isinstance(value, dict):
+                # Complex (nested) feature spec -> IFsComplexValue.ValueOA.
+                existing_cx = existing_complex.get(feat_guid.lower())
+                if existing_cx is not None:
+                    nested_struct = self._CastFsFeatStruc(existing_cx.ValueOA)
+                else:
+                    cx_factory = self.project.project.ServiceLocator.GetService(
+                        IFsComplexValueFactory
+                    )
+                    fs_factory = self.project.project.ServiceLocator.GetService(
+                        IFsFeatStrucFactory
+                    )
+                    nested_guid = value.get("Guid")
+                    with self._TransactionCM("Add feature value"):
+                        complex_value = cx_factory.Create()
+                        struct.FeatureSpecsOC.Add(complex_value)
+                        cx = self._CastFsComplexValue(complex_value)
+                        cx.FeatureRA = feat_obj
+                        nested = self._CreateWithGuid(
+                            fs_factory, guid=nested_guid,
+                            kind="feature structure",
+                        )
+                        cx.ValueOA = nested
+                    existing_complex[feat_guid.lower()] = cx
+                    nested_struct = self._CastFsFeatStruc(cx.ValueOA)
+
+                self._ApplyFeatureStrucSpecMap(
+                    nested_struct, value, on_unresolved, label, cv_factory,
+                )
+                continue
+
+            # Scalar (closed) feature spec.
+            val_guid = value
+            if feat_guid.lower() in existing_closed:
+                continue  # already present
+            val_obj = self._ResolveFsByGuid(val_guid, kind="value")
+            if val_obj is None:
+                if on_unresolved == "raise":
+                    raise FP_ParameterError(
+                        f"ApplySyncableProperties: {label} references "
+                        f"value GUID {val_guid} (feature {feat_guid}) "
+                        f"which does not exist in the target project. "
+                        f"The feature system must be synced before this "
+                        f"item is rewired; silently dropping this spec "
+                        f"would leave the target's feature structure "
+                        f"incomplete with no visible error."
+                    )
+                continue
+
+            with self._TransactionCM("Add feature value"):
+                closed_value = cv_factory.Create()
+                struct.FeatureSpecsOC.Add(closed_value)
+                cv = self._CastFsClosedValue(closed_value)
+                cv.FeatureRA = feat_obj
+                cv.ValueRA = val_obj
+            existing_closed[feat_guid.lower()] = cv
+
     def _RejectLegacyKwargs(self, kwargs, legacy_to_new):
         """
         Trap unexpected legacy keyword arguments with a clear,

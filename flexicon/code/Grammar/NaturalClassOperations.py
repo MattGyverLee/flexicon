@@ -1281,22 +1281,23 @@ class NaturalClassOperations(BaseOperations):
 
     def __ApplyFeatures(self, nc, specs, features_guid):
         """
-        Rewire a feature-based natural class's FeaturesOA feature-value
-        specs from a list of ``{"FeatureGuid", "ValueGuid"}`` dicts,
-        resolving each feature/value against the TARGET project's feature
-        system by GUID.
+        Thin call-through to ``BaseOperations._ApplyFeatureStruc`` (spec
+        feature-structure-sync-gap, T4): rewires a feature-based natural
+        class's FeaturesOA feature-value specs from a list of
+        ``{"FeatureGuid", "ValueGuid"}`` dicts, resolving each
+        feature/value against the TARGET project's feature system by
+        GUID.
 
         A missing FeaturesOA is created (ownership-first), preserving
         ``features_guid`` via ``_CreateWithGuid`` where the factory
         supports a ``Create(Guid)`` overload. Specs are matched by
         (FeatureGuid, ValueGuid) so re-application is idempotent.
 
-        Unlike ``PhonemeOperations.__ApplyFeatures`` (which skips an
-        unresolved spec and logs nothing), a feature or value GUID that
-        does not resolve in the target project RAISES here -- see the
-        ``Raises`` section of ``ApplySyncableProperties`` for why: a
-        silently-incomplete FeaturesOA is precisely the bug this method
-        closes.
+        Unlike ``PhonemeOperations.__ApplyFeatures`` (which passes
+        ``on_unresolved="skip"`` and logs nothing), NC passes
+        ``on_unresolved="raise"`` here -- see the ``Raises`` section of
+        ``ApplySyncableProperties`` for why: a silently-incomplete
+        FeaturesOA is precisely the bug this method closes.
 
         Args:
             nc: The target IPhNCFeatures object (already confirmed to
@@ -1312,105 +1313,18 @@ class NaturalClassOperations(BaseOperations):
                 value GUID does not resolve to an object in the target
                 project.
         """
-        struct = nc.FeaturesOA
-        if struct is None:
-            factory = self.project.project.ServiceLocator.GetService(
-                IFsFeatStrucFactory
-            )
-            # Ownership-first: attach to FeaturesOA before populating specs
-            # (LCM accessors NPE on free-floating IFsFeatStruc objects).
-            with self._TransactionCM("Create natural class feature structure"):
-                new_struct = self._CreateWithGuid(
-                    factory,
-                    guid=features_guid,
-                    kind="natural class feature structure",
-                )
-                nc.FeaturesOA = new_struct
-            struct = nc.FeaturesOA
-        struct = IFsFeatStruc(struct)
-
-        # Existing (feature, value) GUID pairs for idempotency.
-        existing_pairs = set()
-        for raw in struct.FeatureSpecsOC:
-            try:
-                cv = IFsClosedValue(raw)
-                if cv.FeatureRA is not None and cv.ValueRA is not None:
-                    existing_pairs.add(
-                        (str(cv.FeatureRA.Guid).lower(),
-                         str(cv.ValueRA.Guid).lower())
-                    )
-            except Exception:
-                continue
-
         nc_name = ITsString(
             nc.Name.get_String(self.project.project.DefaultAnalWs)
         ).Text or "(unnamed)"
 
-        cv_factory = self.project.project.ServiceLocator.GetService(
-            IFsClosedValueFactory
+        self._ApplyFeatureStruc(
+            nc,
+            "FeaturesOA",
+            specs,
+            struct_guid=features_guid,
+            on_unresolved="raise",
+            label=f"natural class '{nc_name}'",
         )
-        for spec in specs:
-            if not isinstance(spec, dict):
-                raise FP_ParameterError(
-                    f"ApplySyncableProperties: natural class '{nc_name}' "
-                    f"Features entry is not a dict: {spec!r}"
-                )
-            feat_guid = spec.get("FeatureGuid")
-            val_guid = spec.get("ValueGuid")
-            if not feat_guid or not val_guid:
-                raise FP_ParameterError(
-                    f"ApplySyncableProperties: natural class '{nc_name}' "
-                    f"has a Features spec missing FeatureGuid/ValueGuid: "
-                    f"{spec!r}"
-                )
-            if (feat_guid.lower(), val_guid.lower()) in existing_pairs:
-                continue  # already present (fill_gaps and normal both keep it)
-
-            feat_obj = self.__ResolveByGuid(feat_guid)
-            if feat_obj is None:
-                raise FP_ParameterError(
-                    f"ApplySyncableProperties: natural class '{nc_name}' "
-                    f"references feature GUID {feat_guid} which does not "
-                    f"exist in the target project. The feature system "
-                    f"must be synced before natural classes are rewired; "
-                    f"silently dropping this spec would leave the target "
-                    f"class's FeaturesOA incomplete with no visible error."
-                )
-            val_obj = self.__ResolveByGuid(val_guid)
-            if val_obj is None:
-                raise FP_ParameterError(
-                    f"ApplySyncableProperties: natural class '{nc_name}' "
-                    f"references value GUID {val_guid} (feature "
-                    f"{feat_guid}) which does not exist in the target "
-                    f"project. The feature system must be synced before "
-                    f"natural classes are rewired; silently dropping this "
-                    f"spec would leave the target class's FeaturesOA "
-                    f"incomplete with no visible error."
-                )
-
-            # Every guard above stays outside: a spec that fails to
-            # resolve raises before any transaction opens, so no empty
-            # named undo entry is ever created.
-            with self._TransactionCM("Add natural class feature value"):
-                closed_value = cv_factory.Create()
-                struct.FeatureSpecsOC.Add(closed_value)
-                cv = IFsClosedValue(closed_value)
-                cv.FeatureRA = feat_obj
-                cv.ValueRA = val_obj
-
-            existing_pairs.add((feat_guid.lower(), val_guid.lower()))
-
-    def __ResolveByGuid(self, guid_str):
-        """
-        Resolve a GUID string to an LCM object in this (target) project,
-        returning None if it does not exist rather than raising -- the
-        caller (``__ApplyFeatures``) is responsible for turning a None
-        into a loud, actionable exception.
-        """
-        try:
-            return self.project.Object(guid_str)
-        except Exception:
-            return None
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):

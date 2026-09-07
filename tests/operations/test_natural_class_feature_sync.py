@@ -74,6 +74,37 @@ def _method_source(method_name):
     return inspect.getsource(obj)
 
 
+def _base_method_source(method_name):
+    """
+    Same unwrap-and-getsource helper as ``_method_source``, but reading
+    from ``BaseOperations`` -- used for the T4 (spec
+    feature-structure-sync-gap) shape assertions that were migrated off
+    ``NaturalClassOperations._NaturalClassOperations__ApplyFeatures``
+    (which is now a thin call-through) onto the shared
+    ``BaseOperations._ApplyFeatureStruc``/``_ApplyFeatureStrucSpecMap``
+    implementation those calls delegate to.
+    """
+    from flexicon.code.BaseOperations import BaseOperations
+
+    obj = BaseOperations.__dict__[method_name]
+
+    seen = set()
+    while True:
+        oid = id(obj)
+        if oid in seen:
+            break
+        seen.add(oid)
+        if hasattr(obj, "func") and not inspect.isfunction(obj):
+            obj = obj.func
+            continue
+        if hasattr(obj, "__wrapped__"):
+            obj = obj.__wrapped__
+            continue
+        break
+
+    return inspect.getsource(obj)
+
+
 class TestNaturalClassSyncStatic:
     """Locks the shape of the FeaturesOA sync fix without a live project."""
 
@@ -120,12 +151,25 @@ class TestNaturalClassSyncStatic:
         is the opposite of PhonemeOperations.__ApplyFeatures, which skips
         silently -- silence is exactly the natural-class bug being fixed,
         so the two must NOT share that behavior.
+
+        MIGRATED (T4, spec feature-structure-sync-gap, hazard E5):
+        ``_NaturalClassOperations__ApplyFeatures`` is now a thin
+        call-through to ``BaseOperations._ApplyFeatureStruc`` (NC passes
+        ``on_unresolved="raise"``), so the shape this test pins now lives
+        there. The property being pinned -- an unresolved feature/value
+        GUID raises rather than silently continuing -- is unchanged;
+        only the method that implements it moved. ``self.__ResolveByGuid``
+        was also de-duplicated into the shared ``self._ResolveFsByGuid``
+        (T3's helper) as part of this same move, so the resolver-call
+        literal used for the negative "no silent continue" check is
+        updated to match.
         """
-        src = _method_source("_NaturalClassOperations__ApplyFeatures")
+        src = _base_method_source("_ApplyFeatureStruc")
 
         assert "raise FP_ParameterError" in src, (
-            "__ApplyFeatures must raise FP_ParameterError when a feature "
-            "or value GUID does not resolve in the target project."
+            "_ApplyFeatureStruc must raise FP_ParameterError when a "
+            "feature or value GUID does not resolve in the target "
+            "project (on_unresolved='raise')."
         )
         assert "feat_obj is None" in src and "raise" in src, (
             "A None feat_obj (unresolved FeatureGuid) must be checked "
@@ -137,24 +181,39 @@ class TestNaturalClassSyncStatic:
         )
 
         # Negative check: guard against reintroducing the phoneme-style
-        # silent-skip idiom for the "not found" branches specifically.
-        # (A bare `continue` still legitimately appears for the
-        # already-applied/idempotency branch a few lines earlier -- this
-        # only pins that the *unresolved-GUID* branches raise.)
-        unresolved_section = src[src.index("feat_obj = self.__ResolveByGuid") :]
-        assert "continue" not in unresolved_section.split("val_obj = self.__ResolveByGuid")[0], (
+        # silent-skip idiom for the "not found" branches specifically, in
+        # the on_unresolved="raise" branch NC actually exercises. (A bare
+        # `continue` still legitimately appears for the already-applied/
+        # idempotency branch a few lines earlier, AND in the sibling
+        # on_unresolved="skip" branch used by PhonemeOperations -- this
+        # only pins that the FIRST (raise-mode) feat_obj/val_obj
+        # resolution pair has no silent continue between them.)
+        unresolved_section = src[src.index("feat_obj = self._ResolveFsByGuid") :]
+        assert "continue" not in unresolved_section.split("val_obj = self._ResolveFsByGuid")[0], (
             "The unresolved-FeatureGuid branch must raise, not `continue`."
         )
 
     def test_apply_features_error_message_names_guid_and_class(self):
-        src = _method_source("_NaturalClassOperations__ApplyFeatures")
+        """
+        MIGRATED (T4, hazard E5): source moved to
+        ``BaseOperations._ApplyFeatureStruc``. The pinned property --
+        "the raised exception message must name the missing GUID and the
+        failing item" -- is unchanged; only the variable name for "the
+        failing item" changed, from NC's own ``nc_name`` to the
+        generalized ``label`` parameter (C5). NC's call-through passes
+        ``label=f"natural class '{nc_name}'"``, so the RENDERED message
+        text is byte-identical to before this migration -- only the
+        f-string's own variable name differs.
+        """
+        src = _base_method_source("_ApplyFeatureStruc")
         assert "{feat_guid}" in src or "feat_guid}" in src, (
             "The raised exception message must name the missing "
             "FeatureGuid so the failure is actionable."
         )
-        assert "{nc_name}" in src or "nc_name}" in src, (
-            "The raised exception message must name the natural class "
-            "so the failure is actionable."
+        assert "{label}" in src or "label}" in src, (
+            "The raised exception message must name the failing item "
+            "(NC's call-through supplies label=f\"natural class "
+            "'{nc_name}'\") so the failure is actionable."
         )
 
     def test_apply_syncable_properties_raises_on_type_mismatch(self):
@@ -535,6 +594,35 @@ class TestNaturalClassSyncEmptyFeatureStructPreservation:
         )
         monkeypatch.setattr(nco, "IFsClosedValue", lambda x: x)
         monkeypatch.setattr(nco, "IFsFeatStruc", lambda x: x)
+
+        # T4 moved the actual struct-casting/spec-insertion algorithm from
+        # NaturalClassOperations.__ApplyFeatures into
+        # BaseOperations._ApplyFeatureStruc, which does its own FRESH
+        # `from SIL.LCModel import ...` local imports (mirroring
+        # _GetFeatureStruc's existing style) rather than reading the
+        # `nco`-module-scoped names patched above. A fresh local import
+        # reads from the real `SIL.LCModel` module object at call time, so
+        # patching `nco.IFsFeatStruc`/`nco.IFsClosedValue` (above) has NO
+        # effect on it. Patching `SIL.LCModel` itself is not an option
+        # either -- it is a pythonnet CLR namespace, not a regular Python
+        # module, and rejects `setattr` outright
+        # (`AttributeError: type does not support setting attributes`,
+        # confirmed empirically). `_ApplyFeatureStruc` therefore routes
+        # its casts through `BaseOperations._CastFsFeatStruc`/
+        # `_CastFsClosedValue`/`_CastFsComplexValue` -- one-line methods
+        # that exist SPECIFICALLY as a monkeypatchable test seam (classes
+        # DO support `setattr`, unlike CLR namespaces) -- patched here
+        # exactly like the pre-existing `_TransactionCM`/`_CreateWithGuid`
+        # seams below.
+        monkeypatch.setattr(
+            BaseOperations, "_CastFsClosedValue", lambda self, x: x
+        )
+        monkeypatch.setattr(
+            BaseOperations, "_CastFsFeatStruc", lambda self, x: x
+        )
+        monkeypatch.setattr(
+            BaseOperations, "_CastFsComplexValue", lambda self, x: x
+        )
 
         monkeypatch.setattr(
             BaseOperations,
