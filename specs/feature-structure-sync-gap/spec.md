@@ -574,7 +574,8 @@ file. The #250 Defect 4 window opens **after T5's gate**, not after T4's.
       window.
       **What actually unblocks measurement is procedural and costs nothing --
       see section 5.1 below; adopt it in cycle 5 without waiting for T18.**
-- [ ] **T5** `MakeFeatStruc` generalization (C3) -- one implementation; Infl and
+- [x] **T5** DONE (commit `6643b483`; gate PASS `reviews/cycle5-verification-T5.md`) --
+      `MakeFeatStruc` generalization (C3) -- one implementation; Infl and
       Phon become call-throughs; recursive dict + flat-list alias; `slot=`.
       Closes **#256**.
 - [ ] **T6** `MSAOperations`: new `GetSyncableProperties`/`ApplySyncableProperties`,

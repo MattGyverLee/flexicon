@@ -2,7 +2,148 @@
 
 Repo: flexicon (main). Issues: flexicon#251, #252, #256, and **#253 (folded in)**.
 
-## Where things stand (as of 2026-09-07, spurt 3 / cycle 4 end)
+## Where things stand (as of 2026-09-07, spurt 4 / cycle 5 end)
+
+**CHECKPOINT 2b IS CLOSED.** T5 landed (`6643b483`) and its verification gate is
+**PASS** (`reviews/cycle5-verification-T5.md`). One generalized
+`BaseOperations._MakeFeatStruc` now backs both `InflectionFeatureOperations`
+and `PhonFeatureOperations`, routing owner resolution through the C1 table
+instead of the dead `hasattr(..., "FeaturesOA")` gate. Offline delta 0; live
+subset unchanged except the #256 probe flip; mutation test 1 -> 8 failed with a
+hash-verified clean restore. The gate re-derived the true parent itself
+(`7bc6d01c`, NOT `HEAD~1`) and independently confirmed `6643b483` contains only
+its own five files despite a concurrent git-index collision.
+
+**The #250 Defect 4 micro-spurt window is now OPEN.**
+
+### Cycle-5 lead rulings (four)
+
+**Ruling 1 -- the T5 coverage gap does NOT block #256, but it is closed NEXT,
+before anything else, as T14a.**
+
+The gate proved the recursive-dict shape and `slot=` work live, but had to write
+its **own** probes to do it -- and those probes lived in a disposable worktree
+that has since been removed. **The coverage that proves T5's new public surface
+works currently exists nowhere except as prose in an evidence file.** The
+behaviour is verified (two independent parties, live, falsifiable); the
+*regression protection* is not. That is precisely the "1467 passing tests didn't
+catch it" shape from the #222 family that started this feature -- with the one
+difference that we have named it rather than discovered it later.
+
+So: **#256 closes on the evidence** (verification asks whether the code works,
+and it demonstrably does), **and T14a lands immediately** so the protection is
+real. T14a is deliberately test-only -- it adds NO production code, so it does
+not re-open `BaseOperations.py`, which keeps the #250 spec's section 6.3
+condition 3 satisfied for the Defect-4 spurt that follows it.
+
+**T14 is split:** **T14a** (promote the gate's probes -- nested recursive-dict
+round-trip, `slot="From"/"To"` on a live `MoDerivAffMsa`, ambiguous-owner error
+path) runs now; **T14b** (empty-but-present struct, per-level `TypeGuid` and
+GUID preservation, unknown-`ClassName` raise) stays at its original place late
+in the task list.
+
+**Ruling 2 -- C3's "a name" operand claim is WRONG; the contract text is
+amended, no new task is added to this feature.**
+
+The gate confirmed independently what the implementer disclosed: `__ResolveFeature`'s
+non-int branch was a pure passthrough in **both** pre-T5 twins. Name resolution
+was never implemented, is not a T5 regression, and no shipped test ever
+exercised it. Between "amend the contract" and "add a task", **amend**:
+resolving a bare name means choosing a `Find`-style lookup, a scope, an
+ambiguity policy across feature systems, and a case/writing-system rule -- four
+decisions with no obvious default. Guessing them is exactly the silent guess the
+C1 resolver exists to forbid, and inventing a policy under a frozen contract at
+the tail of a feature is how scope creep gets laundered as bug-fixing.
+
+C3's operand list is corrected to what ships (`IFsFeatDefn`/`IFsSymFeatVal`
+objects or wrappers, HVO ints, GUID strings) with a dated errata note recording
+that the "a name" text was never backed by an implementation. C4's
+"user-facing surface is name-tolerant / wire format is GUID-only" contrast is
+corrected in the same pass so the spec stops asserting a distinction that does
+not exist. **Name-operand support is recorded in section 7 as a candidate
+follow-up issue** -- it needs its own freeze cycle, the way #250 did. Filing it
+needs the user's approval and is NOT done unilaterally.
+
+**Ruling 3 -- #256 closes, on two halves, with `CopyFeatStruc` explicitly
+DEFERRED-not-declined.**
+
+Both halves the issue actually asked for are confirmed live by two independent
+parties: (i) owner resolution per type -- `MsFeaturesOA` for MSAs, via the C1
+resolver, not the impossible hardcoded `FeaturesOA` (item 7's live
+`FP_ParameterError` -> `IFsFeatStruc` flip, plus the gate's own `MoStemMsa`
+round-trip re-fetched from a fresh object); (ii) nested feature structures
+expressible -- the gate's two-level recursive-dict round-trip, re-read from a
+fresh `IMoStemMsa`. The issue's third suggestion, `CopyFeatStruc(src_fs,
+target_owner)`, is **in scope for this feature but out of scope for this
+closure**: it is already frozen as **C8** and scheduled as **T12**, with
+`overwrite=False` raising by default and no merge mode. The closing comment must
+say so explicitly, so the closure is not misread as a decline. **Closing is
+proposed, not executed -- issue closure needs the user's approval** (the same
+rule as #250's D4-T6 and #264's filing).
+
+**Ruling 4 -- Defect 4 runs BEFORE T6, and it gets its own spurt.**
+
+All three of `specs/250-writingsystem-activation/spec.md` section 6.3's
+dispatch conditions now hold: (1) the fix is frozen lookup-only (C-D4-2),
+touching none of the 13 map-build sites; (2) live verification is frozen to
+`target_sandbox`, not the in-place Target; (3) Checkpoint 2b's gate has cleared
+and is **committed**, so `BaseOperations.py` holds no uncommitted FS work. The
+substantive reason is unchanged and decisive: **T6-T8 add five new sync
+implementations whose multistring alts inherit the fix for free if it lands
+first, versus five fresh instances of a known bug to sweep later.**
+
+It does **not** share this spurt with T14a. Defect 4 has its own six-task list
+and its own gate, and both it and T14a need `FLEXLIBS_REQUIRE_LIVE=1` live runs.
+**Only one agent runs live pytest at a time in this tree** -- #264 is literally
+about global init order-dependence, and cycle 5's own incident showed a live run
+leaving residue in a shared in-place project. Serialising is cheap; two
+concurrent live sessions is an unforced error.
+
+### Cycle-5 corrections carried forward
+
+- **#264's figure is CORRECTED: 3, not 11.** Of the 13 modules in
+  `flexicon/sync/tests/` and `flexicon/tests/`, 11 are unmarked, but only
+  **three actually call `FLExInitialize`** (`test_base_operations.py`,
+  `test_FLExInit.py`, `test_FLExProject.py`). The other 8 call no init and look
+  genuinely offline-safe. **Blanket-marking those trees would wrongly delete
+  real offline coverage** -- #264's suggested-fix item 2 must target the three,
+  not the eleven. The issue has been amended upstream; use 3 from here on.
+- **Two Pyright diagnostics in T5-touched files are PRE-EXISTING and benign** --
+  `InflectionFeatureOperations.py:415` (empty-generator idiom, from `588a8591`)
+  and `PhonFeatureOperations.py:658` (heterogeneous-dict typing gap, from
+  `e1603c7f`, on the capture side C4b freezes). No action. Recorded so nobody
+  re-derives them.
+- **A concurrent git-index collision occurred during T5** and was caught on both
+  sides: the implementer detected and unstaged the foreign paths, and the gate
+  independently confirmed `6643b483` contains only its own five files with
+  `tests/conftest.py` byte-untouched. The other crew is still active in this
+  tree. The explicit-path staging rule is what made this recoverable -- it is
+  not a formality.
+- **Live-fixture hazard, disclosed twice in cycle 5:** `writable_project` opens
+  the real, shared Sena 3 **in place**, not a sandbox, so a failing live
+  assertion leaves residue -- and residue can make a later clean run report wrong
+  numbers even with the source hash-verified identical. Both agents hit this;
+  both cleared it with `python scripts/restore_sena3.py`. Prefer
+  `target_sandbox` for anything that writes.
+
+## Next pickup
+
+**Spurt 5 = T14a + the two docs/record items, then a narrow gate. Nothing else.**
+
+1. **T14a (live, `target_sandbox`)** -- promote the gate's deleted probes into a
+   shipped test file. Reconstruct from
+   `evidence/live-cycle5-verification-t5.md` section 5; the original file
+   (`test_verify_t5_c3_gate.py`) is **gone** with its worktree, do not hunt for
+   it. Test-only: no production code, do not re-open `BaseOperations.py`.
+2. **C3/C4 errata + #264 figure correction + T14 split** (docs-only, `spec.md`).
+3. **#256 closure comment DRAFTED, not posted** -- routed to the user for
+   approval.
+4. **Gate** -- narrow, and the question that matters is falsifiability: a
+   promoted probe that passes against mutated code is worthless coverage.
+5. **Then the #250 Defect 4 micro-spurt**
+   (`specs/250-writingsystem-activation/spec.md`), **then T6.**
+
+## Where things stood (spurt 3 / cycle 4 end)
 
 **T4 landed and gated PASS. Checkpoint 2b is HALF closed -- T5 remains.**
 Next spurt is **T5 alone**, and only then does the #250 Defect 4 window open.
@@ -249,7 +390,7 @@ runtime delta) and **2b = T4-T5** (re-point NC/Phoneme onto the shared helper +
   the snapshot gap is logged as a P2 tooling follow-up.
 - Reporter's MSA stem count (1949) corrected to **1951**.
 
-## Next pickup
+## Next pickup (spurt 3 -- SUPERSEDED; T5 is DONE)
 
 **T5 alone, one task, one spurt** -- the discipline that worked for T1 and T4.
 
