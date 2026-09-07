@@ -149,3 +149,164 @@ parallel probe file created).
 
 `target_sandbox` / `target_sandbox_path` ONLY. Never the real Target,
 never `scripts/restore_*.py`.
+
+## RESULTS (filled in AFTER the live measuring run; predictions above were
+not edited)
+
+**Diff proof:** `git diff -- flexicon/code/TextsWords/TextOperations.py`
+(commit `db952301`) shows exactly: `Create` -- `name = name.strip()`
+deleted at old `:152`, nothing else changed in that method.
+`Exists` -- `name = name.strip()` deleted at old `:458`; the `target =`
+line and the loop's comparison line each gained `.strip()` on their
+`normalize_match_key(...)` calls (`casefold=False` unchanged, confirmed
+byte-for-byte). `SetName` -- `name = name.strip()` at old `:608` replaced
+with a throwaway `name.strip()` (result discarded, no reassignment), plus
+a comment; the two `_ValidateParam(name, "name")` calls are unchanged.
+`git diff --stat -- flexicon/` shows this one file only, 14 insertions / 6
+deletions net in the method bodies.
+
+**Collect count:**
+```
+python -m pytest tests/operations/test_name_field_identity_probe.py --collect-only -q -m requires_live_project
+```
+-> **11 tests collected** (same 11 as before T2 -- PN2/PN8 were MODIFIED
+in place, not added; no new test count). Nonzero.
+
+**Live run:**
+```
+$env:FLEXLIBS_REQUIRE_LIVE = "1"
+python -m pytest tests/operations/test_name_field_identity_probe.py -m requires_live_project -q -s
+```
+-> `11 passed, 49 warnings in 7.03s`. `tests/live_status.json` confirms
+`"run_mode": "live"`, `"run_timestamp": "2026-09-07T20:15:41Z"`, and lists
+`TextOperations` add/modify (PN8/PN2) both `"status": "pass"`.
+
+**T2-P1 (Create persist) -- MATCHED, confirmed indirectly through PN8/PN2:**
+PN8's layer-B bypass write of `'TEST_NF_Dup '` re-read as
+`'TEST_NF_Dup '` (precondition assert in the test itself), and the
+public-API `Create()` path is exercised directly by PN1/PN2 (unpadded
+persisted names) plus, critically, by the SECOND-call rejection in PN8 --
+which only makes sense if a padded `Create()` call, had it succeeded,
+would have persisted padded bytes. Confirmed additionally by direct code
+inspection: `name` now flows unmodified into
+`TsStringUtils.MakeString(name, wsHandle)` at `:170`.
+
+**T2-P2 (SetName persist) -- MATCHED by code inspection; not separately
+exercised by a NEW live test this cycle** (T2's brief asked to extend PN2
+and PN8 specifically, not add a dedicated SetName probe; PN1's stored-name
+read and the existing test suite's SetName coverage are unaffected/still
+green). The throwaway-`.strip()` mechanism was verified live via PN7,
+which independently confirms `Texts.SetName(non-str)` still raises
+`AttributeError: '_NonStrPayload' object has no attribute 'strip'` --
+proving the throwaway `.strip()` call is still reached and still raises,
+exactly as C7(b) requires, unchanged from pre-fix. Console line:
+`[PROBE] PN7 Texts.SetName(non-str): RAISED AttributeError: '_NonStrPayload' object has no attribute 'strip'`.
+
+**T2-P3 (Exists comparison symmetry, PN2 flip) -- MATCHED exactly.** Live
+output:
+```
+[TABLE][PN2] raw stored Name (direct read): 'TEST_NF_Raw '
+[PROBE] PN2 Exists(unpadded): OK -> True
+[PROBE] PN2 Exists(padded): OK -> True
+[VERDICT][PN2] Exists('TEST_NF_Raw') -> True (PREDICTED True, post-fix); Exists('TEST_NF_Raw ') -> True (PREDICTED True, post-fix)
+```
+Both the unpadded and padded needle now find the padded haystack -- the
+exact opposite of cycle 1's measured result, confirming C4's fix landed
+correctly.
+
+**T2-P4 (duplicate rejection, PN8 flip -- THE C8 pin) -- MATCHED exactly,
+BOTH halves.** Live output:
+```
+[TABLE][PN8] first (bypass) text stored Name: 'TEST_NF_Dup '
+[PROBE] PN8 Create(padded, public API): RAISED FP_ParameterError: A text with the name 'TEST_NF_Dup ' already exists.
+[TABLE][PN8] first text stored Name, re-read after the rejected duplicate attempt: 'TEST_NF_Dup '
+[SUMMARY][PN8] texts matching 'TEST_NF_Dup ' post-fix (stripped comparison): [('11049732-b5b8-410e-925e-c70c04ceef4d', 'TEST_NF_Dup ')]
+```
+- **C8 pin half 1 (second call raises "already exists"):** CONFIRMED --
+  `FP_ParameterError: A text with the name 'TEST_NF_Dup ' already exists.`
+- **C8 pin half 2 (first record re-reads byte-identical):** CONFIRMED --
+  re-read (not re-asserted against the value passed in) as
+  `'TEST_NF_Dup '`, trailing space intact, GUID
+  `11049732-b5b8-410e-925e-c70c04ceef4d`.
+- Exactly ONE `IText` object matches the name post-fix (down from the
+  pre-fix TWO) -- the duplicate-explosion this feature exists to close is
+  confirmed closed for `TextOperations`.
+
+**T2-P5 (C2's byte-identity prediction) -- CONFIRMED as predicted, by
+absence of the scenario it describes.** There is no second record to
+compare post-fix (the second `Create()` call raised instead of
+persisting), so C2's "both records byte-identical" intermediate state
+never materializes for `TextOperations` -- exactly as T2-P5 anticipated.
+This is not a contradiction of C2; C2 explicitly framed that prediction as
+describing what an UNFINISHED (persist-only, no comparison fix) state
+would look like, and T2 never ships that unfinished state.
+
+**T2-P6 (whitespace-only rejection unaffected) -- MATCHED by regression:**
+not independently re-tested by a new T2 assertion this cycle (out of the
+brief's specific PN2/PN8 extension scope), but the offline suite's
+existing coverage of `Create`/`Exists`/`SetName`'s `_ValidateStringNotEmpty`
+guard remained green (see OFFLINE DELTA below -- no new offline failures),
+and `:151`/`:457` were confirmed byte-for-byte unchanged by the diff proof
+above.
+
+## OFFLINE DELTA
+
+| | passed | failed | deselected |
+|---|---|---|---|
+| Before | 1292 | 3 | 501 |
+| After | 1292 | 3 | 501 |
+| Delta | +0 | +0 | +0 |
+
+`3 failed` before AND after are the SAME three known-foreign tests, same
+messages, confirmed by name:
+`test_transaction_rollback.py::TestPhase2JoinOrOpen::test_rollback_flag_set_true_on_exception`,
+`::test_depth_restored_on_exception`,
+`test_flexlibs2_alias_ratchet.py::...::test_no_executable_flexlibs2_imports_outside_alias_package`.
+No fourth failure at any point. `passed`/`deselected` both unchanged --
+expected, because T2 MODIFIED PN2/PN8 in place rather than adding new
+tests (per the task brief's "extend the existing PN2 and PN8 tests"
+instruction), so the offline/live test counts do not shift.
+
+## CONTRACT CONTRADICTIONS FOUND
+
+None in C1-C8 themselves. One MECHANISM DEVIATION from T1's pattern,
+recorded above under WHAT CHANGED / `SetName`: T1 (`DiscourseOperations`)
+could delete its `.strip()` calls entirely because both its sites use
+`_ValidateStringNotEmpty`, which already type-checks (raises `TypeError`)
+before ever reaching `.strip()`. `TextOperations.SetName` has no such
+upstream type-check (`_ValidateParam` is a null-check only, confirmed by
+reading `BaseOperations.py:2747-2796`) -- `.strip()` ITSELF is what raises
+`AttributeError` for a non-str payload today. Deleting that call entirely,
+as T1's pattern would suggest, would have SILENTLY REMOVED that
+`AttributeError` trigger, changing the exception type C7(b) explicitly
+forbids changing. The fix instead keeps a throwaway, non-reassigning
+`.strip()` call. **This is the one detail T3/T4 must NOT copy
+mechanically** -- each site's own upstream validation shape must be
+checked before deciding whether "just delete the line" (T1's shape) or
+"keep a throwaway call" (T2's `SetName` shape) is correct for THAT site.
+
+## WHAT I DID NOT DO
+
+- Did not touch `BaseOperations.py` or `Shared/string_utils.py` (fenced,
+  C4).
+- Did not touch `Find` (`TextOperations.py:498-525`) -- not in T2's scope
+  per `tasks.md` (only `Exists` is listed); `Find`'s own
+  `normalize_match_key` calls at `:512`/`:515` are unchanged.
+- Did not harmonise `SetName`'s `AttributeError`-on-non-str exception type
+  (C7(b), Q-242C, out of scope) -- confirmed still raises `AttributeError`
+  live via PN7.
+- Did not add a dedicated new probe test for `SetName`'s persist fix
+  beyond the throwaway-`.strip()` confirmation already provided by PN7;
+  the task brief's live-gate instruction named PN2/PN8 specifically as
+  the tests to extend.
+- Did not stage or commit `CONCURRENCY.md` (modified by the main
+  session/other crew during this task, per its own "AMENDED today"
+  header), `.claude/ralph-loop.local.md` (deleted, not mine),
+  `.vscode/`, `specs/duplicate-signature-harmonisation/`, or
+  `specs/name-field-whitespace-identity/reviews/cycle2-baseline.md` (the
+  verification agent's file) -- only my own two files (this evidence file,
+  then the code+test edit) were staged, each with explicit
+  `git add <path>`, confirmed clean by `git status --porcelain` before
+  each commit.
+- Did not run `scripts/restore_*.py` or touch the real Target; used
+  `target_sandbox` exclusively.
