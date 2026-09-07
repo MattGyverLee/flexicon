@@ -52,6 +52,39 @@ import pytest
 
 _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 
+_NGOREME_PROJECT_NAME = "Ngoreme FLEx"
+
+
+@pytest.fixture(scope="module")
+def ngoreme_readonly():
+    """
+    Read-only fixture for the populated "Ngoreme FLEx" project, mirroring
+    tests/operations/test_issue251_252_256_feature_struct_probe.py. Used
+    by TestFeatureStructOwnerCastT1 below, which only reads (no writes),
+    so the populated ground-truth data documented in
+    specs/feature-structure-sync-gap/evidence/live-cycle1-probe.md is
+    available without needing a sandbox copy.
+    """
+    if "SIL.LCModel" not in sys.modules:
+        pytest.skip("Requires SIL.LCModel (FieldWorks installed)")
+    try:
+        from flexlibs2.code.FLExProject import FLExProject
+    except Exception as exc:
+        pytest.skip(f"Could not import FLExProject: {exc}")
+
+    project = FLExProject()
+    try:
+        project.OpenProject(_NGOREME_PROJECT_NAME, writeEnabled=False)
+    except Exception as exc:
+        pytest.skip(f"Could not open {_NGOREME_PROJECT_NAME!r} read-only: {exc}")
+
+    yield project
+
+    try:
+        project.CloseProject()
+    except Exception:
+        pass
+
 
 def _try_open_writable_project():
     """Open one of the standard test projects in write mode, or None."""
@@ -495,4 +528,186 @@ class TestOwnerCastLive:
         assert target_chart.RowsOS[0] == row, (
             "ConstChartRowOperations.MoveTo no-op didn't keep the row at "
             "index 0 -- source_chart resolution may have regressed."
+        )
+
+
+# ---------------------------------------------------------------------------
+# T1 regression coverage: spec feature-structure-sync-gap, decision D3.
+#
+# lcm_casting._interface_cache previously had NO entry for any
+# feature-structure owner class. This locks that cast_to_concrete() now
+# resolves the nine ClassNames added in T1 (PhNCFeatures, PhNCSegments,
+# PhPhoneme, PartOfSpeech, PosFeatures, FsComplexFeature, FsFeatStruc,
+# FsComplexValue, FsClosedValue) to their concrete interfaces.
+#
+# CRITICAL (see spec T1 note, and the #222-family repeat mistake in
+# commits f424f99 / 3abf6b5): every object under test is obtained
+# through project.Object(hvo) -- the same bare-ICmObject path C2 uses
+# for the HVO/GUID resolution surface -- NEVER a factory-fresh object.
+# A factory-fresh concrete-typed object already reports hasattr True
+# regardless of the cache, which would make this test pass over dead
+# code exactly like the two prior fixes had to redo. Locating candidate
+# HVOs via GetAll()/FeatureGetAll()/an explicit in-file cast is fine
+# (harvesting a .Hvo is not sensitive to the source object's typing);
+# only the object actually handed to cast_to_concrete() must be the
+# freshly re-fetched, guaranteed-base-typed project.Object(hvo) result.
+# Mirrors tests/operations/test_issue251_252_256_feature_struct_probe.py's
+# base-interface-view-vs-factory-fresh contrast (items 1/2).
+# ---------------------------------------------------------------------------
+
+
+def _locate_pos_hvo(project):
+    for pos in project.POS.GetAll():
+        return pos.Hvo
+    return None
+
+
+def _locate_phoneme_hvo(project):
+    for ph in project.Phonemes.GetAll():
+        return ph.Hvo
+    return None
+
+
+def _locate_natural_class_hvo(project, want_class_name):
+    for nc in project.NaturalClasses.GetAll():
+        if nc.ClassName == want_class_name:
+            return nc.Hvo
+    return None
+
+
+def _locate_complex_feature_hvo(project):
+    for feat in project.InflectionFeatures.FeatureGetAll():
+        if feat.ClassName == "FsComplexFeature":
+            return feat.Hvo
+    return None
+
+
+def _locate_featstruc_family_hvos(project):
+    """
+    Walk populated MoStemMsa.MsFeaturesOA structures (782/1951 stem MSAs
+    have content per the frozen ground-truth probe) to harvest one live
+    Hvo each for FsFeatStruc, FsComplexValue (nested majority shape,
+    799/820), and FsClosedValue. Discovery-side casts are explicit
+    in-file IMoStemMsa(...)/IFsComplexValue(...) casts -- fine for
+    locating an Hvo; only the final assertion re-fetches via
+    project.Object(hvo).
+    """
+    from SIL.LCModel import ILexEntryRepository, IMoStemMsa
+
+    found = {"FsFeatStruc": None, "FsComplexValue": None, "FsClosedValue": None}
+    for entry in project.ObjectsIn(ILexEntryRepository):
+        for msa in entry.MorphoSyntaxAnalysesOC:
+            if msa.ClassName != "MoStemMsa":
+                continue
+            fs = IMoStemMsa(msa).MsFeaturesOA
+            if fs is None:
+                continue
+            if found["FsFeatStruc"] is None:
+                found["FsFeatStruc"] = fs.Hvo
+            for spec in fs.FeatureSpecsOC:
+                if spec.ClassName == "FsComplexValue" and found["FsComplexValue"] is None:
+                    found["FsComplexValue"] = spec.Hvo
+                elif spec.ClassName == "FsClosedValue" and found["FsClosedValue"] is None:
+                    found["FsClosedValue"] = spec.Hvo
+            if all(v is not None for v in found.values()):
+                return found
+    return found
+
+
+@pytest.mark.requires_live_project
+class TestFeatureStructOwnerCastT1:
+    """
+    Regression coverage for spec feature-structure-sync-gap Task 1:
+    lcm_casting._interface_cache gains PhNCFeatures, PhNCSegments,
+    PhPhoneme, PartOfSpeech, PosFeatures, FsComplexFeature, FsFeatStruc,
+    FsComplexValue, FsClosedValue. Read-only against Ngoreme FLEx -- no
+    writes are performed.
+    """
+
+    def test_cast_to_concrete_resolves_all_nine_owner_classnames(
+        self, ngoreme_readonly, capsys
+    ):
+        from flexlibs2.code.lcm_casting import cast_to_concrete
+        from SIL.LCModel import (
+            IPhNCFeatures,
+            IPhNCSegments,
+            IPhPhoneme,
+            IPartOfSpeech,
+            IFsComplexFeature,
+            IFsFeatStruc,
+            IFsClosedValue,
+        )
+        try:
+            from SIL.LCModel import IFsComplexValue
+        except ImportError:
+            IFsComplexValue = None
+        try:
+            from SIL.LCModel import IPosFeatures
+        except ImportError:
+            IPosFeatures = None
+
+        project = ngoreme_readonly
+
+        fs_family = _locate_featstruc_family_hvos(project)
+
+        # (ClassName, located_hvo, expected_interface, defining_attr)
+        # defining_attr is a property declared ONLY on the concrete
+        # interface (confirmed against tests/contract/snapshots/
+        # liblcm_baseline.json where present) -- hasattr on the raw
+        # project.Object(hvo) result must be False, and True after cast.
+        cases = [
+            ("PartOfSpeech", _locate_pos_hvo(project), IPartOfSpeech, "DefaultFeaturesOA"),
+            ("PhPhoneme", _locate_phoneme_hvo(project), IPhPhoneme, "FeaturesOA"),
+            ("PhNCFeatures", _locate_natural_class_hvo(project, "PhNCFeatures"), IPhNCFeatures, "FeaturesOA"),
+            ("PhNCSegments", _locate_natural_class_hvo(project, "PhNCSegments"), IPhNCSegments, "SegmentsRC"),
+            ("FsComplexFeature", _locate_complex_feature_hvo(project), IFsComplexFeature, "DefaultOA"),
+            ("FsFeatStruc", fs_family["FsFeatStruc"], IFsFeatStruc, "FeatureSpecsOC"),
+            ("FsComplexValue", fs_family["FsComplexValue"], IFsComplexValue, "ValueOA"),
+            ("FsClosedValue", fs_family["FsClosedValue"], IFsClosedValue, "ValueRA"),
+            # PosFeatures has no confirmed enumeration path anywhere in
+            # this repo (no snapshot entry, no existing unconditional
+            # import, no Operations method that surfaces it) -- see the
+            # cycle2 report. Included so a future maintainer who does
+            # find a live instance only has to fill in the locator.
+            ("PosFeatures", None, IPosFeatures, "FeaturesOA"),
+        ]
+
+        exercised = []
+        skipped = []
+        for class_name, hvo, expected_interface, defining_attr in cases:
+            if expected_interface is None:
+                skipped.append(f"{class_name} (interface not present in this LCM version)")
+                continue
+            if hvo is None:
+                skipped.append(f"{class_name} (no live instance located in Ngoreme FLEx)")
+                continue
+
+            # Base-interface view: guaranteed bare ICmObject (C2).
+            base_obj = project.Object(hvo)
+            assert base_obj.ClassName == class_name, (
+                f"{class_name}: project.Object({hvo}) returned a different "
+                f"ClassName ({base_obj.ClassName!r}); locator harvested a "
+                f"stale/wrong Hvo."
+            )
+
+            concrete = cast_to_concrete(base_obj)
+            assert isinstance(concrete, expected_interface), (
+                f"{class_name}: cast_to_concrete(project.Object({hvo})) did "
+                f"not resolve to {expected_interface}. This is the T1 "
+                f"regression -- lcm_casting._interface_cache must map "
+                f"{class_name!r} to this interface."
+            )
+            assert hasattr(concrete, defining_attr), (
+                f"{class_name}: cast result is missing {defining_attr!r}, "
+                f"which is declared only on the concrete interface."
+            )
+            exercised.append(class_name)
+
+        print(f"\n[T1] Exercised base-interface-view cast for: {exercised}")
+        if skipped:
+            print(f"[T1] Skipped (see reasons): {skipped}")
+
+        assert exercised, (
+            "No feature-structure owner ClassNames could be located live "
+            f"in Ngoreme FLEx to exercise this regression test. Skipped: {skipped}"
         )

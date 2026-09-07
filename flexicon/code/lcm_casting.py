@@ -210,6 +210,66 @@ def _ensure_interfaces() -> None:
         IWfiAnalysis = None
         ILangProject = None
 
+    # Feature-structure owner interfaces (phonology) - spec
+    # feature-structure-sync-gap, decision D3. IPhNCFeatures and
+    # IPhPhoneme both declare FeaturesOA directly; IPhNCSegments does
+    # not (it uses SegmentsRC instead) but is imported alongside them
+    # because all three are queried through the same PhNC/Phoneme
+    # ClassName-discrimination path.
+    try:
+        from SIL.LCModel import (
+            IPhNCFeatures,
+            IPhNCSegments,
+            IPhPhoneme,
+        )
+    except ImportError:
+        IPhNCFeatures = IPhNCSegments = IPhPhoneme = None
+
+    # Part-of-speech interface - confirmed real and already imported
+    # unconditionally elsewhere in this repo (e.g. POSOperations.py),
+    # so failure here would indicate a genuine environment problem, not
+    # an absent/renamed type. Kept in its own guarded block regardless,
+    # per this module's established per-interface isolation convention.
+    try:
+        from SIL.LCModel import IPartOfSpeech
+    except ImportError:
+        IPartOfSpeech = None
+
+    # IPosFeatures - CONFIRMED ABSENT from this LCM version by live
+    # introspection (2026-09-07, via `pytest tests/contract/
+    # test_lcm_contract.py::TestLiveContractVerification -m requires_liblcm`,
+    # `liblcm_snapshot["missing_types"] == ["IPosFeatures"]`). Only a
+    # descriptive comment at InflectionFeatureOperations.py:486
+    # ("IPosFeatures.FeaturesOA") ever referenced this name; no snapshot,
+    # probe, or existing import confirms it. Per this module's own
+    # precedent for a name that plainly does not exist in LCM
+    # (IPhReduplicationRule below), this is a hardcoded None with NO
+    # `from SIL.LCModel import IPosFeatures` attempt -- a real import
+    # statement would (a) always raise ImportError on every environment,
+    # and (b) get picked up by tests/contract/test_lcm_contract.py's
+    # static AST extractor as an "expected" type, permanently failing
+    # TestLiveContractVerification.test_all_types_found. The D3 registry
+    # slot is kept (see the registration block below) so a future
+    # LCM version that does add this class only needs this line changed.
+    IPosFeatures = None
+
+    # Feature-structure interfaces themselves (IFsFeatStruc and its
+    # nested members). IFsComplexFeature, IFsFeatStruc, and
+    # IFsClosedValue are already imported unconditionally elsewhere
+    # (InflectionFeatureOperations.py); IFsComplexValue is confirmed by
+    # the live probe (evidence/live-cycle1-probe.md item "Create(Guid)")
+    # even though it is absent from tests/contract/snapshots/
+    # liblcm_baseline.json (a documented P2 snapshot gap, spec section 7).
+    try:
+        from SIL.LCModel import (
+            IFsComplexFeature,
+            IFsFeatStruc,
+            IFsComplexValue,
+            IFsClosedValue,
+        )
+    except ImportError:
+        IFsComplexFeature = IFsFeatStruc = IFsComplexValue = IFsClosedValue = None
+
     _interface_cache = {
         # MSA types - used for grammatical category assignment
         "MoStemMsa": IMoStemMsa,
@@ -293,6 +353,54 @@ def _ensure_interfaces() -> None:
         # silently no-opping NoteOperations.Delete/Duplicate's
         # `hasattr(parent, "AnnotationsOC")` checks.
         _interface_cache["LangProject"] = ILangProject
+
+    # Feature-structure owner types (spec feature-structure-sync-gap,
+    # decision D3; issues #251/#252/#256, and the #133 completion at
+    # InflectionFeatureOperations.py:492-493). `IFsFeatStruc` is owned
+    # under a DIFFERENTLY NAMED atomic property on almost every owner
+    # (MsFeaturesOA, InflFeatsOA, From/ToMsFeaturesOA, DefaultFeaturesOA,
+    # InherFeatValOA, MsEnvFeaturesOA, FeaturesOA) and this cache had NO
+    # entry at all for any feature-structure owner except the four
+    # MSA/allomorph classes already registered above
+    # (MoStemMsa/MoInflAffMsa/MoDerivAffMsa/MoAffixAllomorph).
+    # `_GetTypedOwner()` (BaseOperations.py:1564) therefore returned
+    # these owners unchanged as a bare ICmObject, which is why the #133
+    # fix's `hasattr(parent, "FeaturesOA")` guard at
+    # InflectionFeatureOperations.py:493 silently did nothing for
+    # exactly the owner types its own comment at :485-486 names
+    # (IPosFeatures.FeaturesOA, IFsComplexFeature.FeaturesOA) -- and the
+    # same reasoning applies to IPhNCFeatures/IPhPhoneme/IPartOfSpeech.
+    # Registering them here is the prerequisite for the shared
+    # owner-property resolver (T2) and does not by itself resolve the
+    # #251/#252/#256 family -- see this task's cycle2 report for the
+    # caller-by-caller behavioural delta this addition causes.
+    # FsFeatStruc/FsComplexValue/FsClosedValue are needed the other
+    # direction: once a feature structure (or one of its FeatureSpecsOC
+    # members / a nested ValueOA) is reached via an HVO/GUID or a
+    # `.Owner` walk, it too arrives as a bare ICmObject and must be cast
+    # to expose FeatureSpecsOC / ValueOA / FeatureRA-ValueRA.
+    # PhNCSegments has NO FeaturesOA (it uses SegmentsRC instead) and is
+    # inert for this feature; it is registered here only to unblock
+    # spec 233-basetype-cast-sweep's SegmentsRC cast sweep, which shares
+    # this same cache.
+    if IPhNCFeatures is not None:
+        _interface_cache["PhNCFeatures"] = IPhNCFeatures
+    if IPhNCSegments is not None:
+        _interface_cache["PhNCSegments"] = IPhNCSegments
+    if IPhPhoneme is not None:
+        _interface_cache["PhPhoneme"] = IPhPhoneme
+    if IPartOfSpeech is not None:
+        _interface_cache["PartOfSpeech"] = IPartOfSpeech
+    if IPosFeatures is not None:
+        _interface_cache["PosFeatures"] = IPosFeatures
+    if IFsComplexFeature is not None:
+        _interface_cache["FsComplexFeature"] = IFsComplexFeature
+    if IFsFeatStruc is not None:
+        _interface_cache["FsFeatStruc"] = IFsFeatStruc
+    if IFsComplexValue is not None:
+        _interface_cache["FsComplexValue"] = IFsComplexValue
+    if IFsClosedValue is not None:
+        _interface_cache["FsClosedValue"] = IFsClosedValue
 
     _interfaces_loaded = True
 
