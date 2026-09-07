@@ -88,6 +88,39 @@ def _private_method_source(mangled_name):
     return inspect.getsource(obj)
 
 
+def _hasattr_second_args(src):
+    """
+    Walk the full AST of a function's source (docstring included -- a
+    plain string literal in the docstring never produces an ast.Call
+    node, so it cannot false-positive here) and return the second-
+    argument string literal of every top-level-or-nested `hasattr(...)`
+    call found anywhere in the body.
+
+    T6b item 4: this is STRICTLY STRONGER than the old `"hasattr" not
+    in src` substring check -- it would catch a hasattr probe added
+    anywhere in the body (nested in an `if`, a comprehension, etc.),
+    not just literal-text presence, and it lets a caller allowlist
+    *which* attribute names are legitimate rather than banning the
+    token outright.
+    """
+    dedented = textwrap.dedent(src)
+    tree = ast.parse(dedented)
+    names = []
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "hasattr"
+        ):
+            arg = node.args[1]
+            assert isinstance(arg, ast.Constant) and isinstance(arg.value, str), (
+                f"hasattr() call with a non-literal second argument: "
+                f"{ast.dump(node)}"
+            )
+            names.append(arg.value)
+    return names
+
+
 def _body_only(src):
     """
     Strip the docstring (and decorator) out of a method's source so
@@ -217,6 +250,71 @@ class TestMSASyncStatic:
         assert "self.project.Object(msa_or_hvo)" in src
         assert "IMoStemMsa" in src and "IMoInflAffMsa" in src
         assert "IMoDerivAffMsa" in src and "IMoUnclassifiedAffixMsa" in src
+
+    # T6b item 4: the zero-hasattr rule above (test_zero_hasattr_gates_on_
+    # feature_struct_props) is correct for GetSyncableProperties/
+    # ApplySyncableProperties/__CaptureFeatureStrucProp/
+    # __ApplyFeatureStrucProp -- those four have NO legitimate reason to
+    # call hasattr on anything. __GetMsaObject is different: it has ONE
+    # hasattr call (`hasattr(msa_or_hvo, "_obj")`, MSAOperations.py:1144)
+    # that is a Python-level wrapper-unwrap, not a probe for a subtype-
+    # declared LCM member -- a blanket ban would force deleting working
+    # code. The rule this test encodes instead (per lead ruling 1):
+    # hasattr() on a SUBTYPE-DECLARED LCM member (e.g. MsFeaturesOA,
+    # InflFeatsOA) is forbidden; hasattr() on "_obj", "ClassName", "Hvo"
+    # -- all present regardless of concrete ClassName -- is permitted.
+    _ALLOWED_HASATTR_ATTRS = frozenset({"_obj", "ClassName", "Hvo"})
+
+    def test_get_msa_object_hasattr_calls_are_allowlisted(self):
+        """
+        D5 / T6b item 4: every hasattr() call inside __GetMsaObject must
+        target only "_obj" / "ClassName" / "Hvo" -- never a subtype-
+        declared member. MSAOperations.py:1144's
+        `hasattr(msa_or_hvo, "_obj")` is confirmed legitimate (wrapper
+        unwrap); this test would fail loudly if a future edit added a
+        hasattr probe on something like "MsFeaturesOA" instead of the
+        ClassName-driven cast table that follows it.
+        """
+        src = _private_method_source("_MSAOperations__GetMsaObject")
+        names = _hasattr_second_args(src)
+        assert names, (
+            "expected at least one hasattr() call in __GetMsaObject "
+            "(the _obj wrapper-unwrap at :1144) -- if this is empty the "
+            "method changed shape and this test's premise needs "
+            "re-examining, not deleting."
+        )
+        for attr in names:
+            assert attr in self._ALLOWED_HASATTR_ATTRS, (
+                f"__GetMsaObject calls hasattr(x, {attr!r}) -- only "
+                f"{sorted(self._ALLOWED_HASATTR_ATTRS)} are permitted. "
+                f"A subtype-declared LCM member must be discriminated "
+                f"via .ClassName + explicit cast, never hasattr (D5)."
+            )
+
+    def test_resolve_feature_struc_owner_hasattr_calls_are_allowlisted(self):
+        """
+        Same allowlisted rule as above, applied to
+        BaseOperations._ResolveFeatureStrucOwner (def at
+        BaseOperations.py:1717) -- NOTE this reaches outside
+        MSAOperations into the shared BaseOperations class; it is
+        included here (rather than left as a stated boundary) because
+        the rule and the allowlist are identical and lead ruling 1
+        already confirmed all three of that method's hasattr calls
+        (":obj" at :1819/:1821, "ClassName" at :1824) are legitimate.
+        """
+        from flexicon.code.BaseOperations import BaseOperations
+
+        src = inspect.getsource(
+            BaseOperations.__dict__["_ResolveFeatureStrucOwner"]
+        )
+        names = _hasattr_second_args(src)
+        assert names, "expected hasattr() calls in _ResolveFeatureStrucOwner"
+        for attr in names:
+            assert attr in self._ALLOWED_HASATTR_ATTRS, (
+                f"_ResolveFeatureStrucOwner calls hasattr(x, {attr!r}) -- "
+                f"only {sorted(self._ALLOWED_HASATTR_ATTRS)} are "
+                f"permitted (D5)."
+            )
 
 
 # ============================================================================
@@ -566,7 +664,96 @@ class TestMSASyncApplyPopBeforeSuper:
 
 
 class TestMSASyncApplyPresenceGate:
-    """C6: gate on key PRESENCE, never truthiness."""
+    """
+    C6: gate on key PRESENCE, never truthiness.
+
+    Cycle-10 mutation finding: the two tests below this docstring
+    (pre-existing) cannot actually separate a presence gate from a
+    truthiness gate, because the fixture's Guid value
+    ("12121212-...") is truthy in both cases where it is exercised --
+    mutating `__ApplyFeatureStrucProp`'s `if key in props or guid_key
+    in props:` to `if props.get(key) or props.get(guid_key):` left both
+    green, since a truthy guid_key still passes a truthiness check. The
+    two FALSY-BUT-PRESENT tests added below make presence and
+    truthiness come apart on purpose: `{}` and `""` are both PRESENT
+    but FALSY, so a truthiness-gated implementation would (wrongly)
+    treat them as absent and skip `_ApplyFeatureStruc` -- offline-
+    mutation-verified, see specs/feature-structure-sync-gap/evidence/
+    live-T6b.md.
+    """
+
+    def test_falsy_but_present_feature_struct_key_still_triggers_apply(
+        self, monkeypatch, msa_ops
+    ):
+        """
+        The "MsFeatures" key present with a FALSY value ({}) must still
+        trigger _ApplyFeatureStruc -- `if key in props` is True even
+        though `props[key]` itself is falsy. A truthiness-gated
+        `if props.get(key) or props.get(guid_key):` would (wrongly)
+        treat an all-falsy props dict as "nothing to apply" and skip.
+        """
+        from flexicon.code.BaseOperations import BaseOperations
+        from flexicon.code.Lexicon.MSAOperations import MSAOperations
+
+        monkeypatch.setattr(
+            BaseOperations, "ApplySyncableProperties", _make_super_spy([])
+        )
+        monkeypatch.setattr(
+            MSAOperations, "_ResolveFeatureStrucOwner", _make_fake_resolver([])
+        )
+        apply_calls = []
+        monkeypatch.setattr(
+            MSAOperations, "_ApplyFeatureStruc", _make_apply_spy(apply_calls)
+        )
+
+        msa = _FakeMsa("MoStemMsa")
+        # Both the struct key AND its guid sibling are PRESENT but FALSY.
+        props = {"MsFeatures": {}, "MsFeaturesGuid": ""}
+
+        msa_ops.ApplySyncableProperties(msa, props)
+
+        assert len(apply_calls) == 1, (
+            "A present-but-falsy MsFeatures/MsFeaturesGuid pair must "
+            "still trigger _ApplyFeatureStruc (C6 presence gate, not "
+            "truthiness)."
+        )
+        assert apply_calls[0]["spec_dict"] == {}
+        assert apply_calls[0]["struct_guid"] == ""
+
+    def test_falsy_but_present_guid_only_key_still_triggers_apply(
+        self, monkeypatch, msa_ops
+    ):
+        """
+        Same as above but only the Guid sibling is present -- and it
+        too is falsy ("", not merely absent). Distinguishes this from
+        test_guid_only_present_still_triggers_apply_with_empty_spec
+        below, whose Guid value is truthy.
+        """
+        from flexicon.code.BaseOperations import BaseOperations
+        from flexicon.code.Lexicon.MSAOperations import MSAOperations
+
+        monkeypatch.setattr(
+            BaseOperations, "ApplySyncableProperties", _make_super_spy([])
+        )
+        monkeypatch.setattr(
+            MSAOperations, "_ResolveFeatureStrucOwner", _make_fake_resolver([])
+        )
+        apply_calls = []
+        monkeypatch.setattr(
+            MSAOperations, "_ApplyFeatureStruc", _make_apply_spy(apply_calls)
+        )
+
+        msa = _FakeMsa("MoStemMsa")
+        props = {"MsFeaturesGuid": ""}
+
+        msa_ops.ApplySyncableProperties(msa, props)
+
+        assert len(apply_calls) == 1, (
+            "A present-but-falsy MsFeaturesGuid (with MsFeatures "
+            "absent) must still trigger _ApplyFeatureStruc."
+        )
+        assert apply_calls[0]["spec_dict"] == {}
+        assert apply_calls[0]["struct_guid"] == ""
 
     def test_guid_only_present_still_triggers_apply_with_empty_spec(
         self, monkeypatch, msa_ops
@@ -665,9 +852,28 @@ class TestMSASyncApplyDerivAffBothSlots:
 
 
 class TestMSASyncApplyUnclassifiedAffixNoRaise:
-    """R2: MoUnclassifiedAffixMsa MUST NOT RAISE, even if a (careless)
+    """
+    R2: MoUnclassifiedAffixMsa MUST NOT RAISE, even if a (careless)
     caller's props dict carries feature-struct keys it should never have
-    -- discrimination happens before the resolver is ever consulted."""
+    -- discrimination happens before the resolver is ever consulted.
+
+    T6b item 5 (NO NEW TEST -- this is a scope note, not a new
+    assertion): cycle-10 mutation testing found this class's
+    behavioural coverage is STRUCTURALLY IMPOSSIBLE to make
+    mutation-resistant. `ApplySyncableProperties`'s if/elif dispatch
+    (MSAOperations.py:1003 area) EXCLUDES MoUnclassifiedAffixMsa from
+    every branch that reaches the resolver -- so removing BOTH the
+    "MoUnclassifiedAffixMsa: return early" short-circuit AND the
+    `_resolver_must_not_be_called` stub's reason for existing left this
+    no-raise test green regardless, because there is simply no code
+    path left that COULD raise for this ClassName even without the
+    short-circuit (the else-branch below the if/elif is a silent no-op,
+    not a fallthrough into the stem/infl/deriv branches). The real lock
+    on R2's discrimination-BEFORE-resolver ordering is the two static
+    AST tests test_unclassified_affix_discriminated_before_resolver_in_
+    capture and ..._in_apply (TestMSASyncStatic, Section A) -- do not
+    chase a behavioural test here that cannot exist.
+    """
 
     def test_apply_never_calls_resolver_and_does_not_raise(
         self, monkeypatch, msa_ops
@@ -693,13 +899,34 @@ class TestMSASyncApplyUnclassifiedAffixNoRaise:
         msa_ops.ApplySyncableProperties(msa, props)
 
 
-class TestMSASyncApplyRaisesOnUnresolvedGuid:
-    """C7: an unresolvable feature/value/type GUID must RAISE
-    FP_ParameterError naming it -- never be silently dropped. This test
-    confirms MSAOperations.ApplySyncableProperties PROPAGATES the raise
-    from _ApplyFeatureStruc rather than swallowing it."""
+class TestMSASyncApplyRaisePropagationThroughPublicSurface:
+    """
+    C7 raise-PROPAGATION coverage only -- NOT enforcement coverage.
 
-    def test_apply_propagates_fp_parameter_error(self, monkeypatch, msa_ops):
+    Renamed from TestMSASyncApplyRaisesOnUnresolvedGuid (T6b item 2).
+    Cycle-10 mutation finding: this class's test double
+    (_make_apply_spy) raises unconditionally whenever `raise_guid` is
+    passed, and never reads the `on_unresolved` argument it receives --
+    so mutating MSAOperations.__ApplyFeatureStrucProp's hardcoded
+    `on_unresolved="raise"` to `"skip"` left this test green (the spy
+    doesn't care what policy string arrived, it raises regardless).
+    That means this class was never actually locking C7's real
+    enforcement -- only that *when* _ApplyFeatureStruc happens to
+    raise, MSAOperations.ApplySyncableProperties propagates rather than
+    swallows it. Per lead ruling 2, the fix is NOT to make the spy
+    branch on on_unresolved (that would re-implement production policy
+    inside the test double, and the test would then pass by agreeing
+    with itself) -- it is to (a) keep the propagation coverage, and
+    (b) additionally assert the recorded call actually carried
+    on_unresolved == "raise", which DOES die under the raise->skip
+    mutation. C7's real enforcement lock remains the live test
+    test_apply_raises_on_unresolved_feature_guid (:897 area below,
+    against a REAL unresolved GUID with no mocked _ApplyFeatureStruc).
+    """
+
+    def test_apply_propagates_fp_parameter_error_and_passes_raise_policy(
+        self, monkeypatch, msa_ops
+    ):
         from flexicon.code.BaseOperations import BaseOperations, FP_ParameterError
         from flexicon.code.Lexicon.MSAOperations import MSAOperations
 
@@ -710,10 +937,11 @@ class TestMSASyncApplyRaisesOnUnresolvedGuid:
             MSAOperations, "_ResolveFeatureStrucOwner", _make_fake_resolver([])
         )
         bogus_guid = "00000000-0000-0000-0000-0000000000ff"
+        records = []
         monkeypatch.setattr(
             MSAOperations,
             "_ApplyFeatureStruc",
-            _make_apply_spy([], raise_guid=bogus_guid),
+            _make_apply_spy(records, raise_guid=bogus_guid),
         )
 
         msa = _FakeMsa("MoStemMsa")
@@ -724,6 +952,18 @@ class TestMSASyncApplyRaisesOnUnresolvedGuid:
 
         with pytest.raises(FP_ParameterError, match=bogus_guid):
             msa_ops.ApplySyncableProperties(msa, props)
+
+        # Dies under the raise->skip mutation the spy itself cannot
+        # catch: confirms MSAOperations actually asked for "raise"
+        # policy on this call, not merely that the spy (which raises
+        # unconditionally regardless of the value passed) was invoked.
+        assert len(records) == 1
+        assert records[0]["on_unresolved"] == "raise", (
+            "MSAOperations.__ApplyFeatureStrucProp must call "
+            "_ApplyFeatureStruc with on_unresolved='raise' "
+            "unconditionally (C7) -- this is the one assertion in this "
+            "class that would fail if that were mutated to 'skip'."
+        )
 
 
 # ============================================================================
@@ -760,6 +1000,86 @@ def live_msa_factory(target_sandbox):
         sandbox.POS.Delete(pos_obj)
     except Exception:
         pass
+
+
+@pytest.mark.requires_live_project
+class TestMSASyncLiveGetMsaObjectCast:
+    """
+    T6b item 1 (the item Checkpoint 3b gates on): a DIRECT,
+    mutation-resistant live test of __GetMsaObject's C2 cast.
+
+    Cycle-10 mutation testing removed the cast (made __GetMsaObject
+    return `obj` unconditionally) and all 6 pre-existing live tests in
+    this file stayed green:
+      - test_get_msa_object_casts_on_hvo_and_guid_path (Section A,
+        TestMSASyncStatic) is a STATIC source-pattern check -- it reads
+        the method's source text, so it cannot observe a removed cast
+        at runtime at all.
+      - test_hvo_and_guid_entry_paths_capture_feature_keys (below, in
+        TestMSASyncLiveRoundTrip) goes through
+        GetSyncableProperties -> _ResolveFeatureStrucOwner, which casts
+        to the concrete interface INDEPENDENTLY of __GetMsaObject's own
+        cast -- so it is insensitive to whether __GetMsaObject's cast
+        exists.
+
+    This class instead calls the private resolver DIRECTLY by its
+    mangled name (bypassing GetSyncableProperties and
+    _ResolveFeatureStrucOwner entirely) and reads a SUBTYPE-ONLY member
+    straight off the returned object -- MsFeaturesOA / InflFeatsOA are
+    declared on IMoStemMsa / IMoInflAffMsa respectively, and are NOT
+    reachable on the bare ICmObject that self.project.Object(hvo_or_guid)
+    returns. Without the cast, `.MsFeaturesOA` raises AttributeError;
+    that is exactly the failure mode this class is designed to surface.
+    Verified by mutation in a disposable git worktree (removing the
+    cast) -- see specs/feature-structure-sync-gap/evidence/live-T6b.md
+    for the exact failure message.
+    """
+
+    @pytest.mark.live_phase("MSAOperations", "modify")
+    def test_hvo_and_guid_path_cast_to_concrete_stem_msa(self, live_msa_factory):
+        sandbox, entry, new_sense, pos_obj = live_msa_factory
+        stem = sandbox.MSA.CreateStem(new_sense(), pos_obj)
+        hvo = stem.Hvo
+        guid_str = str(stem.Guid)
+
+        # BINDING (lead ruling 3): the PRE-cast bare object fetched via
+        # sandbox.Object(hvo) must LACK the subtype-only member --
+        # without this, the assertions below would only prove the cast
+        # is harmless, never that it does anything (the exact claim
+        # cycle 10 withdrew). If this assertion goes RED, STOP AND
+        # REPORT rather than deleting it: it would mean the
+        # 0-true/2088-false hasattr premise this whole campaign rests
+        # on no longer holds.
+        assert not hasattr(sandbox.Object(hvo), "MsFeaturesOA")
+
+        result_hvo = sandbox.MSA._MSAOperations__GetMsaObject(hvo)
+        assert result_hvo.ClassName == "MoStemMsa"
+        # Direct read of a subtype-only member -- AttributeError here
+        # (not merely a wrong value) is the cast-removed failure mode.
+        assert result_hvo.MsFeaturesOA is None
+
+        result_guid = sandbox.MSA._MSAOperations__GetMsaObject(guid_str)
+        assert result_guid.ClassName == "MoStemMsa"
+        assert result_guid.MsFeaturesOA is None
+
+    @pytest.mark.live_phase("MSAOperations", "modify")
+    def test_hvo_and_guid_path_cast_to_concrete_infl_aff_msa(
+        self, live_msa_factory
+    ):
+        sandbox, entry, new_sense, pos_obj = live_msa_factory
+        infl = sandbox.MSA.CreateInflAff(new_sense(), pos_obj)
+        hvo = infl.Hvo
+        guid_str = str(infl.Guid)
+
+        assert not hasattr(sandbox.Object(hvo), "InflFeatsOA")
+
+        result_hvo = sandbox.MSA._MSAOperations__GetMsaObject(hvo)
+        assert result_hvo.ClassName == "MoInflAffMsa"
+        assert result_hvo.InflFeatsOA is None
+
+        result_guid = sandbox.MSA._MSAOperations__GetMsaObject(guid_str)
+        assert result_guid.ClassName == "MoInflAffMsa"
+        assert result_guid.InflFeatsOA is None
 
 
 @pytest.mark.requires_live_project
@@ -880,7 +1200,20 @@ class TestMSASyncLiveRoundTrip:
     def test_unclassified_affix_msa_capture_and_apply_do_not_raise(
         self, live_msa_factory
     ):
-        """R2, against a REAL MoUnclassifiedAffixMsa (not a fake)."""
+        """
+        R2, against a REAL MoUnclassifiedAffixMsa (not a fake).
+
+        T6b item 5 scope note: like its offline sibling
+        (TestMSASyncApplyUnclassifiedAffixNoRaise), this test's
+        behavioural coverage cannot be made mutation-resistant --
+        MoUnclassifiedAffixMsa is excluded from the if/elif dispatch
+        regardless of whether the explicit early-return short-circuit
+        is present, so this test stays green either way and cannot
+        distinguish presence from absence of that short-circuit. The
+        real lock is the two static AST tests in TestMSASyncStatic:
+        test_unclassified_affix_discriminated_before_resolver_in_capture
+        and ..._in_apply.
+        """
         sandbox, entry, new_sense, pos_obj = live_msa_factory
 
         unclass = sandbox.MSA.CreateUnclassifiedAffix(new_sense(), pos_obj)
