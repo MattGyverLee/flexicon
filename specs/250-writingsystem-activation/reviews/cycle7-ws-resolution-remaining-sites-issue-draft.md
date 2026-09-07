@@ -62,7 +62,7 @@ warning, no exception, and no log line — the alt simply is not there.
 Site 2 has the same shape for example-sentence translations: the example's
 own fields transfer, its translations lose divergent alts.
 
-### The fix is a one-line substitution per site, by design
+### Site 1 is a one-line substitution. Site 2 is not — read this before estimating
 
 #250's contract **C-D4-7** required the new resolver to be a module-level
 function taking every input as a parameter — no `self`, no project handle —
@@ -83,6 +83,14 @@ tgt_handle = _resolve_ws_handle(target_ws_by_id, tgt_ws_id, _index_cache)
 `_index_cache` should be a dict created once per apply call and passed to
 every iteration, per **C-D4-4** (build the normalized side-index at most
 once per apply operation; the all-exact-hits path stays allocation-free).
+
+**That holds for site 1 only.** For site 2 the substitution is necessary but
+not sufficient, and treating it as a one-liner will produce a bug. See
+"Decisions" item 2 below: the loop creates and attaches the `ICmTranslation`
+*before* it resolves any writing system, so introducing a resolver that can
+raise turns a previously-total operation into a partially-completed one.
+Site 2 needs the resolution reordered ahead of object creation, or a proven
+rollback — not a one-line swap. Estimate the two sites separately.
 
 ### Decisions the implementer must make — this is why it is not a trivial PR
 
@@ -160,12 +168,18 @@ ratchet's three-site set.
   criterion 8. Filing this converts a documented known-limitation into a
   tracked work item. If you would rather leave it as a documented limitation
   for now, that is a coherent choice and nothing in #250 depends on it.
-- Consider whether this should be **one issue or two**. The two sites share
-  a root cause and a one-line fix, which argues for one. They sit in
-  different domains (Grammar vs Lexicon) with different reviewers and
-  different live-verification fixtures, which argues for two. I lean toward
-  **one**, because the fix is identical and splitting it doubles the
-  live-verification cost for no design benefit.
+- **One issue or two — I've changed my answer to two.** My first draft
+  leaned "one issue", reasoning that the two sites share a root cause and an
+  identical one-line fix. The second half of that is wrong. Site 1
+  (`BasicIPASymbol`) really is the one-line C-D4-7 substitution. Site 2
+  (`TranslationsOC`) is not: because the `ICmTranslation` is created and
+  attached before any writing system is resolved, adding a resolver that can
+  raise converts a total operation into a partial one, and closing it
+  properly means reordering the loop or proving the transaction rolls back.
+  Different sizes, different risk, different reviewers (Grammar vs Lexicon),
+  different live fixtures. Bundling them would let the easy one carry the
+  hard one through review. **Two issues**, with site 1 as the quick win and
+  site 2 explicitly scoped as a correctness change rather than a substitution.
 - `flexicon-19` is drafting the D4-T6 comment for #250 itself. These two
   texts should not contradict each other on the coverage boundary; this
   draft has been shared with that session for exactly that reason.
