@@ -143,5 +143,115 @@ python -m pytest tests/operations/test_issue242_whitespace_probe.py -m requires_
 
 ## RESULTS (filled in AFTER the live run; predictions above are unedited)
 
-_placeholder -- filled in by the next commit in this same file, immediately
-after the live command above is executed._
+`run_mode` in `tests/live_status.json`: **`"live"`** (confirmed, not `"mock"`).
+Full run: `5 passed, 163 warnings in 7.42s`. `FLEXLIBS_REQUIRE_LIVE=1` was set
+for the whole run. `git diff --stat -- flexicon/` re-run after the live
+command: still empty (pasted above and reconfirmed after the run).
+
+### test_p1 / test_p2 -- Layer A (current shipped writers), payload table
+
+Column headers: `Create` / `InsertAt` / `SetText` are from `test_p1`;
+`AppendSentence full` is the whole paragraph Contents after append (`"Seed. " + text`)
+and `AppendSentence baseline` is `Segments.GetBaselineText()` on the new
+segment, both from `test_p2`.
+
+| payload | raw | Create | InsertAt | SetText | AppendSentence full | AppendSentence baseline |
+|---|---|---|---|---|---|---|
+| trailing_space | `'ka '` | `'ka'` | `'ka'` | `'ka'` | `'Seed. ka'` | `'Seed. ka'` |
+| leading_space | `' ka'` | `'ka'` | `'ka'` | `'ka'` | `'Seed. ka'` | `'Seed. ka'` |
+| trailing_tab | `'ka\t'` | `'ka'` | `'ka'` | `'ka'` | `'Seed. ka'` | `'Seed. ka'` |
+| trailing_newline | `'ka\n'` | `'ka'` | `'ka'` | `'ka'` | `'Seed. ka'` | `'Seed. ka'` |
+| trailing_nbsp | `'ka\xa0'` | `'ka'` | `'ka'` | `'ka'` | `'Seed. ka'` | `'Seed. ka'` |
+| internal_double_space | `'ka  ba'` | `'ka  ba'` | `'ka  ba'` | `'ka  ba'` | `'Seed. ka  ba'` | `'Seed. ka  ba'` |
+| null_marker_bare | `'***'` | `'***'` | `'***'` | `'***'` | `'Seed. ***'` | `'Seed. ***'` |
+| null_marker_padded | `' *** '` | `'***'` | `'***'` | `'***'` | `'Seed. ***'` | `'Seed. ***'` |
+
+**PREDICTIONS MATCHED, no misses.** All four sites lose leading/trailing
+space, tab, newline, and NBSP identically (`.strip()` is symmetric and
+NBSP is Python-whitespace); all four preserve internal double spaces
+unchanged; all four collapse `' *** '` to exactly `'***'` -- confirming
+the padded null marker becomes byte-identical to the real FLEx empty
+marker after this write path, which is a semantic reclassification to
+"empty" for any `normalize_text()`/`is_empty_text()` consumer, not just a
+whitespace trim. Create/InsertAt/SetText agreed on every payload as
+predicted (one shared source line). The segment baseline was ALSO a
+clean tail-match of paragraph Contents for every payload -- offsets ARE
+computed synchronously inside the `Contents` setter; the "will set ...
+when re-parsed" comment at `SegmentOperations.py:639-640` did NOT
+manifest as a lag in this probe. This was flagged as an uncertain,
+non-confident prediction going in; it held.
+
+### test_p3 -- Layer B (bypass, raw `MakeString` direct to `para.Contents`)
+
+| payload | raw | bypass reread | exact match |
+|---|---|---|---|
+| trailing_space | `'ka '` | `'ka '` | **True** |
+| leading_space | `' ka'` | `' ka'` | **True** |
+| trailing_tab | `'ka\t'` | `'ka\t'` | **True** |
+| trailing_newline | `'ka\n'` | `'ka\n'` | **True** |
+| trailing_nbsp | `'ka\xa0'` | `'ka\xa0'` | **True** |
+| internal_double_space | `'ka  ba'` | `'ka  ba'` | **True** |
+| null_marker_bare | `'***'` | `'***'` | **True** |
+| null_marker_padded | `' *** '` | `' *** '` | **True** |
+
+**PREDICTION MATCHED, no misses.** Every payload in the matrix survives
+the LCM bypass byte-for-byte, with zero `.strip()` anywhere in the path.
+
+**HEADLINE ANSWER TO THE DECISION-RELEVANT QUESTION:** whitespace SURVIVES
+layer B for every payload measured. The loss measured at layer A is
+caused ENTIRELY by this library's own `.strip()` calls in the four sites
+under study. **A fix that removes/adjusts those `.strip()` calls would be
+a REAL fix, not cosmetic.**
+
+### test_p4 -- in-memory vs on-disk (layer-B bypass values, open -> write -> close -> reopen -> read)
+
+| payload | raw | in-memory | on-disk (after reopen) | agree |
+|---|---|---|---|---|
+| trailing_space | `'ka '` | `'ka '` | `'ka '` | **True** |
+| leading_space | `' ka'` | `' ka'` | `' ka'` | **True** |
+| trailing_tab | `'ka\t'` | `'ka\t'` | `'ka\t'` | **True** |
+| trailing_newline | `'ka\n'` | `'ka\n'` | `'ka\n'` | **True** |
+| trailing_nbsp | `'ka\xa0'` | `'ka\xa0'` | `'ka\xa0'` | **True** |
+| internal_double_space | `'ka  ba'` | `'ka  ba'` | `'ka  ba'` | **True** |
+| null_marker_bare | `'***'` | `'***'` | `'***'` | **True** |
+| null_marker_padded | `' *** '` | `' *** '` | `' *** '` | **True** |
+
+**PREDICTION MATCHED, no misses.** In-memory and on-disk AGREE for every
+payload measured here -- unlike item 1 of this campaign, this particular
+question (raw-whitespace persistence through `CloseProject()` + reopen)
+showed no in-memory/on-disk divergence.
+
+### test_p5 -- non-str branch divergence
+
+`_NonStrPayload().__str__() == 'ka '` (trailing space) passed to both
+writer families:
+
+- `ParagraphOperations.Create(text, payload)` -> `'ka '` -- trailing space
+  **PRESERVED** (non-str branch is `str(content)`, never stripped).
+- `SegmentOperations.AppendSentence(seed, payload)` -> full contents
+  `'Seed. ka'` (segment tail `'ka'`, no trailing space) -- trailing space
+  **LOST** (non-str branch is `str(text).strip()`, always stripped).
+
+**PREDICTION MATCHED, no misses. CONFIRMED DIVERGENCE**: the two writer
+families disagree on logically-identical non-str input purely because of
+the `isinstance(..., str)` branch shape of their respective stripping
+lines.
+
+### Headline answers (one sentence each, as required by the dispatch brief)
+
+- **Does whitespace survive layer B?** Yes -- every payload in the matrix
+  (including the padded null marker) survives the LCM bypass unchanged,
+  so the loss is entirely this library's own `.strip()` calls and a real
+  fix is possible, not merely cosmetic.
+- **Does in-memory agree with on-disk?** Yes, for every payload measured
+  here (`test_p4`, layer-B bypass values) -- in-memory and on-disk agreed
+  in all 8 cases, no CloseProject()/reopen divergence was found for raw
+  whitespace persistence.
+- **Does the segment baseline behave like the paragraph Contents?** Yes --
+  `Segments.GetBaselineText()` was a clean tail-match of the paragraph
+  Contents for every payload immediately after `AppendSentence`, with no
+  measurable reparse lag, so the segment path shows the identical
+  loss/preservation pattern as the paragraph Contents for this probe's
+  payloads (the owner's field report of 41/86 differing baselines is not
+  reproduced by this specific test shape and would need a targeted
+  follow-up against a populated corpus, not this scratch-sandbox probe).
