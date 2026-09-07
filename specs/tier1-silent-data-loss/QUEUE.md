@@ -25,7 +25,7 @@ promise, so it cannot exit the loop early.
 
 | # | status | slug | issues | why here |
 |---|--------|------|--------|----------|
-| 1 | `active` | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
+| 1 | `active` (CP-A1/T1 done, next CP-A2/T2) | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
 | 2 | `queued` | `242-paragraph-whitespace` | #242 | Cheap, self-contained, real corruption. Paragraph/Segment text writers silently strip leading/trailing whitespace. |
 | 3 | `queued` | `feature-structure-sync-gap` | #251 #252 #253 #256 | **Already in flight** -- contract frozen (C1-C8), live ground truth captured, spurt 1 done. RESUME, do not re-plan. Biggest item (T1-T17). Ships data loss today: `Allomorph` and `POS` are live sync object types. |
 | 4 | `queued` | `250-writingsystem-activation` | #250 | Deliberately LAST: resolving it requires an **API-surface policy decision** (active-only `Exists` plus a separately-named whole-store predicate, vs. an `Ensure()` that activates a store-present WS). That is the item most likely to end `needs_human`, so everything landable unattended lands first. |
@@ -41,11 +41,32 @@ untouched items behind it.
 ### 1. `243-closeproject-save-guard` (#243)
 
 **Spec+probe checkpoint DONE (spurt 1, 2026-09-07).** `spec.md` (contract
-C1-C10), `tasks.md` (T1-T5) and `STATUS.md` are written;
-`tests/operations/test_issue243_closeproject_probe.py` is 5/5 green with
-`run_mode: live` on `target_sandbox_path`; no code under `flexicon/code/` was
-modified. **Resume from `specs/243-closeproject-save-guard/.crew-handoff.json`
--- its `next_entry` is authoritative: CP-A / T1, the P1 depth-read surface.**
+C1-C11), `tasks.md` (T1-T5) and `STATUS.md` are written;
+`tests/operations/test_issue243_closeproject_probe.py` green with
+`run_mode: live` on `target_sandbox_path`.
+
+**CP-A1 / T1 DONE (spurt 2, 2026-09-07) -- first code landed under
+`flexicon/code/`.** The P1 depth-read surface
+(`_ReadActionHandlerDepth()`, `CurrentDepth` as a **property**,
+`HasOpenSessionTask()`) is in `flexicon/code/FLExProject.py`: probe 6/6 green
+with `run_mode: live`, offline suite 1290 passed (unchanged baseline), and
+`git diff --stat flexicon/code/` = **120 insertions, 0 deletions, one file**,
+so `CloseProject()` (T3) and `SaveChanges()` (the user-approval item below)
+are provably untouched. **CP-A is SPLIT: CP-A1 = T1 (done), CP-A2 = T2
+(next).** **Resume from
+`specs/243-closeproject-save-guard/.crew-handoff.json` -- its `next_entry`
+is authoritative: CP-A2 / T2 ALONE, the three internal call sites delegating
+to T1's helper with their own lenient wrappers kept. Do NOT start T3; CP-B is
+gated behind CP-A2.**
+
+Two further rulings were recorded in spurt 2 and must not be re-litigated:
+**Q3 is CLOSED -- NO `flexicon.CAPABILITIES` token** (so `flexicon/__init__.py`
+and `tests/write_path_transactions/test_capabilities.py` are out of scope for
+every remaining task), and **new contract decision C11** freezes
+`HasOpenSessionTask()`'s depth-read-before-mode-check ordering (C4 has no mode
+carve-out, and `self._undoable` does not even exist on a never-opened
+instance). **Q2** (try/finally around the whole `CloseProject()` body) and
+**Q4** (CHANGELOG wording) remain genuinely open, at T3 and T5.
 
 Two cycle-1 findings changed the plan and must not be re-litigated:
 
@@ -159,6 +180,31 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   the unguarded-End loss mechanism, reachable from flexicon's own shipped
   `SaveChanges()` docstring Example. Item 1 remains `active`; next entry is
   CP-A / T1, the first task that touches `flexicon/code/`.
+
+- **2026-09-07 -- item 1, spurt 2 (cycle 2) COMPLETE: CP-A1 / T1.** First code
+  in this campaign to land under `flexicon/code/`. Crew: `lex-programmer`
+  alone (T1 gated solo on purpose; T2 deferred, Q3 pre-ruled). Delivered the
+  P1 depth-read surface in `flexicon/code/FLExProject.py` --
+  `_ReadActionHandlerDepth()` (raises `FP_ProjectError` on closed/never-opened,
+  no lenient fallback per C5), `CurrentDepth` as a **property** (matching the
+  `Cache` precedent), and `HasOpenSessionTask()`. Live: extended probe 6/6
+  green, `tests/live_status.json` `"run_mode": "live"`, `target_sandbox_path`
+  only, real Target never opened, no restore script run. Offline: 1290 passed
+  -- unchanged baseline. `/lex-lead` independently verified the scope fences
+  rather than trusting the report: `git diff --stat flexicon/code/` = **120
+  insertions, 0 deletions, ONE file**, so `CloseProject()` and `SaveChanges()`
+  are provably untouched, and neither `flexicon/__init__.py` nor the
+  capabilities test moved. Two rulings recorded: **Q3 CLOSED (no capability
+  token)** and **new C11** -- the programmer deviated from the dispatch brief
+  by reading depth BEFORE the `_undoable` short-circuit, raised it explicitly,
+  and the deviation was ruled CORRECT (the brief wording would have broken C4
+  for a closed `undoable=True` project and, on a never-opened instance, thrown
+  a bare `AttributeError` because `self._undoable` is assigned after
+  `self.project`). Both are written into `spec.md` and `tasks.md`, not just a
+  dispatch rationale, so a context reset cannot lose them. Item 1 remains
+  `active`; next entry is **CP-A2 / T2 alone**, then CP-B (T3-T4) and CP-C
+  (T5). No GitHub issues filed; the `SaveChanges()` depth-guard item below is
+  still awaiting the user's ruling and was NOT acted on.
 
 ### Awaiting user approval (do not file inside the loop)
 

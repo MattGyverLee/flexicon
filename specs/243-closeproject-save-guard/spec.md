@@ -3,8 +3,14 @@
 **Repo:** flexicon, branch `main`
 **Issue:** #243 (`CloseProject()` unguarded `EndNonUndoableTask()` risks total
 session loss)
-**Status:** CONTRACT FROZEN at the spec+probe checkpoint (2026-09-07). Cycle-1
-live probe complete; no code under `flexicon/code/` has been modified yet.
+**Status:** CONTRACT FROZEN. Cycle-1 live probe complete. **T1 LANDED and
+live-verified (spurt 2, cycle 2, 2026-09-07)** -- `flexicon/code/FLExProject.py`
+now exposes the P1 depth-read surface (`_ReadActionHandlerDepth()`,
+`CurrentDepth` property, `HasOpenSessionTask()`); the diff is purely additive
+(120 insertions, 0 deletions, one file), so `CloseProject()` (T3) and
+`SaveChanges()` are provably untouched. T2 is deliberately deferred to its own
+gated sub-checkpoint (CP-A2) and CP-A is therefore only half done.
+Q3 is now CLOSED (see Q3 below); Q2 and Q4 remain open.
 Q1 RESOLVED 2026-09-07 by `/lex-lead` (see C9/C10) -- the owner's incident is
 a P-5 -> P-3 chain and the frozen C6 guard covers it, so implementation is
 unblocked and needs no owner input.
@@ -324,6 +330,51 @@ Two binding consequences:
   recovery behaviour. If a future reader wants that explained, it is a new
   issue against FieldWorks/liblcm, not this feature.
 
+### C11 -- `HasOpenSessionTask()` reads depth BEFORE the mode check: lifecycle precondition outranks the mode short-circuit
+
+Ruled by `/lex-lead` 2026-09-07 at the T1 review, resolving a genuine
+conflict between C3 and C4 that the cycle-2 dispatch brief had papered over.
+The brief said `HasOpenSessionTask()` should "return `False` WITHOUT
+consulting depth" when `self._undoable` is `True`. **That wording was wrong
+and is superseded by this decision.** The shipped implementation is correct:
+
+```python
+depth = self._ReadActionHandlerDepth()   # lifecycle precondition first
+if self._undoable:
+    return False                         # C3: unconditional in Phase 2
+return depth > 0
+```
+
+Two independent reasons the read must come first:
+
+1. **C4 would otherwise be violated in one mode.** C4 requires a
+   closed/never-opened project to raise `FP_ProjectError` from BOTH members,
+   with no mode carve-out. Short-circuiting on `self._undoable` before the
+   read would make a closed `undoable=True` project answer `False` instead
+   of raising -- silently returning a well-formed boolean for a project that
+   does not exist, which is precisely the depth ambiguity P1 exists to
+   remove (C5's reasoning, applied to the lifecycle axis instead of the
+   fallback axis).
+2. **The literal brief wording is not even implementable safely.**
+   `FLExProject` has no `__init__`, and `OpenProject()` assigns
+   `self.project` (line ~263) BEFORE `self._undoable` (line 271). On a
+   never-opened instance neither attribute exists, so testing
+   `self._undoable` first raises a bare `AttributeError` -- an
+   implementation-detail exception escaping the public API instead of the
+   documented `FP_ProjectError`.
+
+**C3 is not weakened by this.** C3's requirement is that the ANSWER is never
+derived from depth under `undoable=True`, and it is not: `depth` is read for
+its raise-or-not effect only, then discarded unread on the Phase 2 branch.
+Ordering a precondition check ahead of a mode short-circuit is not the same
+thing as making the answer depth-dependent.
+
+**Binding on future readers:** do not "fix" this back to the literal brief
+wording, and do not reorder the mode check ahead of the read. The docstring
+at `HasOpenSessionTask()` already states the rationale inline; if that
+comment is ever removed, this decision still governs. Any change to this
+ordering must cite and overturn C11 explicitly.
+
 ---
 
 ## Open questions -- do not silently decide
@@ -378,14 +429,31 @@ with exactly this gap (P-3, P-5). Should the P0 fix also wrap the whole
 failure -- separately from the End-guard's own try/finally? Not decided;
 left to the implementation cycle, informed by whichever answer Q1 produces.
 
-### Q3 -- Does the P1 surface join `flexicon.CAPABILITIES`?
+### Q3 -- RESOLVED 2026-09-07 by `/lex-lead`: NO capability token
 
-The 4.4.0 release added `flexicon.CAPABILITIES` as a feature-detection
-token set for FlexToolsMCP-style consumers (see `CHANGELOG.md` `[4.4.0]`
-"Added"). Does `HasOpenSessionTask()`/`CurrentDepth` warrant a new token
-(e.g. `session-depth-read`), or is it exposed purely via docstring/API
-surface without a capability token? Not decided; left to the implementation
-cycle.
+**CLOSED. The answer is NO** -- `HasOpenSessionTask()`/`CurrentDepth` do NOT
+get a `flexicon.CAPABILITIES` token (no `session-depth-read` or equivalent),
+and `flexicon/__init__.py` and `tests/write_path_transactions/test_capabilities.py`
+are OUT OF SCOPE for this feature. Ruled in the cycle-2 dispatch and recorded
+here so it cannot be relitigated after a context reset.
+
+Rationale: `CAPABILITIES` earns its keep for behaviour a consumer cannot
+otherwise detect without attempting a write (e.g. transaction/undo
+semantics). A plain additive read member is detectable with a one-line
+`hasattr(project, "HasOpenSessionTask")`, so a token would add a second,
+independently-maintained source of truth for a fact the attribute already
+states. Adding it would also widen T1's diff past `FLExProject.py` into
+`__init__.py` plus the capabilities test, breaking the "one file, purely
+additive" scope fence that makes T1 safe to land ahead of the P0 guard.
+
+Verified honoured at T1: neither file appears in the changed-file list
+(`git diff --stat flexicon/code/` = 120 insertions, 0 deletions, one file).
+
+**Reopening condition (the only one):** if a real consumer is found that
+cannot use `hasattr` -- e.g. a wire-protocol client that never touches the
+Python object -- route it to `specs/tier1-silent-data-loss/QUEUE.md` as a
+NEW ask needing user approval. Do not absorb it into this feature. T1's
+report confirms no such consumer was encountered.
 
 ### Q4 -- Exact CHANGELOG placement and wording for P2
 

@@ -337,6 +337,126 @@ class FLExProject(object):
             except Exception:
                 raise
 
+    def _ReadActionHandlerDepth(self):
+        """
+        Read the live LCM action handler's ``CurrentDepth`` verbatim.
+
+        Private helper backing the public ``CurrentDepth`` property and
+        ``HasOpenSessionTask()`` method (issue #243, spec.md C2/C5). It
+        deliberately does NOT tolerate a closed/never-opened project by
+        degrading to ``0`` -- it raises instead. The three existing
+        internal call sites (`transaction.py:172`,
+        `undoable_operation.py:102`, `System/CustomFieldOperations.py:306`)
+        each wrap a read like this one in their own
+        ``try/except``/``getattr(..., 0)`` to tolerate incomplete test
+        doubles standing in for a real ``IActionHandler``; that tolerance
+        is intentionally NOT inherited here (spec.md C5) -- a public
+        surface that silently returns ``0`` for a closed project would
+        reintroduce the exact depth ambiguity issue #243 exists to
+        remove. A future caller wanting the lenient behaviour wraps a
+        call to this helper in its own ``try/except`` (see T2); this
+        helper never does that on their behalf.
+
+        Returns:
+            int: ``self.project.ActionHandlerAccessor.CurrentDepth``,
+                unmodified.
+
+        Raises:
+            FP_ProjectError: If the project is closed or was never
+                opened (``self.project`` does not exist).
+        """
+        if not hasattr(self, "project"):
+            raise FP_ProjectError(
+                "Cannot read action handler depth: project is not open."
+            )
+        return self.project.ActionHandlerAccessor.CurrentDepth
+
+    @property
+    def CurrentDepth(self):
+        """
+        Raw LCM action-handler nesting depth (issue #243, spec.md C2/C4).
+
+        A direct, documented ``int`` passthrough of
+        ``self.project.ActionHandlerAccessor.CurrentDepth`` -- the same
+        value three internal call sites already read in a more lenient
+        form (`transaction.py`, `undoable_operation.py`,
+        `System/CustomFieldOperations.py`). Implemented as a property
+        (matching the ``Cache`` property's precedent as a discoverable,
+        no-argument, no-side-effect escape hatch onto raw LCM state)
+        rather than a method, since reading the depth has no side effect
+        and nothing to parameterize.
+
+        Mode-dependence (frozen P-2 table, spec.md section 2): under
+        ``undoable=False`` the session-long ``BeginNonUndoableTask()``
+        envelope holds this at 1 for the whole session (unchanged inside
+        ``Transaction()`` blocks); under ``undoable=True`` it is 0
+        outside an ``UndoableOperation()`` block and 1 inside one
+        (``Transaction()`` never changes it either way).
+
+        Returns:
+            int: The real, unmodified depth. For a read-only
+                (``writeEnabled=False``) project this is legitimately
+                ``0`` and is returned WITHOUT raising (spec.md C4) -- a
+                pure read has no mutating consequence, so
+                ``FP_ReadOnlyError`` would be domain-wrong here.
+
+        Raises:
+            FP_ProjectError: If the project is closed or was never
+                opened.
+
+        Example:
+            >>> project = FLExProject()
+            >>> project.OpenProject("MyProject", writeEnabled=True,
+            ...                     undoable=False)
+            >>> project.CurrentDepth
+            1
+        """
+        return self._ReadActionHandlerDepth()
+
+    def HasOpenSessionTask(self):
+        """
+        Is the session-long ``BeginNonUndoableTask()`` envelope open?
+
+        Answers exactly that narrow question (issue #243, spec.md C3) --
+        it is NOT a mode-agnostic "is anything open" predicate, because
+        ``CurrentDepth == 1`` means two structurally different things
+        depending on mode:
+
+        - Under ``undoable=False`` (Phase 1), ``OpenProject()`` opens one
+          session-long envelope via ``BeginNonUndoableTask()`` that
+          ``CloseProject()`` must mirror-close with
+          ``EndNonUndoableTask()``. Here, depth > 0 means that envelope
+          is open.
+        - Under ``undoable=True`` (Phase 2, the 4.4.0 default), no such
+          envelope is ever opened by construction -- each
+          ``UndoableOperation()``/``Transaction()`` manages its own
+          begin/end pair instead. So this method returns ``False``
+          unconditionally in that mode -- a correct fact about that
+          mode, not "nothing to report" -- WITHOUT using depth to decide
+          it (depth is still read first, below, purely so a
+          closed/never-opened project raises consistently regardless of
+          mode).
+
+        Returns:
+            bool: ``False`` when ``self._undoable`` is ``True``.
+                Otherwise ``self.CurrentDepth > 0``, read via the same
+                private helper ``CurrentDepth`` uses.
+
+        Raises:
+            FP_ProjectError: If the project is closed or was never
+                opened, in either mode.
+
+        Example:
+            >>> project.OpenProject("MyProject", writeEnabled=True,
+            ...                     undoable=False)
+            >>> project.HasOpenSessionTask()
+            True
+        """
+        depth = self._ReadActionHandlerDepth()
+        if self._undoable:
+            return False
+        return depth > 0
+
     @property
     def Cache(self):
         """

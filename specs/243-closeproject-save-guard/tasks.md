@@ -9,12 +9,28 @@ of the checkpoints below. The three checkpoints in this file are the
 IMPLEMENTATION checkpoints and start after it. To remove the collision they
 are referred to as **CP-A (T1-T2)**, **CP-B (T3-T4)** and **CP-C (T5)**;
 the older "Checkpoint 1/2/3" headings below are retained only so existing
-cross-references still resolve. The next spurt starts at **CP-A / T1**.
+cross-references still resolve. T1 is DONE (spurt 2); **the next spurt starts
+at CP-A2 / T2.**
 
 **Q1 is CLOSED (spec.md C9/C10, ruled 2026-09-07).** No task below may
 reopen it, and no task may wait on owner repro steps -- the owner's
-sequence is reconciled as a P-5 -> P-3 chain that the C6 guard breaks. Q2
-and Q3 remain genuinely open and are decided at T3 and T1 respectively.
+sequence is reconciled as a P-5 -> P-3 chain that the C6 guard breaks.
+
+**Q3 is now ALSO CLOSED (spec.md Q3, ruled 2026-09-07 at T1): NO capability
+token.** `flexicon/__init__.py` and
+`tests/write_path_transactions/test_capabilities.py` are out of scope for
+every task below. Only **Q2** (decided at T3) and **Q4** (`/lex-doc`'s call
+at T5) remain genuinely open.
+
+**New contract decision C11 (spec.md, ruled 2026-09-07 at the T1 review):**
+`HasOpenSessionTask()` reads depth BEFORE the `self._undoable` mode check,
+because C4's closed/never-opened `FP_ProjectError` has no mode carve-out and
+because `self._undoable` does not exist on a never-opened instance. Do not
+reorder it. T3 must consume the surface as shipped.
+
+**CP-A IS SPLIT (spurt 2, 2026-09-07).** T1 landed alone; T2 was gated into
+its own sub-checkpoint. Read CP-A below as **CP-A1 = T1 (DONE)** and
+**CP-A2 = T2 (NEXT)**. CP-B may not begin until CP-A2 closes.
 
 **Ordering rule (binding):** P1 (the depth-read surface) is a PREREQUISITE of
 P0's final shape, not a follow-on -- `spec.md` C6. Tasks below are sequenced
@@ -52,7 +68,7 @@ asserting on the value passed in).
 Prerequisite for everything else per C6. Touches
 `flexicon/code/FLExProject.py` only.
 
-- [ ] **T1** (LIVE) Add a private depth-read helper on `FLExProject` (e.g.
+- [x] **T1** (LIVE) **DONE 2026-09-07 (spurt 2, cycle 2).** Add a private depth-read helper on `FLExProject` (e.g.
       `_ReadActionHandlerDepth()`) that raises `FP_ProjectError` when
       `self.project` does not exist (closed or never opened -- C4), and
       otherwise returns `self.project.ActionHandlerAccessor.CurrentDepth`
@@ -75,7 +91,24 @@ Prerequisite for everything else per C6. Touches
       instance on which `OpenProject()` was never called raises
       `FP_ProjectError`. Command and evidence file per the boilerplate
       above; evidence file name `live-t1-depth-read-surface.md`.
-- [ ] **T2** (LIVE) Point the three existing internal lenient call sites
+
+      **T1 OUTCOME (verified by `/lex-lead`, not taken on report):**
+      `_ReadActionHandlerDepth()`, `CurrentDepth` (implemented as a
+      **property**, matching the `Cache` property precedent) and
+      `HasOpenSessionTask()` are in `flexicon/code/FLExProject.py`. Live
+      probe 6/6 green with `tests/live_status.json` `"run_mode": "live"`;
+      offline suite 1290 passed (unchanged baseline); all 8 frozen P-2 rows
+      plus both new closed/never-opened `FP_ProjectError` cases match the
+      frozen contract exactly. `git diff --stat flexicon/code/` = 120
+      insertions, 0 deletions, ONE file -- purely additive, so
+      `CloseProject()` (T3) and `SaveChanges()` are provably untouched. C5
+      holds: no `except: return 0`, no `getattr(..., 0)` in the helper.
+      Q3's NO ruling honoured (neither `__init__.py` nor the capabilities
+      test was touched). One deviation from the dispatch brief was reviewed
+      and CONFIRMED as correct, now frozen as **spec.md C11**.
+      Evidence: `evidence/live-t1-depth-read-surface.md`.
+      Report: `reviews/cycle2-programmer.md`.
+- [ ] **T2** (LIVE) **<-- NEXT PICKUP (CP-A2).** Point the three existing internal lenient call sites
       (`transaction.py:172`, `undoable_operation.py:102`,
       `System/CustomFieldOperations.py:306`, all currently
       `getattr(action_handler, "CurrentDepth", 0)` or equivalent) at T1's
@@ -100,12 +133,28 @@ Prerequisite for everything else per C6. Touches
       is the pass count, not an LCM read, since it is a behaviour-preserving
       refactor with no new state to assert on).
 
-**Checkpoint:** T1 and T2 both green and evidence filed. `FLExProject` now
+**Checkpoint CP-A1 (T1) -- REACHED 2026-09-07 (spurt 2).** `FLExProject`
 exposes `HasOpenSessionTask()`/`CurrentDepth` matching the frozen P-2 table
-exactly, including both new closed/never-opened raise cases, and the three
-pre-existing internal call sites are unchanged in behaviour. This is the
-prerequisite C6 requires before the P0 guard (Checkpoint 2) may begin. Stop
-here, update `STATUS.md` / `.crew-handoff.json`, commit.
+exactly, including both new closed/never-opened raise cases, live-verified
+with `run_mode: live` and zero offline regression. C6's PUBLIC-SURFACE
+prerequisite for the P0 guard is satisfied by T1 alone.
+
+**Checkpoint CP-A2 (T2) -- NEXT.** The three pre-existing internal call
+sites delegate to T1's shared helper with their own lenient wrapper intact
+and unchanged in behaviour, all three named live suites green at unchanged
+pass counts, evidence filed.
+
+**Why T2 does not block CP-B.** C6's prerequisite is the PUBLIC depth-read
+surface, which T1 delivers; C5 itself calls the internal-call-site
+consolidation optional ("optionally, at the implementer's discretion during
+T2"). T2 is a behaviour-preserving refactor of three files T1 never touched.
+It is nonetheless sequenced BEFORE CP-B on purpose: it is the cheapest
+possible confirmation that the new helper survives real internal callers,
+and running it after the P0 guard would mix a refactor into the diff that
+carries the actual fix. Do CP-A2 next; do not skip it to reach T3 sooner.
+
+At each of CP-A1/CP-A2: stop, update `STATUS.md` / `.crew-handoff.json` and
+the campaign `QUEUE.md` / `.crew-handoff.json`, commit.
 
 
 ---

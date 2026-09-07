@@ -239,6 +239,117 @@ def test_p2_depth_table(target_sandbox_path):
 
 
 # ===========================================================================
+# T1 -- PUBLIC CurrentDepth / HasOpenSessionTask() SURFACE (spec.md C2-C5)
+# ===========================================================================
+
+@pytest.mark.live_phase("FLExProject", "modify")
+def test_p2_public_surface_matches_depth_table(target_sandbox_path):
+    """
+    Re-run the frozen P-2 depth-table moments (spec.md section 2), but read
+    the NEW public `CurrentDepth` property / `HasOpenSessionTask()` method
+    instead of the raw `_depth()` helper, and assert they agree with the
+    frozen table row-by-row. Also covers the two new closed/never-opened
+    raise cases (C4) that the original P-2 probe did not need: (a) after a
+    successful CloseProject(), and (b) on a FLExProject() instance on which
+    OpenProject() was never called.
+    """
+    from flexicon.code.FLExProject import FLExProject
+    from flexicon.code.exceptions import FP_ProjectError
+
+    rows = {}
+
+    # --- Session 1: undoable=False ---
+    project = FLExProject()
+    project.OpenProject(str(target_sandbox_path), writeEnabled=True, undoable=False)
+    try:
+        rows["open_undoable_false"] = (project.CurrentDepth, project.HasOpenSessionTask())
+        print(f"[PROBE][T1] after OpenProject(undoable=False): CurrentDepth={rows['open_undoable_false'][0]} HasOpenSessionTask={rows['open_undoable_false'][1]}")
+
+        with project.Transaction("probe"):
+            rows["transaction_block_undoable_false"] = (project.CurrentDepth, project.HasOpenSessionTask())
+            print(f"[PROBE][T1] inside Transaction() block, undoable=False: CurrentDepth={rows['transaction_block_undoable_false'][0]} HasOpenSessionTask={rows['transaction_block_undoable_false'][1]}")
+
+        aborted = project.AbortSession()
+        rows["after_abort_session_true"] = (project.CurrentDepth, project.HasOpenSessionTask())
+        print(f"[PROBE][T1] AbortSession() returned {aborted}; CurrentDepth={rows['after_abort_session_true'][0]} HasOpenSessionTask={rows['after_abort_session_true'][1]}")
+
+        project.project.MainCacheAccessor.EndNonUndoableTask()
+        rows["after_manual_end_nonundoable_task"] = (project.CurrentDepth, project.HasOpenSessionTask())
+        print(f"[PROBE][T1] after manual EndNonUndoableTask(): CurrentDepth={rows['after_manual_end_nonundoable_task'][0]} HasOpenSessionTask={rows['after_manual_end_nonundoable_task'][1]}")
+
+        # Repair the envelope so this session can close cleanly (mirrors
+        # test_p2_depth_table's own repair step) -- this is a surface probe,
+        # not a P-3/P-5 reproduction.
+        _safe(project.project.MainCacheAccessor.BeginNonUndoableTask, "T1 repair BeginNonUndoableTask")
+    finally:
+        _safe(project.CloseProject, "T1 session1 CloseProject")
+        _dispose_if_open(project, "T1 session1")
+
+    # --- (a) after a SUCCESSFUL CloseProject(): both raise FP_ProjectError ---
+    with pytest.raises(FP_ProjectError) as exc_current_depth_closed:
+        _ = project.CurrentDepth
+    print(f"[PROBE][T1] (a) CurrentDepth after successful CloseProject(): RAISED {type(exc_current_depth_closed.value).__name__}: {exc_current_depth_closed.value}")
+    with pytest.raises(FP_ProjectError) as exc_has_open_closed:
+        project.HasOpenSessionTask()
+    print(f"[PROBE][T1] (a) HasOpenSessionTask() after successful CloseProject(): RAISED {type(exc_has_open_closed.value).__name__}: {exc_has_open_closed.value}")
+
+    # --- Session 2: undoable=True ---
+    project = FLExProject()
+    project.OpenProject(str(target_sandbox_path), writeEnabled=True, undoable=True)
+    try:
+        rows["open_undoable_true"] = (project.CurrentDepth, project.HasOpenSessionTask())
+        print(f"[PROBE][T1] after OpenProject(undoable=True): CurrentDepth={rows['open_undoable_true'][0]} HasOpenSessionTask={rows['open_undoable_true'][1]}")
+
+        with project.Transaction("probe"):
+            rows["transaction_block_undoable_true"] = (project.CurrentDepth, project.HasOpenSessionTask())
+            print(f"[PROBE][T1] inside Transaction() block, undoable=True: CurrentDepth={rows['transaction_block_undoable_true'][0]} HasOpenSessionTask={rows['transaction_block_undoable_true'][1]}")
+
+        with project.UndoableOperation("probe"):
+            rows["undoable_operation_block"] = (project.CurrentDepth, project.HasOpenSessionTask())
+            print(f"[PROBE][T1] inside UndoableOperation() block, undoable=True: CurrentDepth={rows['undoable_operation_block'][0]} HasOpenSessionTask={rows['undoable_operation_block'][1]}")
+    finally:
+        _safe(project.CloseProject, "T1 session2 CloseProject")
+        _dispose_if_open(project, "T1 session2")
+
+    # --- Session 3: read-only ---
+    project = FLExProject()
+    project.OpenProject(str(target_sandbox_path), writeEnabled=False)
+    try:
+        current_depth_ro, exc_msg_depth = _safe(lambda: project.CurrentDepth, "T1 read-only CurrentDepth")
+        has_open_ro, exc_msg_has_open = _safe(project.HasOpenSessionTask, "T1 read-only HasOpenSessionTask")
+        rows["readonly"] = (
+            current_depth_ro if exc_msg_depth is None else f"EXC:{exc_msg_depth}",
+            has_open_ro if exc_msg_has_open is None else f"EXC:{exc_msg_has_open}",
+        )
+        print(f"[PROBE][T1] read-only project: CurrentDepth={rows['readonly'][0]} HasOpenSessionTask={rows['readonly'][1]}")
+    finally:
+        _safe(project.CloseProject, "T1 session3 CloseProject")
+        _dispose_if_open(project, "T1 session3")
+
+    print(f"[PROBE][T1] full public-surface table: {rows}")
+
+    # --- (b) on a FLExProject() instance where OpenProject() was NEVER
+    #     called: both raise FP_ProjectError ---
+    never_opened = FLExProject()
+    with pytest.raises(FP_ProjectError) as exc_current_depth_never:
+        _ = never_opened.CurrentDepth
+    print(f"[PROBE][T1] (b) CurrentDepth on never-opened FLExProject(): RAISED {type(exc_current_depth_never.value).__name__}: {exc_current_depth_never.value}")
+    with pytest.raises(FP_ProjectError) as exc_has_open_never:
+        never_opened.HasOpenSessionTask()
+    print(f"[PROBE][T1] (b) HasOpenSessionTask() on never-opened FLExProject(): RAISED {type(exc_has_open_never.value).__name__}: {exc_has_open_never.value}")
+
+    # --- Assert every row of the frozen P-2 table (spec.md section 2) ---
+    assert rows["open_undoable_false"] == (1, True)
+    assert rows["open_undoable_true"] == (0, False)
+    assert rows["transaction_block_undoable_false"] == (1, True)
+    assert rows["transaction_block_undoable_true"] == (0, False)
+    assert rows["undoable_operation_block"] == (1, False)
+    assert rows["after_abort_session_true"] == (1, True)
+    assert rows["after_manual_end_nonundoable_task"] == (0, False)
+    assert rows["readonly"] == (0, False)
+
+
+# ===========================================================================
 # P-3 (+ P-6) -- THE P0 REPRODUCTION, FULLY LIVE
 # ===========================================================================
 
