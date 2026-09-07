@@ -116,6 +116,13 @@ class TextOperations(BaseOperations):
 
         Args:
             name (str): The name of the text. Must be unique and non-empty.
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (Q-242A); a value that is entirely whitespace still
+                raises FP_ParameterError. Uniqueness is checked
+                whitespace-insensitively (see Exists) -- a name differing
+                from an existing one only by leading/trailing whitespace is
+                treated as a duplicate and raises FP_ParameterError, not
+                silently accepted.
             genre (ICmPossibility, optional): Genre classification for the text.
                 If provided, must be a valid ICmPossibility from the project's
                 genre list. Defaults to None.
@@ -437,6 +444,10 @@ class TextOperations(BaseOperations):
 
         Args:
             name (str): The name of the text to check.
+                Note: the comparison strips leading/trailing whitespace on
+                BOTH the search value and each stored text name (Q-242A) --
+                a name differing only by whitespace still counts as a
+                match.
 
         Returns:
             bool: True if a text with the given name exists, False otherwise.
@@ -582,6 +593,11 @@ class TextOperations(BaseOperations):
         Args:
             text_or_hvo: Either an IText object or its HVO (integer identifier).
             name (str): The new name for the text. Must be non-empty.
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (Q-242A). A whitespace-only value is NOT rejected
+                here and is persisted literally (Q-242D, a known remaining
+                gap -- see Q-242C for the pending harmonisation decision);
+                this differs from Create(), which does reject it.
             wsHandle (int, optional): Writing system handle. If None, uses the
                 default analysis writing system. Can also be a language tag string.
 

@@ -12,6 +12,116 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 ## [Unreleased]
 
 ### Changed
+- **BREAKING (behavioural): name-field writers across four Operations
+  classes now persist the caller's original, unstripped name, and their
+  three sibling comparison methods now strip whitespace on BOTH sides of
+  the comparison, not just the search argument** (Q-242A,
+  `specs/name-field-whitespace-identity`). Persist sites:
+  `TextOperations.Create`/`SetName`, `AnthropologyOperations.Create`/
+  `CreateSubitem`, `DiscourseOperations.CreateChart`/`SetChartName`,
+  `CheckOperations.CreateCheckType`/`SetName`. Comparison sites:
+  `TextOperations.Exists`, `AnthropologyOperations.Find`,
+  `CheckOperations.FindCheckType`.
+
+  Previously these six writer sites validated a `.strip()`ed copy of the
+  caller's name but persisted that same stripped copy, silently
+  discarding leading/trailing whitespace; meanwhile the three sibling
+  dedup comparisons stripped only the search argument, never the stored
+  name, because the stored name was ALWAYS pre-stripped by the same
+  writer bug -- the writer's own strip was load-bearing for dedup
+  coherence, not incidental to it (spec.md C1). Fixing persist alone
+  would have broken that coherence: a name persisted with trailing
+  whitespace would become invisible to its own family's dedup check,
+  letting `Create()` mint unbounded duplicate-looking records instead of
+  raising (spec.md C2). Both halves land together for this reason.
+
+  **A caller who relied on the old stripping now silently persists
+  different data**, and **a caller who relied on whitespace defeating
+  the uniqueness guard (e.g. deliberately padding a name to bypass a
+  duplicate check) now gets `FP_ParameterError: ... already exists`
+  instead of a second record.** Whitespace-insensitive dedup was a
+  deliberate ruling, not an oversight: the uniqueness guard at all three
+  families is a flexicon invention with no FLEx/LCM equivalent (FLEx's
+  own Texts & Words organizer enforces zero title uniqueness), and a
+  guard defeated by one invisible character is a false-confidence
+  footgun -- worse than no guard at all (spec.md C3, independently
+  re-derived and accepted by `/lex-domain` under owner override).
+
+  `DiscourseOperations` has no dedup check at all and never did (spec.md
+  C3's per-family carve-out); only its persist half changed.
+  `AnthropologyOperations.CreateSubitem` also has no dedup check, unlike
+  `Create` (spec.md C5 observation) -- this was not added.
+  `AnthropologyOperations.Exists` was deliberately left untouched (it
+  still strips and reassigns its own local copy; only `Find`, which it
+  calls, gained symmetric comparison).
+
+  **Known remaining gap, disclosed and not fixed here (Q-242D):** at
+  three of the eight persist sites -- `AnthropologyOperations.Create`,
+  `AnthropologyOperations.CreateSubitem`, and `TextOperations.SetName` --
+  a whitespace-only name (e.g. `"   "`) is not rejected. It now persists
+  as literal whitespace instead of silently becoming `""` as before;
+  this removes a payload-loss bug but does not add the whitespace-only
+  rejection the other five sites already have. Adding that rejection at
+  these three sites is `Q-242C`'s decision (validator harmonisation
+  across differing exception types), deliberately not fragmented into
+  this fix.
+
+  **Verification gap, disclosed rather than smoothed over:**
+  `DiscourseOperations.CreateChart`'s persist fix is correct by code
+  inspection but is `FAIL: unverified` through its own public API --
+  live verification is blocked by two pre-existing, unrelated defects in
+  the chart-creation path (`Q-DISC1`). `SetChartName` and all seven other
+  sites are fully live-verified (20/20 tests passing,
+  `run_mode: live`, `target_sandbox`/`target_sandbox_path` fixtures only;
+  see `specs/name-field-whitespace-identity/evidence/`). This entry does
+  not claim 8/8 sites live-verified.
+
+- **BREAKING (behavioural): `CheckOperations.CreateCheckType`,
+  `.FindCheckType`, and `.SetName` now raise instead of silently
+  persisting or matching an empty name** (Q-242B,
+  `specs/name-field-whitespace-identity`). All three previously ran
+  `name = name.strip() if isinstance(name, str) else ""` ahead of a
+  None-only `_ValidateParam` check, so a non-`str` payload OR an
+  ordinary whitespace-only string (e.g. `"   "`) silently coerced to
+  `""` and was persisted or matched with **no exception at all** --
+  total loss of the caller's intended name, not merely lost padding.
+  This is classified separately from, and more severe than, the Q-242A
+  entry above: Q-242A restores whitespace that used to be silently
+  trimmed; Q-242B closes a path that used to silently destroy the
+  caller's entire payload.
+
+  All three now call the already-shipped
+  `BaseOperations._ValidateStringNotEmpty` (no reassignment of `name`,
+  so the caller's original bytes still reach persist), which raises
+  `TypeError` for a non-`str` payload and `FP_ParameterError` for a
+  whitespace-only string. The pre-existing leading
+  `_ValidateParam(name, "name")` call is unchanged at all three sites,
+  so `None` still raises `FP_NullParameterError` exactly as before.
+
+  **`FindCheckType`'s docstring previously contradicted itself** --
+  its `Raises` section promised `FP_NullParameterError` for an empty
+  name, a promise the pre-fix code never kept, while its `Notes` section
+  simultaneously claimed the method never raises. Both are now true and
+  mutually consistent: see the updated docstring.
+
+  **Callers who were passing a non-`str` or whitespace-only name to any
+  of these three methods, and relying on it silently succeeding with an
+  empty/blank name, now get an exception instead.** No caller should
+  have depended on this -- it is the Tier-1 silent-data-loss bug this
+  campaign exists to close -- but it is recorded as breaking per this
+  file's own convention for exception-behaviour changes (see the
+  `SaveChanges()` entry above). Blast radius of `FindCheckType`'s break
+  is external callers only: the sole internal call site
+  (`CheckOperations.py`, inside `CreateCheckType`) already validates
+  `name` immediately beforehand.
+
+  Live-verified: 20/20 tests passing, `run_mode: live`, all nine
+  predictions matched exactly (`specs/name-field-whitespace-identity/
+  evidence/live-t4b-check-q242b-fix.md`). Reaching `CreateCheckType`
+  through the public API at all required a test-instance-only monkeypatch
+  of the unrelated, pre-existing `_GetCheckList()` stub bug (recorded,
+  not fixed, in `spec.md` section 3 of the same feature).
+
 - **BREAKING (behavioural): `WfiMorphBundleOperations.GetMorphType` now
   returns `IMoMorphType` instead of `IMoForm`** (#254). The bundle's
   `MorphRA` field holds its linked allomorph (`IMoForm` -- concretely

@@ -283,6 +283,12 @@ class DiscourseOperations(BaseOperations):
         Args:
             text_or_hvo: Either an IText object or its HVO (integer identifier).
             name (str): The name of the chart. Must be non-empty.
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (Q-242A); a value that is entirely whitespace still
+                raises FP_ParameterError. This method's persist behaviour
+                is correct by code inspection but could not be
+                independently live-verified through its own public API,
+                blocked by two pre-existing, unrelated defects (Q-DISC1).
             chart_type (str): Type of chart to create. Either "constituent" or
                 "discourse". Defaults to "constituent".
 
@@ -455,6 +461,9 @@ class DiscourseOperations(BaseOperations):
         Args:
             chart_or_hvo: Either a chart object or its HVO (integer identifier).
             name (str): The new name for the chart. Must be non-empty.
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (Q-242A); a value that is entirely whitespace still
+                raises FP_ParameterError.
             wsHandle (int, optional): Writing system handle. If None, uses the
                 default analysis writing system.
 

@@ -216,6 +216,13 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Args:
             name (str): The name of the item (e.g., "Marriage Customs").
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (Q-242A); uniqueness is checked
+                whitespace-insensitively (see Find), so a name differing
+                from an existing one only by whitespace is treated as a
+                duplicate. A whitespace-only value is NOT rejected here and
+                is persisted literally (Q-242D, a known remaining gap --
+                see Q-242C for the pending harmonisation decision).
             abbreviation (str, optional): Short abbreviation (e.g., "MAR").
                 If None, no abbreviation is set. Defaults to None.
             anthro_code (str, optional): OCM (Outline of Cultural Materials) code
@@ -328,6 +335,12 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         Args:
             parent_item: The parent ICmAnthroItem object or HVO.
             name (str): The name of the subitem (e.g., "Wedding Ceremony").
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (Q-242A). CreateSubitem has no uniqueness check at
+                all (unlike Create), so this note covers persistence only.
+                A whitespace-only value is NOT rejected here and is
+                persisted literally (Q-242D, a known remaining gap -- see
+                Q-242C for the pending harmonisation decision).
             abbreviation (str, optional): Short abbreviation. Defaults to None.
             anthro_code (str, optional): OCM code for the subitem. Defaults to None.
 
@@ -528,6 +541,10 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Args:
             name (str): The name to search for.
+                Note: the comparison strips leading/trailing whitespace on
+                BOTH the search value and each item's stored name
+                (Q-242A) -- a name differing only by whitespace still
+                counts as a match.
 
         Returns:
             ICmAnthroItem or None: The item object if found, None otherwise.

@@ -152,6 +152,15 @@ class CheckOperations(BaseOperations):
 
         Args:
             name (str): The name of the check type. Must be unique and non-empty.
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (Q-242A); uniqueness is checked
+                whitespace-insensitively (see FindCheckType), so a name
+                differing from an existing one only by whitespace is
+                treated as a duplicate. A non-str payload now raises
+                TypeError and a whitespace-only string now raises
+                FP_ParameterError (Q-242B) -- both previously coerced
+                silently to an empty string and persisted with no
+                exception at all.
             description (str, optional): Description of what the check validates.
                 Defaults to None (empty description).
             wsHandle: Optional writing system handle. Defaults to analysis WS.
@@ -161,8 +170,10 @@ class CheckOperations(BaseOperations):
 
         Raises:
             FP_ReadOnlyError: If project was not opened with writeEnabled=True.
-            FP_NullParameterError: If name is None or empty.
-            FP_ParameterError: If a check type with this name already exists.
+            FP_NullParameterError: If name is None.
+            TypeError: If name is not a str (Q-242B).
+            FP_ParameterError: If name is empty/whitespace-only (Q-242B),
+                or if a check type with this name already exists.
 
         Example:
             >>> # Create a simple check type
@@ -305,12 +316,20 @@ class CheckOperations(BaseOperations):
 
         Args:
             name (str): The check type name to search for (case-insensitive).
+                Note: the comparison strips leading/trailing whitespace on
+                BOTH the search value and each stored check-type name
+                (Q-242A) -- a name differing only by whitespace still
+                counts as a match.
 
         Returns:
-            ICmPossibility or None: The check type object if found, None otherwise.
+            ICmPossibility or None: The check type object if found, None
+                otherwise (i.e. name is valid but no check type matches --
+                see Notes).
 
         Raises:
-            FP_NullParameterError: If name is None or empty.
+            FP_NullParameterError: If name is None.
+            TypeError: If name is not a str (Q-242B).
+            FP_ParameterError: If name is empty or whitespace-only (Q-242B).
 
         Example:
             >>> # Find a check type
@@ -329,8 +348,21 @@ class CheckOperations(BaseOperations):
             - Search is case-insensitive
             - Searches in default analysis writing system
             - Returns first match only
-            - Returns None if not found (doesn't raise exception)
+            - Returns None ONLY when name is valid but no check type
+              matches -- it does not silently swallow an invalid name (see
+              Raises above). This corrects an earlier version of this
+              docstring, which simultaneously promised
+              "FP_NullParameterError: If name is None or empty" in Raises
+              while this Notes section claimed no exception was ever
+              raised; both statements were never true together, since the
+              pre-fix code never actually validated emptiness at all. Both
+              statements above are now true and consistent.
             - Searches recursively through nested check types
+            - BREAKING (Q-242B): a non-str or whitespace-only name used to
+              return None (or worse, silently match on a coerced empty
+              string) instead of raising. The only internal caller
+              (CreateCheckType) already validates name before calling this
+              method, so this break reaches external callers only.
 
         See Also:
             GetAllCheckTypes, CreateCheckType, GetName
@@ -402,12 +434,19 @@ class CheckOperations(BaseOperations):
             check_or_hvo: Either an ICmPossibility check type object or its
                 HVO (integer identifier).
             name (str): The new name for the check type. Must be non-empty.
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (Q-242A). A non-str payload now raises TypeError
+                and a whitespace-only string now raises FP_ParameterError
+                (Q-242B) -- both previously coerced silently to an empty
+                string with no exception at all.
             wsHandle: Optional writing system handle. Defaults to analysis WS.
 
         Raises:
             FP_ReadOnlyError: If project was not opened with writeEnabled=True.
-            FP_NullParameterError: If check_or_hvo or name is None/empty.
-            FP_ParameterError: If the check type does not exist or is invalid.
+            FP_NullParameterError: If check_or_hvo or name is None.
+            TypeError: If name is not a str (Q-242B).
+            FP_ParameterError: If name is empty/whitespace-only (Q-242B),
+                or if the check type does not exist or is invalid.
 
         Example:
             >>> check = project.Checks.FindCheckType("Old Name")
