@@ -3,15 +3,18 @@
 **Campaign:** `tier1-silent-data-loss`, spun-out sub-item **2a** (between
 queue item 2, `242-paragraph-whitespace`, and queue item 3,
 `feature-structure-sync-gap`) -- **`active`**.
-**Last updated:** 2026-09-07, **end of cycle 3 (spurt 3)**. Checkpoint 1 DONE;
-Checkpoint 2 is **6 of 8 sites landed** (T1, T2, T3 done; **T4 remains**).
-**Status:** Contract items **C1-C11 FROZEN**. Behaviour change HAS now landed
-under `flexicon/code/` from this feature, in three files:
-`TextsWords/DiscourseOperations.py` (T1), `TextsWords/TextOperations.py` (T2),
-`Notebook/AnthropologyOperations.py` (T3). `System/CheckOperations.py` is
-**untouched** -- that is T4, the next spurt. See the "Cycle 3 close" section at
-the foot of this file for the authoritative next pickup; the older
-"Next pickup" section above it is superseded.
+**Last updated:** 2026-09-07, **end of cycle 4 (spurt 4)**. Checkpoint 1 DONE;
+**Checkpoint 2 DONE -- 8 of 8 sites landed** (T1, T2, T3, T4). Only
+**Checkpoint 3 (T5, docs)** remains.
+**Status:** Contract items **C1-C13 FROZEN** -- C12 and C13 were ruled by
+`/lex-lead` at the cycle-4 close and are recorded in the "Cycle 4 close"
+section below; their verbatim transcription into `spec.md` is PENDING and
+rides with the T5 spurt. Behaviour change has landed under `flexicon/code/`
+from this feature in **four** files: `TextsWords/DiscourseOperations.py` (T1),
+`TextsWords/TextOperations.py` (T2), `Notebook/AnthropologyOperations.py` (T3),
+`System/CheckOperations.py` (T4). See the "Cycle 4 close" section at the FOOT
+of this file for the authoritative next pickup; every earlier "Next pickup" and
+the "Cycle 3 close" section are superseded.
 
 > **A SECOND CREW is committing in this same clone right now** (confirmed
 > by the project owner as theirs and expected). See `CONCURRENCY.md` --
@@ -248,3 +251,128 @@ AND Q-242B in ONE commit at the SAME expressions (C6), it is the only task
 gated behind the `_GetCheckList` workaround (C9), and it is the only task whose
 target sites are governed by C7's explicit fix shape rather than C11's Shape
 A/B choice. Do not bundle T5 into it.
+
+---
+
+## Cycle 4 close -- Checkpoint 2 is DONE, 8/8 sites landed (AUTHORITATIVE next pickup)
+
+**Spurt 4 ended here by design.** T5 was deliberately NOT chained on after T4;
+it is the entire next spurt, and it is the last one.
+
+### What landed in cycle 4
+
+- **T4 landed** (`flexicon/code/System/CheckOperations.py`), commits `2d8bfc5`
+  (predictions, C28) / `0ab9c60` (code + tests) / `cbbb55e` (results) /
+  `f5291e9` + `785d5ee` (report). Q-242A and Q-242B landed in ONE commit at the
+  SAME three expressions per C6, tracked with TWO evidence files.
+- **C7's exact shape at all three sites**: the coercing rebind
+  `name = name.strip() if isinstance(name, str) else ""` and the duplicate
+  trailing `_ValidateParam` were replaced by
+  `self._ValidateStringNotEmpty(name, "name")` with **no reassignment of
+  `name`**; the LEADING `_ValidateParam` was kept per C7(a).
+  `FindCheckType` additionally strips **both** the needle key and the haystack
+  key inline, `casefold=True` unchanged.
+- **20/20 live, `run_mode: live`, collect count 20** (15 prior + PN16-PN20).
+  All nine predictions (T4A-P1..P4, T4B-P1..P5) matched exactly. Offline delta
+  **`+0/+0/+5`**; the same three known-foreign failures with unchanged
+  messages, no fourth. C8 pin green on both halves at `CreateCheckType`.
+- **No line-number drift this cycle** -- all five re-derived figures matched
+  the cycle-3-close values.
+
+### Independently verified by /lex-lead this cycle (not taken on report)
+
+- `git show 0ab9c60 -- flexicon/code/System/CheckOperations.py` is exactly
+  C7's shape at exactly three sites and touches nothing else. The true code-file
+  numstat is **`+5 / -8`** (13 lines touched), not the `+13/-13` quoted in the
+  cycle-4 relay -- a relay mis-statement only; the diff shape is correct.
+- The test-file deletions in `0ab9c60` (`+509 / -63`) are **only** the pre-fix
+  assertions inside PN4/PN5/PN6, correctly flipped to assert the fixed
+  behaviour with the pre-fix behaviour preserved in each docstring. **No
+  existing pin was weakened or removed.** The file now holds exactly 20
+  `test_` functions, matching the collect count.
+- **`git stash list` and the stash reflog are both EMPTY** -- T4's
+  stash/measure/pop left no residue and no foreign working-tree change is
+  sitting in a stash.
+- **Blast radius of the `FindCheckType` breaking change is external callers
+  only.** The single internal call site is `CheckOperations.py:199`, inside
+  `CreateCheckType`, which validates `name` immediately beforehand. No other
+  module in `flexicon/` calls `FindCheckType`.
+- The existing `FindCheckType` docstring is **internally inconsistent** and T5
+  must resolve it, not merely append to it: its `Raises:` section already
+  promises `FP_NullParameterError: If name is None or empty` (a promise the
+  pre-fix code never kept), while its `Notes:` say
+  `- Returns None if not found (doesn't raise exception)`. Post-fix the method
+  raises `TypeError` for non-`str` and `FP_ParameterError` (**not**
+  `FP_NullParameterError`) for whitespace-only.
+
+### Lead rulings at the cycle-4 close
+
+- **C12 (FROZEN, transcription into `spec.md` pending -- rides with T5).**
+  `CONCURRENCY.md` AMENDMENT 2 is **retained and vindicated**. On T4's 4th
+  commit the pre-`commit` status re-check caught five of the other crew's
+  `specs/feature-structure-sync-gap/` files already staged in the shared index,
+  landed there after T4's own `git add`. T4 cleared them with an index-only
+  `git reset HEAD -- <paths>` (zero working-tree bytes), re-confirmed, then
+  committed; `f5291e9` is confirmed to contain exactly one file. The amendment
+  caught, at its intended catch point, the exact failure that motivated it.
+  **Recommendation (main session's call, not this feature's):** copy AMENDMENT
+  2 verbatim into `specs/tier1-silent-data-loss/.crew-handoff.json`'s
+  hard_rules so campaign items 3 and 4 inherit it. That file is the main
+  session's to maintain and must NOT be edited from inside this feature.
+- **C13 (FROZEN, transcription into `spec.md` pending -- rides with T5).**
+  T4's self-disclosed order slip -- the code edit preceded the "before" offline
+  baseline, against STEP 4 -- is **accepted, and the `+0/+0/+5` delta stands as
+  measured; no re-derivation is ordered.** Grounds: (a) T4 corrected by
+  stashing its own edit, measuring the true pre-edit tree at the same HEAD, then
+  popping, which yields a genuine before/after pair rather than a
+  reconstruction; (b) the C28 predict-before-measure guarantee is intact --
+  `2d8bfc5` landed before the measuring run; (c) the delta is independently
+  corroborated by the collect count moving 15 -> 20, exactly the `+5` claimed;
+  (d) `git stash list` is empty, so the pop was complete. **Forward rule:** the
+  stash/measure/pop recovery is ALLOWED in this clone, but ONLY with an
+  explicit pathspec (`git stash push -- <your own path>`); a bare `git stash`
+  would sweep the other crew's uncommitted work and is FORBIDDEN, alongside
+  `git reset --hard`.
+
+### Recorded, not fixed
+
+- `_ValidateStringNotEmpty`'s own `None` branch is dead code at all three
+  `CheckOperations` sites, because the leading `_ValidateParam` (kept per C7a)
+  catches `None` first. Observation only.
+- `Q-242D` is unchanged: whitespace-only input still persists literal
+  whitespace at the three Shape-B sites. T5 MUST disclose it.
+- `Q-DISC1` is unchanged: `DiscourseOperations.CreateChart`'s persist half
+  remains **`FAIL: unverified`** -- inspection-correct but unreachable through
+  its own public API. T5 MUST record this rather than claim 8/8 verified.
+
+### Unrelated working-tree observation (NOT this feature's, do not act)
+
+`git status --porcelain` at this handoff shows `.claude/ralph-loop.local.md`
+as **deleted (unstaged)**, plus a modified
+`specs/feature-structure-sync-gap/spec.md` and two untracked paths. None of
+that is this feature's work; per `CONCURRENCY.md` it must not be staged,
+restored, or reverted from inside this feature. Flagged to the main session
+only because a missing `.claude/ralph-loop.local.md` may matter to the loop
+harness.
+
+### Next pickup -- Checkpoint 3, T5 (docs), the LAST spurt
+
+**T5 is docs-only; there is no live-verification requirement.** Full brief in
+`.crew-handoff.json` -> `next_entry`. In outline:
+
+1. **`/lex-doc` authors the patches directly** (it edits files; it has **no
+   shell tool** and therefore cannot run `pytest` or `git` -- it must not be
+   asked to verify or commit, and must not be blamed for refusing to).
+2. **Two separate `CHANGELOG.md` entries** under `[Unreleased]`, per C6 -- one
+   for Q-242A, one for Q-242B, following the #242 precedent already in the file
+   at `CHANGELOG.md:95` (a `### Changed` item led by
+   `**BREAKING (behavioural): ...**`). Divergence is `/lex-doc`'s call to make
+   and record.
+3. **Docstring updates on the 11 touched methods** across the four files.
+4. **Mandatory disclosures**: Q-242D as a known remaining gap; Q-DISC1 /
+   `CreateChart` as `FAIL: unverified`; the `FindCheckType` behavioural break.
+5. **The main session performs every shell action** -- the AMENDMENT 2 commit
+   bracket and the commit itself. `/lex-doc` returns a report path plus a
+   2-line summary and nothing else.
+6. Optionally an archivist pass to transcribe **C12 and C13** into `spec.md`
+   verbatim; that transcription is outstanding either way.

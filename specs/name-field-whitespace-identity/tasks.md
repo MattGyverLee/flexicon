@@ -139,7 +139,7 @@ begin without following the READ FIRST rules above, especially item 1
 
 ---
 
-## Checkpoint 2 -- Implement the direct fix, one task per family (**3 of 4 DONE -- only T4 remains**)
+## Checkpoint 2 -- Implement the direct fix, one task per family (**DONE, 4 of 4 -- 8/8 sites landed, cycle 4**)
 
 Sequenced so the comparison-symmetry fix (C4) and the persist fix land
 TOGETHER per family -- never a persist fix without its comparison fix,
@@ -226,7 +226,7 @@ RAISES "already exists", AND the stored value re-reads BYTE-IDENTICAL.
 behaviour. Live gate per READ FIRST items 3-7. Evidence:
 `evidence/live-t3-anthropology-fix.md`.
 
-### [ ] T4 -- `CheckOperations` (LIVE) -- **NEXT SPURT, the only Checkpoint-2 task left**: Q-242A comparison-symmetry + persist fix, AND the distinct Q-242B fix, landed TOGETHER at the same expressions
+### [x] T4 -- `CheckOperations` (LIVE) -- **DONE, cycle 4** (`2d8bfc5` / `0ab9c60` / `cbbb55e` / `f5291e9`+`785d5ee`). Q-242A and Q-242B landed TOGETHER at the same three expressions in ONE commit per C6, with TWO evidence files. C7's exact shape at all three sites; `FindCheckType` strips both sides. 20/20 live, `run_mode: live`, collect count 20; all nine predictions MATCHED; offline delta `+0/+0/+5`; both C8 halves green. BREAKING: `FindCheckType` now RAISES instead of coercing and returning `None`.
 
 **Sites:** `flexicon/code/System/CheckOperations.py:196`
 (`CreateCheckType`), `:341/:344/:350` (`FindCheckType`), `:432`
@@ -297,7 +297,7 @@ files.
 
 ## Checkpoint 3 -- Docs (dispatch to `/lex-doc`)
 
-### T5 -- CHANGELOG + docstring updates, per C6's separate-entries requirement
+### [ ] T5 -- CHANGELOG + docstring updates, per C6's separate-entries requirement -- **THE LAST TASK; the whole next spurt**
 
 Not authored by the Archivist (Archivist/Doc-Agent division of labour) --
 dispatched to `/lex-doc`, whose returned patches are staged and committed
@@ -326,6 +326,36 @@ by the Archivist.
   claiming 8/8 verified.
 
 Docs-only, no live-verification requirement.
+
+**Added at the cycle-4 close by `/lex-lead` (binding on the T5 spurt):**
+
+- **`/lex-doc` has NO shell tool.** It cannot run `pytest` or `git`. It edits
+  files and returns a report path; **the main session performs every shell
+  action**, including the AMENDMENT 2 commit bracket and the commit itself.
+  Never ask `/lex-doc` to verify or commit -- refusing is the correct answer.
+- **The docstring scope is ELEVEN methods**, not eight (the "eight sites" count
+  is persist sites; the comparison-symmetry methods are additional):
+  `DiscourseOperations.CreateChart`, `.SetChartName`; `TextOperations.Create`,
+  `.Exists`, `.SetName`; `AnthropologyOperations.Create`, `.CreateSubitem`,
+  `.Find`; `CheckOperations.CreateCheckType`, `.FindCheckType`, `.SetName`.
+  **`AnthropologyOperations.Exists` was deliberately NOT touched** -- do not
+  document it as changed.
+- **`FindCheckType`'s docstring needs a RESOLUTION, not an append.** Its
+  `Raises:` section already promises `FP_NullParameterError: If name is None or
+  empty` -- a promise the pre-fix code never kept -- while its `Notes:` say
+  `- Returns None if not found (doesn't raise exception)`. Post-fix the real
+  behaviour is `TypeError` for non-`str` and **`FP_ParameterError`** (not
+  `FP_NullParameterError`) for whitespace-only. Both statements must end up
+  true and mutually consistent.
+- **Blast radius of that break is EXTERNAL callers only** (`/lex-lead`
+  verified): the only internal call site in `flexicon/` is
+  `CheckOperations.py:199`, inside `CreateCheckType`, which validates `name`
+  immediately beforehand.
+- **`CHANGELOG.md` anchors** (advisory, re-derive): `[Unreleased]` at `:12`,
+  `### Changed` at `:14`, the #242 whitespace precedent entry at `:95`,
+  `### Fixed` at `:138`.
+- **Also outstanding in this spurt:** transcribe **C12** and **C13** (ruled at
+  the cycle-4 close, recorded in `STATUS.md`) verbatim into `spec.md`.
 
 ---
 
