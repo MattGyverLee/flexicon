@@ -97,11 +97,55 @@ present -- only the resolution behaviour differs).
 
 ## [MEASURED] Unfixed-code run
 
-<!-- Filled in after running against the pre-fix BaseOperations.py. -->
+Command run (verbatim):
+```
+$env:FLEXLIBS_REQUIRE_LIVE = "1"
+python -m pytest tests/operations/test_issue250_ws_case_divergence.py -m requires_live_project -q
+```
 
-Command run: (recorded verbatim below)
+Method: `flexicon/code/BaseOperations.py` was temporarily overwritten in the
+shared working tree with the pre-fix blob (verified via
+`git hash-object` == `git rev-parse HEAD:flexicon/code/BaseOperations.py`
+at the pre-fix commit, `a32d94151fee1c3c62ccc33e71f3253990b0181a`), the live
+suite was run, then the fixed blob was restored from a scratchpad backup and
+re-verified by hash (`a8e914bfd7c31d2d34f2a0e42e47794bd4ad32db`) before any
+further work continued.
 
-Result: PENDING -- see follow-up commit / STEP 3 log.
+**Result: `tests/live_status.json` -> `"run_mode": "live"`. 2 FAILED, 1 SKIPPED
+-- matches the prediction exactly for D4-a/D4-b; D4-c did not reach a
+pass/fail verdict for a different, pre-existing-project reason (see below).**
+
+- `test_d4a_ws_map_case_divergent_resolves`: **FAILED**, as predicted.
+  ```
+  AssertionError: D4-a: ws_map value 'en' -> 'ETU' (case-divergent from the
+  target's real ws.Id 'etu') must resolve to handle 999000002 and save the
+  text. Got '' -- if this is empty, the fix did not land or did not reach
+  this call path.
+  assert '' == 'TEST_D4a'
+  ```
+- `test_d4b_no_ws_map_source_id_case_divergent_resolves`: **FAILED**, as
+  predicted.
+  ```
+  AssertionError: D4-b: no ws_map, source key 'ETU' (case-divergent from
+  target's real ws.Id 'etu') must still resolve to handle 999000002. Got ''.
+  assert '' == 'TEST_D4b'
+  ```
+- `test_d4c_separator_divergent_resolves`: **SKIPPED** (loud skip, both
+  before and after the fix -- this is a project-inventory limitation, not a
+  pass/fail result). `target_sandbox`'s only two active writing systems are
+  `en` (analysis, handle 999000001) and `etu` (vernacular, handle
+  999000002) -- **neither has a `-` or `_` separator to flip**, so no
+  separator-divergent spelling can be constructed live from this project's
+  actual WS inventory. The skip message names the WS Id and states plainly
+  that D4-a/D4-b are unaffected and that C-D4-5's separator path is proven
+  offline instead (`test_issue250_defect4_ws_resolution.py`, D4-c-shaped
+  unit tests using fabricated dicts). This is a documented gap in the LIVE
+  half of D4-c coverage, not a silent one -- see acceptance-criteria notes
+  below.
+
+This is the required acceptance-criterion-2 demonstration: the pre-fix drop
+is measured, not assumed, for both trigger paths this project's WS inventory
+can exercise live (D4-a and D4-b).
 
 ---
 
@@ -127,11 +171,56 @@ Same command, run against `BaseOperations.py` **after** the D4-T1 edit.
 
 ## [MEASURED] Fixed-code run
 
-<!-- Filled in after running against the post-fix BaseOperations.py. -->
+Command run (verbatim, identical to the unfixed-side invocation):
+```
+$env:FLEXLIBS_REQUIRE_LIVE = "1"
+python -m pytest tests/operations/test_issue250_ws_case_divergence.py -m requires_live_project -q
+```
 
-Command run: (recorded verbatim below)
+**Result: `tests/live_status.json` -> `"run_mode": "live"`. 2 PASSED, 1
+SKIPPED -- matches the prediction exactly.**
 
-Result: PENDING -- see follow-up commit / STEP 5 log.
+- `test_d4a_ws_map_case_divergent_resolves`: **PASSED.** `post ==
+  "TEST_D4a"` -- `ws_map={"en": "ETU"}` resolved through the normalized
+  fallback to handle `999000002` (the real `etu` writing system).
+- `test_d4b_no_ws_map_source_id_case_divergent_resolves`: **PASSED.**
+  `post == "TEST_D4b"` -- no `ws_map`; source key `"ETU"` passed through
+  unchanged as `tgt_ws_id` and still resolved to `999000002` via the same
+  fallback (this is the D4-b path the original issue omits).
+- `test_d4c_separator_divergent_resolves`: **SKIPPED**, same loud-skip
+  reason as the unfixed side (no separator-bearing WS Id in this project's
+  inventory) -- the fix's behaviour on this path is unmeasured live in this
+  run and is covered offline only (see the section above and the "Ambiguity"
+  section below for the general pattern of offline-only coverage where live
+  project state cannot construct the trigger).
+- **C-D4-6 assertions** (embedded in each passing test): writing-system
+  count, `CurVernWss` (`"etu"`), and `CurAnalysisWss` (`"en"`) were asserted
+  unchanged from each test's own pre-run baseline and did not fail --
+  Defect 4 activates and creates nothing.
+
+This is the required acceptance-criterion-1 demonstration for D4-a and D4-b:
+the fix resolves the divergent spelling to the correct existing handle, read
+back from the LCM by re-fetching the object fresh via `project.Object(hvo)`
+(cast back to `IPartOfSpeech`), not by trusting the pre-write reference.
+
+**D4-c live coverage gap, stated plainly (not left to be inferred):** this
+run demonstrates D4-a and D4-b live, both before (drop) and after (save).
+D4-c (separator divergence) could not be demonstrated live against
+`target_sandbox` because neither of its two active writing systems (`en`,
+`etu`) contains a `-` or `_` character to flip -- the sandbox's fixed,
+tiny WS inventory (a property of the `Target` `.fwbackup` fixture, not of
+this fix) makes the separator trigger unconstructible from real project
+state without hunting for/fabricating a differently-shaped project, which
+section 6.4's "no special project state" design explicitly rules out doing.
+C-D4-5's separator-divergence guarantee is instead proven **offline**, at
+the `_apply_props_loop`/`_resolve_ws_handle` unit level, in
+`tests/operations/test_issue250_defect4_ws_resolution.py`
+(`test_d4c_separator_divergent_resolves`,
+`test_separator_divergence_resolves`), which fabricates the target dict
+directly and is therefore independent of any particular project's WS
+inventory. This is a live-evidence gap for D4-c specifically, disclosed
+here rather than papered over by claiming full live coverage of all three
+D4 variants.
 
 ---
 
@@ -167,6 +256,77 @@ C-D4-6 assertions are unchanged from the frozen shape.
 
 ---
 
+## CONCURRENCY DISCLOSURE (read this before trusting section provenance)
+
+While this task's live-verification work (this section and everything above
+it) was in progress, a **second, independent agent instance**
+(`Claude-Session: https://claude.ai/code/session_01RGBHqwkd2STFHfAXgeCbWt`,
+distinct from this file's `Claude-Session:
+https://claude.ai/code/session_01Wr7oeVWoo3XUJHFe83Km6Y`) was concurrently
+dispatched against the **same spec** in the **same shared working tree** and
+independently:
+
+1. Committed `269b6a7` -- `fix(250-writingsystem-activation): D4-T1 --
+   normalized WS-id lookup fallback in _apply_props_loop`. **Verified by
+   hash:** the `flexicon/code/BaseOperations.py` blob this commit landed
+   (`a8e914bfd7c31d2d34f2a0e42e47794bd4ad32db`) is **byte-identical** to this
+   task's own independently-authored fix, confirmed via `git hash-object`
+   against the scratchpad backup taken before this file's author restored
+   the fixed content for the STEP 5 measurement below. This is almost
+   certainly because `git commit --only -- <path>` reads **working-tree**
+   content directly regardless of staging state -- the other agent's commit
+   picked up whatever was sitting unstaged in the shared `BaseOperations.py`
+   at that moment, which was this task's own in-progress, not-yet-committed
+   D4-T1 edit. Net effect: the fix is correct and landed exactly once, but
+   under the other session's attribution rather than this one's.
+2. Committed `8c679ed` -- `docs(250-writingsystem-activation): D4-T5 --
+   CHANGELOG entry for Defect 4 fix`. Reviewed in full: it correctly states
+   the bug-fix-not-breaking-change framing, the new `FP_ParameterError`
+   failure mode, and the full acceptance-criterion-8 coverage boundary
+   (naming both `PhonemeOperations.__ApplyBasicIPASymbol` and
+   `ExampleOperations.ApplySyncableProperties`'s `TranslationsOC` loop).
+   D4-T5 is therefore ALSO already satisfied; no further CHANGELOG edit is
+   needed from this task.
+3. Edited (uncommitted, in the shared working tree) the "Offline delta"
+   and "Resolution-site ratchet result" sections immediately below, plus
+   the `git diff --stat` pointer at the end of this file -- using a
+   disposable `git worktree` for its own "before" offline measurement
+   (a cleaner isolation technique than this task used for the equivalent
+   live before/after swap above; noted for future reference). Its content
+   is retained below as-is; this task's author reviewed it and found it
+   consistent with, though methodologically distinct from, this task's own
+   offline delta (see the discrepancy note under "Offline delta" below).
+4. Also independently created and deleted a transient
+   `flexicon/code/_scratch_ratchet_probe.py` file as its own "bites when
+   mutated" proof for the D4-T2 ratchet test. **This explains an otherwise
+   mysterious transient ratchet-test failure this task's author observed
+   mid-session**: a single `TestResolutionSiteRatchet` run failed, listing
+   `_scratch_ratchet_probe.py` as a fourth site, then passed again on
+   immediate re-run with no code change on this task's side. At the time
+   this looked alarming (a real fourth site appearing and vanishing); it is
+   now understood to be the other agent's own deliberate, momentary probe
+   file overlapping with this task's test invocation, not a defect in
+   either agent's work.
+
+**What this task's author did NOT do in response:** rewrite, amend, reset,
+or otherwise alter commits `269b6a7` or `8c679ed` -- per the standing
+git-safety rules (never amend, never force-push, always new commits), and
+because the content is independently verified correct regardless of
+attribution. **What this task's author DID do:** complete and commit the
+live D4-T3 verification (D4-T1's one piece the other agent's session did
+not appear to attempt -- its edits above touch only offline measurement),
+merge the other session's in-progress offline-delta/ratchet edits into the
+final version of this file rather than discarding them, and write this
+disclosure so a human or `/lex-lead` reviewing this file understands why it
+carries findings from two different sessions. **Recommendation to the
+user/lead:** the dispatch that produced `session_01RGBHqwkd2STFHfAXgeCbWt`
+and the dispatch that produced this file were evidently the same D4-T1/T2/
+T3/T5 task instructions sent to two separate agent threads against the same
+tree at the same time; deduplicating that dispatch is a process fix outside
+either agent's authority to make.
+
+---
+
 ## Offline delta (STEP 6) -- filled in cycle 7 (programmer, D4-T1/T2/T5 spurt)
 
 Command (identical both sides):
@@ -196,6 +356,28 @@ Additionally, `tests/write_path_transactions` (B2g unbracketed-mutation
 ratchet) run offline on the main tree: `24 passed`, confirming the new
 helper performs no mutation.
 
+**Cross-check from this task's own independent measurement (no
+`git worktree` used; before/after both taken in the shared main tree by
+swapping `flexicon/code/BaseOperations.py` between its scratchpad-backed
+unfixed and fixed blobs, hash-verified each time):**
+`--before` (unfixed blob, `--ignore=tests/operations/test_issue250_defect4_ws_resolution.py`
+since that file imports fix-only symbols and cannot even collect against
+unfixed code): `2 failed, 350 passed, 504 deselected`.
+`--after` (fixed blob, full command as above, run four times total across
+this session -- three consecutively plus one after the scratch-file scare
+in item 4 of the concurrency disclosure -- all four agreeing):
+`2 failed, 371 passed, 504 deselected`. Same delta conclusion (+21 passed,
+0 change in failures, same two known-foreign `TestPhase2JoinOrOpen`
+failures with unchanged messages). The `501` vs `504` deselected-count
+difference between the two sessions' "before" figures is fully explained by
+reference-point choice, not disagreement: the other session's `git worktree`
+pinned to `e6a9492` (before either session's new test files existed, hence
+501), while this session's in-tree "before" run already had
+`test_issue250_ws_case_divergence.py` present (adding its 3
+`requires_live_project`-marked tests to the deselected count, hence
+504) and only excluded the fix-dependent offline file. Both measurements
+independently confirm zero offline-suite regressions.
+
 ---
 
 ## Resolution-site ratchet result (D4-T2) -- filled in cycle 7
@@ -217,7 +399,11 @@ needed) and re-ran: **1 passed** again. Full detail in
 
 ## `git diff --stat` (acceptance criterion 6)
 
-See `specs/250-writingsystem-activation/reviews/cycle7-programmer-D4-T1-T2-T5.md`
-(this cycle's report; the earlier `cycle7-programmer-D4-T1-T3.md` reference
-was this file's original author's own planned filename and was never
-written under that name -- superseded by the above).
+See `specs/250-writingsystem-activation/reviews/cycle7-programmer-D4-T1-T3.md`
+-- this is the filename this file's task instructions actually specified,
+and it is the file being written. (A now-corrected note previously appeared
+here claiming this filename was abandoned in favour of
+`cycle7-programmer-D4-T1-T2-T5.md`; that was a misreading produced by the
+concurrent-dispatch collision described in the section immediately above --
+`cycle7-programmer-D4-T1-T2-T5.md` was never written as a file and should
+not be treated as the canonical report for this work.)

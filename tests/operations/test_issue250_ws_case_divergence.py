@@ -42,6 +42,21 @@ pytestmark = pytest.mark.requires_live_project
 TEST_PREFIX = "TEST_"
 
 
+def _refetch_pos(project, hvo):
+    """Re-fetch the POS fresh from the LCM cache by Hvo and cast back to
+    IPartOfSpeech -- project.Object() returns the generic ICmObject/
+    ICmPossibility base, which has no .Name attribute. Never reuse a
+    stale pre-write reference; this always re-resolves against the cache.
+
+    Imports SIL.LCModel lazily (inside the function, not at module scope)
+    so this module can be collected even on a machine without FieldWorks
+    installed -- mirrors the existing convention in
+    test_apply_syncable_properties.py's live section."""
+    from SIL.LCModel import IPartOfSpeech
+
+    return IPartOfSpeech(project.Object(hvo))
+
+
 def _swap_case_flip(tag):
     """Case-flip a ws.Id, e.g. 'en' -> 'EN', 'en-US' -> 'EN-us'."""
     return tag.swapcase()
@@ -101,13 +116,13 @@ def _case_divergence_fixture(target_sandbox):
             "spelling from this project's writing systems."
         )
 
+    # flipped_sep is deliberately NOT gated here: D4-a and D4-b (the only
+    # variants that use flipped_case) must not skip just because this
+    # project's picked ws_id happens to have no '-'/'_' separator to flip
+    # (e.g. a bare single-subtag Id like 'etu'). The separator-flippability
+    # check lives in the D4-c test itself, which is the only variant that
+    # needs it -- see that test's own loud skip.
     flipped_sep = _separator_flip(ws_id)
-    if flipped_sep == ws_id:
-        pytest.skip(
-            f"LOUD SKIP: ws.Id {ws_id!r} has no '-' or '_' separator -- "
-            "cannot construct a separator-divergent spelling from this "
-            "project's writing systems."
-        )
 
     pre_run_ws_count = len(all_ids)
     pre_run_cur_vern_wss = project.lp.CurVernWss
@@ -164,7 +179,7 @@ class TestWsCaseDivergenceLive:
         pos = pos_ops.Create(f"{TEST_PREFIX}D4a_{ctx['handle']}", "TD4a")
         hvo = pos.Hvo
         try:
-            pre = pos_ops.GetName(project.Object(hvo), ctx["handle"])
+            pre = pos_ops.GetName(_refetch_pos(project, hvo), ctx["handle"])
             assert pre == "", (
                 f"Pre-state: Name alt at handle {ctx['handle']} "
                 f"(ws_id={ctx['ws_id']!r}) must be empty before apply; "
@@ -177,7 +192,7 @@ class TestWsCaseDivergenceLive:
                 ws_map={"en": ctx["flipped_case"]},
             )
 
-            post_pos = project.Object(hvo)  # re-fetch fresh, not the stale ref
+            post_pos = _refetch_pos(project, hvo)  # re-fetch fresh, not the stale ref
             post = pos_ops.GetName(post_pos, ctx["handle"])
 
             assert post == "TEST_D4a", (
@@ -203,7 +218,7 @@ class TestWsCaseDivergenceLive:
         pos = pos_ops.Create(f"{TEST_PREFIX}D4b_{ctx['handle']}", "TD4b")
         hvo = pos.Hvo
         try:
-            pre = pos_ops.GetName(project.Object(hvo), ctx["handle"])
+            pre = pos_ops.GetName(_refetch_pos(project, hvo), ctx["handle"])
             assert pre == "", (
                 f"Pre-state: Name alt at handle {ctx['handle']} must be "
                 f"empty before apply; got {pre!r}."
@@ -216,7 +231,7 @@ class TestWsCaseDivergenceLive:
                 ws_map=None,
             )
 
-            post_pos = project.Object(hvo)
+            post_pos = _refetch_pos(project, hvo)
             post = pos_ops.GetName(post_pos, ctx["handle"])
 
             assert post == "TEST_D4b", (
@@ -232,13 +247,24 @@ class TestWsCaseDivergenceLive:
 
     def test_d4c_separator_divergent_resolves(self, _case_divergence_fixture):
         ctx = _case_divergence_fixture
+        if ctx["flipped_sep"] == ctx["ws_id"]:
+            pytest.skip(
+                f"LOUD SKIP: ws.Id {ctx['ws_id']!r} has no '-' or '_' "
+                "separator -- cannot construct a separator-divergent "
+                "spelling from this project's writing systems. D4-a and "
+                "D4-b (case divergence) are unaffected by this and are "
+                "covered by their own tests in this file; the separator "
+                "path of C-D4-5 is additionally covered offline in "
+                "test_issue250_defect4_ws_resolution.py, which does not "
+                "depend on any particular project's WS inventory."
+            )
         project = ctx["project"]
         pos_ops = project.POS
 
         pos = pos_ops.Create(f"{TEST_PREFIX}D4c_{ctx['handle']}", "TD4c")
         hvo = pos.Hvo
         try:
-            pre = pos_ops.GetName(project.Object(hvo), ctx["handle"])
+            pre = pos_ops.GetName(_refetch_pos(project, hvo), ctx["handle"])
             assert pre == "", (
                 f"Pre-state: Name alt at handle {ctx['handle']} must be "
                 f"empty before apply; got {pre!r}."
@@ -250,7 +276,7 @@ class TestWsCaseDivergenceLive:
                 ws_map=None,
             )
 
-            post_pos = project.Object(hvo)
+            post_pos = _refetch_pos(project, hvo)
             post = pos_ops.GetName(post_pos, ctx["handle"])
 
             assert post == "TEST_D4c", (
