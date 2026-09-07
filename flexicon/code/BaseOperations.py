@@ -20,7 +20,7 @@ from .exceptions import (
     FP_NullParameterError,
     FP_ParameterError,
 )
-from .Shared.lcm_constants import OWNING_SEQUENCE_SUFFIX
+from .Shared.lcm_constants import OWNING_SEQUENCE_SUFFIX, FEATURE_STRUC_OWNER_TABLE
 
 # --- Constants ---------------------------------------------------------------
 
@@ -1600,6 +1600,365 @@ class BaseOperations:
             return None
         from .lcm_casting import cast_to_concrete
         return cast_to_concrete(owner)
+
+    def _ResolveFeatureStrucOwner(self, owner, slot=None):
+        """
+        Resolve which atomic-owning ('OA') property on ``owner`` holds an
+        ``IFsFeatStruc``, and return ``owner`` cast to the CONCRETE LCM
+        interface that declares it.
+
+        Single, ``ClassName``-driven source of truth for the "which
+        differently-named property owns the feature structure on this
+        object" question (spec ``feature-structure-sync-gap``, contract
+        C1/C5). Backed by ``FEATURE_STRUC_OWNER_TABLE``
+        (``Shared/lcm_constants.py``) -- the one and only copy of the
+        frozen C1 table.
+
+        Args:
+            owner: An LCM object (or an ``LCMObjectWrapper``-style wrapper
+                exposing ``._obj``) whose ``ClassName`` is looked up in
+                ``FEATURE_STRUC_OWNER_TABLE``. Callers reaching ``owner``
+                via an HVO or GUID must resolve/cast it to a real LCM
+                object THEMSELVES first (contract C2) -- this method does
+                not accept an ``int``/HVO.
+            slot: Required ONLY when ``owner``'s ``ClassName`` has more
+                than one row in the table (``MoDerivAffMsa``: ``"From"``/
+                ``"To"``; ``PartOfSpeech``: ``"Default"``/
+                ``"InherFeatVal"``). Ignored -- not an error -- for a
+                ClassName with exactly one row, even if the caller passes
+                one anyway (documented behaviour, not a defect).
+
+        Returns:
+            tuple: ``(concrete_owner, prop_name)`` where ``concrete_owner``
+            is ``owner`` cast to its concrete LCM interface (e.g.
+            ``IMoStemMsa(owner)``) and ``prop_name`` is the LCM
+            atomic-owning property name on that interface (e.g.
+            ``"MsFeaturesOA"``) -- read/write it directly:
+            ``getattr(concrete_owner, prop_name)`` /
+            ``setattr(concrete_owner, prop_name, new_struct)``.
+
+        Raises:
+            FP_ParameterError: If ``owner`` is ``None``; if ``owner`` has
+                no ``ClassName`` (not an LCM object); if ``owner``'s
+                ``ClassName`` is not a row in
+                ``FEATURE_STRUC_OWNER_TABLE`` (message names the
+                ClassName AND lists every supported ClassName -- this
+                covers the table's deliberately-excluded ``ClassName``s,
+                ``MoDerivStepMsa``, ``LexEntryInflType``, ``MoStemName``,
+                ``MoUnclassifiedAffixMsa``, which raise here rather than
+                being guessed at); if ``owner``'s ClassName has more than
+                one row and ``slot`` is ``None`` or does not match any
+                row's slot (message names the valid slot values -- NEVER
+                guessed); or if no ``I<ClassName>`` interface exists in
+                ``SIL.LCModel`` for a ClassName that IS in the table
+                (an environment/LCM-version mismatch, not a caller error).
+            TypeError: If the concrete cast itself fails (pythonnet
+                rejects casting ``owner`` to its own ClassName's
+                interface -- should not happen in normal operation since
+                the interface is chosen FROM ``owner.ClassName`` itself,
+                but this is intentionally NOT caught: a cast failure here
+                indicates something is genuinely wrong with ``owner`` and
+                must surface loudly, not be silently swallowed (probe
+                item 2; contract C1 step 5).
+
+        Notes:
+            - Never gates on ``hasattr`` for a subtype-declared member --
+              discriminates on ``.ClassName`` (always visible on the base
+              interface under pythonnet) and then casts explicitly. This
+              is the frozen rule the whole ``feature-structure-sync-gap``
+              family exists to enforce (spec D5).
+            - This method resolves OWNERSHIP only. It does not read or
+              create the ``IFsFeatStruc`` itself -- see
+              ``_GetFeatureStruc`` (serialize) and the future
+              ``_ApplyFeatureStruc`` (T4) for that, and remember the
+              ownership-first invariant: attach the struct to the owning
+              property BEFORE populating or even reading its
+              ``FeatureSpecsOC`` (a free-floating ``IFsFeatStruc``'s own
+              getter raises ``NullReferenceException``).
+
+        Example::
+
+            >>> concrete, prop_name = self._ResolveFeatureStrucOwner(
+            ...     msa, slot=None
+            ... )
+            >>> concrete.ClassName
+            'MoStemMsa'
+            >>> prop_name
+            'MsFeaturesOA'
+            >>> struct = getattr(concrete, prop_name)  # IFsFeatStruc | None
+
+            >>> # Ambiguous owner -- slot required
+            >>> concrete, prop_name = self._ResolveFeatureStrucOwner(
+            ...     deriv_msa, slot="From"
+            ... )
+            >>> prop_name
+            'FromMsFeaturesOA'
+        """
+        if owner is None:
+            raise FP_ParameterError(
+                "_ResolveFeatureStrucOwner: owner is None."
+            )
+
+        # Unwrap LCMObjectWrapper-style wrappers before reading ClassName.
+        # Mirrors InflectionFeatureOperations.__Unwrap / PhonFeatureOperations
+        # .__Unwrap -- a plain LCM object passes through unchanged.
+        unwrapped = owner
+        if hasattr(unwrapped, "_obj") and not hasattr(unwrapped, "Hvo"):
+            unwrapped = unwrapped._obj
+        elif hasattr(unwrapped, "_obj") and hasattr(unwrapped._obj, "Hvo"):
+            unwrapped = unwrapped._obj
+
+        if not hasattr(unwrapped, "ClassName"):
+            raise FP_ParameterError(
+                f"_ResolveFeatureStrucOwner: owner {unwrapped!r} has no "
+                f"ClassName; expected an LCM object (or a wrapper "
+                f"exposing one via ._obj)."
+            )
+        class_name = unwrapped.ClassName
+
+        rows = FEATURE_STRUC_OWNER_TABLE.get(class_name)
+        if not rows:
+            supported = ", ".join(sorted(FEATURE_STRUC_OWNER_TABLE))
+            raise FP_ParameterError(
+                f"_ResolveFeatureStrucOwner: ClassName {class_name!r} is "
+                f"not a recognized feature-structure owner. Supported "
+                f"ClassNames: {supported}."
+            )
+
+        if len(rows) > 1:
+            valid_slots = ", ".join(repr(row[0]) for row in rows)
+            if slot is None:
+                raise FP_ParameterError(
+                    f"_ResolveFeatureStrucOwner: ClassName {class_name!r} "
+                    f"has {len(rows)} feature-structure owning properties "
+                    f"and requires an explicit slot=. Valid slot values: "
+                    f"{valid_slots}. Never guessed."
+                )
+            for row_slot, prop_name, _props_key in rows:
+                if row_slot == slot:
+                    break
+            else:
+                raise FP_ParameterError(
+                    f"_ResolveFeatureStrucOwner: ClassName {class_name!r} "
+                    f"has no slot {slot!r}. Valid slot values: "
+                    f"{valid_slots}."
+                )
+        else:
+            # Single row: slot is IGNORED (documented behaviour, not an
+            # error), even if the caller supplied one.
+            _row_slot, prop_name, _props_key = rows[0]
+
+        import SIL.LCModel as _lcm_module
+
+        iface_name = "I" + class_name
+        interface_type = getattr(_lcm_module, iface_name, None)
+        if interface_type is None:
+            raise FP_ParameterError(
+                f"_ResolveFeatureStrucOwner: no {iface_name} interface "
+                f"found in SIL.LCModel for ClassName {class_name!r}, even "
+                f"though it is a row in FEATURE_STRUC_OWNER_TABLE. This "
+                f"indicates an LCM-version mismatch, not a caller error."
+            )
+
+        # The cast itself is NOT wrapped in try/except -- a failure here
+        # must raise TypeError loudly (contract C1 step 5); silently
+        # falling back to the unchanged base object would defeat the
+        # entire point of resolving a CONCRETE owner.
+        concrete_owner = interface_type(unwrapped)
+
+        return concrete_owner, prop_name
+
+    def _GetFeatureStruc(self, struct, _top_level=True):
+        """
+        Serialize an ``IFsFeatStruc`` into the frozen C4 sync wire-format
+        dict, RECURSIVELY -- an ``IFsComplexValue`` spec's ``ValueOA``
+        becomes a nested dict of the same shape.
+
+        Spec ``feature-structure-sync-gap``, contract C4/C5.
+
+        Args:
+            struct: An ``IFsFeatStruc`` (or an object castable to one --
+                e.g. the base-typed value read back from a nested
+                ``IFsComplexValue.ValueOA``, which pythonnet returns
+                statically typed as the base ``IFsAbstractStructure``).
+                May be ``None``.
+            _top_level: Internal recursion flag. Always leave at the
+                default (``True``) when calling this method directly --
+                recursive calls into a nested ``ValueOA`` pass
+                ``_top_level=False`` themselves. Controls only whether the
+                returned dict carries a ``"Guid"`` key (see Returns).
+
+        Returns:
+            dict | None: ``None`` if ``struct`` is ``None`` (a genuinely
+            absent/null feature structure -- the ONLY case that returns
+            ``None``). Otherwise a dict shaped::
+
+                {
+                    "TypeGuid": "<guid>" | None,   # struct.TypeRA, THIS level
+                    "Guid": "<guid>",              # NESTED levels only --
+                                                    # omitted at top level
+                    "specs": {
+                        "<featDefnGuid>": "<valueGuid>",      # IFsClosedValue
+                        "<complexFeatGuid>": {...recursive...} # IFsComplexValue
+                                                                # .ValueOA
+                    },
+                }
+
+            An empty-but-present structure (a real, attached
+            ``IFsFeatStruc`` whose ``FeatureSpecsOC`` has zero entries)
+            serializes as ``{"TypeGuid": ..., "specs": {}}`` -- NEVER
+            ``None``. Only a struct that IS ``None`` returns ``None``.
+
+        Notes:
+            - Walks ``FeatureSpecsOC`` only. ``FeatureDisjunctionsOC`` is
+              deliberately NOT traversed (out of scope for this feature;
+              disjunctive feature structures are a new capability, filed
+              separately per spec D2).
+            - Discriminates each spec by ``.ClassName`` (``FsClosedValue``
+              vs ``FsComplexValue``), then casts explicitly -- never
+              ``hasattr``-probes a subtype member.
+            - ``TypeGuid`` is copied PER LEVEL, independently. Live data
+              has a NULL outer ``TypeRA`` and a NON-NULL inner one on a
+              nested struct -- ``TypeRA`` is never a whole-struct
+              property.
+            - A spec whose ``FeatureRA``/``ValueRA`` (closed) or
+              ``FeatureRA``/``ValueOA`` (complex) is ``None`` is skipped,
+              matching the existing NC/Phoneme capture behaviour for a
+              malformed/partial spec.
+            - This is a pure READ/serialize helper -- it never creates or
+              attaches anything, so the ownership-first invariant does not
+              apply to it directly. It DOES rely on the caller having
+              already attached ``struct`` to its owner: a free-floating
+              (unattached) ``IFsFeatStruc``'s own ``FeatureSpecsOC``
+              getter raises ``NullReferenceException`` in LCM.
+            - C4a (Lead ruling, binding on future work): the CURRENTLY
+              SHIPPED wire format for ``NaturalClassOperations`` /
+              ``PhonemeOperations``'s ``props["Features"]`` is a FLAT LIST
+              of ``{"FeatureGuid", "ValueGuid"}`` dicts
+              (``NaturalClassOperations.py:1162``,
+              ``PhonemeOperations.py:1373``), NOT this C4 dict shape. This
+              method ALWAYS emits the C4 dict -- it does not, and must
+              not, special-case its output to match the legacy list shape.
+              The legacy flat list REMAINS a supported INPUT shape for the
+              future ``_ApplyFeatureStruc``/generalized ``MakeFeatStruc``
+              (T4/T5) to accept, alongside the new recursive C4 dict and
+              recursive-dict specs surface (C3). Capture in
+              ``NaturalClassOperations``/``PhonemeOperations`` is NOT
+              migrated to C4 by this method's addition -- those two
+              classes' ``GetSyncableProperties`` are untouched here and
+              keep emitting the flat list until T4/T10 re-point them.
+
+        Example::
+
+            >>> concrete, prop_name = self._ResolveFeatureStrucOwner(msa)
+            >>> struct = getattr(concrete, prop_name)
+            >>> self._GetFeatureStruc(struct)
+            {'TypeGuid': None, 'specs': {
+                '11111111-...': '22222222-...',
+                '33333333-...': {'TypeGuid': '44444444-...',
+                                  'Guid': '55555555-...',
+                                  'specs': {'66666666-...': '77777777-...'}},
+            }}
+        """
+        if struct is None:
+            return None
+
+        from SIL.LCModel import IFsFeatStruc, IFsComplexValue, IFsClosedValue
+
+        fs = IFsFeatStruc(struct)
+
+        type_ra = fs.TypeRA
+        result = {
+            "TypeGuid": str(type_ra.Guid) if type_ra is not None else None,
+            "specs": {},
+        }
+        if not _top_level:
+            result["Guid"] = str(fs.Guid)
+
+        for spec in fs.FeatureSpecsOC:
+            # Discriminate on ClassName (always visible on the base
+            # interface under pythonnet), then cast explicitly -- never
+            # hasattr-probe a subtype-declared member.
+            spec_class_name = spec.ClassName
+            if spec_class_name == "FsClosedValue":
+                closed_value = IFsClosedValue(spec)
+                feat_ra = closed_value.FeatureRA
+                val_ra = closed_value.ValueRA
+                if feat_ra is None or val_ra is None:
+                    continue
+                result["specs"][str(feat_ra.Guid)] = str(val_ra.Guid)
+            elif spec_class_name == "FsComplexValue":
+                complex_value = IFsComplexValue(spec)
+                feat_ra = complex_value.FeatureRA
+                if feat_ra is None:
+                    continue
+                nested_value_oa = complex_value.ValueOA
+                if nested_value_oa is None:
+                    continue
+                # Every read-back of a nested ValueOA needs its OWN
+                # explicit IFsFeatStruc(...) cast -- it comes back typed
+                # as the base IFsAbstractStructure (probe item 5).
+                # _GetFeatureStruc performs that cast at the top of its
+                # own recursive call, so we hand the raw ValueOA through.
+                result["specs"][str(feat_ra.Guid)] = self._GetFeatureStruc(
+                    nested_value_oa, _top_level=False
+                )
+            # else: an unrecognized spec ClassName -- out of scope
+            # (FeatureDisjunctionsOC members live on a different
+            # property entirely and are never reached via this loop
+            # anyway). Silently skipped, matching NC/Phoneme's existing
+            # "continue on unrecognized spec shape" behaviour.
+
+        return result
+
+    def _ResolveFsByGuid(self, guid, kind=None):
+        """
+        Resolve a GUID string to an LCM object in THIS project, returning
+        ``None`` on failure rather than raising.
+
+        De-duplicates the byte-for-byte identical
+        ``NaturalClassOperations.__ResolveByGuid``
+        (``NaturalClassOperations.py:1403``) and
+        ``PhonemeOperations.__ResolveByGuid``
+        (``PhonemeOperations.py:1525``) private methods into one shared
+        helper (spec ``feature-structure-sync-gap``, contract C5). Those
+        two private methods are left untouched here -- re-pointing them at
+        this helper is T4's job, not this task's; this addition is purely
+        additive and changes no existing caller's behaviour.
+
+        Args:
+            guid: GUID string to resolve (braced or unbraced -- whatever
+                ``FLExProject.Object()`` itself accepts).
+            kind (str, optional): Descriptive label for what is being
+                resolved (e.g. ``"feature"``, ``"value"``), used only for
+                a debug-level log line on failure. Purely diagnostic --
+                does not affect this method's return value or behaviour.
+
+        Returns:
+            The resolved LCM object, or ``None`` if ``guid`` does not
+            resolve to an object in this project (unknown/foreign GUID,
+            or a malformed GUID string).
+
+        Notes:
+            - This method NEVER raises on a resolution failure -- per
+              contract C7, an unresolved GUID must become a loud
+              ``FP_ParameterError`` naming the GUID, but that raise is the
+              CALLER's responsibility (mirroring the existing NC/Phoneme
+              methods' division of labour: NC's caller raises, Phoneme's
+              historically did not -- see spec D1/T9 for the ``skip``
+              default's own upcoming policy flip, which is unrelated to
+              this method's own contract).
+        """
+        import logging
+
+        try:
+            return self.project.Object(guid)
+        except Exception as exc:
+            logging.getLogger("flexicon").debug(
+                "_ResolveFsByGuid: could not resolve %s GUID %r: %s: %s",
+                kind or "object", guid, type(exc).__name__, exc,
+            )
+            return None
 
     def _RejectLegacyKwargs(self, kwargs, legacy_to_new):
         """

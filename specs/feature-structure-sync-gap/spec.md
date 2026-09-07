@@ -189,10 +189,37 @@ feature-structure owner class. It is the root enabler: it is why the #133 fix at
 below depend on it. Fixing it is one place and unblocks multiple rows, so it is
 sequenced **first**.
 
-Entries to add: `PhNCFeatures`, `PhNCSegments`, `PhPhoneme`, `PartOfSpeech`,
-`PosFeatures`, `FsComplexFeature`, `MoStemMsa`, `MoInflAffMsa`,
-`MoDerivAffMsa`, `MoAffixAllomorph`, `FsFeatStruc`, `FsComplexValue`,
-`FsClosedValue`.
+**Cycle-3 correction (E1):** the original 13-name list below included
+`PosFeatures`, but the live assembly scan run as part of T1 proves
+**`IPosFeatures` does not exist in this LCM version**
+(`missing_types: ["IPosFeatures"]`). "Add the 13 entries" was therefore
+unachievable as written. The corrected scope is **12 registrable
+`_interface_cache` names** -- 8 net-new, plus 4 (`MoStemMsa`, `MoInflAffMsa`,
+`MoDerivAffMsa`, `MoAffixAllomorph`) that were already cached **before T1
+ran** -- **plus `PosFeatures` hardcoded to resolve to `None`**, following the
+existing `IPhReduplicationRule` precedent for a name with no backing LCM
+interface. Landed in commit `1790fcc0`; T1 is marked `[x]` DONE in section 5.
+
+**C1's frozen table (section 4) is UNAMENDED by this correction** -- it never
+listed `PosFeatures` as a resolver row; only the interface-cache entries list
+below was wrong.
+
+Entries to add (corrected, 12 registrable names): `PhNCFeatures`,
+`PhNCSegments`, `PhPhoneme`, `PartOfSpeech`, `FsComplexFeature`, `MoStemMsa`,
+`MoInflAffMsa`, `MoDerivAffMsa`, `MoAffixAllomorph`, `FsFeatStruc`,
+`FsComplexValue`, `FsClosedValue` -- plus `PosFeatures` hardcoded to `None`
+(not a real cache entry; see correction above).
+
+**Cycle-3 finding (E2), second T1 result:** the live assembly scan also
+confirms that **only `PhNCFeatures` and `PhPhoneme` have a property literally
+named `FeaturesOA`** -- `PartOfSpeech` has
+`DefaultFeaturesOA`/`InherFeatValOA`, and `FsComplexFeature` has `DefaultOA`,
+never `FeaturesOA`. This **CONFIRMS C1; no amendment**. Side effect now
+unlocked by T1: with the cache entries in place,
+`InflectionFeatureOperations.FeatureStructureDelete` now **genuinely clears
+`FeaturesOA`** on a `PhNCFeatures`/`PhPhoneme` owner where it previously
+silently no-op'd -- and **no test locks this clear-path today**. See D3a and
+T11 (section 5) for the regression-test obligation this creates.
 
 **Mandatory guard on this task:** adding entries *changes* `cast_to_concrete`
 behaviour for every existing caller that passes one of those ClassNames (today
@@ -203,9 +230,23 @@ the NC/Phoneme live tests before any other task in this feature is started.
 `PhNCSegments` is included even though the `SegmentsRC` fixes are out of scope --
 the entry is inert here and unblocks spec 233.
 
+### D3a -- Scope statement: T6 unchanged, T11 changes twice (E3)
+
+`T6` (`MSAOperations`, #251) is **UNCHANGED** by E1 and E2 -- the MSA rows in
+C1 never involved `PosFeatures` or a bare `FeaturesOA` assumption.
+
+`T11` (`InflectionFeatureOperations.py:493`, #133 completion) **changes
+twice**:
+(a) drop `PosFeatures` from its owner list and from the descriptive comment at
+`InflectionFeatureOperations.py:486` that invented it;
+(b) T11 now also owns a **regression test** for the E2
+`FeatureStructureDelete` clear-path on `PhNCFeatures`/`PhPhoneme` owners.
+
+T11's bullet in section 5 is updated accordingly.
+
 ### D4 -- Frozen surfaces
 
-See section 4 (contract items C1-C8). Headline rulings:
+See section 4 (contract items C1-C8, plus C4a/C4b added cycle 3). Headline rulings:
 
 - **Nested spec surface: RECURSIVE DICT. The `("feat", [(f,v)...])` tuple
   overload is REJECTED** -- it is a silent `isinstance` branch (element 2 is
@@ -230,7 +271,7 @@ See section 4 (contract items C1-C8). Headline rulings:
 
 ---
 
-## 4. Frozen contract (C1-C8)
+## 4. Frozen contract (C1-C8, C4a-C4b)
 
 ### C1 -- Owner-property resolver table (FROZEN)
 
@@ -348,6 +389,36 @@ props["<Name>Guid"] = "<guid of the top-level struct>"
   to a present-but-empty struct on the target -- not to `None`. This is the
   `PhonemeOperations.py:1431` bug class; see C6.
 
+### C4a -- `_ApplyFeatureStruc` must accept both wire shapes (FROZEN, cycle 3, E4)
+
+C4 defines `props["<Name>"]` as a recursive dict, and C6 codifies
+`props.get("<Name>") or {}`. But the **shipped format is a flat LIST** of
+`{"FeatureGuid", "ValueGuid"}` dicts (`NaturalClassOperations.py:1162`,
+`PhonemeOperations.py:1373`), locked byte-for-byte by three test files:
+`test_natural_classes.py:826/865/897/925/959`, `test_phonemes.py:678/715/725`,
+`test_natural_class_feature_sync.py:88/446`. C4 addressed back-compat only for
+the `<Name>Guid` sibling key -- it never addressed the `<Name>` key itself;
+that gap is closed here.
+
+`_ApplyFeatureStruc` **MUST accept BOTH** the C4 recursive dict and the legacy
+flat list, normalising legacy -> C4 internally. This mirrors C3's frozen
+flat-list concession for `MakeFeatStruc`.
+
+### C4b -- Capture stays on the legacy wire format for NC/Phoneme; migration is T9b (FROZEN, cycle 3, E4)
+
+`_GetFeatureStruc` always **emits** C4 (recursive dict). But NC's and
+Phoneme's **capture** sides are **not** re-pointed at it in T3 or T4 -- they
+keep emitting the legacy flat list byte-for-byte, so T4 stays
+behaviour-preserving. Migrating capture to C4 is a **new task T9b** (section
+5, sequenced after T9): its own commit, its own live evidence, its own
+`CHANGELOG.md` entry. **Two concurrent wire formats is the accepted interim
+state.**
+
+T9b's priority depends on an **open measurement** -- whether NC/Phoneme
+feature structs ever nest in live data. The code comments at
+`NaturalClassOperations.py:1145-1148` and `PhonemeOperations.py:1358-1362`
+assert they do not, but **nobody has measured it**.
+
 ### C5 -- Shared helpers on `BaseOperations` (FROZEN shape)
 
 ```python
@@ -427,15 +498,38 @@ linguist, not to a silently-invented policy.
 
 Sequenced; T1 is a hard prerequisite.
 
-- [ ] **T1** `lcm_casting._interface_cache` -- add the 13 entries (D3), enumerate
-      and state the delta for every `cast_to_concrete`/`_GetTypedOwner` caller,
-      full offline suite + NC/Phoneme live tests green before proceeding.
+**Re-cut checkpoints (cycle 3):** **Checkpoint 2a = T1-T3** (additive helpers,
+zero runtime delta) -- T1 is now `[x]` DONE (commit `1790fcc0`; see D3
+correction above). **Checkpoint 2b = T4-T5** (re-pointing NC/Phoneme onto the
+shared helper + `MakeFeatStruc` generalization).
+
+- [x] **T1** DONE (commit `1790fcc0`) -- `lcm_casting._interface_cache`: added
+      the **12 registrable entries** (corrected from 13, D3/E1 --
+      `IPosFeatures` does not exist), plus `PosFeatures` hardcoded to `None`
+      (`IPhReduplicationRule` precedent); enumerated and stated the delta for
+      every `cast_to_concrete`/`_GetTypedOwner` caller; full offline suite +
+      NC/Phoneme live tests green. Also surfaced the E2 finding (only
+      `PhNCFeatures`/`PhPhoneme` literally have `FeaturesOA`) and unlocked the
+      `FeatureStructureDelete` clear-path side effect -- see D3/D3a.
 - [ ] **T2** `BaseOperations`: `_ResolveFeatureStrucOwner` + the C1 table (one copy).
 - [ ] **T3** `BaseOperations`: `_GetFeatureStruc` (recursive serialize, C4) and
       `_ResolveFsByGuid`.
+      **Corollary (E5):** NC's and Phoneme's private `__ResolveByGuid` must
+      survive T3 **untouched** -- de-duplication into `_ResolveFsByGuid`
+      happens in T4, not here.
 - [ ] **T4** `BaseOperations`: `_ApplyFeatureStruc` (recursive apply, C5/C6/C7);
       re-point NC (`on_unresolved="raise"`) and Phoneme (`"skip"`) at it.
       **Behaviour-preserving -- zero delta.**
+      **Hazard (E5, cycle 3):** `tests/operations/test_natural_class_feature_sync.py:77-160`
+      holds five `inspect.getsource` shape assertions against
+      `_NaturalClassOperations__ApplyFeatures`, including
+      `src.index("feat_obj = self.__ResolveByGuid")` at ~:145, which raises
+      `ValueError` if that literal disappears. A thin call-through breaks all
+      five. **Ruling: "behaviour-preserving" means RUNTIME behaviour only**;
+      these source-text assertions must be **migrated 1:1** to introspect
+      `BaseOperations._ApplyFeatureStruc`, enumerated assertion-by-assertion in
+      the T4 report. Deleting or weakening any one of the five is a QC
+      rejection.
 - [ ] **T5** `MakeFeatStruc` generalization (C3) -- one implementation; Infl and
       Phon become call-throughs; recursive dict + flat-list alias; `slot=`.
       Closes **#256**.
@@ -449,11 +543,23 @@ Sequenced; T1 is a hard prerequisite.
       together or none is testable. Then the `on_unresolved` default flips to
       `"raise"` in its **own commit** with a `CHANGELOG.md` `### Changed`
       BREAKING (behavioural) entry. Closes **#253**.
+- [ ] **T9b** (C4b, E4) Migrate NC's and Phoneme's **capture** sides
+      (`NaturalClassOperations.py:1162`, `PhonemeOperations.py:1373`) from the
+      legacy flat list to the C4 recursive-dict wire format emitted by
+      `_GetFeatureStruc`. Own commit, own live evidence, own `CHANGELOG.md`
+      entry. Priority gated on an **open measurement** -- whether NC/Phoneme
+      feature structs ever nest in live data; the code comments at
+      `NaturalClassOperations.py:1145-1148` and `PhonemeOperations.py:1358-1362`
+      assert they do not, but nobody has measured it.
 - [ ] **T10** `NaturalClassOperations`: replace the feature-struct `hasattr` gates
       at `:911`, `:913`, `:956`, `:1021` with `ClassName` + cast. (`SegmentsRC`
       gates at `:655`/`:711`/`:766` are OUT -- append to spec 233.)
 - [ ] **T11** `InflectionFeatureOperations.py:493` -- complete the #133 fix using
-      the C1 resolver (needs T1 + T2).
+      the C1 resolver (needs T1 + T2). **Cycle-3 changes (E3/D3a):** (a) drop
+      `PosFeatures` from its owner list and from the descriptive comment at
+      `InflectionFeatureOperations.py:486` that invented it; (b) add a
+      regression test for the E2 `FeatureStructureDelete` clear-path on
+      `PhNCFeatures`/`PhPhoneme` owners.
 - [ ] **T12** `CopyFeatStruc` (C8).
 - [ ] **T13** Latent truthiness gates: `PhonemeOperations.py:1428`,
       `PhonFeatureOperations.py:760`.
