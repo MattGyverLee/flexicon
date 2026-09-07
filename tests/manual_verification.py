@@ -523,7 +523,12 @@ def verify_safe_operations(project: FLExProject) -> VerificationResult:
             result.add_finding("  3. Get or create object via project methods")
             result.add_finding("  4. Set properties on object")
             result.add_finding("  5. End undo task (if supported)")
-            result.add_finding("  6. Call project.SaveChanges() - persist to disk")
+            result.add_finding(
+                "  6. Call project.SaveChanges() - persist to disk "
+                "(issue #243: SaveChanges() now REFUSES with "
+                "FP_TransactionError if a unit of work is still open "
+                "(CurrentDepth > 0) -- step 5 must complete first)"
+            )
             result.add_finding("  7. On error: may need rollback via undo mechanism")
 
         except Exception as e:

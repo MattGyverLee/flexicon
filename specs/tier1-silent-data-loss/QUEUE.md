@@ -31,7 +31,7 @@ promise, so it cannot exit the loop early.
 
 | # | status | slug | issues | why here |
 |---|--------|------|--------|----------|
-| 1 | **`needs_human`** (CP-A closed; CP-B/T3+T4 done and PASSED; **T6 DONE spurt 5 -- the ceiling is now MEASURED**; blocked at T7 -- see the escalated `SaveChanges()` item under "Awaiting user approval", which is now the ONLY thing that can fix the filed incident) | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
+| 1 | **`active`** (no longer `needs_human` -- the user's coupled ruling landed as C20 at spurt 6; T8a+T8b LANDED spurt 6/7, the `SaveChanges()` guard is shipped and the owner's filed incident now measures 25/25; T7 (loudness log) and T5b (this docs pass) IN PROGRESS this cycle; one NEW narrower question opened under "Awaiting user approval" -- C25, does rollback actually discard anything) | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
 | 2 | `queued` | `242-paragraph-whitespace` | #242 | Cheap, self-contained, real corruption. Paragraph/Segment text writers silently strip leading/trailing whitespace. |
 | 3 | `queued` | `feature-structure-sync-gap` | #251 #252 #253 #256 | **Already in flight** -- contract frozen (C1-C8), live ground truth captured, spurt 1 done. RESUME, do not re-plan. Biggest item (T1-T17). Ships data loss today: `Allomorph` and `POS` are live sync object types. |
 | 4 | `queued` | `250-writingsystem-activation` | #250 | Deliberately LAST: resolving it requires an **API-surface policy decision** (active-only `Exists` plus a separately-named whole-store predicate, vs. an `Ensure()` that activates a store-present WS). That is the item most likely to end `needs_human`, so everything landable unattended lands first. |
@@ -46,29 +46,36 @@ untouched items behind it.
 
 ### 1. `243-closeproject-save-guard` (#243)
 
-> **STATUS 2026-09-07 (end of spurt 5): `needs_human`, and there is now NO
-> pre-authorised work left.** T6 -- the one exception -- is **DONE** (run as
-> a one-shot on the user's greenlight, not in the loop; zero `flexicon/`
-> diff). CP-B remains done and passed: the P0 guard is landed, live-verified,
-> and P-3 is fixed 0/25 -> 25/25.
+> **STATUS 2026-09-07 (end of spurt 8, cycle 8): `active`. The owner's
+> filed incident is FIXED, live-verified, 25/25.** The user's coupled
+> ruling (spurt 6) landed as `spec.md` **C20**: the `SaveChanges()` depth
+> guard is APPROVED IN SUBSTANCE, constrained to depth/transaction
+> correctness, not sharing exclusivity. **T8a** (spurt 6, measurement-only,
+> `spec.md` C21) proved a blanket guard is safe -- no measured path where
+> `SaveChanges()` succeeds at `CurrentDepth > 0`. **T8b** (spurt 7)
+> implemented it: `SaveChanges()` now raises `FP_TransactionError` before
+> `usm.Save()` at any `CurrentDepth > 0`, in either mode, with a
+> mode-differentiated message (C21) and fail-OPEN behaviour on an
+> unreadable depth. **Consequence: the full owner sequence (create,
+> mid-session `SaveChanges()`, `CloseProject()`) now re-measures 25/25 in
+> memory and 25/25 on disk** -- C17's ceiling ("no `CloseProject()`-side
+> change can ever fix this") stood right up until a `SaveChanges()`-side
+> change did, exactly as C17 predicted it would have to.
 >
-> **What T6 settled -- `spec.md` C16/C17.** P-7 read **0/25 from the
-> STILL-OPEN project before `CloseProject()` was ever entered**, so the
-> change set never survives that far: **no `CloseProject()`-side change --
-> T3's shipped guard, T7, or any future guard there -- can EVER fix the
-> owner's filed incident. Only the `SaveChanges()` fourth ask can.** That ask
-> is therefore no longer "would also help"; it is the only possible fix. **And
-> T3's P-3 fix stands as shipped, unqualified** -- state both halves.
+> T8b also enumerated and repaired its own 11-site test blast radius
+> (`spec.md` C22, corrected by **C26** this cycle -- see below), and
+> measured an unexpected finding, **P-11**: an `FP_TransactionError`
+> escaping an `UndoableOperation()` block did NOT discard the block's
+> object creations (25/25 survived), contradicting that module's own
+> rollback-discards-everything docstring claim. Routed narrowly per
+> `spec.md` **C25** (below).
 >
-> T7 is still a public-behaviour change coupled to that unruled ask, so
-> **both must be ruled by the user together** -- see the escalated item under
-> "Awaiting user approval" below.
-> `specs/243-closeproject-save-guard/.crew-handoff.json` `blocker` is
-> authoritative. Task order: **T7 -> T5b**. **T5 was SPLIT (C19): T5a, a
-> minimal `[Unreleased]` CHANGELOG stub scoped to C17's two halves, is
-> ruling-independent, zero-churn and RECOMMENDED -- offered as a second
-> pre-authorised unit for the USER to greenlight, exactly as T6 was. It does
-> not unblock T7 or T5b.**
+> **This cycle (spurt 8): T7 (the C23-recut loudness log) landing in
+> parallel via `/lex-programmer`; this docs pass (T5b) closes out
+> `docs/TRANSACTION_GUIDE.md`, Q4, and a CHANGELOG factual correction
+> (C24) that the pre-T8b CHANGELOG text ("this does not fix the incident
+> #243 was filed about") is now FALSE and must not be cited.** See
+> `spec.md` C21-C27 and `specs/243-closeproject-save-guard/reviews/cycle8-doc.md`.
 
 
 **Spec+probe checkpoint DONE (spurt 1, 2026-09-07).** `spec.md` (contract
@@ -419,6 +426,78 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   Items 2, 3 and 4 untouched, and `specs/feature-structure-sync-gap/` was not
   opened.
 
+- **2026-09-07 -- item 1, spurt 6 (cycle 6): the user RULED, and T8a
+  measured the guard shape.** The user answered the `needs_human` blocker
+  directly: *"resolve #243 with /lex-lead. The goal is safe writes, but
+  without sacrificing edits on shared projects; editing custom fields is
+  the only edit I've seen that CAN'T be done shared."* Frozen as `spec.md`
+  **C20**: the `SaveChanges()` depth guard is APPROVED IN SUBSTANCE,
+  constrained to depth/transaction correctness only -- NOT sharing
+  exclusivity, locking, or refusing writes because a project is shared.
+  `/lex-lead` also corrected the user's premise against the code: flexicon
+  contains zero sharing-based refusals; the custom-field refusal the user
+  named is itself a depth guard (`CustomFieldOperations.py:306`), not an
+  exclusivity one, so the fourth ask is the same KIND of guard the user
+  already accepts. **T8a** (measurement-only, zero `flexicon/` diff)
+  measured `SaveChanges()` at `CurrentDepth > 0` in the one case P-5/P-7
+  never exercised (inside `UndoableOperation()`, `undoable=True`) plus two
+  controls: no measured case exists where `SaveChanges()` currently
+  succeeds at depth > 0, so a blanket guard is safe. Frozen as **C21**.
+  Ralph loop stays cancelled; ran as a directed dispatch, not a loop
+  iteration.
+
+- **2026-09-07 -- item 1, spurt 7 (cycle 7): T8b LANDED -- the fourth ask
+  is shipped, and the owner's filed incident measures 25/25.** Crew:
+  `lex-programmer` alone. `FLExProject.SaveChanges()` now raises
+  `FP_TransactionError` before `usm.Save()` at any `CurrentDepth > 0`, in
+  either mode, with a mode-differentiated message (undoable=False may name
+  data loss; undoable=True must not, per a measured false-positive risk) and
+  fails OPEN if the depth read itself raises. The three shipped docstring
+  `Example` blocks (`SaveChanges()`, `RefreshFromDisk()`,
+  `AbortSession()`'s `else:` branch) were corrected in the same diff. All
+  11 enumerated test-blast-radius sites (`spec.md` C22) were repaired;
+  public-API pins now assert `FP_TransactionError`, liblcm-mechanism pins
+  (P-7/P-8/P-9) switched to the raw `usm.Save()` accessor so C13/C16/C18's
+  basis is not silently deleted. **Headline measurement: the full owner
+  sequence now re-measures 25/25 in memory and 25/25 on disk**, up from
+  0/25 pre-guard -- C17's ceiling is met, by the only route C17 said could
+  ever meet it. **P-11** (a new probe) found an escaping
+  `FP_TransactionError` inside `UndoableOperation()` does NOT discard the
+  block's object creations (25/25 survived), contradicting that module's
+  own rollback docstring -- a P0 finding flagged for routing, not
+  absorbed here. `/lex-lead` recut **T7** as **C23**: post-T8b the only
+  live route into `CloseProject()`'s Phase-1 envelope-missing branch is
+  the one where the save already succeeded, so the planned
+  `FP_ProjectError` raise there is WITHDRAWN (it would be a false alarm on
+  success); the ERROR-level log (naming the anomaly, asserting nothing
+  about loss) is the whole remaining remedy. Live: probe 11/11,
+  `test_abort_session_live.py` 12/12, both `run_mode: live`; offline 1290
+  passed unchanged. Item 1 moves from `needs_human` to `active`; next is
+  T7 (`/lex-programmer`) and T5b (`/lex-doc`), in parallel.
+
+- **2026-09-07 -- item 1, spurt 8 (cycle 8): T5b docs pass, plus three
+  process corrections.** Crew: `/lex-doc` alone this cycle (T7 dispatched
+  in parallel to `/lex-programmer`, tracked separately). Delivered: a
+  CHANGELOG factual correction (`spec.md` **C24**) -- the pre-existing
+  `[Unreleased]` text "this does not fix the incident #243 was filed
+  about" was FALSE as of T8b and is corrected in place, with two
+  anti-overclaim carve-outs preserved (C10's `.fwdata` exclusion; a new
+  single-client-only caveat); `docs/TRANSACTION_GUIDE.md` corrections
+  (the "no side effects on transactions" bullet, inverted; both
+  `SaveChanges()` usage examples given a mode note; a bounded accuracy
+  banner on the unverified Phase 1 rollback narrative); Q4 CLOSED
+  (CHANGELOG amends `[Unreleased]` in place, cross-referencing `[4.4.0]`
+  by prose); a new **C25** narrowly routing P-11's rollback finding (a
+  docstring caveat to `/lex-programmer`'s `undoable_operation.py`, a
+  broader open question to "Awaiting user approval" below, gating only
+  this cycle's `TRANSACTION_GUIDE.md` wording); a **C26** correction to
+  C22's test-blast-radius table (it was a different, coincidentally
+  same-sized partition from `/lex-lead`'s own enumeration; re-keyed, three
+  previously-unlisted edited sites surfaced, and a second widened
+  source-slice window found); and **C27**, a standing rule that the doc
+  agent landing a spurt's docs task owns that spurt's staleness sweep.
+  Full report: `specs/243-closeproject-save-guard/reviews/cycle8-doc.md`.
+
 ### Awaiting user approval (do not file inside the loop)
 
 - (carried from the `feature-structure-sync-gap` handoff) `IWfiAnalysis.MsFeaturesOA`
@@ -426,6 +505,10 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   `ICmBaseAnnotation` / `IScrScriptureNote.FeaturesOA` uncaptured;
   `EtymologyOperations.py:548` no-clear-on-null RA policy;
   `BaseOperations._apply_props_loop:346-353` dict-dispatch hazard.
+- **APPROVED (spurt 6, `spec.md` C20) and LANDED (spurt 7, T8a/T8b) -- see
+  `spec.md` C20-C23 and `evidence/live-t8b-savechanges-guard.md`. NOT
+  deleted; kept below as the audit trail for how this ask was raised,
+  ruled and shipped.** Original text follows verbatim for the record:
 - **NEW (item 1, spurt 1, 2026-09-07) -- `SaveChanges()` has no depth guard.**
   Under `undoable=False`, `FLExProject.SaveChanges()` (`FLExProject.py:563-588`)
   calls `usm.Save()` with no check on `ActionHandlerAccessor.CurrentDepth`. The
@@ -500,6 +583,62 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   docs-only, ruling-independent, discloses nothing public issue #243 does not
   already state, and has **zero churn cost** because it can be edited before
   any version cut. It does **not** unblock T7 or T5b.
+- **NEW (item 1, spurt 7, cycle 7, 2026-09-07) -- audit the broader class of
+  schema/metadata-mutating and exclusivity-sensitive operations for
+  depth-guard coverage.** `lex-domain`'s cycle-6 Q2 review (
+  `specs/243-closeproject-save-guard/reviews/cycle6-domain.md`) found that
+  `CustomFieldOperations.py:306`'s depth guard is **one instance of a
+  broader class, not a unique case**: writing-system add/remove/change,
+  model migration on version upgrade, project rename/relocation,
+  possibility-list restructuring (especially deletes/moves of items with
+  wide references), and deletes of objects with wide references generally
+  are all schema-level or referential-integrity-sensitive mutations that
+  may need the same kind of transaction-depth guard custom fields already
+  have. This ask is for an **audit of that class** -- which operations need
+  a depth guard, and whether any already have one -- not an implementation.
+  **Overlap, stated explicitly so this is not filed as a duplicate:** the
+  writing-system half of the class is **already open issue #250**, queue
+  item 4 of this campaign. This ask is the audit of the whole class; #250
+  is one already-tracked instance of it.
+  **Why this is about transaction depth, not exclusivity** (also from
+  cycle-6 domain Q1/Q3, same review): **Q1** found custom-field
+  creation/editing is **NOT blocked on shared projects** -- FLEx's own gate
+  at `CustomFieldOperations.py:306` is a local, in-process
+  `ActionHandlerAccessor.CurrentDepth` check, independent of Send/Receive or
+  LAN-sharing state. **Q3** found the issue-#21 ghost-field corruption
+  mechanism (`IFwMetaDataCacheManaged.AddCustomField` inside an open task)
+  would still occur on a **fully exclusive, non-shared** project -- the bug
+  is about UnitOfWork/task-nesting order within one process, not about a
+  second writer. So the class this audit targets is scoped by transaction
+  depth and schema/metadata mutation, not by sharing/exclusivity, matching
+  the C20 ruling's own correction of that premise for #243/#243's
+  `SaveChanges()` guard.
+- **NEW (item 1, spurt 8, cycle 8, 2026-09-07) -- does
+  `UndoableUnitOfWorkHelper.Dispose()` + `set_RollBack(True)` actually
+  discard anything?** T8b's P-11 (`evidence/live-t8b-savechanges-guard.md`)
+  measured that an `FP_TransactionError` escaping a `with
+  project.UndoableOperation(...)` block -- triggering `Dispose()` +
+  `set_RollBack(True)` -- did NOT discard the block's own object
+  creations: 25/25 survived both an in-memory re-read and a genuine
+  close-and-reopen, contradicting `undoable_operation.py`'s and
+  `transaction.py`'s own docstring claims that rollback discards the
+  block's mutations. This ask is for a full audit, not an
+  implementation: enumerate object creations (**MEASURED: no, 25/25
+  survived both reads**), property modifications (unmeasured), deletions
+  (unmeasured), plus every rollback claim in `undoable_operation.py`,
+  `transaction.py`, `BaseOperations.TransactionCM`,
+  `docs/TRANSACTION_GUIDE.md`, and what
+  `tests/test_transaction_honesty.py` actually pins -- then a decision on
+  whether the advertised rollback semantics change or the docs do. Likely
+  a candidate feature directory of its own; likely also affects
+  `AbortSession()`'s advertised semantics (it wraps the same
+  `IActionHandler.Rollback(0)` primitive). **NO work happens on this
+  until the user approves it.** Routed narrowly per `spec.md` **C25**: it
+  gates only this cycle's `docs/TRANSACTION_GUIDE.md` wording (do not
+  claim an escaping exception safely discards work; do not generalise the
+  25/25 creation-survival measurement to property modifications or
+  deletions), and gates neither T7 nor T8b's own completion -- #243's
+  frozen contract never covered `UndoableOperation()` rollback semantics.
 - Open issue **#259** (`InflClassRA` does not exist on `IWfiMorphBundle`) is
   Tier 2, NOT in this campaign -- but its draft lives at
   `specs/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md`

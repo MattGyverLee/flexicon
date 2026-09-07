@@ -71,8 +71,18 @@ class TestRefreshFromDisk:
         # Both methods must resolve the same service.
         refresh_idx = source.index("def RefreshFromDisk(self):")
         save_idx = source.index("def SaveChanges(self):")
-        refresh_body = source[refresh_idx : refresh_idx + 2500]
-        save_body = source[save_idx : save_idx + 1000]
+        # Widened from 2500 (issue #243 T8b): RefreshFromDisk()'s docstring
+        # gained a "Note on mode" section (spec.md C21) ahead of the
+        # ObjectRepository(IUndoStackManager) call.
+        refresh_body = source[refresh_idx : refresh_idx + 4000]
+        # Widened from 1000 (issue #243 T8b): the SaveChanges() depth guard
+        # (spec.md C21) added a docstring and guard body ahead of the
+        # ObjectRepository(IUndoStackManager) call, pushing it well past the
+        # old 1000-character window. 6000 comfortably covers the guarded
+        # method (~5.3k chars as of T8b) with headroom for future growth;
+        # the assertion's intent -- both methods resolve the same accessor
+        # -- is unchanged, only the window assumption was wrong.
+        save_body = source[save_idx : save_idx + 6000]
         assert "self.ObjectRepository(IUndoStackManager)" in refresh_body
         assert "self.ObjectRepository(IUndoStackManager)" in save_body
         assert "usm.Refresh()" in refresh_body

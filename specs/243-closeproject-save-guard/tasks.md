@@ -19,20 +19,28 @@ sequence is reconciled as a P-5 -> P-3 chain that the C6 guard breaks.
 **Q3 is now ALSO CLOSED (spec.md Q3, ruled 2026-09-07 at T1): NO capability
 token.** `flexicon/__init__.py` and
 `tests/write_path_transactions/test_capabilities.py` are out of scope for
-every task below. Only **Q2** (decided at T3) and **Q4** (`/lex-doc`'s call
-at T5) remain genuinely open.
+every task below. **Q2, Q3, Q4 and Q5 are now ALL CLOSED** (see the "STATE
+AS OF SPURT 8" block below for the current tally -- this paragraph is
+retained as history of when Q1/Q3 first closed).
 
-**STATE AS OF SPURT 5 (cycle 5, 2026-09-07) -- READ BEFORE ANY TASK BELOW.**
-Done: T1, T3, T4, **T6**. Dropped: T2 (C12). Remaining: **T7 (BLOCKED on the
-user's coupled ruling)**, **T5a (separable, ruling-independent,
-RECOMMENDED)**, **T5b (gated behind T7 + the ruling)**. Contract is now
-**C1-C19**. Q2 CLOSED (C15); **Q5's detector half CLOSED (C18)**; Q4 open at
-T5b. **THE RALPH LOOP IS CANCELLED** -- no Stop hook will re-feed anything,
-so nothing below resumes automatically; a human must restart it (see
-`STATUS.md` -> "How a human restarts this"). **The single most important
-fact, frozen as C17:** no `CloseProject()`-side change can ever fix the
-owner's filed incident -- only the `SaveChanges()` fourth ask can -- **and**
-T3's P-3 fix (0/25 -> 25/25) stands as shipped. State both halves.
+**STATE AS OF SPURT 8 (cycle 8, 2026-09-07) -- READ BEFORE ANY TASK BELOW.**
+Done: T1, T3, T4, T6, **T8a, T8b**. Dropped: T2 (C12). **The user's coupled
+ruling landed as C20 (spurt 6) -- T7 is no longer blocked.** In progress
+THIS CYCLE: **T7** (the C23-recut loudness log, dispatched to
+`/lex-programmer` in parallel) and **T5b** (this docs pass, `/lex-doc`).
+T5a already landed as a pre-authorised unit (see Checkpoint 3). Contract is
+now **C1-C27**. Q2 CLOSED (C15); Q3 CLOSED (no capability token); **Q4
+CLOSED** (`/lex-doc`'s placement/wording call, this cycle); **Q5's detector
+half CLOSED (C18)**, its ruling half CLOSED (C20). **THE RALPH LOOP IS
+STILL CANCELLED** -- no Stop hook re-feeds anything; each spurt is a
+directed dispatch, not a loop iteration. **C17's ceiling still stands as
+written -- no `CloseProject()`-side change could ever fix the owner's
+filed incident -- but T8b has now DONE it from the `SaveChanges()` side
+C17 said was the only possible route:** the full owner sequence (create,
+mid-session `SaveChanges()`, `CloseProject()`) re-measures **25/25 in
+memory and 25/25 on disk** (`evidence/live-t8b-savechanges-guard.md`), up
+from 0/25 pre-guard. T3's independent P-3 fix (0/25 -> 25/25) still stands
+as shipped. State all three facts together, not any one alone.
 
 **New contract decision C11 (spec.md, ruled 2026-09-07 at the T1 review):**
 `HasOpenSessionTask()` reads depth BEFORE the `self._undoable` mode check,
@@ -421,63 +429,182 @@ OBSERVES it, T7 does not modify it.
       `evidence/live-t6-noop-save-mechanism.md`. Do NOT modify
       `SaveChanges()`, do NOT implement any part of T7 here, and do NOT
       change `CloseProject()`.
-- [ ] **T7** (LIVE) **BLOCKED on the user's ruling -- do not start it inside
-      the loop.** Implement the C14 remedy in `flexicon/code/FLExProject.py`
-      only: (1) the Phase-1 `else:` branch logs at **ERROR**, not `debug`;
-      (2) `CloseProject()` still always attempts `usm.Save()`, then raises
-      `FP_ProjectError` when the save cannot be trusted, saying explicitly
-      that the session's changes may not have been written to disk;
-      (3) **DETECTOR -- RE-SCOPED 2026-09-07 (spurt 5) by `spec.md` C18,
-      which SUPERSEDES this point's original wording.** The original text
-      said "preferring the direct `IUndoStackManager` read over the
-      envelope-missing heuristic". **That is now measured to be WRONG and is
-      withdrawn:** T6/P-9 showed `HasUnsavedChanges` reads `False`
-      immediately after `usm.Save()` in BOTH the real-save (25/25) and no-op
-      (0/25) cases -- **indistinguishable**, therefore unusable as a
-      post-save detector. The binding shape is:
-      - **PRIMARY, required:** the Phase-1-envelope-missing anomaly
-        (`writeEnabled and not _undoable` and `HasOpenSessionTask()` is
-        `False`), computable from T1's P1 surface. It is anomalous by
-        construction (C14), so it is a sound trigger.
-      - **OPTIONAL, diagnostic only:** a *pre*-`Save()` `HasUnsavedChanges`
-        read, logged as a value inside that already-anomalous branch. It
-        **MUST NOT** gate the raise and **MUST NOT** introduce a second code
-        path. It is not independent information -- P-9 read `True` only
-        after a *successful* `End`, so it is a proxy for "did an End just
-        succeed", which `CloseProject()` already knows first-hand from its
-        own End attempt.
-      - **DO NOT OVER-CLAIM (this is the point of the re-scope).** Do not
-        word `HasUnsavedChanges == False` as *"there is nothing pending to
-        save"*. Proven false-negative: in P-9's no-op shape it read `False`
-        while all 25 entries still existed in memory. The property means "a
-        completed-but-unsaved unit of work is registered", not "dirty data
-        exists".
-      - **Do not describe the raise as recovering data.** Per **C17** it
-        cannot: the change set is gone before `CloseProject()` is entered.
-        T7 restores LOUDNESS, not DATA.
-      (4) move `Dispose()` / `del self.project` into a `finally` per
-      **C15**; (5) re-point T4's P-5 assertions at the new contract
-      (`CloseProject()` RAISES; survivors stay 0/25 -- and per C17 that 0/25
-      is now the *ceiling*, not a pending improvement). Do NOT touch
-      `SaveChanges()`. Evidence: `evidence/live-t7-loud-close.md`.
-      **Why blocked -- SHARPENED by T6 (spurt 5):** C14's raise is a
-      public-behaviour change in the same failure path as the unruled
-      `SaveChanges()` fourth ask, and the two interact -- if `SaveChanges()`
-      is approved to fail fast the raise becomes near-unreachable defensive
-      code; if declined it is the only signal the owner gets. **C17 raises
-      the stakes of the decline branch specifically:** the fourth ask is now
-      measured to be the ONLY thing that can fix the filed incident, so
-      declining it makes T7's loudness the entire, permanent remedy. Building
-      T7 on one branch of that coin is still the wrong sequence.
+- [ ] **T7** (LIVE) **IN PROGRESS (spurt 8, cycle 8) -- dispatched to
+      `/lex-programmer` in parallel with this docs pass.** RECUT 2026-09-07
+      (spurt 7, cycle 7) by `spec.md` C23. No longer `needs_human` -- the
+      user's ruling landed as C20. Sequenced to run AFTER T8b (Checkpoint
+      2d, now DONE), because T8b's own P-5 re-run is the
+      empirical check on this task's one remaining live route. Implement in
+      `flexicon/code/FLExProject.py` only:
+      1. the Phase-1 `else:` branch logs at **ERROR**, not `debug` --
+         reworded per **C23** to name the anomaly
+         (`HasOpenSessionTask()` read `False` inside Phase 1, unreachable by
+         construction unless the envelope was already ended early) and
+         state plainly that `usm.Save()` is proceeding anyway, asserting
+         **nothing** about whether data was lost. Post-T8b the only live
+         route into this branch is P-3 (envelope gone, change set intact,
+         save SUCCEEDS), so the log must not imply loss.
+      2. ~~raise `FP_ProjectError`~~ -- **WITHDRAWN by C23.** Post-T8b, the
+         P-5 route that justified this raise is CLOSED (T8b's guard stops
+         `SaveChanges()` from ever collapsing the envelope), the
+         `AbortSession()`-reopen-failure route already raises
+         `FP_ProjectError` from `AbortSession()` itself
+         (`FLExProject.py:955-963`), and the one route that remains live
+         (P-3) is a SUCCESSFUL save. A raise there would be a false alarm on
+         success and would never fire on a real loss -- C18 point 4's
+         prohibition, applied to ourselves. Do not reintroduce this raise
+         without first citing and overturning C23.
+      3. **DETECTOR -- unchanged from C18**, only its consequence changes
+         (feeds a log line, not a raise). Binding shape, unchanged:
+         - **PRIMARY, required:** the Phase-1-envelope-missing anomaly
+           (`writeEnabled and not _undoable` and `HasOpenSessionTask()` is
+           `False`), computable from T1's P1 surface.
+         - **OPTIONAL, diagnostic only:** a *pre*-`Save()` `HasUnsavedChanges`
+           read, logged inside that already-anomalous branch. MUST NOT gate
+           anything and MUST NOT introduce a second code path -- it is a
+           proxy for "did an End just succeed", not independent information
+           (P-9).
+         - **DO NOT OVER-CLAIM.** Do not word `HasUnsavedChanges == False`
+           as "there is nothing pending to save" -- proven false-negative
+           (P-9's no-op shape read `False` while all 25 entries still
+           existed in memory).
+      4. move `Dispose()` / `del self.project` into a `finally` per **C15**
+         -- unchanged, independent of whether the branch raises or merely
+         logs.
+      5. ~~re-point T4's P-5 assertions~~ -- **VOID by C23.** T8b re-points
+         them itself (`spec.md` C22 row 3), and to **25/25**, not to
+         "raises, 0/25" -- there is no T7-side assertion flip left to make.
+      Do NOT touch `SaveChanges()`. Evidence: `evidence/live-t7-loud-close.md`.
+      **C14 and C17 are NOT reopened by this recut.** C14's diagnosis of the
+      observability regression stands; C17's ceiling stands -- no
+      `CloseProject()`-side change was ever going to fix the owner's
+      original filed sequence, only T8b's `SaveChanges()`-side change could.
+      **Only C14's remedy SHAPE narrows**, because T8b removes the loss path
+      the raise was written to make audible.
 
 **Checkpoint -- HALF REACHED 2026-09-07 (spurt 5).** T6 is DONE: three
 probes green (probe file 9/9, `run_mode: live`), mechanism named
 ((ii) confirmed / (i) ruled out / (iii) undetermined -- `spec.md` C16),
 ceiling frozen (C17), detector verdict ruled (C18), CP-B defect 2 closed,
-zero `flexicon/` diff. **The other half, T7, remains BLOCKED on the user's
-coupled ruling and the loop is CANCELLED -- nothing resumes it
-automatically.** CP-C (T5b) stays gated behind T7; **T5a is now separable
-and recommended -- see C19 and Checkpoint 3 below.**
+zero `flexicon/` diff. **UPDATED 2026-09-07 (spurt 7, cycle 7):** the user's
+coupled ruling landed as **C20** (the `SaveChanges()` fourth ask is APPROVED
+IN SUBSTANCE), so T7 is no longer `needs_human`. It is instead **RESEQUENCED
+to run AFTER Checkpoint 2d / T8b** -- see `spec.md` **C23** and the rewritten
+T7 bullet below. CP-C (T5b) stays gated, now behind T7 (unchanged shape,
+new reason); **T5a already landed as a pre-authorised unit -- see Checkpoint
+3 below.**
+
+---
+
+## Checkpoint 2d -- T8a/T8b: the SaveChanges() depth guard (CP-D)
+
+Opened by `spec.md` **C20** (spurt 6) as the campaign's fourth ask, approved
+in substance and constrained to depth/transaction correctness, not sharing
+exclusivity. T8a is the P-10 measurement that decides the guard's shape;
+T8b implements it. **T7 (Checkpoint 2c above) is RESEQUENCED to run AFTER
+T8b** -- see `spec.md` **C23** -- because T8b's own P-5 re-run is the
+empirical check on T7's one remaining live route.
+
+- [x] **T8a** (LIVE, measurement only) **DONE 2026-09-07 (spurt 6, cycle 6).**
+      Measured `SaveChanges()`'s behaviour at `CurrentDepth > 0` in the one
+      case P-5/P-7 never exercised -- inside `UndoableOperation()` under
+      `undoable=True` -- alongside two controls, to decide whether a
+      blanket guard is safe. Result table (full detail
+      `reviews/cycle6-programmer.md`,
+      `evidence/live-t8a-savechanges-depth-blast-radius.md`):
+
+      | Case | Context / mode | Depth before `SaveChanges()` | Raised? | In-memory survivors | On-disk survivors |
+      |---|---|---|---|---|---|
+      | A | `UndoableOperation()`, undoable=True | 1 | YES (`Commit at wrong place.`) | 25/25 | 25/25 |
+      | B | `Transaction()`, undoable=True | 0 | NO | 25/25 | 25/25 |
+      | C | `Transaction()`, undoable=False | 1 | YES (`Commit at wrong place.`) | 0/25 | 0/25 |
+
+      **Verdict: BLANKET GUARD SAFE.** No measured case exists where
+      `SaveChanges()` currently succeeds at `CurrentDepth > 0` -- Case A
+      raises but the edit survives by a mechanism independent of that
+      specific call (the enclosing `UndoableOperation()` block's own clean
+      `__exit__` commits regardless); Case C reproduces the destructive
+      P-5/P-7 mechanism; Case B is outside the guard's domain (depth 0).
+      Frozen as **C21**. Probe file 9 -> 10 live tests
+      (`test_p10_savechanges_depth_blast_radius`, matrix-style over A/B/C).
+      Live: 10 passed, `run_mode: live`. Offline: 1290 passed, unchanged
+      (deselected 473 -> 474, exactly +1). `git diff --stat -- flexicon/`
+      empty -- `SaveChanges()` and `CloseProject()` untouched, as required
+      for a measurement-only task.
+      Evidence: `evidence/live-t8a-savechanges-depth-blast-radius.md`.
+      Report: `reviews/cycle6-programmer.md`.
+- [x] **T8b** (LIVE) **DONE (spurt 7, cycle 7).** Implement the C21
+      guard in `flexicon/code/FLExProject.py`'s `SaveChanges()` only:
+      1. Before calling `usm.Save()`, read `CurrentDepth` via the existing
+         T1 helper. If it raises (closed/never-opened project), log a
+         WARNING and proceed to `usm.Save()` unguarded -- fail OPEN, per
+         C21, mirroring `CustomFieldOperations.py:306`'s `getattr(...,0)`
+         precedent.
+      2. If `CurrentDepth > 0`, raise `FP_TransactionError` instead of
+         calling `usm.Save()`. Blanket predicate, no mode exemption (C21).
+      3. The exception message differs by mode (C21's MESSAGE CLAUSE): the
+         `undoable=False` wording may name data loss (measured,
+         P-5/P-7/P-10 case C); the `undoable=True` wording MUST NOT mention
+         data loss or data risk (measured false-positive risk, P-10 case A).
+      4. Correct the three shipped docstring `Example` blocks named in C21:
+         `SaveChanges()` (~:745-750), `RefreshFromDisk()` (:792-797),
+         `AbortSession()`'s `else:` branch (~:908).
+      5. Work through the C22 11-site blast radius: public-API pins
+         (rows 1-3, 8-9) keep calling `SaveChanges()` and are re-pointed at
+         `FP_TransactionError`; liblcm-mechanism pins (rows 4-7, and half of
+         row 10) switch to the raw `usm.Save()` accessor so they keep
+         measuring what C13/C16/C18 actually rest on; row 10 additionally
+         gains a new assertion for the public `FP_TransactionError` path;
+         row 11 (`test_transaction_honesty.py:73`)'s 1000-character
+         slice is widened, not routed around (see `spec.md` C26 --
+         re-keyed; the "`:154`" line does not need widening, it is
+         `test_transaction_body_always_passes_none_none`'s unbounded
+         slice, untouched).
+      6. Add **P-11**: with the new guard live, re-run P-10's case A
+         (`SaveChanges()` inside `UndoableOperation()`) and measure --
+         do not infer -- whether the new `FP_TransactionError` is caught by
+         the harness's `_safe()` wrapper as before, and separately let it
+         escape the `with` block once, on purpose, to confirm whether
+         `UndoableOperation.__exit__` treats it as a rollback trigger
+         (expected: yes, identical to today's behaviour with the raw liblcm
+         exception -- C21's caveat). Record which of the two shapes was
+         measured for each claim.
+      Live verification: `target_sandbox_path` only,
+      `FLEXLIBS_REQUIRE_LIVE=1`, `-m requires_live_project`, counts derived
+      with `--collect-only` per the standing rule, `run_mode: live` in
+      `tests/live_status.json`, offline baseline re-confirmed against 1290
+      (T8a's baseline). Evidence: `evidence/live-t8b-savechanges-guard.md`.
+
+      **T8b OUTCOME (spurt 7, cycle 7).** Landed exactly as specified.
+      Guard live in `flexicon/code/FLExProject.py`'s `SaveChanges()`; all
+      three docstring `Example` blocks corrected; all 11 C22 sites
+      repaired (public-API pins re-pointed at `FP_TransactionError`,
+      liblcm-mechanism pins P-7/P-8/P-9 switched to the raw `usm.Save()`
+      accessor); `test_transaction_honesty.py`'s slice widened (both
+      `save_body` 1000->6000 AND `refresh_body` 2500->4000 -- see `spec.md`
+      **C26** ADDENDUM, a second window the original enumeration missed).
+      Probe file 10 -> 11 live tests (**P-11** added); `test_abort_session_live.py`
+      12/12. Both `run_mode: live`; offline 1290 passed, deselected
+      474 -> 475. **Headline: the full P-5/P-7/P-10-case-C sequence now
+      re-measures 25/25 in memory and 25/25 on disk**, up from 0/25
+      pre-guard -- C17's ceiling is met, by the only route C17 said could
+      meet it. **P-11 finding (routed, not absorbed here):** an escaping
+      `FP_TransactionError` inside `UndoableOperation()` did NOT discard
+      the block's object creations (25/25 survived), contradicting that
+      module's own rollback-discards-everything docstring claim; routed
+      per `spec.md` **C25** (spurt 8) to `undoable_operation.py`'s
+      docstring (`/lex-programmer`'s diff) plus a new "Awaiting user
+      approval" QUEUE.md item for the broader question.
+      Evidence: `evidence/live-t8b-savechanges-guard.md`.
+
+**Checkpoint CP-D -- REACHED 2026-09-07 (spurt 7, cycle 7).** T8a and T8b
+both landed and live-verified; the guard's shape (C21) is shipped with a
+mode-differentiated message; all 11 C22 sites are accounted for with no
+silently-broken pin (re-keyed against `/lex-lead`'s authoritative
+enumeration as `spec.md` **C26**, spurt 8); P-11 is measured, not
+inferred; the offline suite is green including the (doubly) widened
+`test_transaction_honesty.py` slices. `spec.md` C21-C26 reflect the
+shipped shape. T7 (Checkpoint 2c) is now IN PROGRESS per C23's recut.
 
 ---
 
@@ -502,12 +629,17 @@ observability regression -- entirely undocumented. So:
   (loudness not data), C17 (state BOTH halves). Docs-only, live-exempt.
   **Offered as a second pre-authorised, ruling-independent unit, exactly as
   T6 was -- the USER greenlights it or not. Do not run it inside any loop.**
-- **T5b -- the prominent P2 release note + the `SaveChanges()` docstring
-  correction + Q4's placement/wording. STAYS GATED** behind the user's
-  ruling AND T7, unchanged. Its wording depends on both, and the docstring
-  correction must tell callers what to do instead -- which depends on
-  whether `SaveChanges()` is getting a guard. The T5 task text below is
-  T5b's.
+- **T5b -- the prominent P2 release note + the `TRANSACTION_GUIDE.md`
+  corrections + Q4's placement/wording. Gate LIFTED 2026-09-07 (spurt 8,
+  cycle 8):** the user's ruling landed as C20 (spurt 6) and the guard
+  landed as T8b (spurt 7), so the wording this task depends on is now
+  settled and measured, not merely proposed. Dispatched to `/lex-doc` this
+  cycle IN PARALLEL with T7 (not strictly after it): the `SaveChanges()`
+  docstring correction itself already shipped inside T8b's own diff (per
+  the NARROWING below), so T5b's remaining surface (CHANGELOG,
+  `docs/TRANSACTION_GUIDE.md`, Q4) does not depend on T7's specific log
+  wording landing first -- only on T8b, which is done. The T5 task text
+  below is T5b's.
 
 **RE-GATED 2026-09-07 (spurt 4): T5 is now LAST, after T6 and T7.** It was
 originally third of three; the CP-B ruling inserted Checkpoint 2c ahead of
@@ -523,18 +655,58 @@ Q4:
   not DATA. Same discipline as C10's ban on claiming the `.fwdata` swap is
   fixed.
 
-- [ ] **T5** (DOCS-ONLY, EXEMPT FROM LIVE VERIFICATION) Dispatch `/lex-doc`
-      with this spec (`spec.md` sections 3, C8, Q4) and the `[4.4.0]`
-      `CHANGELOG.md` entry for the `undoable` default flip, so it can draft
-      a new, prominent CHANGELOG entry documenting this fix and
-      cross-referencing the 4.4.0 entry -- per the Archivist/Doc-Agent
-      division of labour (C8), the Archivist does not author the entry's
-      prose itself. Stage and commit `/lex-doc`'s returned patch. This task
-      is docs-only and carries NO live-verification requirement -- no
-      `target_sandbox`, no evidence file, no pytest invocation.
+- [~] **T5** (DOCS-ONLY, EXEMPT FROM LIVE VERIFICATION) **IN PROGRESS
+      (spurt 8, cycle 8) -- dispatched to `/lex-doc` this cycle, in
+      parallel with T7 at `/lex-programmer`. See
+      `specs/243-closeproject-save-guard/reviews/cycle8-doc.md` for what
+      landed this pass; leave the checkbox open until `/lex-lead`
+      verifies it, per this feature's own "not taken on report"
+      discipline.** NARROWED 2026-09-07 (spurt 7, cycle 7) by `spec.md`
+      C21/C23. The three
+      shipped docstring `Example` corrections (`SaveChanges()`,
+      `RefreshFromDisk()`, `AbortSession()`'s `else:` branch) that used to
+      live under this task's "ADDED by the C9 ruling" heading below **MOVE
+      TO T8b** -- they are guaranteed refusals under the now-implemented
+      C21 guard, not merely a pre-existing docstring inaccuracy, so they
+      ship in the same diff as the guard, not deferred here. What T5b
+      (this task) keeps:
+      - the prominent P2 release note (`CHANGELOG.md`, cross-referencing
+        the `[4.4.0]` `undoable` default-flip entry, per C8);
+      - **`docs/TRANSACTION_GUIDE.md`**, especially the "SaveChanges()
+        Method" -> "Notes" section (`:154-183`), whose bullet "**No side
+        effects on transactions**: calling `SaveChanges()` does NOT affect
+        the undo stack or active transactions" (`:181`) is the precise
+        inverse of the measured truth (P-5/P-7/P-10: it can collapse the
+        session envelope and, post-guard, refuses outright at depth > 0).
+        The two `SaveChanges()` usage examples at `:43-50` and `:170-176`
+        also need review against the new guard (both are written using
+        `Transaction()`, so they are `undoable=True`-default-safe today,
+        but the doc never states that the same code under `undoable=False`
+        now raises `FP_TransactionError`);
+      - Q4's placement/wording answer (`/lex-doc`'s call, per C8).
+      Dispatch `/lex-doc` with this spec (`spec.md` sections 3, C8, Q4, C21,
+      C23), the `[4.4.0]` `CHANGELOG.md` entry, and `docs/TRANSACTION_GUIDE.md`
+      so it can draft the release note and correct the guide -- per the
+      Archivist/Doc-Agent division of labour (C8), the Archivist does not
+      author the entry's prose itself. Stage and commit `/lex-doc`'s
+      returned patch. **CHANGELOG classification note:** `SaveChanges()`
+      changing its raised exception type (liblcm `InvalidOperationException`
+      -> `FP_TransactionError`) at `CurrentDepth > 0` is a **public-behaviour
+      change**, not merely a fix -- the CHANGELOG must classify it under a
+      heading that says so (e.g. `Changed` / `Breaking`, per the project's
+      own Doc-Agent classification discipline), not bury it under `Fixed`
+      alongside T3's P-3 guard. This task is docs-only and carries NO
+      live-verification requirement -- no `target_sandbox`, no evidence
+      file, no pytest invocation.
 
-      **ADDED by the C9 ruling (2026-09-07) -- also in P2's docs scope:**
-      correct the `SaveChanges()` docstring at
+      **P2 must NOT claim the fix prevents the `.fwdata` file replacement**
+      (C10) -- it fixes the loss of the in-memory session only.
+
+      **Historical text retained below for the record -- SUPERSEDED by the
+      narrowing above; the docstring correction it describes now ships in
+      T8b, not here:**
+
+      Correct the `SaveChanges()` docstring at
       `flexicon/code/FLExProject.py:563-588`. Its Example block currently
       shows `with project.Transaction("import batch"): ...` followed by
       `project.SaveChanges()`, which is correct under `undoable=True`
@@ -547,14 +719,7 @@ Q4:
       (line 572) is the same overclaim the probe disproved. The docstring
       must state that under `undoable=False` `SaveChanges()` must not be
       called while `HasOpenSessionTask()` is true, and point at
-      `HasOpenSessionTask()` (T1). **Docstring/prose only** -- changing
-      `SaveChanges()`'s BEHAVIOUR is out of scope (spec.md section 4 binds
-      this feature to the three asks) and is routed to QUEUE.md "Awaiting
-      user approval". It stays live-exempt as a pure-docs change, but the
-      diff must touch no executable line; if it does, it is no longer T5.
-
-      **P2 must NOT claim the fix prevents the `.fwdata` file replacement**
-      (C10) -- it fixes the loss of the in-memory session only.
+      `HasOpenSessionTask()` (T1).
 
 **Checkpoint:** `CHANGELOG.md` updated and committed, acceptance criterion 5
 in `spec.md` section 5 satisfied. All three surviving asks (P0, P1, P2) are

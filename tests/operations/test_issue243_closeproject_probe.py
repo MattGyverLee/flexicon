@@ -38,7 +38,6 @@ import pathlib
 
 import pytest
 
-pytestmark = pytest.mark.requires_live_project
 
 TEST_PREFIX = "TEST_"
 N_ENTRIES = 25
@@ -97,6 +96,7 @@ def _count_prefixed_entries(project, prefix):
 # P-1 -- MODE MATRIX
 # ===========================================================================
 
+@pytest.mark.requires_live_project
 @pytest.mark.live_phase("FLExProject", "read")
 def test_p1_mode_matrix(target_sandbox_path):
     """
@@ -164,6 +164,7 @@ def test_p1_mode_matrix(target_sandbox_path):
 # P-2 -- DEPTH TABLE
 # ===========================================================================
 
+@pytest.mark.requires_live_project
 @pytest.mark.live_phase("FLExProject", "modify")
 def test_p2_depth_table(target_sandbox_path):
     """
@@ -242,6 +243,7 @@ def test_p2_depth_table(target_sandbox_path):
 # T1 -- PUBLIC CurrentDepth / HasOpenSessionTask() SURFACE (spec.md C2-C5)
 # ===========================================================================
 
+@pytest.mark.requires_live_project
 @pytest.mark.live_phase("FLExProject", "modify")
 def test_p2_public_surface_matches_depth_table(target_sandbox_path):
     """
@@ -353,6 +355,7 @@ def test_p2_public_surface_matches_depth_table(target_sandbox_path):
 # P-3 (+ P-6) -- THE P0 REPRODUCTION, FULLY LIVE
 # ===========================================================================
 
+@pytest.mark.requires_live_project
 @pytest.mark.live_phase("FLExProject", "modify")
 def test_p3_p6_reproduction_and_symptom(target_sandbox_path, capsys):
     """
@@ -462,12 +465,20 @@ def test_p3_p6_reproduction_and_symptom(target_sandbox_path, capsys):
 # P-4 -- CONTROL RUN
 # ===========================================================================
 
+@pytest.mark.requires_live_project
 @pytest.mark.live_phase("FLExProject", "modify")
-def test_p4_control_run_normal_close(target_sandbox_path):
+def test_p4_control_run_normal_close(target_sandbox_path, caplog):
     """
     Identical flow to P-3 but WITHOUT the manual End -- CloseProject() runs
     normally. Proves the P-3 loss is caused by ordering, not by the sandbox.
+
+    T7 (spec.md C18/C23) negative check: this run's envelope is ended by
+    CloseProject() itself (HasOpenSessionTask() reads True, the normal
+    "if" branch), so the anomaly branch's ERROR log must NOT fire here --
+    contrast with P-5 below, where it does.
     """
+    import logging as _logging
+
     from flexicon.code.FLExProject import FLExProject
 
     fwdata_path = pathlib.Path(target_sandbox_path)
@@ -476,15 +487,24 @@ def test_p4_control_run_normal_close(target_sandbox_path):
     project = FLExProject()
     project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=False)
     close_exc_msg = None
-    try:
-        created = _create_test_entries(project, prefix, N_ENTRIES)
-        print(f"[PROBE][P4] created {len(created)} entries with prefix {prefix!r}")
+    with caplog.at_level(_logging.ERROR, logger="flexicon.code.FLExProject"):
+        try:
+            created = _create_test_entries(project, prefix, N_ENTRIES)
+            print(f"[PROBE][P4] created {len(created)} entries with prefix {prefix!r}")
 
-        _, close_exc_msg = _safe(project.CloseProject, "P4 CloseProject (expected to succeed)")
-    finally:
-        _dispose_if_open(project, "P4")
+            _, close_exc_msg = _safe(project.CloseProject, "P4 CloseProject (expected to succeed)")
+        finally:
+            _dispose_if_open(project, "P4")
 
     assert close_exc_msg is None, f"CloseProject() raised unexpectedly in the control run: {close_exc_msg}"
+
+    anomaly_records = [r for r in caplog.records if "HasOpenSessionTask() read False" in r.message]
+    print(f"[PROBE][P4] anomaly ERROR records logged (expected 0): {len(anomaly_records)}")
+    assert not anomaly_records, (
+        "T7's anomaly ERROR must NOT fire on a normal close where "
+        f"CloseProject() itself ends the still-open envelope; found: "
+        f"{[r.message for r in anomaly_records]}"
+    )
 
     reopen_project = FLExProject()
     reopen_project.OpenProject(str(fwdata_path), writeEnabled=False)
@@ -506,37 +526,68 @@ def test_p4_control_run_normal_close(target_sandbox_path):
 # P-5 -- THE GO/NO-GO FOR THE P0 FIX
 # ===========================================================================
 
+@pytest.mark.requires_live_project
 @pytest.mark.live_phase("FLExProject", "modify")
-def test_p5_save_before_forced_end(target_sandbox_path):
+def test_p5_save_before_forced_end(target_sandbox_path, caplog):
     """
     P-5 is the TRIGGER half of the owner's real incident (spec.md C9); its
     post-guard survivor count IS the acceptance test for the owner's actual
     sequence, not a side note.
 
+    T7 addition (spec.md C18/C23): after the manual End above, this run's
+    envelope is already closed by the time CloseProject() is entered, so
+    CloseProject() takes the anomaly ("else:") branch and must log the
+    ERROR record naming it -- this is the one live route T8b leaves into
+    that branch (a stray/forced End with the change set intact, save
+    SUCCEEDS). The assertion below pins that the record fires, at ERROR
+    level, and asserts nothing about data loss in its message.
+
     Flow: open undoable=False, create N_ENTRIES TEST_ entries, call
     project.SaveChanges() while CurrentDepth == 1 (envelope still open),
-    THEN force the manual End as in P-3, then CloseProject(), dispose,
+    THEN call the manual End as in P-3, then CloseProject(), dispose,
     reopen, count.
 
-    UNCHANGED by T3 (T3 does not touch SaveChanges()): SaveChanges() itself
-    still raises "Commit at wrong place." while CurrentDepth > 0, and its
-    own failure path still collapses depth 1 -> 0 as a side effect
-    (measured live in cycle 1, evidence/live-cycle1-probe.md).
+    CHANGED by T8b (the SaveChanges() depth guard, spec.md C20/C21): this
+    inverts the T3-era contract pinned above the fold. SaveChanges() now
+    reads CurrentDepth and refuses with FP_TransactionError BEFORE
+    usm.Save() is ever attempted -- so the owner's exact "Commit at wrong
+    place." string no longer reaches the caller here, and (unlike the
+    pre-guard liblcm mechanism, which collapsed the envelope 1 -> 0 as a
+    side effect of the failed commit check) CurrentDepth is left UNCHANGED
+    by the refused call, because the guard never touches LCM state -- it
+    only reads it. The manual "End" call below is therefore no longer
+    forcing a double-end onto an already-collapsed envelope (as it was
+    pre-guard, and still is in P-3's true double-End scenario): the
+    envelope is genuinely still open, so this End call is now a normal,
+    successful End of the real session envelope -- functionally identical
+    to what CloseProject() would have done itself. The pending change set
+    was never touched by any failed commit attempt, so it commits
+    normally. CloseProject() then finds HasOpenSessionTask() False
+    (already ended above), skips its own End, and reaches usm.Save() at a
+    legal depth (0) with an intact, untouched change set.
 
-    CHANGED by T3: what happens to CloseProject() next. With the guard in
-    place, the manual End (forced onto an already-depth-0 envelope) leaves
-    HasOpenSessionTask() False, so the guard skips EndNonUndoableTask() and
-    reaches usm.Save(). This test MEASURES the resulting survivor count
-    rather than assuming it -- three possible outcomes per the T4 brief:
-    N_ENTRIES/N_ENTRIES (guard's intended outcome), 0/N_ENTRIES (a NEW
-    finding -- a UnitOfWorkService whose commit check already failed is
-    unrecoverable even once the guard runs; would need a companion guard on
-    SaveChanges() itself, out of scope here and routed to QUEUE.md
-    "Awaiting user approval"), or any count in between (a partial-write
-    finding, P0-severity in its own right). HISTORICAL RECORD (unfixed
-    code, cycle 1): 0/25 survivors, CloseProject() raised.
+    PREDICTED (not yet measured at authoring time): N_ENTRIES/N_ENTRIES
+    survive. This is a genuine PREDICTION derived from the guard's design,
+    not a value carried over from the pre-guard T4 measurement (which was
+    0/25, under the OLD unguarded mechanism -- see the historical record
+    below). If the live measurement differs, that is a P0 finding to
+    report verbatim, not an assertion to quietly retune.
+
+    HISTORICAL RECORD (pre-T8b, i.e. the T3-only guard with no
+    SaveChanges() guard, spurt 4, 2026-09-07): SaveChanges() raised the raw
+    "Commit at wrong place." and collapsed depth 1 -> 0 as a side effect;
+    the forced manual End then found nothing to end (envelope already
+    collapsed) and raised "Cannot end task that has not been started.";
+    CloseProject()'s T3 guard saw HasOpenSessionTask() False, skipped its
+    own End, and reached usm.Save() -- which returned successfully having
+    persisted NOTHING (0/25 survivors, per C13/C16). That entire chain
+    depended on SaveChanges() actually calling usm.Save() and failing; T8b
+    removes that call from the chain entirely.
     """
+    import logging as _logging
+
     from flexicon.code.FLExProject import FLExProject
+    from flexicon.code.exceptions import FP_TransactionError  # noqa: F401 (documents the expected type)
 
     fwdata_path = pathlib.Path(target_sandbox_path)
     prefix = f"{TEST_PREFIX}p5_"
@@ -544,41 +595,109 @@ def test_p5_save_before_forced_end(target_sandbox_path):
     project = FLExProject()
     project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=False)
     save_exc_msg = None
+    end_exc_msg = None
     close_exc_msg = None
-    try:
-        created = _create_test_entries(project, prefix, N_ENTRIES)
-        print(f"[PROBE][P5] created {len(created)} entries with prefix {prefix!r}")
+    with caplog.at_level(_logging.ERROR, logger="flexicon.code.FLExProject"):
+        try:
+            created = _create_test_entries(project, prefix, N_ENTRIES)
+            print(f"[PROBE][P5] created {len(created)} entries with prefix {prefix!r}")
 
-        depth_before_save = _depth(project)
-        print(f"[PROBE][P5] CurrentDepth before SaveChanges(): {depth_before_save}")
+            depth_before_save = _depth(project)
+            print(f"[PROBE][P5] CurrentDepth before SaveChanges(): {depth_before_save}")
 
-        _, save_exc_msg = _safe(project.SaveChanges, "P5 SaveChanges() while envelope still open")
+            _, save_exc_msg = _safe(project.SaveChanges, "P5 SaveChanges() while envelope still open")
 
-        depth_after_save = _safe(lambda: _depth(project), "P5 CurrentDepth after SaveChanges()")[0]
-        print(f"[PROBE][P5] CurrentDepth after SaveChanges() attempt: {depth_after_save}")
+            depth_after_save = _safe(lambda: _depth(project), "P5 CurrentDepth after SaveChanges()")[0]
+            print(f"[PROBE][P5] CurrentDepth after SaveChanges() attempt: {depth_after_save}")
 
-        # THEN force the failing End as in P-3, regardless of whether
-        # SaveChanges() itself raised -- the task asks for this exact
-        # sequence so the final count answers the go/no-go question
-        # unambiguously.
-        _safe(project.project.MainCacheAccessor.EndNonUndoableTask, "P5 manual EndNonUndoableTask (post-SaveChanges)")
+            # This End call now ends the GENUINELY still-open envelope (the
+            # guard never touched it) -- no longer "forcing" a double-end onto
+            # an already-collapsed one, as it did pre-guard.
+            _, end_exc_msg = _safe(project.project.MainCacheAccessor.EndNonUndoableTask, "P5 manual EndNonUndoableTask (post-SaveChanges)")
 
-        _, close_exc_msg = _safe(project.CloseProject, "P5 CloseProject (expected to succeed under T3 guard)")
-    finally:
-        _dispose_if_open(project, "P5")
+            _, close_exc_msg = _safe(project.CloseProject, "P5 CloseProject (expected to succeed, guard finds envelope already ended)")
+        finally:
+            _dispose_if_open(project, "P5")
 
-    # CP-B defect 2 (tasks.md T6, spec.md C13 fact 3): this assertion was
-    # missing here even though test_p3_p6_reproduction_and_symptom asserts
-    # it (line ~434). C13 fact 3 -- "usm.Save() returned successfully having
-    # persisted nothing" -- depends on CloseProject() NOT raising; without
-    # this assertion that dependency was prose, not a measurement. Pin it.
+    # THE HEADLINE T8b ASSERTIONS: SaveChanges() must refuse with
+    # FP_TransactionError, the raw liblcm string must NOT reach the caller,
+    # and usm.Save() must never have been reached -- proven by CurrentDepth
+    # staying UNCHANGED across the refused call (the guard reads depth but
+    # never mutates LCM state).
+    assert save_exc_msg is not None, (
+        "SaveChanges() did not raise while CurrentDepth > 0 -- the issue "
+        "#243 depth guard (spec.md C21) must refuse this call."
+    )
+    assert save_exc_msg.startswith("FP_TransactionError:"), (
+        f"Expected the depth guard's FP_TransactionError; got: {save_exc_msg!r}"
+    )
+    assert "Commit at wrong place." not in save_exc_msg, (
+        "The raw liblcm exception string must NO LONGER reach the caller "
+        f"here -- the guard refuses before usm.Save() is ever attempted; "
+        f"got: {save_exc_msg!r}"
+    )
+    assert depth_after_save == depth_before_save == 1, (
+        f"Expected CurrentDepth to stay UNCHANGED at 1 across the refused "
+        f"SaveChanges() call -- proof usm.Save() was never reached (the "
+        f"guard reads CurrentDepth but never mutates LCM state); measured "
+        f"before={depth_before_save}, after={depth_after_save}."
+    )
+    print(f"[PROBE][P5] SaveChanges() now refuses BEFORE usm.Save() (T8b): {save_exc_msg}")
+
+    # The manual End now succeeds (envelope was genuinely still open --
+    # unlike the pre-guard record where this same call found nothing to
+    # end).
+    assert end_exc_msg is None, (
+        f"Expected the manual EndNonUndoableTask() to succeed against the "
+        f"genuinely-still-open envelope (T8b left it untouched); got: "
+        f"{end_exc_msg!r}. If this fails, SaveChanges()'s guard is "
+        "mutating LCM state before refusing, which contradicts the "
+        "fail-fast design."
+    )
+
     assert close_exc_msg is None, (
-        f"CloseProject() raised even with the T3 guard in place: "
-        f"{close_exc_msg!r} -- the guard should have found "
-        "HasOpenSessionTask() False (SaveChanges()'s own failure already "
-        "collapsed the envelope, and the forced manual End above found "
-        "nothing to end), skipped EndNonUndoableTask(), and still reached "
-        "usm.Save()."
+        f"CloseProject() raised even though the envelope was already ended "
+        f"above: {close_exc_msg!r} -- the guard should have found "
+        "HasOpenSessionTask() False, skipped EndNonUndoableTask(), and "
+        "still reached usm.Save()."
+    )
+
+    # T7 (spec.md C18/C23): CloseProject() must name the anomaly at ERROR
+    # level -- this run's manual End above already closed the envelope, so
+    # CloseProject() enters the "else:" branch. Pin that the record fires,
+    # at the right level, naming HasOpenSessionTask() reading False, and
+    # QUOTE it verbatim so the evidence file does not paraphrase.
+    anomaly_records = [r for r in caplog.records if "HasOpenSessionTask() read False" in r.message]
+    print(f"[PROBE][P5] anomaly ERROR records logged (expected 1): {len(anomaly_records)}")
+    for r in anomaly_records:
+        print(f"[PROBE][P5] ERROR record: level={r.levelname} message={r.getMessage()!r}")
+    assert len(anomaly_records) == 1, (
+        "Expected exactly one T7 anomaly ERROR record from CloseProject() "
+        f"(the manual End above already closed the envelope); found "
+        f"{len(anomaly_records)}: {[r.message for r in anomaly_records]}"
+    )
+    anomaly_record = anomaly_records[0]
+    assert anomaly_record.levelname == "ERROR", (
+        f"T7's anomaly log must be at ERROR level (spec.md C23); got "
+        f"{anomaly_record.levelname}."
+    )
+    rendered = anomaly_record.getMessage()
+    assert "unreachable by construction" in rendered, (
+        f"Expected the anomaly message to name the anomaly as unreachable "
+        f"by construction; got: {rendered!r}"
+    )
+    assert "usm.Save()" in rendered and "proceeding" in rendered, (
+        f"Expected the anomaly message to state plainly that usm.Save() is "
+        f"proceeding anyway; got: {rendered!r}"
+    )
+    assert "lost" not in rendered.lower(), (
+        f"T7's anomaly message must assert NOTHING about whether data was "
+        f"lost (spec.md C23); got: {rendered!r}"
+    )
+    assert "nothing pending to save" not in rendered.lower(), (
+        "The pre-Save() HasUnsavedChanges diagnostic must never be worded "
+        f"as 'nothing pending to save' (spec.md C18, proven false-negative "
+        f"by P-9); got: {rendered!r}"
     )
 
     reopen_project = FLExProject()
@@ -590,80 +709,45 @@ def test_p5_save_before_forced_end(target_sandbox_path):
         _safe(reopen_project.CloseProject, "P5 reopen CloseProject")
         _dispose_if_open(reopen_project, "P5 reopen")
 
-    # UNCHANGED by T3 (T3 does not touch SaveChanges(), spec.md C9/tasks.md
-    # T4): SaveChanges() must still raise "Commit at wrong place." at
-    # CurrentDepth > 0. This is the owner's TRIGGER, not the loss mechanism
-    # the guard fixes.
-    assert save_exc_msg is not None, (
-        "SaveChanges() did not raise while CurrentDepth > 0 -- this is the "
-        "TRIGGER half of the owner's incident (spec.md C9) and is "
-        "unrelated to the T3 guard, so it must still hold unchanged."
-    )
-    assert "Commit at wrong place." in save_exc_msg, (
-        f"Expected the owner's exact symptom string from SaveChanges(); "
-        f"got: {save_exc_msg!r}"
-    )
-    print(f"[PROBE][P5] SaveChanges() raise UNCHANGED by T3: {save_exc_msg}")
-
-    # CHANGED by T3: this is a MEASURED survivor count, not an assumption
-    # (per the C9 ruling / tasks.md T4 "raised bar"). Three possible
-    # outcomes are named in the docstring; report whichever was observed.
+    # CHANGED by T8b: this is a MEASURED survivor count, not an assumption.
+    # PREDICTED N_ENTRIES/N_ENTRIES (see docstring); the change set was
+    # never touched by a failed commit attempt this time, so it should
+    # commit normally via the manual End + CloseProject()'s usm.Save().
     if surviving_count == N_ENTRIES:
         verdict = (
-            f"{surviving_count}/{N_ENTRIES} survived -- MATCHES the guard's "
-            "intended outcome: SaveChanges()'s own failure path collapsed "
-            "depth 1 -> 0, so the guard's HasOpenSessionTask() check skips "
-            "the redundant End and CloseProject() reaches usm.Save() at a "
-            "legal depth."
+            f"{surviving_count}/{N_ENTRIES} survived -- MATCHES the T8b "
+            "prediction: SaveChanges()'s guard never touched the envelope "
+            "or the change set, the manual End committed it normally, and "
+            "CloseProject() persisted it at a legal depth."
         )
     elif surviving_count == 0:
         verdict = (
-            f"0/{N_ENTRIES} survived -- NEW FINDING, not a partial fix: a "
-            "UnitOfWorkService whose commit check already failed (via "
-            "SaveChanges()) is unrecoverable even once the guard lets "
-            "usm.Save() run. Recorded as a dated note under spec.md Q2; "
-            "would require a companion guard on SaveChanges() itself "
-            "(out of scope for T3/T4, routed to QUEUE.md 'Awaiting user "
-            "approval')."
+            f"0/{N_ENTRIES} survived -- CONTRADICTS the T8b prediction. "
+            "This is a P0 FINDING, reported verbatim rather than tuned to "
+            "match: the guard was expected to leave the change set intact "
+            "for a normal End+Save, but the data did not survive."
         )
     else:
         verdict = (
             f"{surviving_count}/{N_ENTRIES} survived -- PARTIAL WRITE, "
             "itself P0-severity. Reported here, not papered over."
         )
-    print(f"[PROBE][P5] GO/NO-GO VERDICT (T3 guard, measured not assumed): {verdict}")
+    print(f"[PROBE][P5] GO/NO-GO VERDICT (T8b guard, measured not assumed): {verdict}")
 
-    # This is the headline evidence artifact for T4 -- the exact measured
-    # count is asserted (not merely "in {0, N_ENTRIES}") because C9 makes
-    # this test the acceptance test for the owner's real sequence, and a
-    # silent range-check would let a partial-write regression pass green.
-    #
-    # MEASURED LIVE (spurt 4, T4, 2026-09-07): 0/25, NOT the guard's
-    # intended 25/25. This is the "0/N_ENTRIES" branch named in the
-    # docstring and tasks.md T4's three-outcome brief -- NOT a partial-fix
-    # failure of T3, and NOT looped back to loosen T3's guard. Root cause:
-    # SaveChanges()'s own InvalidOperationException path leaves the
-    # UnitOfWorkService's internal commit/UndoStack state such that a
-    # SUBSEQUENT usm.Save() call in the same process (the one CloseProject()
-    # reaches once the guard skips the redundant End) also raises/no-ops
-    # rather than persisting -- a UnitOfWorkService whose commit check has
-    # already failed once is unrecoverable within that session, independent
-    # of whether the End mirror is guarded. Recorded as a dated note under
-    # spec.md Q2 (2026-09-07); flagged prominently in
-    # reviews/cycle4-programmer.md. Asserting the MEASURED value (not the
-    # hoped-for one) so this finding cannot silently regress to "passing
-    # for the wrong reason" if a future change makes it worse (e.g. a
-    # partial count) or better (25/25, if SaveChanges() itself is ever
-    # guarded per the QUEUE.md follow-up).
-    assert surviving_count == 0, (
+    # Headline evidence artifact for T8b -- the exact measured count is
+    # asserted (not merely "in {0, N_ENTRIES}") so a partial-write
+    # regression cannot pass silently. If this assertion fails, DO NOT
+    # retune it to the observed value -- report the discrepancy verbatim
+    # as a P0 finding; per the task brief this is the acceptance test for
+    # the owner's real sequence.
+    assert surviving_count == N_ENTRIES, (
         f"Measured {surviving_count}/{N_ENTRIES} survivors for the P-5 "
-        "sequence under the T3 guard; expected exactly 0 per the recorded "
-        "finding (spec.md Q2, 2026-09-07): a UnitOfWorkService whose "
-        "commit check already failed via SaveChanges() is unrecoverable "
-        "even once the guard lets usm.Save() run again. If this assertion "
-        "is failing, the measured count has CHANGED from the recorded "
-        "finding -- do not silently adjust this assertion to match; "
-        "report the new count, it is P0-severity either way."
+        f"sequence under the T8b SaveChanges() depth guard; PREDICTED "
+        f"{N_ENTRIES}/{N_ENTRIES} (the guard leaves the envelope and "
+        "change set untouched, so the manual End + CloseProject() should "
+        "commit and persist normally). If this assertion is failing, "
+        "report the measured count as a P0 finding -- do not silently "
+        "adjust this assertion to match."
     )
 
 
@@ -680,6 +764,7 @@ def test_p5_save_before_forced_end(target_sandbox_path):
 # CloseProject() are only ever OBSERVED, never modified, never reordered.
 # ===========================================================================
 
+@pytest.mark.requires_live_project
 @pytest.mark.live_phase("FLExProject", "modify")
 def test_p7_data_survives_failed_savechanges_in_memory(target_sandbox_path):
     """
@@ -705,8 +790,20 @@ def test_p7_data_survives_failed_savechanges_in_memory(target_sandbox_path):
       #243's CEILING: no CloseProject()-side change could ever reach 25/25
       for the owner's real P-5 -> P-3 sequence, because the data is already
       gone one step earlier than CloseProject() even runs.
+
+    T8b note: since the SaveChanges() depth guard landed, the public
+    ``FLExProject.SaveChanges()`` refuses outright at CurrentDepth > 0
+    (raises FP_TransactionError before usm.Save() is ever attempted), so it
+    can no longer be used to trigger the raw liblcm no-op-commit mechanism
+    this probe exists to characterise. This probe therefore calls the raw
+    ``usm.Save()`` accessor directly -- the exact same accessor
+    ``SaveChanges()`` uses internally -- so it keeps measuring the same
+    liblcm mechanism unchanged by the guard. The guard only stops users
+    reaching this path through the public API; it does not change what
+    happens when liblcm's own commit path is reached directly.
     """
     from flexicon.code.FLExProject import FLExProject
+    from SIL.LCModel import IUndoStackManager
 
     fwdata_path = pathlib.Path(target_sandbox_path)
     prefix = f"{TEST_PREFIX}p7_"
@@ -722,9 +819,13 @@ def test_p7_data_survives_failed_savechanges_in_memory(target_sandbox_path):
         depth_before_save = _depth(project)
         print(f"[PROBE][P7] CurrentDepth before SaveChanges(): {depth_before_save}")
 
-        _, save_exc_msg = _safe(project.SaveChanges, "P7 SaveChanges() while envelope still open")
+        # Raw usm.Save() (see T8b note in docstring): the public
+        # SaveChanges() now refuses first, so we reach liblcm's commit path
+        # directly, the same way SaveChanges() does internally.
+        usm = project.ObjectRepository(IUndoStackManager)
+        _, save_exc_msg = _safe(usm.Save, "P7 raw usm.Save() while envelope still open")
         assert save_exc_msg is not None and "Commit at wrong place." in save_exc_msg, (
-            f"Expected SaveChanges() to raise the owner's exact symptom "
+            f"Expected usm.Save() to raise the owner's exact symptom "
             f"string at CurrentDepth > 0 (spec.md C9); got: {save_exc_msg!r}"
         )
 
@@ -805,6 +906,7 @@ def test_p7_data_survives_failed_savechanges_in_memory(target_sandbox_path):
 # P-8 -- GLOBALLY POISONED, OR ONLY THE EXISTING DIRTY SET? (spec.md C13 (i) vs (ii)/(iii))
 # ===========================================================================
 
+@pytest.mark.requires_live_project
 @pytest.mark.live_phase("FLExProject", "modify")
 def test_p8_fresh_entry_after_failed_savechanges(target_sandbox_path):
     """
@@ -827,8 +929,18 @@ def test_p8_fresh_entry_after_failed_savechanges(target_sandbox_path):
     - Nothing persists (0/1) => mechanism (i) CONFIRMED: the UOW is
       poisoned session-wide; no post-failure write of any kind can ever
       commit again in that process.
+
+    T8b note: since the SaveChanges() depth guard landed, the public
+    ``FLExProject.SaveChanges()`` refuses outright at CurrentDepth > 0
+    (raises FP_TransactionError before usm.Save() is ever attempted), so it
+    can no longer be used to trigger the raw liblcm no-op-commit mechanism
+    this probe exists to characterise. This probe therefore calls the raw
+    ``usm.Save()`` accessor directly -- the exact same accessor
+    ``SaveChanges()`` uses internally -- so it keeps measuring the same
+    liblcm mechanism unchanged by the guard.
     """
     from flexicon.code.FLExProject import FLExProject
+    from SIL.LCModel import IUndoStackManager
 
     fwdata_path = pathlib.Path(target_sandbox_path)
     setup_prefix = f"{TEST_PREFIX}p8setup_"
@@ -841,9 +953,13 @@ def test_p8_fresh_entry_after_failed_savechanges(target_sandbox_path):
         created = _create_test_entries(project, setup_prefix, N_ENTRIES)
         print(f"[PROBE][P8] created {len(created)} setup entries with prefix {setup_prefix!r}")
 
-        _, save_exc_msg = _safe(project.SaveChanges, "P8 SaveChanges() while envelope still open")
+        # Raw usm.Save() (see T8b note in docstring): the public
+        # SaveChanges() now refuses first, so we reach liblcm's commit path
+        # directly, the same way SaveChanges() does internally.
+        usm = project.ObjectRepository(IUndoStackManager)
+        _, save_exc_msg = _safe(usm.Save, "P8 raw usm.Save() while envelope still open")
         assert save_exc_msg is not None and "Commit at wrong place." in save_exc_msg, (
-            f"Expected SaveChanges() to raise the owner's exact symptom "
+            f"Expected usm.Save() to raise the owner's exact symptom "
             f"string at CurrentDepth > 0 (spec.md C9); got: {save_exc_msg!r}"
         )
         depth_after_save = _safe(lambda: _depth(project), "P8 CurrentDepth after SaveChanges()")[0]
@@ -932,6 +1048,7 @@ def test_p8_fresh_entry_after_failed_savechanges(target_sandbox_path):
 # P-9 -- THE DETECTOR, AND CP-B DEFECT 2 (spec.md C13 fact 3, C14 point 3, Q5)
 # ===========================================================================
 
+@pytest.mark.requires_live_project
 @pytest.mark.live_phase("FLExProject", "modify")
 def test_p9_iundostackmanager_detector(target_sandbox_path):
     """
@@ -968,11 +1085,22 @@ def test_p9_iundostackmanager_detector(target_sandbox_path):
       ended and skips the redundant End). Reopen and confirm N_ENTRIES/25
       persisted (reconfirms this really was a real save).
 
-    Both shapes call usm.Save() manually from the test (via SaveChanges()
-    or directly) rather than only through CloseProject() -- this is what
-    lets the test read the detector on BOTH sides of the exact call, and
-    it changes no flexicon/ code: CloseProject() is still called,
-    unmodified, to finish each project's lifecycle.
+    Both shapes call usm.Save() manually from the test (directly, via the
+    raw ObjectRepository(IUndoStackManager) accessor -- see the T8b note
+    below) rather than only through CloseProject() -- this is what lets the
+    test read the detector on BOTH sides of the exact call, and it changes
+    no flexicon/ code: CloseProject() is still called, unmodified, to
+    finish each project's lifecycle.
+
+    T8b note: since the SaveChanges() depth guard landed, the public
+    ``FLExProject.SaveChanges()`` refuses outright at CurrentDepth > 0
+    (raises FP_TransactionError before usm.Save() is ever attempted), so
+    the TRIGGER call below can no longer reach liblcm's raw commit path
+    through SaveChanges(). Both the TRIGGER call and the second (no-op)
+    call in the no-op shape now go through the raw ``usm.Save()`` accessor
+    directly -- the exact same accessor ``SaveChanges()`` uses internally
+    -- so this probe keeps measuring the same liblcm mechanism unchanged
+    by the guard.
 
     Reports whether the AFTER value in the no-op case is distinguishable
     from the AFTER value in the real-save case. If both read the same, the
@@ -1026,18 +1154,21 @@ def test_p9_iundostackmanager_detector(target_sandbox_path):
         print(f"[PROBE][P9] (no-op shape) created {len(created_noop)} entries with prefix {prefix_noop!r}")
 
         if has_detector:
-            detector_before_trigger = _safe(lambda: usm.HasUnsavedChanges, "P9 HasUnsavedChanges before TRIGGER SaveChanges()")[0]
-        print(f"[PROBE][P9] (no-op shape) HasUnsavedChanges before the TRIGGER SaveChanges(): {detector_before_trigger}")
+            detector_before_trigger = _safe(lambda: usm.HasUnsavedChanges, "P9 HasUnsavedChanges before TRIGGER usm.Save()")[0]
+        print(f"[PROBE][P9] (no-op shape) HasUnsavedChanges before the TRIGGER usm.Save(): {detector_before_trigger}")
 
-        _, save_exc_msg = _safe(project.SaveChanges, "P9 TRIGGER SaveChanges() while envelope still open")
+        # Raw usm.Save() (see T8b note in docstring): the public
+        # SaveChanges() now refuses first, so we reach liblcm's commit path
+        # directly, the same way SaveChanges() does internally.
+        _, save_exc_msg = _safe(usm.Save, "P9 TRIGGER raw usm.Save() while envelope still open")
         assert save_exc_msg is not None and "Commit at wrong place." in save_exc_msg, (
-            f"Expected the TRIGGER SaveChanges() to raise the owner's exact "
+            f"Expected the TRIGGER usm.Save() to raise the owner's exact "
             f"symptom string; got: {save_exc_msg!r}"
         )
 
         if has_detector:
-            detector_after_trigger = _safe(lambda: usm.HasUnsavedChanges, "P9 HasUnsavedChanges after TRIGGER SaveChanges()")[0]
-        print(f"[PROBE][P9] (no-op shape) HasUnsavedChanges after the TRIGGER SaveChanges() raised: {detector_after_trigger}")
+            detector_after_trigger = _safe(lambda: usm.HasUnsavedChanges, "P9 HasUnsavedChanges after TRIGGER usm.Save()")[0]
+        print(f"[PROBE][P9] (no-op shape) HasUnsavedChanges after the TRIGGER usm.Save() raised: {detector_after_trigger}")
 
         _safe(project.project.MainCacheAccessor.EndNonUndoableTask, "P9 forced manual EndNonUndoableTask (post-trigger)")
         depth_before_noop_save = _safe(lambda: _depth(project), "P9 CurrentDepth before the no-op Save()")[0]
@@ -1047,15 +1178,17 @@ def test_p9_iundostackmanager_detector(target_sandbox_path):
             detector_before_noop = _safe(lambda: usm.HasUnsavedChanges, "P9 HasUnsavedChanges immediately BEFORE the no-op usm.Save()")[0]
         print(f"[PROBE][P9] (no-op shape) HasUnsavedChanges BEFORE the no-op usm.Save(): {detector_before_noop}")
 
-        # This SECOND SaveChanges() call is the exact usm.Save() shape
-        # CloseProject() reaches once the T3 guard skips the already-
-        # collapsed envelope's End -- same two lines
-        # (ObjectRepository(IUndoStackManager); usm.Save()), same `usm`
-        # object, same depth (0). Calling it directly here (rather than via
-        # CloseProject()) is what lets this test read the detector on both
-        # sides of exactly that call.
-        _, noop_save_exc_msg = _safe(project.SaveChanges, "P9 NO-OP SaveChanges() (mirrors CloseProject()'s guarded usm.Save())")
-        print(f"[PROBE][P9] (no-op shape) second SaveChanges() call raised: {noop_save_exc_msg}")
+        # This SECOND call is the exact usm.Save() shape CloseProject()
+        # reaches once the T3 guard skips the already-collapsed envelope's
+        # End -- same `usm` object, same depth (0). Calling it directly
+        # here (rather than via CloseProject(), and via the raw accessor
+        # rather than SaveChanges() -- T8b note above) is what lets this
+        # test read the detector on both sides of exactly that call. At
+        # depth 0 the SaveChanges() guard would not fire anyway, but the
+        # raw call is used here for consistency with the TRIGGER call
+        # above.
+        _, noop_save_exc_msg = _safe(usm.Save, "P9 NO-OP raw usm.Save() (mirrors CloseProject()'s guarded usm.Save())")
+        print(f"[PROBE][P9] (no-op shape) second usm.Save() call raised: {noop_save_exc_msg}")
 
         if has_detector:
             detector_after_noop = _safe(lambda: usm.HasUnsavedChanges, "P9 HasUnsavedChanges immediately AFTER the no-op usm.Save()")[0]
@@ -1229,3 +1362,702 @@ def test_p9_iundostackmanager_detector(target_sandbox_path):
             "no direct-read detector available and must use the "
             "Phase-1-envelope-missing heuristic."
         )
+
+
+# ===========================================================================
+# P-10 -- SaveChanges() DEPTH BLAST RADIUS: THE UndoableOperation()/
+# Transaction() CASES (T8a, measurement only -- no flexicon/ file touched)
+#
+# This does NOT modify SaveChanges() or CloseProject(). It measures the one
+# case the frozen P-2/T1 depth table never exercised against SaveChanges():
+# what SaveChanges() actually does at CurrentDepth == 1 reached via
+# `with project.UndoableOperation(...)` under undoable=True, versus the
+# already-understood undoable=False bare-session depth-1 case (P-5/P-7).
+# Also re-verifies, by direct measurement rather than by citing the frozen
+# P-2/T1 table, that `Transaction()` does not itself change CurrentDepth in
+# either mode. This decides whether the guard approved for T8b can be a
+# blanket `CurrentDepth > 0` refusal, or must be narrowed to spare a
+# genuinely working edit.
+# ===========================================================================
+
+def _measure_savechanges_in_context(project, cm_factory, case_label, prefix):
+    """
+    Create N_ENTRIES TEST_-prefixed entries, then call SaveChanges() from
+    inside the context manager `cm_factory()` returns, recording:
+      (2) CurrentDepth immediately BEFORE SaveChanges(),
+      (3) whether SaveChanges() raised, and the verbatim message if so,
+      (4) CurrentDepth immediately AFTER,
+      (5) the survivor count re-read from the LCM on the STILL-OPEN
+          project (P-7 technique), taken BEFORE the context manager's own
+          __exit__ runs, so the measurement isolates SaveChanges() itself
+          from whatever the block's own exit-time commit/rollback logic
+          does.
+    Uses _safe() around the SaveChanges() call specifically so any raised
+    exception is caught there and never propagates to the `with` block's
+    __exit__ -- a genuinely transactional block (UndoableOperation()) would
+    otherwise treat an escaping exception as a rollback trigger for
+    everything inside it, which would conflate "what SaveChanges() did" with
+    "what the block did in response to an unrelated failure."
+    Item (6) -- on-disk survival after a genuine close/reopen -- is measured
+    by the caller once every case's project has actually been closed.
+    """
+    created = _create_test_entries(project, prefix, N_ENTRIES)
+    print(f"[PROBE][P10] ({case_label}) created {len(created)} entries with prefix {prefix!r}")
+
+    with cm_factory():
+        depth_before = _depth(project)
+        print(f"[PROBE][P10] ({case_label}) CurrentDepth before SaveChanges(): {depth_before}")
+
+        _, save_exc_msg = _safe(project.SaveChanges, f"P10 ({case_label}) SaveChanges()")
+
+        depth_after = _safe(lambda: _depth(project), f"P10 ({case_label}) CurrentDepth after SaveChanges()")[0]
+        print(f"[PROBE][P10] ({case_label}) CurrentDepth after SaveChanges(): {depth_after}")
+
+        in_memory_count = _count_prefixed_entries(project, prefix)
+        print(
+            f"[PROBE][P10] ({case_label}) survivor count re-read from the "
+            f"STILL-OPEN project (inside the block, before its __exit__): "
+            f"{in_memory_count} / {N_ENTRIES}"
+        )
+
+    return {
+        "case": case_label,
+        "depth_before": depth_before,
+        "save_exc_msg": save_exc_msg,
+        "depth_after": depth_after,
+        "in_memory_count": in_memory_count,
+    }
+
+
+@pytest.mark.requires_live_project
+@pytest.mark.live_phase("FLExProject", "modify")
+def test_p10_savechanges_depth_blast_radius(target_sandbox_path):
+    """
+    T8a / P-10 (measurement only): three cases, none of them previously
+    measured against SaveChanges() directly.
+
+    - Case A: undoable=True, SaveChanges() called INSIDE
+      `with project.UndoableOperation(...)`. Per the frozen P-2/T1 table
+      (test_p2_public_surface_matches_depth_table, row
+      "undoable_operation_block"), CurrentDepth is 1 there -- this is the
+      one case named in the task as never measured against SaveChanges().
+      This case decides the guard's shape: if SaveChanges() raises here and
+      destroys the change set (like the undoable=False bare-session case),
+      a blanket `CurrentDepth > 0` refusal removes nothing that worked. If
+      it SUCCEEDS and the edit persists, the same blanket guard would newly
+      refuse a WORKING edit made through FLExProject's own recommended
+      undoable-mode API, which the owner's ruling forbids.
+
+      MEASURED LIVE (spurt 6, T8a, 2026-09-07): a THIRD outcome, distinct
+      from both of the above -- SaveChanges() RAISES the identical
+      "Commit at wrong place." string (same as the undoable=False
+      mechanism), CurrentDepth collapses 1 -> 0 as the same side effect,
+      YET the change set is NOT destroyed: 25/25 survive re-read from the
+      STILL-OPEN project (before the block's own __exit__ runs) AND 25/25
+      survive a genuine close-and-reopen. The data's survival does not
+      depend on this SaveChanges() call succeeding at all -- it is
+      registered onto the real UndoableUnitOfWorkHelper stack by the
+      UndoableOperation() block's own normal (non-exceptional) __exit__,
+      and is then captured for real by CloseProject()'s own later
+      usm.Save() at the now-legal depth 0. Consequence for the guard: a
+      blanket `CurrentDepth > 0` refusal changes NOTHING about this case's
+      outcome -- the call already fails today (just with LCM's cryptic
+      message instead of the guard's own), and the edit was never actually
+      at risk from this specific call one way or the other. See the
+      "CASE A VERDICT" print block below for the reasoning pinned as a
+      named branch, not folded into a generic partial-write catch-all.
+    - Case B: undoable=True, SaveChanges() called INSIDE
+      `with project.Transaction(...)`. Per the same frozen table
+      ("transaction_block_undoable_true"), CurrentDepth is 0 there, matching
+      the bare undoable=True session -- this case re-verifies, by direct
+      measurement here rather than by citing that table, that `Transaction()`
+      does not itself change CurrentDepth.
+    - Case C: undoable=False, SaveChanges() called INSIDE
+      `with project.Transaction(...)`. Per the same frozen table
+      ("transaction_block_undoable_false"), CurrentDepth is 1 there, matching
+      the bare undoable=False session (P-5/P-7) -- re-verified here directly,
+      not assumed.
+
+    Depth-before setup-sanity assertions pin the frozen P-2/T1 table values
+    for these three rows; if any of them fails, the underlying depth
+    behaviour has CHANGED since T1 and must be reported, not silently
+    re-baselined.
+
+    No file under flexicon/ is touched BY THIS TEST: SaveChanges() and
+    CloseProject() are only ever called through FLExProject's own public
+    API, exactly as an application would call them.
+
+    T8B UPDATE (spurt 7, 2026-09-07): this test now runs AGAINST the
+    SaveChanges() depth guard landed by T8b (spec.md C21), not the
+    pre-guard code the T8a measurements above describe. The guard reads
+    CurrentDepth and refuses with FP_TransactionError BEFORE usm.Save() is
+    ever attempted, whenever CurrentDepth > 0 -- so for Case A and Case C
+    (both depth 1) the exception type and message change (FP_TransactionError,
+    not the raw "Commit at wrong place." liblcm string), and CurrentDepth is
+    no longer collapsed as a side effect (the guard never touches LCM
+    state, so depth_after == depth_before == 1 for both). Case B (depth 0)
+    is untouched -- the guard never fires there.
+
+    The DATA outcome differs between the two depth-1 cases, and this is the
+    reason a blanket guard was ruled SAFE (T8a's finding, unchanged):
+    - Case A (UndoableOperation(), undoable=True): data outcome UNCHANGED
+      at 25/25 both reads. It never depended on this specific SaveChanges()
+      call succeeding -- the UndoableOperation() block's own normal
+      __exit__ commits the edit onto the real undo stack regardless, and
+      CloseProject() persists it. The guard refusing earlier (with a
+      clearer message) sacrifices nothing that worked before.
+    - Case C (Transaction(), undoable=False): data outcome CHANGES from the
+      T8a-measured 0/25 (both reads) to a PREDICTED 25/25 (both reads).
+      Under the old, unguarded liblcm mechanism, SaveChanges() actually
+      called usm.Save(), which failed AND discarded the pending change set
+      as a measured side effect (C16 mechanism (ii)/(iii)). The T8b guard
+      never calls usm.Save() at all, so that discard never happens: the
+      change set stays intact and registered against the still-open
+      session-long envelope, Transaction()'s own exit is a no-op in this
+      mode (no rollback capability -- see transaction.py's _FLExTransaction
+      docstring), and CloseProject() reaches an intact change set at a
+      legal depth. MEASURE, do not assume -- if this prediction is wrong,
+      report the measured values verbatim as a P0 finding.
+    """
+    from flexicon.code.FLExProject import FLExProject
+
+    fwdata_path = pathlib.Path(target_sandbox_path)
+    cases = []  # list of (result_dict, close_exc_msg, prefix)
+
+    # --- Case A: undoable=True, inside UndoableOperation() ---
+    prefix_a = f"{TEST_PREFIX}p10a_"
+    project = FLExProject()
+    project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=True)
+    close_exc_msg_a = None
+    try:
+        result_a = _measure_savechanges_in_context(
+            project,
+            lambda: project.UndoableOperation("p10 probe"),
+            "A: undoable=True, inside UndoableOperation()",
+            prefix_a,
+        )
+        _, close_exc_msg_a = _safe(project.CloseProject, "P10 case A CloseProject")
+    finally:
+        _dispose_if_open(project, "P10 case A")
+    cases.append((result_a, close_exc_msg_a, prefix_a))
+
+    # --- Case B: undoable=True, inside Transaction() ---
+    prefix_b = f"{TEST_PREFIX}p10b_"
+    project = FLExProject()
+    project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=True)
+    close_exc_msg_b = None
+    try:
+        result_b = _measure_savechanges_in_context(
+            project,
+            lambda: project.Transaction("p10 probe"),
+            "B: undoable=True, inside Transaction()",
+            prefix_b,
+        )
+        _, close_exc_msg_b = _safe(project.CloseProject, "P10 case B CloseProject")
+    finally:
+        _dispose_if_open(project, "P10 case B")
+    cases.append((result_b, close_exc_msg_b, prefix_b))
+
+    # --- Case C: undoable=False, inside Transaction() ---
+    prefix_c = f"{TEST_PREFIX}p10c_"
+    project = FLExProject()
+    project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=False)
+    close_exc_msg_c = None
+    try:
+        result_c = _measure_savechanges_in_context(
+            project,
+            lambda: project.Transaction("p10 probe"),
+            "C: undoable=False, inside Transaction()",
+            prefix_c,
+        )
+        _, close_exc_msg_c = _safe(project.CloseProject, "P10 case C CloseProject")
+    finally:
+        _dispose_if_open(project, "P10 case C")
+    cases.append((result_c, close_exc_msg_c, prefix_c))
+
+    # --- Item (6) for all three cases: on-disk survival after a genuine
+    # close-and-reopen. One shared reopen, three counts. ---
+    reopen_project = FLExProject()
+    reopen_project.OpenProject(str(fwdata_path), writeEnabled=False)
+    try:
+        for result, _close_exc_msg, prefix in cases:
+            on_disk_count = _count_prefixed_entries(reopen_project, prefix)
+            result["on_disk_count"] = on_disk_count
+            print(
+                f"[PROBE][P10] ({result['case']}) survivor count after a "
+                f"genuine close-and-reopen: {on_disk_count} / {N_ENTRIES}"
+            )
+    finally:
+        _safe(reopen_project.CloseProject, "P10 reopen CloseProject")
+        _dispose_if_open(reopen_project, "P10 reopen")
+
+    # --- Full six-item table, one line per case, for the evidence file. ---
+    for result, close_exc_msg, _prefix in cases:
+        print(
+            f"[PROBE][P10] TABLE {result['case']}: "
+            f"depth_before={result['depth_before']}, "
+            f"save_raised={result['save_exc_msg']!r}, "
+            f"depth_after={result['depth_after']}, "
+            f"in_memory_count={result['in_memory_count']}/{N_ENTRIES}, "
+            f"on_disk_count={result['on_disk_count']}/{N_ENTRIES}, "
+            f"CloseProject_raised={close_exc_msg!r}"
+        )
+
+    # --- Setup sanity: CloseProject() itself must not raise in any of the
+    # three cases (this probe only measures SaveChanges(), not
+    # CloseProject() -- a raise here would mean the probe's own scaffolding
+    # is broken, not a new finding about the guard). ---
+    for result, close_exc_msg, _prefix in cases:
+        assert close_exc_msg is None, (
+            f"CloseProject() raised unexpectedly for case {result['case']}: "
+            f"{close_exc_msg!r} -- this probe only measures SaveChanges(), "
+            "so a raise here means the probe scaffolding itself is broken."
+        )
+
+    # --- Setup sanity: pin the frozen P-2/T1 CurrentDepth values for these
+    # three rows (test_p2_public_surface_matches_depth_table). If any of
+    # these fail, the underlying depth behaviour has CHANGED since T1. ---
+    assert result_a["depth_before"] == 1, (
+        f"Expected CurrentDepth == 1 inside UndoableOperation() under "
+        f"undoable=True (frozen P-2/T1 row 'undoable_operation_block'); "
+        f"got {result_a['depth_before']}."
+    )
+    assert result_b["depth_before"] == 0, (
+        f"Expected CurrentDepth == 0 inside Transaction() under "
+        f"undoable=True (frozen P-2/T1 row 'transaction_block_undoable_true'); "
+        f"got {result_b['depth_before']}. Transaction() would no longer be "
+        "depth-neutral in undoable=True mode -- report this, do not assume."
+    )
+    assert result_c["depth_before"] == 1, (
+        f"Expected CurrentDepth == 1 inside Transaction() under "
+        f"undoable=False (frozen P-2/T1 row 'transaction_block_undoable_false'); "
+        f"got {result_c['depth_before']}. Transaction() would no longer be "
+        "depth-neutral in undoable=False mode -- report this, do not assume."
+    )
+
+    # --- Headline verdict, printed for the evidence file. Deliberately NOT
+    # hard-coding an assumed outcome for case A beyond what is asserted
+    # below on the MEASURED values -- that is the entire point of this
+    # probe: find out, don't guess. ---
+    print(
+        "[PROBE][P10] VERDICT: "
+        f"A(UndoableOperation,undoable=True,depth=1): "
+        f"SaveChanges() {'RAISED' if result_a['save_exc_msg'] else 'SUCCEEDED'}, "
+        f"in_memory={result_a['in_memory_count']}/{N_ENTRIES}, "
+        f"on_disk={result_a['on_disk_count']}/{N_ENTRIES} || "
+        f"B(Transaction,undoable=True,depth=0): "
+        f"SaveChanges() {'RAISED' if result_b['save_exc_msg'] else 'SUCCEEDED'}, "
+        f"in_memory={result_b['in_memory_count']}/{N_ENTRIES}, "
+        f"on_disk={result_b['on_disk_count']}/{N_ENTRIES} || "
+        f"C(Transaction,undoable=False,depth=1): "
+        f"SaveChanges() {'RAISED' if result_c['save_exc_msg'] else 'SUCCEEDED'}, "
+        f"in_memory={result_c['in_memory_count']}/{N_ENTRIES}, "
+        f"on_disk={result_c['on_disk_count']}/{N_ENTRIES}"
+    )
+
+    # --- Case B control assertion: MEASURED, not assumed. Depth-0, so the
+    # T8b guard never fires -- expected to behave exactly like the
+    # already-understood bare undoable=True case (SaveChanges() succeeds,
+    # edit persists). Asserted on the measured value so a future change to
+    # this mechanism is caught here, not silently re-baselined. ---
+    assert result_b["save_exc_msg"] is None, (
+        f"Case B (Transaction(), undoable=True, depth=0) was expected to "
+        f"match the bare undoable=True case and SUCCEED; SaveChanges() "
+        f"raised instead: {result_b['save_exc_msg']!r}. This is a NEW "
+        "finding if it reproduces -- report it, do not loosen this "
+        "assertion to match."
+    )
+    assert result_b["on_disk_count"] == N_ENTRIES, (
+        f"Case B (Transaction(), undoable=True, depth=0) was expected to "
+        f"persist all {N_ENTRIES} entries; got "
+        f"{result_b['on_disk_count']}/{N_ENTRIES}."
+    )
+    assert result_b["depth_after"] == 0, (
+        f"Case B (Transaction(), undoable=True, depth=0) was expected to "
+        f"leave CurrentDepth unchanged at 0 (SaveChanges() succeeded "
+        f"normally, no guard involvement); got {result_b['depth_after']}."
+    )
+
+    # --- Case C: CHANGED by T8b (spec.md C21). Under the guard,
+    # SaveChanges() refuses BEFORE usm.Save() is ever attempted, so the raw
+    # liblcm "Commit at wrong place." string no longer reaches the caller,
+    # CurrentDepth is left UNCHANGED (proof usm.Save() was never reached --
+    # the guard reads depth but never mutates LCM state), and the pending
+    # change set -- never touched by a failed commit attempt this time --
+    # is PREDICTED to survive intact through CloseProject()'s own later
+    # usm.Save(). MEASURE, do not assume: if any of this is wrong, report
+    # the measured values verbatim as a P0 finding rather than adjusting
+    # these assertions to match. ---
+    assert result_c["save_exc_msg"] is not None, (
+        "Case C (Transaction(), undoable=False, depth=1) was expected to "
+        "raise the T8b depth guard's FP_TransactionError; SaveChanges() "
+        "did not raise at all."
+    )
+    assert result_c["save_exc_msg"].startswith("FP_TransactionError:"), (
+        f"Case C (Transaction(), undoable=False, depth=1) was expected to "
+        f"raise FP_TransactionError from the T8b depth guard; got "
+        f"{result_c['save_exc_msg']!r}."
+    )
+    assert "Commit at wrong place." not in result_c["save_exc_msg"], (
+        f"Case C's raw liblcm exception string must NO LONGER reach the "
+        f"caller -- the guard refuses before usm.Save() is ever attempted; "
+        f"got: {result_c['save_exc_msg']!r}."
+    )
+    assert result_c["depth_after"] == result_c["depth_before"] == 1, (
+        f"Case C (Transaction(), undoable=False, depth=1) was expected to "
+        f"leave CurrentDepth UNCHANGED at 1 across the refused "
+        f"SaveChanges() call -- proof usm.Save() was never reached; "
+        f"measured before={result_c['depth_before']}, "
+        f"after={result_c['depth_after']}."
+    )
+    assert result_c["in_memory_count"] == N_ENTRIES, (
+        f"Case C (Transaction(), undoable=False, depth=1): PREDICTED "
+        f"{N_ENTRIES}/{N_ENTRIES} still visible in the STILL-OPEN project "
+        f"immediately after the guard refused SaveChanges() (the change "
+        f"set was never touched by a failed commit attempt this time); "
+        f"got {result_c['in_memory_count']}/{N_ENTRIES}. If this fails, "
+        "report the measured count as a P0 finding -- do not silently "
+        "adjust this assertion to match."
+    )
+    assert result_c["on_disk_count"] == N_ENTRIES, (
+        f"Case C (Transaction(), undoable=False, depth=1): PREDICTED "
+        f"{N_ENTRIES}/{N_ENTRIES} survivors after a genuine reopen (the "
+        f"intact change set commits normally via CloseProject()'s own "
+        f"End + usm.Save()); got {result_c['on_disk_count']}/{N_ENTRIES}. "
+        "If this fails, report the measured count as a P0 finding -- do "
+        "not silently adjust this assertion to match."
+    )
+
+    # --- Case A: THE headline unmeasured case. Pin whatever was actually
+    # measured live so this cannot silently regress or be re-baselined
+    # without visibly failing. MEASURED LIVE, do not adjust without
+    # reporting the new numbers per the task's binding evidence rules.
+    #
+    # If SaveChanges() SUCCEEDED and the edit persisted (on_disk ==
+    # N_ENTRIES): a blanket `CurrentDepth > 0` refusal on SaveChanges()
+    # WOULD sacrifice a genuinely working edit in this case, and the guard
+    # approved for T8b must be narrowed to exclude it (e.g. distinguish via
+    # HasOpenSessionTask()'s own undoable-mode-aware semantics, or some
+    # other signal that separates a UndoableOperation()-owned depth-1 from
+    # the bare undoable=False session-long depth-1).
+    #
+    # If SaveChanges() RAISED and the edit was destroyed (on_disk == 0,
+    # matching the undoable=False mechanism exactly): a blanket
+    # `CurrentDepth > 0` refusal removes nothing that worked, and is SAFE
+    # as far as this case is concerned.
+    if result_a["save_exc_msg"] is None and result_a["on_disk_count"] == N_ENTRIES:
+        print(
+            "[PROBE][P10] CASE A VERDICT: SaveChanges() SUCCEEDED and the "
+            "edit PERSISTED to disk at CurrentDepth == 1 inside "
+            "UndoableOperation() under undoable=True. A blanket "
+            "`CurrentDepth > 0` guard on SaveChanges() WOULD SACRIFICE THIS "
+            "WORKING EDIT and must be narrowed for T8b."
+        )
+    elif result_a["save_exc_msg"] is not None and result_a["on_disk_count"] == 0:
+        print(
+            "[PROBE][P10] CASE A VERDICT: SaveChanges() RAISED and the edit "
+            "was DESTROYED (0/{N_ENTRIES} on disk), matching the "
+            "undoable=False bare-session mechanism exactly. A blanket "
+            "`CurrentDepth > 0` guard removes nothing that worked here."
+        )
+    elif result_a["save_exc_msg"] is not None and result_a["on_disk_count"] == N_ENTRIES:
+        print(
+            "[PROBE][P10] CASE A VERDICT (MEASURED, third outcome -- "
+            "distinct from both named alternatives above; T8b UPDATE: "
+            "the exception is now the guard's own FP_TransactionError, "
+            "raised BEFORE usm.Save() is ever attempted, not the raw "
+            "liblcm 'Commit at wrong place.' string T8a measured): "
+            "SaveChanges() RAISED, YET the edit was NOT destroyed -- "
+            "25/25 survived in-memory (still-open, before the block's own "
+            "__exit__) AND 25/25 survived a genuine close-and-reopen. The "
+            "survival does not depend on this SaveChanges() call: the "
+            "UndoableOperation() block's own normal __exit__ (no exception "
+            "escaped, because _safe() caught it) commits the edit onto the "
+            "real UndoableUnitOfWorkHelper stack regardless, and "
+            "CloseProject()'s own later usm.Save() at the now-legal depth "
+            "0 persists it for real. VERDICT: BLANKET GUARD SAFE for this "
+            "case -- the call already failed before T8b too (just with "
+            "LCM's cryptic message instead of the guard's own clearer "
+            "one), and the edit was never actually at risk from this "
+            "specific SaveChanges() call one way or the other, so "
+            "refusing it earlier sacrifices nothing."
+        )
+    else:
+        print(
+            f"[PROBE][P10] CASE A VERDICT: PARTIAL/UNEXPECTED result -- "
+            f"save_raised={bool(result_a['save_exc_msg'])}, "
+            f"in_memory={result_a['in_memory_count']}/{N_ENTRIES}, "
+            f"on_disk={result_a['on_disk_count']}/{N_ENTRIES}. Does not "
+            "match any of the three named outcomes above; report exactly "
+            "as measured, this is itself P0-severity information for the "
+            "guard's shape."
+        )
+
+    # --- Pin the exact measured Case A result as a regression lock,
+    # mirroring the P-5/P-7/P-8/P-9 "assert the MEASURED value, not the
+    # hoped-for one" convention. If this fails, Case A's behaviour has
+    # CHANGED since this spurt -- report the new numbers, do not silently
+    # adjust this assertion to match. UPDATED for T8b: the exception type
+    # and depth-after value change (guard refuses before usm.Save(), never
+    # mutating LCM state); the data outcome (25/25 both reads) does not. ---
+    assert result_a["save_exc_msg"] is not None, (
+        "Case A (UndoableOperation(), undoable=True, depth=1) was expected "
+        "to raise the T8b depth guard's FP_TransactionError; SaveChanges() "
+        "did not raise at all."
+    )
+    assert result_a["save_exc_msg"].startswith("FP_TransactionError:"), (
+        f"MEASURED LIVE: Case A (UndoableOperation(), undoable=True, "
+        f"depth=1) was expected to raise the T8b guard's "
+        f"FP_TransactionError; got {result_a['save_exc_msg']!r} instead. "
+        "This is a CHANGE from the recorded finding -- report it."
+    )
+    assert "Commit at wrong place." not in result_a["save_exc_msg"], (
+        f"Case A's raw liblcm exception string must NO LONGER reach the "
+        f"caller -- the guard refuses before usm.Save() is ever attempted; "
+        f"got: {result_a['save_exc_msg']!r}."
+    )
+    assert result_a["depth_after"] == result_a["depth_before"] == 1, (
+        f"Case A (UndoableOperation(), undoable=True, depth=1) was "
+        f"expected to leave CurrentDepth UNCHANGED at 1 across the refused "
+        f"SaveChanges() call -- proof usm.Save() was never reached; "
+        f"measured before={result_a['depth_before']}, "
+        f"after={result_a['depth_after']}."
+    )
+    assert result_a["in_memory_count"] == N_ENTRIES, (
+        f"MEASURED LIVE (spurt 6, T8a): Case A's edit survived in-memory "
+        f"({N_ENTRIES}/{N_ENTRIES}) despite SaveChanges() raising; got "
+        f"{result_a['in_memory_count']}/{N_ENTRIES}. This is a CHANGE from "
+        "the recorded finding -- report it, this is the exact measurement "
+        "the guard's shape decision depends on."
+    )
+    assert result_a["on_disk_count"] == N_ENTRIES, (
+        f"MEASURED LIVE (spurt 6, T8a): Case A's edit survived a genuine "
+        f"close-and-reopen ({N_ENTRIES}/{N_ENTRIES}) despite SaveChanges() "
+        f"raising; got {result_a['on_disk_count']}/{N_ENTRIES}. This is a "
+        "CHANGE from the recorded finding -- report it, this is the exact "
+        "measurement the guard's shape decision depends on."
+    )
+
+
+# ===========================================================================
+# P-11 -- CASE A, BUT LET THE GUARD'S EXCEPTION PROPAGATE (T8b, spec.md C21)
+#
+# P-10 case A deliberately isolated SaveChanges() from the block's own
+# exit-time commit/rollback logic by catching the guard's exception with
+# _safe() -- exactly so the measurement above answers "what does THIS CALL
+# do" rather than "what does an unrelated escaping exception do to the
+# block". This probe asks the complementary, equally real-world question:
+# an application that does NOT catch SaveChanges()'s FP_TransactionError
+# lets it propagate out of the `with project.UndoableOperation(...)` block,
+# which (per _NestingAwareTransaction.__exit__, FLExProject.py's
+# transaction.py) treats ANY escaping exception as a rollback trigger for
+# the whole block, independent of what raised it.
+#
+# No file under flexicon/ is touched by this test. This does not modify
+# SaveChanges(), UndoableOperation(), or CloseProject().
+# ===========================================================================
+
+@pytest.mark.requires_live_project
+@pytest.mark.live_phase("FLExProject", "modify")
+def test_p11_case_a_exception_propagates_and_rolls_back(target_sandbox_path):
+    """
+    T8b / P-11 (spec.md C21, task brief "NEW: P-11"): P-10 case A repeated,
+    but this time the guard's FP_TransactionError is allowed to PROPAGATE
+    out of the `with project.UndoableOperation(...)` block instead of being
+    caught by _safe() inside it.
+
+    Mechanism (per transaction.py's _NestingAwareTransaction.__exit__ and
+    UndoableOperation()'s own docstring): an escaping exception makes the
+    block's own UndoableUnitOfWorkHelper call `set_RollBack(True)` before
+    Dispose(). This is NOT new behaviour introduced by the T8b guard: the
+    same block already ran this same exit path on ANY escaping exception
+    before the guard existed (e.g. the raw liblcm
+    InvalidOperationException this same call used to raise, pre-T8b, if a
+    caller ALSO did not catch it -- P-10 case A only avoided this outcome
+    by deliberately catching it with _safe()).
+
+    PREDICTED (a priori, before this probe was run): 0/25 survivors, on the
+    assumption that `RollBack=True` discards every mutation made inside the
+    block.
+
+    MEASURED LIVE (spurt 7, T8b, 2026-09-07) -- CONTRADICTS THE PREDICTION,
+    reported verbatim as a P0 FINDING rather than silently retuned: 25/25
+    survivors, BOTH in-memory (re-read from the still-open project
+    immediately after the block's exit, before CloseProject()) AND on-disk
+    (after a genuine close-and-reopen). The debug log DOES confirm
+    `set_RollBack(True)` and `Dispose()` ran ("UnitOfWork rolled back"), yet
+    the 25 created entries were NOT discarded either time. This means
+    `UndoableUnitOfWorkHelper.Dispose()` with `RollBack=True` does NOT, in
+    this measured case, revert already-applied object creation the way its
+    own naming and transaction.py's/undoable_operation.py's docstrings both
+    assert it does. This is NOT the SaveChanges() depth guard's doing -- the
+    guard raised and refused correctly (see the assertions above); this
+    finding is about what liblcm's OWN rollback primitive does afterward,
+    independent of what triggered the escape. Distinguishing exactly why
+    (e.g. object creation may already be reflected in the cache's live
+    collections in a way `RollBack` does not reach, as opposed to modified
+    property values) needs instrumentation inside liblcm/UnitOfWorkHelper.cs
+    and is OUT OF SCOPE for this task (same disposition as spec.md C16's
+    "needs instrumentation inside liblcm" boundary) -- reported as a P0
+    finding for /lex-lead to route, not investigated further here.
+
+    THE BINDING CONSEQUENCE FOR THE T8b DOCSTRING (per the task brief): the
+    undoable=True SaveChanges() docstring must not describe the escaping-
+    exception outcome from inference, and it does not -- it only states that
+    the block "commits automatically when it exits normally," which says
+    nothing about what happens on a non-normal exit, so this measured
+    surprise does not falsify anything the shipped docstring claims. But any
+    FUTURE claim that "an escaping exception safely discards the edit" would
+    be FALSE per this measurement and must not be written anywhere in this
+    codebase without re-verifying first.
+    """
+    from flexicon.code.FLExProject import FLExProject
+    from flexicon.code.exceptions import FP_TransactionError
+
+    fwdata_path = pathlib.Path(target_sandbox_path)
+    prefix = f"{TEST_PREFIX}p11_"
+
+    project = FLExProject()
+    project.OpenProject(str(fwdata_path), writeEnabled=True, undoable=True)
+    close_exc_msg = None
+    propagated_exc = None
+    in_memory_count = None
+    try:
+        created = _create_test_entries(project, prefix, N_ENTRIES)
+        print(f"[PROBE][P11] created {len(created)} entries with prefix {prefix!r}")
+
+        depth_before_block = _depth(project)
+        print(f"[PROBE][P11] CurrentDepth before UndoableOperation() block: {depth_before_block}")
+
+        try:
+            with project.UndoableOperation("p11 probe"):
+                depth_inside = _depth(project)
+                print(f"[PROBE][P11] CurrentDepth inside UndoableOperation() block: {depth_inside}")
+                # Deliberately NOT wrapped in _safe() -- the whole point of
+                # this probe is to let the raise ESCAPE the `with` block.
+                project.SaveChanges()
+        except FP_TransactionError as e:
+            propagated_exc = e
+            print(f"[PROBE][P11] FP_TransactionError PROPAGATED out of the "
+                  f"UndoableOperation() block, as expected: {e}")
+
+        depth_after_block = _safe(lambda: _depth(project), "P11 CurrentDepth after the block")[0]
+        print(f"[PROBE][P11] CurrentDepth after the block's own rollback exit: {depth_after_block}")
+
+        # THE MEASUREMENT: re-read from the STILL-OPEN in-memory project,
+        # before CloseProject() is ever called (P-7 technique).
+        in_memory_count = _count_prefixed_entries(project, prefix)
+        print(
+            f"[PROBE][P11] TEST_ entries still visible in the STILL-OPEN "
+            f"project after the block rolled back: {in_memory_count} / {N_ENTRIES}"
+        )
+
+        _, close_exc_msg = _safe(project.CloseProject, "P11 CloseProject")
+    finally:
+        _dispose_if_open(project, "P11")
+
+    assert propagated_exc is not None, (
+        "SaveChanges() did not raise FP_TransactionError at all inside the "
+        "UndoableOperation() block -- the depth guard should have fired "
+        "(CurrentDepth == 1 inside the block, per the frozen P-2/T1 table)."
+    )
+
+    assert close_exc_msg is None, (
+        f"CloseProject() raised unexpectedly: {close_exc_msg!r} -- this "
+        "probe only measures the block's own rollback behaviour, so a "
+        "raise here means the probe scaffolding itself is broken."
+    )
+
+    reopen_project = FLExProject()
+    reopen_project.OpenProject(str(fwdata_path), writeEnabled=False)
+    try:
+        surviving_count = _count_prefixed_entries(reopen_project, prefix)
+        print(f"[PROBE][P11] TEST_ entries surviving a genuine close-and-reopen: {surviving_count} / {N_ENTRIES}")
+    finally:
+        _safe(reopen_project.CloseProject, "P11 reopen CloseProject")
+        _dispose_if_open(reopen_project, "P11 reopen")
+
+    print(
+        f"[PROBE][P11] VERDICT: FP_TransactionError propagated out of "
+        f"UndoableOperation(), Dispose()/set_RollBack(True) ran (per the "
+        f"debug log) -- in_memory={in_memory_count}/{N_ENTRIES}, "
+        f"on_disk={surviving_count}/{N_ENTRIES}. "
+        f"{'MATCHES the a-priori prediction (0/25).' if in_memory_count == 0 and surviving_count == 0 else 'P0 FINDING: CONTRADICTS the a-priori 0/25 rollback prediction -- RollBack(True)+Dispose() ran but did NOT discard the created entries. See docstring MEASURED LIVE section.'}"
+    )
+
+    # MEASURED LIVE (spurt 7, T8b, 2026-09-07) -- CONTRADICTS the a-priori
+    # 0/25 prediction recorded in the docstring above. 25/25 survived both
+    # reads despite the debug log confirming set_RollBack(True) + Dispose()
+    # ran. This is asserted as the MEASURED value, per this file's own
+    # established convention (P-5/P-7/P-8/P-9/P-10: "assert the MEASURED
+    # value, not the hoped-for one") -- NOT silently retuned to make the
+    # test green, but pinned so a FUTURE change to this liblcm mechanism is
+    # caught here rather than re-surprising a future reader. Reported
+    # prominently as a P0 finding in reviews/cycle7-programmer.md; the
+    # SaveChanges() docstring does not claim otherwise (see docstring above)
+    # so this is not a documentation contradiction, but it IS a live
+    # liblcm-mechanism finding outside this task's scope to investigate
+    # further (would need instrumentation inside UnitOfWorkHelper.cs).
+    assert in_memory_count == N_ENTRIES, (
+        f"MEASURED LIVE: {N_ENTRIES}/{N_ENTRIES} survivors in-memory despite "
+        f"the escaping exception triggering set_RollBack(True) + Dispose() "
+        f"on the UndoableOperation() block (CONTRADICTS the a-priori 0/25 "
+        f"prediction -- see docstring); got {in_memory_count}/{N_ENTRIES}. "
+        "If this assertion is now failing, the underlying liblcm rollback "
+        "mechanism has CHANGED AGAIN -- report the new count, it is "
+        "P0-severity either way."
+    )
+    assert surviving_count == N_ENTRIES, (
+        f"MEASURED LIVE: {N_ENTRIES}/{N_ENTRIES} survivors after a genuine "
+        f"close-and-reopen (same measured non-rollback, confirmed on disk); "
+        f"got {surviving_count}/{N_ENTRIES}. If this assertion is now "
+        "failing, the underlying liblcm rollback mechanism has CHANGED "
+        "AGAIN -- report the new count, it is P0-severity either way."
+    )
+
+
+# ===========================================================================
+# T7 -- C15 finally-guarantee, MOCK/OFFLINE (NOT live verification)
+# ===========================================================================
+#
+# No @pytest.mark.requires_live_project on this test: it never opens a
+# real LCM project. It exists solely to pin CloseProject()'s finally
+# structure (spec.md C15) -- Dispose()/del self.project must run even
+# when something above raises -- which a live probe cannot isolate as
+# cleanly as a mock can, since the live routes into the anomaly branch
+# (P-3/P-5) all measure a SUCCESSFUL usm.Save(). This test forces
+# usm.Save() itself to raise, a shape none of the live probes reach.
+# A mock pass here is NOT a substitute for live verification of the rest
+# of T7 -- see evidence/live-t7-loud-close.md for that.
+
+def test_c15_dispose_runs_in_finally_even_when_save_raises():
+    """
+    MOCK/OFFLINE test (spec.md C15). Constructs a bare FLExProject without
+    OpenProject() and stubs its LCM-facing surface, then forces
+    usm.Save() to raise. Asserts Dispose() is still called and
+    self.project is still deleted -- the finally guarantee -- and that
+    the original exception still propagates (the finally must not
+    swallow it).
+    """
+    from unittest.mock import Mock
+
+    from flexicon.code.FLExProject import FLExProject
+
+    project = FLExProject()
+    project.writeEnabled = True
+    project._undoable = True  # Phase 2: skip the Phase-1 End/anomaly logic entirely
+    fake_lcm = Mock(name="fake_lcm_cache")
+    project.project = fake_lcm
+
+    fake_usm = Mock(name="fake_undo_stack_manager")
+    fake_usm.Save.side_effect = RuntimeError("boom: usm.Save() failed")
+    project.ObjectRepository = Mock(return_value=fake_usm)
+
+    with pytest.raises(RuntimeError, match="boom: usm.Save\\(\\) failed"):
+        project.CloseProject()
+
+    fake_lcm.Dispose.assert_called_once()
+    assert not hasattr(project, "project"), (
+        "C15: del self.project must still run in the finally block even "
+        "though usm.Save() raised."
+    )

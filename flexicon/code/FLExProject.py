@@ -329,7 +329,10 @@ class FLExProject(object):
            open (e.g. a prior mid-session ``SaveChanges()`` call already
            collapsed it -- spec.md C9), the ``End`` call is skipped
            entirely rather than assuming ``writeEnabled and not
-           _undoable`` implies the envelope is still present.
+           _undoable`` implies the envelope is still present. This is an
+           anomaly by construction in Phase 1 (spec.md C14/C18), so it is
+           logged at ERROR (spec.md C23) rather than debug -- see the
+           branch below for exactly what is and is not asserted.
         2. Even when the check says an envelope IS open, the ``End``
            call itself is wrapped in try/except so an unexpected raise
            there (not just the already-prevented depth-0 case) still
@@ -339,51 +342,99 @@ class FLExProject(object):
         ``usm.Save()`` ahead of the ``End`` call; P-5 (spec.md section 2)
         proved that shape trades one guaranteed raise for another with
         no save occurring either way.
+
+        ``Dispose()``/``del self.project`` run in a ``finally`` (spec.md
+        C15) so the live LCM handle is never leaked, including when the
+        ERROR branch below is taken or when ``usm.Save()`` itself raises.
         """
         if hasattr(self, "project"):
-            if self.writeEnabled:
-                if not self._undoable:
-                    # Phase 1: This must be called to mirror the call to
-                    # BeginNonUndoableTask() -- but only if that envelope
-                    # is actually still open (issue #243, spec.md C6).
-                    if self.HasOpenSessionTask():
-                        try:
-                            self.project.MainCacheAccessor.EndNonUndoableTask()
-                        except Exception as e:
-                            # Any raise here -- not just the depth-0 case
-                            # already prevented by the check above -- must
-                            # not be allowed to skip usm.Save() below
-                            # (spec.md C6 part 2). Log loudly: a single,
-                            # easy-to-miss [WARN] elsewhere in this exact
-                            # failure path is the defect issue #243 exists
-                            # to fix, so swallowing this silently would
-                            # repeat it.
-                            logging.getLogger(__name__).warning(
-                                "CloseProject: EndNonUndoableTask() raised "
-                                "even though HasOpenSessionTask() reported "
-                                "an open envelope; continuing to "
-                                "usm.Save() below regardless. %s: %s",
-                                type(e).__name__, e,
-                            )
-                    else:
-                        logging.getLogger(__name__).debug(
-                            "CloseProject: HasOpenSessionTask() is False; "
-                            "skipping EndNonUndoableTask() rather than "
-                            "assuming the mode implies the envelope is "
-                            "present."
-                        )
-                # Phase 2: In undoable mode, no EndNonUndoableTask() to call
-                # (each UndoableOperation handles its own Begin/End)
-
-                # Save all changes to disk
-                usm = self.ObjectRepository(IUndoStackManager)
-                usm.Save()
             try:
+                if self.writeEnabled:
+                    if not self._undoable:
+                        # Phase 1: This must be called to mirror the call to
+                        # BeginNonUndoableTask() -- but only if that envelope
+                        # is actually still open (issue #243, spec.md C6).
+                        if self.HasOpenSessionTask():
+                            try:
+                                self.project.MainCacheAccessor.EndNonUndoableTask()
+                            except Exception as e:
+                                # Any raise here -- not just the depth-0 case
+                                # already prevented by the check above -- must
+                                # not be allowed to skip usm.Save() below
+                                # (spec.md C6 part 2). Log loudly: a single,
+                                # easy-to-miss [WARN] elsewhere in this exact
+                                # failure path is the defect issue #243 exists
+                                # to fix, so swallowing this silently would
+                                # repeat it.
+                                logging.getLogger(__name__).warning(
+                                    "CloseProject: EndNonUndoableTask() raised "
+                                    "even though HasOpenSessionTask() reported "
+                                    "an open envelope; continuing to "
+                                    "usm.Save() below regardless. %s: %s",
+                                    type(e).__name__, e,
+                                )
+                        else:
+                            # PRIMARY detector (spec.md C18, unchanged in
+                            # logic from C14; now feeds this log line
+                            # rather than a raise -- C23 WITHDRAWS the
+                            # FP_ProjectError this branch used to raise).
+                            # Reaching this branch at all means
+                            # writeEnabled and not self._undoable (Phase
+                            # 1, where the session-long envelope should
+                            # still be open) yet HasOpenSessionTask() read
+                            # False -- unreachable by construction unless
+                            # something already ended that envelope before
+                            # CloseProject() was entered. This is the
+                            # anomaly; naming it is the whole point of the
+                            # ERROR level (a single easy-to-miss [WARN]
+                            # elsewhere in this exact failure path was the
+                            # original incident's only symptom -- spec.md
+                            # QUEUE.md item 1 / C14).
+                            #
+                            # OPTIONAL/diagnostic-only (spec.md C18 point
+                            # 3): a pre-Save() HasUnsavedChanges read,
+                            # logged for context. It is a proxy for "did
+                            # an End just succeed", not independent
+                            # information, so it MUST NOT gate anything
+                            # here and does not create a second code path.
+                            # P-9 proved reading it as "nothing pending to
+                            # save" when False is a FALSE NEGATIVE (all 25
+                            # entries still existed in memory at that
+                            # reading), so it is logged as a raw value
+                            # only -- this log asserts NOTHING about
+                            # whether data was lost.
+                            diagnostic_has_unsaved = None
+                            try:
+                                diagnostic_has_unsaved = self.ObjectRepository(
+                                    IUndoStackManager
+                                ).HasUnsavedChanges
+                            except Exception:
+                                pass  # diagnostic-only; never gates the save below
+                            logging.getLogger(__name__).error(
+                                "CloseProject: HasOpenSessionTask() read False "
+                                "inside Phase 1 (writeEnabled and not "
+                                "_undoable) -- unreachable by construction "
+                                "unless the session envelope was already "
+                                "ended before CloseProject() was entered. "
+                                "Skipping EndNonUndoableTask() and proceeding "
+                                "to usm.Save() below regardless (pre-Save() "
+                                "HasUnsavedChanges=%s, a diagnostic value "
+                                "only -- spec.md C18 -- not proof of what "
+                                "is or is not pending).",
+                                diagnostic_has_unsaved,
+                            )
+                    # Phase 2: In undoable mode, no EndNonUndoableTask() to call
+                    # (each UndoableOperation handles its own Begin/End)
+
+                    # Save all changes to disk
+                    usm = self.ObjectRepository(IUndoStackManager)
+                    usm.Save()
+            finally:
+                # C15: always dispose, even if the ERROR branch above was
+                # taken or usm.Save() itself raised -- a raise here must
+                # never leak the live LCM handle.
                 self.project.Dispose()
                 del self.project
-                return
-            except Exception:
-                raise
 
     def _ReadActionHandlerDepth(self):
         """
@@ -735,22 +786,102 @@ class FLExProject(object):
         This is equivalent to what CloseProject() does internally before Dispose().
         Useful after a successful Transaction block to ensure changes are persisted.
 
+        Depth guard (issue #243, spec.md C20/C21): refuses to call
+        ``usm.Save()`` whenever ``CurrentDepth > 0`` -- i.e. while a unit
+        of work is open, in EITHER mode. Live probes (P-5/P-7/P-10-C)
+        measured that calling ``usm.Save()`` at depth > 0 raises
+        ``InvalidOperationException: Commit at wrong place.`` from liblcm,
+        and that under ``undoable=False`` that failure's own path
+        collapses the session-long envelope as a side effect, discarding
+        the whole session's pending work with nothing written to disk
+        (0/25 survivors measured pre-guard). This guard turns that into an
+        honest, fail-fast ``FP_TransactionError`` before ``usm.Save()`` is
+        ever attempted, so the refusal itself discards nothing.
+
         Note:
             Only valid for write-enabled projects.
             Does NOT call EndNonUndoableTask() - the session stays open.
+            Under ``undoable=False``, the session-long envelope opened by
+            ``OpenProject()`` holds ``CurrentDepth`` at 1 for the entire
+            session, so this method ALWAYS raises if called mid-session in
+            that mode -- see the Example below. Use ``CloseProject()``
+            instead, which ends that envelope before saving.
+            Under ``undoable=True``, call this AFTER an
+            ``UndoableOperation()``/``Transaction()`` block has exited
+            (``CurrentDepth`` back to 0), never from inside one.
 
         Raises:
             FP_ReadOnlyError: If project is not write-enabled.
+            FP_TransactionError: If ``CurrentDepth > 0`` -- a unit of work
+                is currently open, in either mode. ``usm.Save()`` is never
+                attempted when this is raised.
 
-        Example::
+        Example (``undoable=True``, the 4.4.0 default)::
 
-            with project.Transaction("import batch"):
+            with project.UndoableOperation("import batch"):
                 for word in words:
                     project.LexEntry.Create(word, "stem")
-            project.SaveChanges()  # Persist the batch before continuing
+            # SaveChanges() belongs AFTER the block, not inside it --
+            # CurrentDepth is back to 0 here.
+            project.SaveChanges()
+
+        Example (``undoable=False``, explicit opt-out)::
+
+            project.OpenProject("MyProject", writeEnabled=True,
+                                 undoable=False)
+            project.LexEntry.Create("word", "stem")
+            # SaveChanges() here would raise FP_TransactionError: the
+            # session-long envelope opened at OpenProject() holds
+            # CurrentDepth at 1 for the whole session. CloseProject()
+            # ends that envelope first, then saves.
+            project.CloseProject()
         """
         if not self.writeEnabled:
             raise FP_ReadOnlyError()
+
+        log = logging.getLogger(__name__)
+        try:
+            depth = self.CurrentDepth
+        except Exception as e:
+            # Fail OPEN (spec.md C21): an unreadable depth is never a
+            # reason to refuse a save that would otherwise have
+            # succeeded. Log loudly and fall through to usm.Save() below,
+            # exactly as this method behaved before the guard existed.
+            log.warning(
+                "SaveChanges: could not evaluate the issue #243 depth "
+                "guard (CurrentDepth read raised %s: %s); proceeding to "
+                "usm.Save() without it.",
+                type(e).__name__, e,
+            )
+            depth = 0
+
+        if depth > 0:
+            if self._undoable:
+                raise FP_TransactionError(
+                    f"SaveChanges() refused: CurrentDepth is {depth} (a "
+                    "unit of work is currently open). usm.Save() was NOT "
+                    "attempted, so this refusal itself discarded "
+                    "nothing. The enclosing UndoableOperation()/"
+                    "Transaction() block owns the open unit of work; the "
+                    "pending edit commits automatically when that block "
+                    "exits normally. Call SaveChanges() AFTER the block, "
+                    "not from inside it."
+                )
+            else:
+                raise FP_TransactionError(
+                    f"SaveChanges() refused: CurrentDepth is {depth} "
+                    "(the session-long non-undoable envelope opened by "
+                    "OpenProject(undoable=False) is still open). "
+                    "usm.Save() was NOT attempted, so this refusal "
+                    "itself discarded nothing -- your pending changes "
+                    "are intact in memory and will be written to disk "
+                    "by CloseProject(). Calling through here would "
+                    "instead have discarded the session's pending "
+                    "changes (measured 0/25 survivors when this guard "
+                    "did not exist -- spec.md P-5/P-7/P-10-C). "
+                    "Mid-session saving requires opening the project "
+                    "with undoable=True instead."
+                )
 
         usm = self.ObjectRepository(IUndoStackManager)
         usm.Save()
@@ -791,10 +922,24 @@ class FLExProject(object):
 
         Example::
 
-            project.OpenProject("MyProject", writeEnabled=True)
+            project.OpenProject("MyProject", writeEnabled=True,
+                                 undoable=True)
             # ... FLEx (or another client) saves a conflicting change ...
             project.RefreshFromDisk()
             project.SaveChanges()  # No longer wedged
+
+        Note on mode (issue #243, spec.md C21): the Example above requires
+            ``undoable=True``. Under ``undoable=False`` the session-long
+            envelope opened at ``OpenProject()`` holds ``CurrentDepth`` at
+            1 for the whole session, so ``SaveChanges()`` always raises
+            ``FP_TransactionError`` in that mode -- it cannot be called
+            mid-session at all, reconciliation or not.
+            ``CloseProject()`` ends that envelope before its own
+            ``usm.Save()`` call, so it reaches ``usm.Save()`` at a legal
+            depth; whether ``RefreshFromDisk()`` followed by
+            ``CloseProject()`` fully clears a pending-reconciliation wedge
+            under ``undoable=False`` has not been measured here and is
+            not claimed.
         """
         if not self.writeEnabled:
             raise FP_ReadOnlyError()
@@ -905,7 +1050,12 @@ class FLExProject(object):
                 project.AbortSession()   # discard the whole partial import
                 raise
             else:
-                project.SaveChanges()
+                # NOTE: not SaveChanges(). Under undoable=False the
+                # session-long envelope keeps CurrentDepth at 1 for the
+                # whole session (issue #243, spec.md C21), so
+                # SaveChanges() always raises FP_TransactionError here.
+                # CloseProject() ends that envelope first, then saves.
+                project.CloseProject()
 
         See Also:
             Undo() - reverse one committed ``UndoableOperation``

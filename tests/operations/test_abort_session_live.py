@@ -118,8 +118,8 @@ class TestAbortDiscardsUncommittedWrites:
         boundary, so its field value must return to the pre-abort reading.
 
         Note the object is taken from the fixture's existing data rather than
-        created-and-committed here, because `SaveChanges()` cannot be used to
-        commit mid-session in this mode -- see
+        created-and-committed here, because `SaveChanges()` refuses to commit
+        mid-session in this mode (issue #243 depth guard, spec.md C21) -- see
         `TestSaveChangesIsUnusableInThisMode` below.
         """
         pos_ops = target_sandbox.POS
@@ -233,37 +233,45 @@ class TestAbortDoesNotTouchCommittedData:
 
 class TestSaveChangesIsUnusableInThisMode:
     """
-    PRE-EXISTING DEFECT, not an A3 regression -- pinned here because A3's
-    first draft used `SaveChanges()` to establish committed state and could
-    not.
+    FIXED, issue #243 (spec.md C20/C21) -- this is the inversion the class
+    docstring previously promised.
 
     Under `undoable=False` the session envelope holds the FSM in
-    `ProcessingDataChanges` for the whole session, but `SaveInternal()` runs
-    `CheckReadyForCommit("Commit at wrong place.")`, which demands
-    `ReadyForBeginTask` (`UnitOfWorkService.cs:304`). So `SaveChanges()`
-    cannot succeed in the DEFAULT write mode. Worse, per
-    `UndoStack.cs:239-246` that check ROLLS BACK the open bundle before
-    throwing -- so the failed save also silently discards the session's
-    uncommitted work, and it surfaces as a raw
-    `System.InvalidOperationException` rather than an `FP_*` error.
+    `ProcessingDataChanges` for the whole session, so raw `SaveInternal()`
+    runs `CheckReadyForCommit("Commit at wrong place.")`, which demands
+    `ReadyForBeginTask` (`UnitOfWorkService.cs:304`) and previously ROLLED
+    BACK the open bundle before throwing a raw
+    `System.InvalidOperationException` (`UndoStack.cs:239-246`) -- silently
+    discarding the session's uncommitted work with no data written to disk.
+
+    `FLExProject.SaveChanges()` now guards this: it reads `CurrentDepth`
+    BEFORE calling `usm.Save()` and refuses with a clean `FP_TransactionError`
+    when depth > 0, so `usm.Save()` is never reached and nothing is
+    discarded by the refusal itself. `SaveChanges()` still cannot COMMIT
+    mid-session in this mode -- that has not changed and is not the claim --
+    but the failure is now a documented, catchable `FP_*` error instead of a
+    raw liblcm exception plus silent data loss.
 
     `CloseProject()` is unaffected: it calls `EndNonUndoableTask()` first,
-    returning the FSM to `ReadyForBeginTask` before `usm.Save()`.
-
-    This test asserts the CURRENT broken behavior so the defect is recorded
-    and measurable. It must be inverted when the defect is fixed.
+    returning the FSM to `ReadyForBeginTask` before `usm.Save()`, i.e. depth
+    is 0 by the time it reaches `usm.Save()` and the guard never fires there.
     """
 
     @pytest.mark.live_phase("FLExProject", "modify")
     def test_save_changes_raises_commit_at_wrong_place(self, target_sandbox):
-        import System
-
         target_sandbox.POS.Create(f"{TEST_PREFIX}save_probe", f"{TEST_PREFIX}sp")
 
-        with pytest.raises(System.InvalidOperationException) as excinfo:
+        with pytest.raises(FP_TransactionError) as excinfo:
             target_sandbox.SaveChanges()
 
-        assert "Commit at wrong place" in str(excinfo.value)
+        assert "CurrentDepth" in str(excinfo.value)
+
+        # The refusal happened before usm.Save() was ever attempted, so the
+        # pending create is still present in the still-open project.
+        assert target_sandbox.POS.Find(f"{TEST_PREFIX}save_probe") is not None, (
+            "SaveChanges() refusing should not have discarded the pending "
+            "create -- usm.Save() must never have been reached."
+        )
 
 
 class TestUndoableMode:

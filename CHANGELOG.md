@@ -60,6 +60,108 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   (e.g. an `IMoMorphType`), so a caller who passes a morph type gets an
   actionable error instead of a raw pythonnet `TypeError`.
 
+- **BREAKING (behavioural): `FLExProject.SaveChanges()` now raises
+  `FP_TransactionError` instead of letting the call reach liblcm when
+  `CurrentDepth > 0`** (#243, spec.md C20/C21). Previously, calling
+  `SaveChanges()` while a unit of work was open -- in EITHER mode --
+  reached `usm.Save()` unguarded, which raised liblcm's
+  `InvalidOperationException: "Commit at wrong place."` and, under
+  `undoable=False`, that failure's own path collapsed the session-long
+  task envelope as a side effect, discarding the whole pending change set
+  with nothing written to disk (measured 0/25 survivors -- spec.md
+  P-5/P-7/P-10 case C). `SaveChanges()` now reads `CurrentDepth` first and
+  refuses before `usm.Save()` is ever attempted, so the refusal itself
+  discards nothing. **Callers catching the old liblcm exception type must
+  now catch `FP_TransactionError` instead.** What to do per mode:
+  - `undoable=False`: do not call `SaveChanges()` while
+    `HasOpenSessionTask()` is true. The pending changes are intact in
+    memory; `CloseProject()` ends the session envelope and writes them to
+    disk.
+  - `undoable=True`: call `SaveChanges()` AFTER the
+    `UndoableOperation()`/`Transaction()` block has exited (`CurrentDepth`
+    back to 0), never from inside one -- the block commits automatically
+    on a normal exit.
+
+  If the `CurrentDepth` read itself fails (closed/never-opened project),
+  the guard fails OPEN -- it logs a `WARNING` and proceeds to `usm.Save()`
+  unguarded, exactly as before the guard existed.
+
+  See also the `[4.4.0]` entry below (`OpenProject(..., undoable=...)` now
+  defaults to `True`) -- this guard and that default flip are the two
+  halves of the #243 story: the flip is what let callers reach
+  `undoable=False`'s single-envelope mode at all, and this guard is what
+  now stops that mode's `SaveChanges()` from destroying it.
+
+### Fixed
+- **`FLExProject.CloseProject()` no longer skips `usm.Save()` if its own
+  `EndNonUndoableTask()` mirror call raises** (#243). Under
+  `writeEnabled=True, undoable=False`, `CloseProject()` called
+  `EndNonUndoableTask()` unconditionally, immediately before `usm.Save()`;
+  a raise there (e.g. because a prior mid-session `SaveChanges()` call had
+  already collapsed the session's non-undoable task envelope) skipped
+  `usm.Save()` entirely, discarding the whole in-memory session with
+  nothing written to disk. `CloseProject()` now guards that call two ways:
+  it checks the new `HasOpenSessionTask()` first and skips
+  `EndNonUndoableTask()` outright when no envelope is open, and it
+  additionally wraps the call in try/except (logging a warning on any
+  other raise), so `usm.Save()` always still runs either way. End-then-
+  `Save()` order is unchanged. Live-verified against a `target_sandbox_path`
+  tempdir copy (`run_mode: live`; the real Target was never opened and no
+  restore script was run): the forced-double-`End` scenario that
+  previously lost all 25 created objects (0/25 survived reopen) now
+  persists 25/25.
+
+  **This fix, combined with the `SaveChanges()` guard above, now closes
+  the incident #243 was filed about.** The incident is a two-step chain:
+
+  1. A mid-session `SaveChanges()` call under `undoable=False` used to
+     reach `usm.Save()` while the session-long envelope was still open
+     (`CurrentDepth == 1`), raising `Commit at wrong place.` and
+     collapsing the envelope as a side effect, discarding the whole
+     pending change set before `CloseProject()` was ever entered. This
+     step is now **refused outright** by `SaveChanges()`'s own depth
+     guard (see `### Changed` above) -- `usm.Save()` is never attempted,
+     so nothing is discarded at this step any more.
+  2. With the envelope never collapsed, `CloseProject()`'s own
+     `EndNonUndoableTask()` mirror call finds a genuinely open envelope to
+     end, so this fix's guard (above) reaches `usm.Save()` at a legal
+     depth with an intact, never-touched change set.
+
+  The full sequence -- 25 objects created, mid-session `SaveChanges()`
+  attempted and refused, `CloseProject()` called -- now re-measures
+  **25/25 survivors in memory** (re-read from the still-open project
+  before close) **and 25/25 survivors after a genuine close-and-reopen**
+  (spec.md T8b, `evidence/live-t8b-savechanges-guard.md`).
+
+  **Two things this fix does NOT claim, so a future reader cannot
+  overclaim them:**
+  - It says nothing about `Target.fwdata` being replaced by a
+    crash-recovery copy, as originally reported. flexicon has no code
+    path that renames, rotates or replaces `.fwdata`; that observation
+    remains attributed to a FieldWorks-side mechanism, out of this
+    project's scope (spec.md C10).
+  - Every measurement above is **single-client**, against a local,
+    file-backed `target_sandbox_path` copy. No shared-project /
+    multi-client recovery behaviour was measured, and none is claimed.
+
+  **Also (#243 T7, landing in parallel this cycle -- verify against the
+  landed diff before the next release cut):** `CloseProject()`'s Phase-1
+  envelope-missing branch (`HasOpenSessionTask()` reads `False` while
+  `writeEnabled and not undoable` -- reachable only via a stray or forced
+  early `End`, spec.md P-3) now logs at **ERROR** instead of `debug`,
+  naming the anomaly explicitly and stating that `usm.Save()` is
+  proceeding anyway. This restores **loudness**, not **data** (spec.md
+  C14) -- it asserts **nothing** about whether data was lost, because the
+  only live route into this branch post-T8b is the one where the save
+  succeeds (spec.md C23).
+
+  **New public surface: `FLExProject.CurrentDepth`** (raw `int`
+  passthrough of the live LCM action handler's task depth) **and
+  `FLExProject.HasOpenSessionTask()`** (whether the session-long
+  `undoable=False` task envelope is currently open; unconditionally
+  `False` under `undoable=True`). Both raise `FP_ProjectError` on a closed
+  or never-opened project rather than silently returning `0`/`False`.
+
 ## [4.5.2] - 2026-08-19
 
 > Follow-up to 4.5.1: a residual falsy-gate gap for empty-but-present

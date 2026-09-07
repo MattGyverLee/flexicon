@@ -1,27 +1,34 @@
 # STATUS -- 243-closeproject-save-guard (flexicon#243)
 
 **Campaign:** `tier1-silent-data-loss`, queue item 1 of 4 (`active`).
-**Last updated:** 2026-09-07, end of spurt 5 (cycle 5).
-**Status:** `needs_human`. **STOPPED ON A BLOCKER, not on a failure.**
-**THE RALPH LOOP IS CANCELLED** -- the Stop hook will no longer re-feed
-anything. Nothing in this feature resumes automatically. See
-**"How a human restarts this"** at the bottom.
+**Last updated:** 2026-09-07, end of spurt 8 (cycle 8).
+**Status:** `active`. **No longer `needs_human`** -- the user's coupled
+ruling landed as `spec.md` C20 at spurt 6, and the guard it approved
+shipped at T8a/T8b (spurt 6/7). T7 and T5b (this docs pass) are IN
+PROGRESS this cycle. **THE RALPH LOOP REMAINS CANCELLED** -- the Stop hook
+will not re-feed anything; each spurt since spurt 5 is a directed
+dispatch, not a loop iteration.
 
-> ## THE ONE FACT THIS FEATURE TURNS ON (C17, measured at T6)
+> ## THE ONE FACT THIS FEATURE TURNS ON (C17, measured at T6 -- NOW MET BY T8b)
 >
-> **The owner's filed incident cannot be fixed by anything in #243's scope.**
-> T6/P-7 measured the 25 entries as already gone from the **still-open**
-> project immediately after `SaveChanges()` raised -- **before
-> `CloseProject()` is ever entered.** So no `CloseProject()`-side change --
-> not T3's shipped guard, not T7, not any future guard there -- can ever
-> recover that data. **Only the still-unruled `SaveChanges()` depth guard
-> can.**
+> **No `CloseProject()`-side change could ever fix the owner's filed
+> incident, at any price, and none did.** T6/P-7 measured the 25 entries as
+> already gone from the **still-open** project immediately after
+> `SaveChanges()` raised -- **before `CloseProject()` is ever entered.** So
+> no `CloseProject()`-side change -- not T3's shipped guard, not T7, not any
+> future guard there -- could ever recover that data. **C17 named the only
+> remaining route as the `SaveChanges()` depth guard, and T8b (spurt 7)
+> shipped exactly that:** the full owner sequence now re-measures **25/25 in
+> memory and 25/25 on disk** (`evidence/live-t8b-savechanges-guard.md`).
 >
 > **And, unqualified: T3 IS a real, shipped, live-verified fix for the P-3
 > path** (intact change set + stray/forced `End`): 0/25 -> 25/25. C17 does
 > not weaken that.
 >
-> **Say both halves. Either alone is a misrepresentation.**
+> **Say all three things together: T3 fixed P-3; nothing in `CloseProject()`
+> could ever have fixed the owner's real P-5 -> P-3 chain; T8b, on the
+> `SaveChanges()` side, has now fixed that chain too.** Any one alone is a
+> misrepresentation.
 
 Spec+probe (spurt 1), **CP-A1/T1** (spurt 2) and **CP-A closed in full** with
 T2 dropped (spurt 3) are done. **CP-B (T3-T4, the P0 guard) REACHED AND
@@ -397,6 +404,43 @@ as a second pre-authorised unit -- the user's to greenlight, as T6 was.
 
 ---
 
+## What landed in spurts 6-8 (cycles 6-8) -- the blocker resolved, the guard shipped
+
+**Spurt 6 (cycle 6):** the user ruled on the blocker directly, frozen as
+`spec.md` **C20** -- the `SaveChanges()` guard is APPROVED IN SUBSTANCE,
+constrained to depth/transaction correctness only, not sharing exclusivity.
+**T8a** (measurement-only, zero `flexicon/` diff) then proved a blanket
+`CurrentDepth > 0` guard is safe: no measured case exists where
+`SaveChanges()` currently succeeds at depth > 0. Frozen as **C21**.
+
+**Spurt 7 (cycle 7):** **T8b landed** -- `SaveChanges()` now raises
+`FP_TransactionError` before `usm.Save()` at any `CurrentDepth > 0`, mode-
+differentiated message, fails OPEN on an unreadable depth. All three
+shipped docstring `Example`s corrected in the same diff; all 11 enumerated
+test sites (`spec.md` C22) repaired. **Headline: the full owner sequence now
+re-measures 25/25 in memory and 25/25 on disk**, meeting C17's ceiling from
+the only side C17 said could ever meet it. A new probe, **P-11**, found an
+escaping `FP_TransactionError` inside `UndoableOperation()` did NOT discard
+the block's object creations (25/25 survived) -- contradicting that
+module's own rollback docstring; routed, not absorbed, per `spec.md` C25.
+`/lex-lead` recut T7 as **C23**: post-T8b the only live route into
+`CloseProject()`'s Phase-1 branch is the one where the save already
+succeeded, so T7's planned `FP_ProjectError` raise is WITHDRAWN; the
+ERROR-level log is the whole remaining remedy.
+
+**Spurt 8 (cycle 8, this pass):** `/lex-doc` closed out T5b --
+`CHANGELOG.md` corrected (**C24**: the pre-existing "this does not fix the
+incident #243 was filed about" text was FALSE as of T8b and is replaced),
+`docs/TRANSACTION_GUIDE.md` corrected (inverted "no side effects" claim, an
+accuracy banner on the unverified Phase 1 rollback narrative, mode notes on
+both usage examples), Q4 CLOSED, C25's narrow routing recorded, a C22 table
+correction (**C26**), and a standing staleness-sweep rule (**C27**). T7 is
+landing in parallel via `/lex-programmer` this same cycle. See
+`specs/243-closeproject-save-guard/reviews/cycle8-doc.md` and
+`spec.md` C20-C27.
+
+---
+
 ## The two findings that changed the plan (spurt 1)
 
 1. **The issue's proposed fix is wrong (C1).** Reordering `usm.Save()` ahead
@@ -448,17 +492,15 @@ is out of scope).
   forced an answer, and nothing about it was silently decided in spurts
   1-3); C14's new raise is what forces it, since a raise emitted after
   `usm.Save()` must not leak the LCM handle.
-- **Q5** -- **NEW spurt 4; DETECTOR HALF CLOSED spurt 5.** `usm.Save()`
-  returns successfully having persisted nothing: how must `CloseProject()`
-  detect and report that? Facts frozen (C13), severity and remedy ruled
-  (C14), mechanism now ANSWERED (**C16**) with its scope consequence frozen
-  (**C17**), and the DETECTOR **RESOLVED as C18** -- the post-`Save()`
-  `HasUnsavedChanges` read is indistinguishable and unusable; the
-  envelope-missing anomaly is primary; the pre-`Save()` read is
-  diagnostic-only and must not be worded as "nothing pending to save".
-  **What remains open under Q5 is ONLY the user's coupled ruling.**
-- **Q4** -- exact CHANGELOG placement/wording. `/lex-doc`'s call at T5.
-  **STILL OPEN.**
+- **Q5** -- **FULLY CLOSED.** Detector half RESOLVED spurt 5 as **C18**;
+  ruling half RESOLVED spurt 6 as **C20** (the user approved the
+  `SaveChanges()` guard). Nothing remains open under Q5.
+- **Q4** -- **CLOSED spurt 8** by `/lex-doc`: amend the existing
+  `[Unreleased]` entries in place, cross-referencing `[4.4.0]` by prose,
+  not a new heading or a forward pointer. See `spec.md` Q4.
+
+Nothing remains genuinely open except T7's and T5b's own completion this
+cycle (tracked in `tasks.md`, not here).
 
 ### Closed questions -- do not relitigate after a context reset
 
@@ -474,118 +516,53 @@ is out of scope).
 
 ### Contract decisions now frozen
 
-C1-C10 (spurt 1), **C11** (spurt 2, the `HasOpenSessionTask()` ordering
-ruling), **C12** (spurt 3, T2 dropped -- the strict helper and the three
-lenient internal sites keep separate depth reads permanently), and
-**C13/C14/C15** (spurt 4: what the P-5 measurement does and does not
-establish; the new silent-loss surface and its T7 remedy; Q2(a) resolved),
-and **C16/C17/C18/C19** (spurt 5: the mechanism verdict with (iii) left
-undetermined by design; **#243's CEILING**; T7's re-scoped detector; the T5
-split). Do not reopen any of them; overturning C11-C19 specifically requires
-citing it explicitly. Note that **C18 supersedes C14 point 3** and **C16/C17
-answer C13's "NOT frozen" paragraph** -- read those originals as history.
+C1-C10 (spurt 1), **C11** (spurt 2), **C12** (spurt 3, T2 dropped),
+**C13/C14/C15** (spurt 4), **C16/C17/C18/C19** (spurt 5), **C20/C21**
+(spurt 6, the user's ruling and the T8a guard-shape measurement),
+**C22/C23** (spurt 7, T8b's test blast radius and the T7 recut), and
+**C24/C25/C26/C27** (spurt 8, this pass -- the CHANGELOG correction, P-11
+routing, the C22 table correction, and the staleness-sweep rule). Do not
+reopen any of them; overturning any specific decision requires citing and
+overturning it explicitly. Note that **C18 supersedes C14 point 3**,
+**C16/C17 answer C13's "NOT frozen" paragraph**, and **C26 supersedes
+C22's table** (read those originals as history).
 
-## Next pickup -- BLOCKED, and the loop is CANCELLED. Read the blocker first.
+## Next pickup -- ACTIVE, no longer blocked
 
-**Item 1 is `needs_human`.** T6 -- the one pre-authorised exception -- is now
-DONE, so **nothing in this feature is startable without the user.**
+**The blocker is RESOLVED.** The user ruled (C20, spurt 6); the guard the
+ruling approved shipped (T8a/T8b, spurt 6/7); the owner's filed incident
+now measures 25/25 (see the banner above). Nothing is `needs_human` on this
+feature any more. **The ralph loop remains CANCELLED regardless** -- each
+spurt is still a directed dispatch, not an automatic re-entry; a human (or
+`/lex-lead`, dispatched by a human) drives the remaining steps.
 
-### The blocker, RESTATED on T6's sharpened facts
+**Remaining work, this cycle (spurt 8):**
 
-**One decision, two coupled parts:** does `SaveChanges()` get a
-`CurrentDepth` guard so it fails fast instead of calling `usm.Save()` at
-depth > 0 -- and, given that answer, should `CloseProject()` raise when it
-detects a save it cannot trust (C14/T7)?
-
-**What T6 changed about this decision.** Before T6, the `SaveChanges()` guard
-read as an extra ask that "would also help". **After C16/C17 it is measured
-to be the ONLY thing that can fix the incident #243 was filed about** -- the
-data is gone before `CloseProject()` is entered, so #243's own three asks
-cannot fix it at any price. **So the user is not deciding whether to approve
-an improvement; they are deciding whether flexicon fixes #243's incident at
-all, or ships #243 documenting it as unfixed.**
-
-The coupling itself is unchanged, but the decline branch is now heavier:
-
-- **Approve the `SaveChanges()` guard** -> the envelope is never collapsed,
-  the change set is never discarded, the P-5 chain never forms, the owner's
-  sequence can reach 25/25, and T7's raise is near-unreachable defensive
-  code (still worth having; low-stakes wording).
-- **Decline it** -> **permanently unfixable, by measurement**. T7's ERROR +
-  raise becomes the entire remedy the owner ever gets, so its severity and
-  wording matter a great deal.
-
-**One observation for the decision, not a new ask.** C16 places the loss
-*inside* `SaveChanges()`, so even T7's raise reports it **late**. If the
-"fail fast / prevent" shape is declined, the honest maximum available is
-"loud at close, already lost at `SaveChanges()`". Whether that same fourth
-ask should have a *minimum* shape (report loudly at the point of loss) is
-part of the ruling about that one method. It is **not** a fifth ask and
-nothing may implement, prototype or plan it. `SaveChanges()` stays
-untouchable.
-
-### How a human restarts this
-
-The ralph loop is **cancelled** -- the Stop hook is gone
-(`.claude/ralph-loop.local.md` is deleted in the working tree) and will not
-re-feed a standing prompt. Nothing happens until a human acts. In order:
-
-1. **Rule on the blocker above** (both parts, together). That is the only
-   thing standing between this feature and completion.
-2. **Optionally greenlight T5a first** (C19) -- it is ruling-independent,
-   docs-only, zero churn cost, and it closes the "T3 shipped undocumented"
-   gap immediately. It does **not** unblock T7 or T5b.
-3. **Then, and only then, restart the campaign loop** with the standing
-   prompt from `lex-lead.md`'s "Spurt Mode & the Ralph Handoff Loop"
-   section, e.g.:
-   `/ralph-loop "Resume the LEX crew on the active feature. Read specs/tier1-silent-data-loss/QUEUE.md and specs/243-closeproject-save-guard/.crew-handoff.json, then invoke /lex-lead in spurt mode. ..." --completion-promise "TIER1 COMPLETE"`
-   The campaign promise is `TIER1 COMPLETE`, **not** `FEATURE COMPLETE` --
-   a per-feature completion must not exit the campaign loop.
-4. **Entry point after the ruling:** T7, then T5b. Do **not** start T5b
-   first. Do not re-run T6 (done, evidence on file). Do not re-attempt T2
-   (C12).
-
-**Why this is a real blocker and not caution** (any one of these suffices):
-
-1. **Two coupled public-API decisions, both the user's.** T7 makes
-   `CloseProject()` raise where it currently returns cleanly -- a behaviour
-   change to a shipped public method, in the same failure path as the unruled
-   fourth ask.
-2. **Closing #243 now would be a false completion by the campaign's own
-   standard.** C9 is our ruling that the owner's incident is the P-5 -> P-3
-   chain; the campaign is named `tier1-silent-data-loss`. Stamping item 1
-   done while the owner's own measured sequence loses 25/25 silently would
-   report as fixed the exact thing this campaign exists to catch. T5's
-   release note would have to either claim a fix that does not hold for the
-   filed incident, or publicly document that it is unfixed -- and the latter
-   commits the project to a position on the fourth ask.
-3. **The decision has become blocking, where before it was merely queued.**
-   Spurts 1-3 produced spec, T1 and a T2 drop, none of which touched it. As
-   of C14 the remaining work in item 1 cannot be specified without it.
-
-**Pre-authorised without the ruling: T6 only.** It is probe-only, sandbox
-fixture only, changes no `flexicon/` behaviour, and it sharpens the ruling
-itself by settling which rival mechanism holds (decisively, whether the data
-is already gone before `CloseProject()` is entered) and by finding T7's
-detector. If the user prefers "probe first, then rule", T6 can be greenlit
-alone. It does not unblock T7 or T5.
-
-**When the ruling lands:** T6 -> T7 -> T5, in that order. Do not start T5
-first; its wording depends on both.
+1. **T7** (`/lex-programmer`, in parallel with this docs pass) -- the
+   C23-recut loudness log inside `CloseProject()`'s Phase-1 branch.
+2. **T5b** (`/lex-doc`, this pass) -- CHANGELOG correction (C24),
+   `docs/TRANSACTION_GUIDE.md` corrections, Q4 closure. See
+   `specs/243-closeproject-save-guard/reviews/cycle8-doc.md`.
 
 **Standing prohibitions, unchanged:** do NOT re-attempt T2 (C12); do NOT
-reopen C1-C15, Q1 or Q3; do NOT touch `SaveChanges()`; do NOT file GitHub
+reopen C1-C23 without citing and overturning the specific decision; do NOT
+touch `SaveChanges()` outside T8b's already-landed diff; do NOT file GitHub
 issues inside the loop.
+
+**Once T7 and T5b both land and are verified:** the feature is a candidate
+for `/lex-lead`'s final sign-off. Q2 and Q3 are already CLOSED (C15, and
+the Q3 ruling above); no open question remains that would prevent sign-off.
 
 ## Routed to the user (do not act on inside the loop)
 
-**Still awaiting the user's ruling as of end of spurt 2 -- nothing in spurt 2
-acted on it, and `SaveChanges()` was not modified (proved by the 0-deletion,
-one-file T1 diff).** One follow-up was spawned by the C9 ruling and
-deliberately NOT absorbed into
-this feature, because `spec.md` section 4 binds it to the three surviving
-asks: **`SaveChanges()` has no depth guard**, so under `undoable=False` it
-turns a documented usage pattern into a liblcm exception that also destroys
-the session envelope. Making it fail fast is a behaviour change and a fourth
-ask. It is listed under "Awaiting user approval" in
-`specs/tier1-silent-data-loss/QUEUE.md`.
+**RESOLVED at spurt 6 -- kept here as the audit trail, not an open item.**
+The `SaveChanges()` depth guard this section used to describe as awaiting
+the user's ruling was APPROVED (`spec.md` C20) and has LANDED (T8a/T8b).
+See `specs/tier1-silent-data-loss/QUEUE.md` -> "Awaiting user approval" for
+the full history and the ONE genuinely new item spawned this cycle
+(**C25**): whether `UndoableUnitOfWorkHelper.Dispose()` +
+`set_RollBack(True)` actually discards property modifications or deletions
+-- object creation is already MEASURED (25/25 survived, T8b's P-11), but
+property modifications and deletions are unmeasured. That question is out
+of #243's scope and awaits its own user approval; nothing in this feature
+is blocked on it.

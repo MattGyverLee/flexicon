@@ -134,6 +134,19 @@ class _FLExUndoableOperation:
         ``EndUndoTask()`` when it has been cleared. If this block joined an
         already-open UnitOfWork, there is nothing to close here; the
         enclosing block owns disposal.
+
+        Measured caveat (2026-09-07, issue #243 spec.md C25, T8b's P-11):
+        an escaping exception here does NOT reliably discard work done
+        inside the block. Object CREATIONS made inside the block were
+        measured to SURVIVE an exception that propagated out of this
+        context manager with ``set_RollBack(True)`` and ``Dispose()`` both
+        confirmed run (per the debug log) -- 25/25 still present in the
+        still-open project immediately afterward, and 25/25 still present
+        after a genuine close-and-reopen. Do not rely on an escaping
+        exception to discard work done inside an ``UndoableOperation()``
+        block. This measurement covers object creation only; property
+        modifications and deletions were not measured and nothing is
+        claimed about them either way.
         """
         if self._helper is None:
             return False  # Joined block, or never started: nothing to do.

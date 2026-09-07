@@ -1,5 +1,17 @@
 # Transaction Guide: Safe Rollback Operations in FlexLibs2
 
+> **Accuracy note (2026-09-07, issue #243 T5b -- assertion only, not a
+> rewrite).** This guide's Phase 1 rollback narrative below (the
+> "Overview", "On Failure" and "Rollback Failure" sections, roughly lines
+> 5, 28, 59-76 and 145-148) is **not verified by the current test suite**,
+> and is in part **contradicted** by it. See
+> `tests/test_transaction_honesty.py::TestTransactionHonesty::test_transaction_runs_body_and_reraises_without_rollback`
+> -- a mock proof that `Transaction()` runs the block body and re-raises
+> on exception with **no rollback attempted** -- and the documented
+> "Transaction: no LCM rollback API found" path further down this guide.
+> This note asserts only that gap; diagnosing or rewriting the narrative
+> itself is tracked separately (spec.md Q4 follow-up), not done here.
+
 ## Overview
 
 FlexLibs2 Phase 1 introduces safe transaction rollback via context managers. If an error occurs during a series of database operations, all changes can be automatically rolled back to the state before the transaction started.
@@ -49,6 +61,15 @@ with project.Transaction("import batch 2"):
 
 project.SaveChanges()  # Persist batch 2
 ```
+
+**Mode note (issue #243, spec.md C21):** this pattern is safe only under
+`undoable=True` (the 4.4.0 default), where `CurrentDepth` is back to 0
+once each `Transaction()` block exits. Under the explicit
+`undoable=False` opt-out, the session-long envelope opened by
+`OpenProject()` holds `CurrentDepth` at 1 for the whole session, so
+`SaveChanges()` called anywhere mid-session -- including right after a
+`Transaction()` block, as shown above -- raises `FP_TransactionError`.
+Under `undoable=False`, save via `CloseProject()` instead.
 
 ---
 
@@ -176,9 +197,26 @@ with project.Transaction("batch 2"):
 project.SaveChanges()  # Flush again
 ```
 
+**Mode note (issue #243, spec.md C21):** as above, this is safe only
+under `undoable=True`. Under `undoable=False` the same code raises
+`FP_TransactionError` at the `SaveChanges()` call, because the
+session-long envelope holds `CurrentDepth` at 1 for the whole session --
+use `CloseProject()` to persist under that mode instead.
+
 ### Notes
 
-- **No side effects on transactions**: calling `SaveChanges()` does NOT affect the undo stack or active transactions
+- **Guarded by transaction depth (issue #243, spec.md C21) -- this is the
+  INVERSE of an earlier claim in this guide.** Calling `SaveChanges()`
+  while a unit of work is open (`CurrentDepth > 0`, in EITHER mode) now
+  raises `FP_TransactionError` **before** `usm.Save()` is ever attempted.
+  Measured pre-guard behaviour was the opposite of "no side effects":
+  under `undoable=False`, a mid-session `SaveChanges()` call reached
+  `usm.Save()` anyway, which raised liblcm's `"Commit at wrong place."`
+  **and collapsed the session-long envelope as a side effect**,
+  discarding the whole pending change set (0/25 survivors measured,
+  spec.md P-5/P-7/P-10 case C). Only call `SaveChanges()` when
+  `CurrentDepth` is 0 -- after a `Transaction()`/`UndoableOperation()`
+  block has exited, or via `CloseProject()` under `undoable=False`.
 - **Read-only projects**: raises `FP_ReadOnlyError` if project is not write-enabled
 - **Session remains open**: the project stays open and usable after `SaveChanges()`
 
