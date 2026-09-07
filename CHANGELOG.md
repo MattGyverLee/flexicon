@@ -11,6 +11,30 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+### Added
+- **`MSAOperations.GetSyncableProperties`/`ApplySyncableProperties`.**
+  Task T6 of `specs/feature-structure-sync-gap`, closes #251.
+  `MSAOperations` previously had ZERO sync methods, so every MSA synced
+  across projects with a correct `ClassName`/POS but a permanently null
+  feature structure: `MoStemMsa.MsFeaturesOA`, `MoInflAffMsa.InflFeatsOA`,
+  and `MoDerivAffMsa`'s two independent slots,
+  `FromMsFeaturesOA`/`ToMsFeaturesOA`.
+
+  Dispatch is entirely `ClassName`-driven, reusing the shared
+  `BaseOperations._ResolveFeatureStrucOwner`/`_GetFeatureStruc`/
+  `_ApplyFeatureStruc` helpers (T1-T5) rather than a second resolver
+  table: an MSA reached via `entry.MorphoSyntaxAnalysesOC` is
+  base-`IMoMorphSynAnalysis`-typed under pythonnet, so a `hasattr` gate on
+  any of these four properties is 0/2088 True in live data and would be
+  dead code (spec D5). `MoUnclassifiedAffixMsa` is discriminated BEFORE
+  any resolver call and never raises, since
+  `MSAOperations.CreateUnclassifiedAffix` manufactures these routinely
+  and the resolver excludes this `ClassName` by design.
+
+  An unresolvable feature/value GUID raises `FP_ParameterError` naming it
+  rather than silently dropping the spec (same policy as
+  `NaturalClassOperations`/#222).
+
 ### Changed
 - **BREAKING (behavioural): name-field writers across four Operations
   classes now persist the caller's original, unstripped name, and their
