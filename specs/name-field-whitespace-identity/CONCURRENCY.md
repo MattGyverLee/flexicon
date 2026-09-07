@@ -35,21 +35,45 @@ author — their uncommitted work is unrecoverable if discarded.
 
 ## The offline suite is RED for reasons that are not ours
 
-As of writing, `python -m pytest tests -m "not requires_live_project" -q` gives roughly
-`2 failed, 1286 passed, 491 deselected, 8 errors`. **The campaign's old fixed baseline of
-1292 passed / 483 deselected is VOID for the duration.** Do not chase it, do not "restore"
-it, and do not report it as a regression you caused.
+**AMENDED 2026-09-07 after re-derivation against committed HEAD
+(`reviews/cycle2-baseline.md`). The other crew has now COMMITTED
+(`4aca74a`, `61e0f87`, `e17cd7d`); their work is no longer uncommitted, and the
+first version of this section is superseded. Use the list below, not the one it
+replaced, and not the campaign's old fixed 1292/483 gate — that absolute is VOID
+while they are active.**
 
-Known-foreign failures, all traceable to the other crew's uncommitted `BaseOperations.py`:
+Re-derived baseline at HEAD: **`3 failed, 1292 passed, 498 deselected, 0 errors`.**
 
-- `tests/operations/test_natural_class_feature_sync.py` — collection errors (their file)
-- `tests/contract/test_lcm_contract.py::TestContractStability::test_no_new_type_dependencies`
-  — a RATCHET test tripping on their new type dependencies
-- `tests/write_path_transactions/test_unbracketed_mutations.py::TestUnbracketedMutationRatchet::test_no_new_unbracketed_mutations`
-  — a RATCHET test tripping on their new mutations
+All three items this file originally named as known-foreign now **pass or collect
+clean** — `test_natural_class_feature_sync.py`'s collection errors, and both
+ratchets (`test_no_new_type_dependencies`, `test_no_new_unbracketed_mutations`).
+They were transients of the other crew's uncommitted state and are resolved. Do
+not carry them forward.
 
-Those two ratchet tests are the trap: they fail in files nobody here touched, because they
-assert repo-wide properties. Seeing them red does NOT mean your change broke something.
+The current known-foreign set, **red against committed code and therefore a
+legitimate repo state rather than a transient**:
+
+- `tests/operations/test_transaction_rollback.py::TestPhase2JoinOrOpen::test_rollback_flag_set_true_on_exception`
+- `tests/operations/test_transaction_rollback.py::TestPhase2JoinOrOpen::test_depth_restored_on_exception`
+- `tests/test_flexlibs2_alias_ratchet.py::TestFlexlibs2AliasIsInboundOnly::test_no_executable_flexlibs2_imports_outside_alias_package`
+
+The distinction matters and changes how you treat them: a transient clears itself,
+so "name it as foreign and move on" was right. These do **not** clear themselves.
+Treat them as the expected red baseline — your run should show these three and no
+others. **If your run shows a fourth, or one of these three changes its failure
+message, STOP and report.** Do not fix them; they are outside this feature.
+
+`specs/duplicate-signature-harmonisation/` (untracked) is **attributed**: orphaned
+evidence from already-merged issue #246, dated 2026-08-18. It belongs to neither
+crew's current work. Leave it alone; it is not a foreign-failure source.
+
+## Line numbers in spec.md and tasks.md are already stale
+
+The other crew's `+423` lines moved shared code. Concretely, `spec.md` C7 cites
+`_ValidateStringNotEmpty` at `BaseOperations.py:2491`; it is now at **`:2915`**,
+and its whitespace-only `FP_ParameterError` raise is at **`:2966`**. **Re-confirm
+every line number against HEAD before editing at it.** Cite by symbol name where
+you can; a stale line number in a brief is not authority to edit the wrong place.
 
 ## Measure a DELTA, never an absolute
 
