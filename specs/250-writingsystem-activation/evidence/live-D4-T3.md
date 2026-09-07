@@ -167,26 +167,57 @@ C-D4-6 assertions are unchanged from the frozen shape.
 
 ---
 
-## Offline delta (STEP 6)
+## Offline delta (STEP 6) -- filled in cycle 7 (programmer, D4-T1/T2/T5 spurt)
 
-<!-- Filled in after the D4-T1 fix lands, per the delta protocol: run the
-"after" command three times (twice same shell, once fresh shell) and report
-if they disagree. -->
+Command (identical both sides):
+```
+python -m pytest tests/operations tests/contract -m "not requires_live_project" -p no:cacheprovider -q
+```
 
-PENDING -- see follow-up commit.
+**Before** -- disposable `git worktree add <tmp> e6a9492` (never the shared
+main working tree; removed after measurement):
+`2 failed, 350 passed, 501 deselected`. The 2 failures are the FOREIGN
+`test_transaction_rollback.py::TestPhase2JoinOrOpen` pair (known-red
+baseline, unrelated crew).
+
+**After** -- same command, main working tree at commit `8c679ed3` (D4-T1 +
+D4-T5 landed; D4-T2 tests were already present at `302d266`, ancestor of
+both measurements): `2 failed, 371 passed, 504 deselected`. Same 2 failures,
+unchanged messages.
+
+**Delta: +21 passed (the new `test_issue250_defect4_ws_resolution.py`
+offline suite), +3 deselected (the new `test_issue250_ws_case_divergence.py`
+live tests, correctly excluded by `-m "not requires_live_project"`), 0
+change in failures.** Zero offline-suite regressions (acceptance criterion
+3). Worktree removed with `git worktree remove --force <tmp>` after the
+`e6a9492` measurement.
+
+Additionally, `tests/write_path_transactions` (B2g unbracketed-mutation
+ratchet) run offline on the main tree: `24 passed`, confirming the new
+helper performs no mutation.
 
 ---
 
-## Resolution-site ratchet result (D4-T2)
+## Resolution-site ratchet result (D4-T2) -- filled in cycle 7
 
-<!-- Filled in after running the offline suite. -->
+Ran green post-fix:
+`python -m pytest tests/operations/test_issue250_defect4_ws_resolution.py::TestResolutionSiteRatchet -m "not requires_live_project" -q` -> `1 passed`.
 
-PENDING -- see follow-up commit.
+**Bites-when-mutated proof:** added an untracked scratch file
+`flexicon/code/_scratch_ratchet_probe.py` containing both signature
+substrings (`ws_map.get(src_ws_id, src_ws_id)` / `target_ws_by_id.get(`).
+Re-ran the same ratchet test: **FAILED**, `AssertionError` listing
+`'_scratch_ratchet_probe.py'` as an extra item beyond the frozen 3-file
+set. Deleted the scratch file (`rm flexicon/code/_scratch_ratchet_probe.py`;
+it was never `git add`ed, so no `git checkout` of tracked content was
+needed) and re-ran: **1 passed** again. Full detail in
+`specs/250-writingsystem-activation/reviews/cycle7-programmer-D4-T1-T2-T5.md`.
 
 ---
 
 ## `git diff --stat` (acceptance criterion 6)
 
-<!-- Filled in in the final report / commit, once all edits are complete. -->
-
-PENDING -- see cycle7-programmer-D4-T1-T3.md.
+See `specs/250-writingsystem-activation/reviews/cycle7-programmer-D4-T1-T2-T5.md`
+(this cycle's report; the earlier `cycle7-programmer-D4-T1-T3.md` reference
+was this file's original author's own planned filename and was never
+written under that name -- superseded by the above).
