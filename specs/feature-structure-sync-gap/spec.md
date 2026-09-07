@@ -349,17 +349,28 @@ def MakeFeatStruc(self, specs, owner=None, slot=None):
     """
 ```
 
-Keys/values accept a name, an `IFsFeatDefn`/`IFsSymFeatVal`, an HVO, or a GUID
-string -- i.e. whatever the existing `__ResolveFeature`/`__Unwrap` pair already
-accepts. `owner=None` continues to raise (the issue #28 ruling stands,
-unchanged).
+Keys/values accept an `IFsFeatDefn`/`IFsSymFeatVal` object (or a wrapper around
+one), an HVO int, or a GUID string -- i.e. whatever the existing
+`__ResolveFeature`/`__Unwrap` pair already accepts. `owner=None` continues to
+raise (the issue #28 ruling stands, unchanged).
+
+**Errata (cycle 5, 2026-09-07):** the previous revision of this section listed
+"a name" as an accepted operand. That was never backed by an implementation in
+either pre-T5 twin -- both twins' non-int branch was a pure passthrough with no
+name lookup, independently confirmed at the true parent commit by both the T5
+implementer and the verification gate. This is a **specification defect, not a
+T5 regression**: T5 did not remove name support because none existed to
+remove. GUID-string support, conversely, **was added by T5**. Name-operand
+support is recorded in section 7 as a candidate follow-up, not implemented
+here.
 
 ### C4 -- Sync wire format for a captured structure (FROZEN)
 
-The user-facing surface (C3) is name-tolerant. **The sync wire format is
-GUID-only** -- names are localised and renameable, and every other sync key in
-this repo that crosses projects is a GUID. These are two different surfaces and
-must not be conflated.
+The user-facing surface (C3) accepts objects, HVOs, and GUID strings (see the
+cycle-5 errata under C3 -- it does not accept a bare name). **The sync wire
+format is GUID-only** -- names are localised and renameable, and every other
+sync key in this repo that crosses projects is a GUID. These are two different
+surfaces and must not be conflated.
 
 ```
 props["<Name>"] = {
@@ -564,6 +575,14 @@ file. The #250 Defect 4 window opens **after T5's gate**, not after T4's.
       bootstrapping (`flexicon/code/FLExInit.py:66-71`) wraps the identical call
       in `try/except` + warning. The asymmetry is unambiguous and pre-existing
       (identical at `a26d39c`, orthogonal to T4).
+      **Cycle-5 correction (2026-09-07), supersedes the "11" figure above:** of
+      the 13 modules in `flexicon/sync/tests/` and `flexicon/tests/`, 11 are
+      unmarked, but only **three actually call `FLExInitialize`** --
+      `test_base_operations.py`, `test_FLExInit.py`, and `test_FLExProject.py`.
+      The other 8 unmarked modules call no init and are genuinely offline-safe.
+      Blanket-marking those 11 would wrongly delete real offline coverage.
+      `#264`'s suggested-fix item 2 must therefore target the **three**
+      init-calling modules, not the eleven unmarked ones.
       **Do NOT land it while a second crew is active.** `tests/conftest.py` is a
       SHARED harness that neither crew owns, the other crew is measuring deltas
       against it, and their protocol
@@ -608,11 +627,20 @@ file. The #250 Defect 4 window opens **after T5's gate**, not after T4's.
 - [ ] **T12** `CopyFeatStruc` (C8).
 - [ ] **T13** Latent truthiness gates: `PhonemeOperations.py:1428`,
       `PhonFeatureOperations.py:760`.
-- [ ] **T14** Live verification on Target / `target_sandbox`: nested round-trip
-      (write nested -> re-read from the LCM -> compare), empty-but-present struct
-      round-trip, per-level `TypeGuid` preservation, per-level GUID preservation,
-      `slot=` disambiguation errors, unknown-`ClassName` raise. Evidence ->
-      `specs/feature-structure-sync-gap/evidence/live-<task>.md`, `run_mode: live`
+- [ ] **T14a** (split out cycle 5, 2026-09-07) Promote the C3 live coverage
+      into the shipped suite: nested recursive-dict round-trip (write nested ->
+      re-read from the LCM -> compare), `slot="From"/"To"` disambiguation
+      exercised **through `MakeFeatStruc` itself**, and the ambiguous-owner-
+      without-slot error path. Runs at **Checkpoint 2c (cycle 6)**. TEST-ONLY by
+      design -- does **not** re-open `BaseOperations.py`. Its existence is owed
+      to the gate's probes having died with their disposable worktree. Evidence
+      -> `specs/feature-structure-sync-gap/evidence/live-t14a.md`, `run_mode:
+      live` required.
+- [ ] **T14b** (remainder of original T14; keeps T14's original late position)
+      Live verification on Target / `target_sandbox`: empty-but-present struct
+      round-trip, per-level `TypeGuid` preservation, per-level GUID
+      preservation, unknown-`ClassName` raise. Evidence ->
+      `specs/feature-structure-sync-gap/evidence/live-t14b.md`, `run_mode: live`
       required.
 - [ ] **T15** Docs: `docs/API_ISSUES_CATEGORIZED.md` Category 8 entry for the
       varying feature-struct property name; `FeatureStructureRA` on
@@ -678,6 +706,11 @@ live init, and whichever of those 11 reaches SLDR first decides whether
 `tests/conftest.py:135` raises. Marker hygiene is `#264`'s suggested-fix item 2
 -- a **separate** change from the guard. **Waiting for `#264` therefore buys T5
 nothing.**
+
+**Cycle-5 correction (2026-09-07):** see the T18 entry above -- only **three**
+of these modules (`test_base_operations.py`, `test_FLExInit.py`,
+`test_FLExProject.py`) actually call `FLExInitialize`; the other 8 are
+offline-safe and must not be blanket-marked.
 
 T5's acceptance is measured against these four, in this order of authority:
 
@@ -756,6 +789,17 @@ Affected: the "Project Structure" tree, the file-header example, the
 `tests/operations/test_wfi_morph_bundle.py:43,73,104,188` still import the old
 name. Fix `CLAUDE.md` in this feature (docs-only, zero risk); the code/test
 alias sweep stays deferred as its own PR.
+
+**Candidate follow-up (cycle 5, 2026-09-07): `MakeFeatStruc` does not accept a
+plain feature/value NAME as an operand.** See the C3 errata above -- this was
+never implemented in either pre-T5 twin, so it is a pre-existing specification
+gap, not a T5 regression. It needs its own freeze cycle rather than a quick
+patch here, because a bare-name lookup requires four undecided policy choices:
+which `Find`-style lookup to use, what scope to search (project-wide vs. a
+single feature system), what ambiguity policy applies when the same name
+occurs in more than one feature system, and what case/writing-system rule
+governs the match. **Filing this as a GitHub issue needs the user's approval --
+it is not filed, and no `gh` command has been run for it.**
 
 **Tooling limitations found during the sweep (recorded so future sweeps do not
 repeat them):**
