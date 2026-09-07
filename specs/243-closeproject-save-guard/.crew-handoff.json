@@ -6,27 +6,28 @@
     243
   ],
   "status": "in_progress",
-  "last_cycle": 2,
-  "spurts_completed": 2,
-  "checkpoint_reached": "CP-A1 / T1 DONE -- P1 depth-read surface landed in flexicon/code/FLExProject.py and live-verified (6/6 probe, run_mode: live, offline 1290 passed unchanged). Diff is 120 insertions / 0 deletions / ONE file, so CloseProject() and SaveChanges() are provably untouched. CP-A is SPLIT: T2 gated into CP-A2.",
+  "last_cycle": 3,
+  "spurts_completed": 3,
+  "checkpoint_reached": "CP-A CLOSED IN FULL. CP-A1/T1 DONE (spurt 2, commit f3a0f50): P1 depth-read surface landed and live-verified. CP-A2/T2 DROPPED ON THE MERITS (spurt 3, spec.md C12) -- attempted at all three sites, each broke the offline suite (9/2/2 failures), all reverted; git diff f3a0f50 -- flexicon/ is EMPTY and offline is 1290 passed (pre-T1 baseline), both re-verified by /lex-lead. CP-B (T3-T4, the P0 guard) is UNBLOCKED and is the next pickup.",
   "checkpoint_numbering_note": "The campaign QUEUE.md called the spec+probe milestone 'Checkpoint 1'; it is DONE. tasks.md's three implementation checkpoints are CP-A (T1-T2), CP-B (T3-T4), CP-C (T5). As of spurt 2, CP-A is further SPLIT into CP-A1 = T1 (DONE) and CP-A2 = T2 (NEXT). Do not read tasks.md's legacy 'Checkpoint 1' heading as un-done work; T1's checkbox is ticked.",
   "tasks_done": [
     "T1"
   ],
-  "next_checkpoint": "CP-A2 -- T2 alone (internal call-site delegation to T1's helper)",
-  "next_entry": "Start at tasks.md T2, ALONE. Point the three existing lenient internal depth reads (transaction.py:172, undoable_operation.py:102, System/CustomFieldOperations.py:306) at T1's shared _ReadActionHandlerDepth() helper, KEEPING each call site's own try/except / getattr(..., 0) fallback WRAPPED AROUND the helper call -- C5 puts the lenient fallback out of the PUBLIC surface, not out of existence. Behaviour-preserving: zero functional delta expected. T1's report confirms the helper signature (self only; raises or returns the raw int) permits this shape unmodified. Live-verify at UNCHANGED pass counts, one file per invocation with FLEXLIBS_REQUIRE_LIVE=1 and -m requires_live_project: tests/operations/test_transaction_rollback.py, tests/operations/test_custom_field_multistring_best_alt.py, tests/operations/test_undoable_mode_live.py. Sandbox fixture only. Evidence file: evidence/live-t2-internal-callsite-dedup.md (commands, run_mode, before/after pass counts). Do NOT start T3 -- CP-B is gated behind CP-A2. Do NOT touch CloseProject() or SaveChanges().",
-  "contract_frozen": "C1-C11 in spec.md. Do not reopen. C11 is new in spurt 2.",
+  "next_checkpoint": "CP-B -- T3 then T4 (the P0 CloseProject() End-guard and its regression tests)",
+  "next_entry": "Start at tasks.md T3, in flexicon/code/FLExProject.py ONLY. Guard CloseProject()'s line-326 EndNonUndoableTask(): (1) check self.HasOpenSessionTask() first and skip+debug-log when no envelope is open; (2) when one IS open, still wrap the End call in try/except|finally so ANY raise cannot skip line 332's usm.Save(). Do NOT reorder 326/332 (C7). Decide Q2 here and record it as a dated note under spec.md Q2. Then T4: extend tests/operations/test_issue243_closeproject_probe.py in place -- flip P-3 to expect no raise and 25/25 survivors re-read from the LCM after a read-only reopen, and MEASURE P-5's survivor count (do not assume 25/25; 0/25 or 1..24 are both reportable P0 findings, see tasks.md T4). LIVE GATE RE-DERIVED FROM MARKERS: probe (6 live tests) + tests/operations/test_undoable_mode_live.py (33) + tests/operations/test_target_live_smoke.py (3), each with FLEXLIBS_REQUIRE_LIVE=1 -m requires_live_project, target_sandbox fixture ONLY, run_mode: live; run tests/operations/test_transaction_rollback.py OFFLINE (it has ZERO live markers -- 0 collected); plus offline suite at 1290 passed. Paste each file's '--collect-only -q -m requires_live_project' count into the evidence file. Evidence: evidence/live-t4-p0-guard-regression.md. Do NOT touch SaveChanges() (user's open ruling). Do NOT re-attempt T2 (C12).",
+  "contract_frozen": "C1-C12 in spec.md. Do not reopen. C12 is new in spurt 3 (T2 dropped).",
   "key_rulings": {
     "C1": "Fix shape is a GUARD around the line-326 EndNonUndoableTask() call, NOT the reorder the issue prose proposed. P-5 proved usm.Save() itself raises 'Commit at wrong place.' at CurrentDepth > 0 and collapses the envelope, so swapping lines 326/332 trades one guaranteed raise for another with no save either way.",
     "C6": "P1 is a hard PREREQUISITE of P0: the guard checks depth first and only calls EndNonUndoableTask() when an envelope is open, then still wraps the call so any other raise cannot skip Save().",
     "C7": "End-then-Save order is unchanged.",
     "C9": "Q1 RECONCILED. The owner's incident is a P-5 -> P-3 CHAIN: mid-session SaveChanges() under undoable=False hits usm.Save() at depth 1, raises the owner's exact 'Commit at wrong place.' string and collapses the envelope; the collapsed envelope then makes CloseProject()'s unguarded End raise, skipping Save(), losing the whole in-memory session. The C6 guard breaks the chain. The trigger is reachable from flexicon's own SHIPPED SaveChanges() docstring Example (FLExProject.py:563-588), correct under undoable=True and a guaranteed raise under undoable=False -- so no owner repro steps were needed.",
     "C10": "The .fwdata file-swap detail is OUT OF SCOPE and must not be claimed as fixed. CloseProject() has no path that renames/rotates/replaces .fwdata; the probe's delta-0 result is the correct consequence of Save() never running. Attributed to FieldWorks-side recovery, left unexplained by design.",
-    "C11": "HasOpenSessionTask() reads depth BEFORE the self._undoable mode check. The cycle-2 dispatch brief's 'return False WITHOUT consulting depth' wording was WRONG and is superseded. Two independent reasons: (1) C4 requires closed/never-opened to raise FP_ProjectError from BOTH members with no mode carve-out -- short-circuiting first would make a closed undoable=True project answer False instead of raising, the exact silent-answer ambiguity P1 removes; (2) FLExProject has no __init__ and OpenProject() assigns self.project (line ~263) BEFORE self._undoable (line 271), so on a never-opened instance testing self._undoable first raises a bare AttributeError instead of the documented FP_ProjectError. C3 is NOT weakened: depth is read for its raise-or-not effect only and discarded unread on the Phase 2 branch, so the ANSWER is still never depth-derived under undoable=True. Do not 'fix' this back to the brief wording; overturning it requires citing C11 explicitly."
+    "C11": "HasOpenSessionTask() reads depth BEFORE the self._undoable mode check. The cycle-2 dispatch brief's 'return False WITHOUT consulting depth' wording was WRONG and is superseded. Two independent reasons: (1) C4 requires closed/never-opened to raise FP_ProjectError from BOTH members with no mode carve-out -- short-circuiting first would make a closed undoable=True project answer False instead of raising, the exact silent-answer ambiguity P1 removes; (2) FLExProject has no __init__ and OpenProject() assigns self.project (line ~263) BEFORE self._undoable (line 271), so on a never-opened instance testing self._undoable first raises a bare AttributeError instead of the documented FP_ProjectError. C3 is NOT weakened: depth is read for its raise-or-not effect only and discarded unread on the Phase 2 branch, so the ANSWER is still never depth-derived under undoable=True. Do not 'fix' this back to the brief wording; overturning it requires citing C11 explicitly.",
+    "C12": "T2 DROPPED, not deferred, and not merely on cost. The premise was wrong: _ReadActionHandlerDepth() is deliberately STRICT (raises FP_ProjectError, returns depth verbatim -- C5) while transaction.py:_current_depth / undoable_operation.py:102 / CustomFieldOperations.py:306 are deliberately LENIENT (coerce non-int to 0 so a malformed double degrades to 'treat as outermost'). One implementation cannot serve both contracts; sharing them is a conflation, not a de-duplication. Escape hatch 1 (isinstance(depth,int) after delegation) REJECTED: behaviour-preserving in production but it makes the doubles stop testing what they claim to, and decisively the prescribed except-wrapper would swallow the FP_ProjectError the helper exists to raise and substitute 0 -- at CustomFieldOperations.py:306 that silently disables the issue-#21 corruption guard. Escape hatch 2 (edit the static source-grep test at tests/test_custom_field_create_refusal.py:54-60) REJECTED: it deliberately pins that corruption guard's implementation; loosening it for a zero-functional-delta refactor is net-negative, and parking the literals in a comment would be gaming it. Escape hatch 3 (add spec= to the doubles) REJECTED as a means to T2 and NOT owed as a follow-up, since T2 itself is dropped. C5's 'optionally at the implementer's discretion during T2' clause is now CLOSED as declined. Nothing in P0/P1/P2 depends on T2."
   },
   "open_questions": {
     "Q1": "CLOSED 2026-09-07 by /lex-lead -- see C9/C10. Do not reopen; no task may wait on owner repro steps.",
-    "Q2": "STILL OPEN -- should the P0 fix also wrap the whole CloseProject() body in try/finally so Dispose() always runs even when Save() raises? Decide at T3. Untouched by spurt 2: T1's diff never entered CloseProject() (0 deletions, one file), so nothing about Q2 was silently decided.",
+    "Q2": "STILL OPEN -- should the P0 fix also wrap the whole CloseProject() body in try/finally so Dispose() always runs even when Save() raises? Decide at T3. Untouched by spurts 2 and 3: T1's diff never entered CloseProject() and spurt 3 changed zero lines of flexicon/.",
     "Q3": "CLOSED 2026-09-07 by /lex-lead at T1: NO capability token. HasOpenSessionTask()/CurrentDepth do NOT join flexicon.CAPABILITIES; flexicon/__init__.py and tests/write_path_transactions/test_capabilities.py are OUT OF SCOPE for every remaining task. A plain additive read member is detectable with hasattr(project, 'HasOpenSessionTask'), so a token would add a second source of truth and widen T1's diff past the one-file additive scope fence. Recorded in spec.md under Q3 and in tasks.md's header, not merely in a dispatch rationale. Only reopening condition: a real consumer that cannot use hasattr (e.g. a wire-protocol client) -- route that to QUEUE.md as a NEW ask needing user approval, do not absorb it here. Verified honoured: neither file is in T1's changed-file list.",
     "Q4": "OPEN -- exact CHANGELOG placement and wording. /lex-doc's call at T5."
   },
@@ -37,19 +38,22 @@
     "probe_harness": "tests/operations/test_issue243_closeproject_probe.py",
     "evidence": [
       "specs/243-closeproject-save-guard/evidence/live-cycle1-probe.md",
-      "specs/243-closeproject-save-guard/evidence/live-t1-depth-read-surface.md"
+      "specs/243-closeproject-save-guard/evidence/live-t1-depth-read-surface.md",
+      "specs/243-closeproject-save-guard/evidence/live-t2-internal-callsite-dedup.md"
     ],
     "reviews": [
       "specs/243-closeproject-save-guard/reviews/cycle1-programmer.md",
       "specs/243-closeproject-save-guard/reviews/cycle1-domain.md",
       "specs/243-closeproject-save-guard/reviews/cycle1-archivist.md",
-      "specs/243-closeproject-save-guard/reviews/cycle2-programmer.md"
+      "specs/243-closeproject-save-guard/reviews/cycle2-programmer.md",
+      "specs/243-closeproject-save-guard/reviews/cycle3-programmer.md"
     ]
   },
   "live_evidence": {
     "run_mode": "live",
-    "tests_passed": "6/6 (extended issue243 probe, cycle 2)",
-    "offline_suite": "1290 passed, 470 deselected -- identical to pre-T1 baseline",
+    "spurt3_note": "T2 produced no code change, so there was nothing new to live-verify. Offline 1290 passed BEFORE and AFTER (identical to the pre-T1 baseline); test_undoable_mode_live.py 33 passed with run_mode: live; test_transaction_rollback.py collected 0 live tests (offline file); test_custom_field_multistring_best_alt.py 1 skipped (pre-existing env skip).",
+    "t1_tests_passed": "6/6 (extended issue243 probe, cycle 2)",
+    "offline_suite": "1290 passed, 470 deselected -- identical to the pre-T1 baseline, through both T1 and T2",
     "fixture": "target_sandbox_path (tempdir copy of the Target .fwbackup)",
     "real_target_touched": false,
     "restore_script_run": false
@@ -61,10 +65,26 @@
   ],
   "blocker": null,
   "updated": "2026-09-07",
-  "code_diff_scope": "flexicon/code/FLExProject.py ONLY -- 120 insertions, 0 deletions. Purely additive (_ReadActionHandlerDepth, CurrentDepth property, HasOpenSessionTask). CloseProject() (T3) and SaveChanges() (user-approval item) provably untouched.",
+  "code_diff_scope": "Unchanged since f3a0f50: flexicon/code/FLExProject.py ONLY -- 120 insertions, 0 deletions (T1, purely additive). Spurt 3 added ZERO lines of flexicon/ (T2 dropped). CloseProject() (T3) and SaveChanges() (user-approval item) remain provably untouched.",
   "public_surface_added": {
     "_ReadActionHandlerDepth()": "private helper; raises FP_ProjectError when not hasattr(self, 'project'), else returns ActionHandlerAccessor.CurrentDepth verbatim. No lenient fallback (C5).",
     "CurrentDepth": "PROPERTY (not a method) -- matches the Cache property precedent. Raw int passthrough.",
     "HasOpenSessionTask()": "method. Reads depth first (C11), then False under _undoable (C3), else depth > 0."
-  }
+  },
+  "tasks_dropped": [
+    "T2 -- DROPPED, not deferred. See spec.md C12. Do NOT re-attempt or re-tick as open work."
+  ],
+  "verification_plan_correction": {
+    "defect": "The cycle-3 (T2) brief named live suites BY FILENAME. tests/operations/test_transaction_rollback.py carries ZERO requires_live_project markers -- 0 collected, 20 deselected -- so one of the three named 'live suites' verified nothing; test_custom_field_multistring_best_alt.py env-skipped (1 skipped). Only test_undoable_mode_live.py (33 passed) exercised anything.",
+    "rule": "Never name a live suite by filename. Derive it with 'python -m pytest <file> -m requires_live_project --collect-only -q' and paste the count into the evidence file. 'no tests collected' is a ZERO, never a pass.",
+    "live_counts_verified_2026_09_07": {
+      "tests/operations/test_issue243_closeproject_probe.py": 6,
+      "tests/operations/test_undoable_mode_live.py": 33,
+      "tests/operations/test_target_live_smoke.py": 3,
+      "tests/operations/test_transaction_rollback.py": "0 -- OFFLINE FILE, run with -m 'not requires_live_project' (20 tests)",
+      "tests/operations/test_custom_field_multistring_best_alt.py": "1, env-dependent skip here -- not a usable gate"
+    },
+    "t3_t4_gate": "probe (6, grows with T4) + undoable_mode_live (33) + target_live_smoke (3) live, plus offline suite 1290 passed"
+  },
+  "test_hygiene_observation": "NON-BLOCKING, not a task, not an open question, no issue filed (recorded in spec.md C12): the project doubles in tests/test_b1t_action_handler_double.py, tests/operations/test_transaction_rollback.py and tests/test_custom_field_create_refusal.py are bare Mock()/MagicMock() with no spec=, so they auto-vivify any attribute and cannot detect a call-site change that reroutes a read through a new wrapper method. Latent blind spot in those three files only. A future feature may tighten them on its own merits; #243 does not."
 }

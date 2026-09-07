@@ -6,7 +6,7 @@
   "promise_condition": "all four queue items status=done, gates green, live evidence on file. A per-feature feature_complete from lex-lead does NOT satisfy this.",
   "active_index": 1,
   "active_feature": "243-closeproject-save-guard",
-  "next_entry": "Item 1 (243-closeproject-save-guard) is STILL ACTIVE. Spec+probe checkpoint DONE (spurt 1) and CP-A1 / T1 DONE (spurt 2, 2026-09-07) -- the P1 depth-read surface (_ReadActionHandlerDepth, CurrentDepth as a PROPERTY, HasOpenSessionTask) is landed in flexicon/code/FLExProject.py, live-verified (probe 6/6, run_mode: live, target_sandbox only), offline suite unchanged at 1290 passed, and the diff is 120 insertions / 0 deletions / ONE file so CloseProject() and SaveChanges() are provably untouched. CP-A is SPLIT into CP-A1 (T1, done) and CP-A2 (T2, next). RESUME from specs/243-closeproject-save-guard/.crew-handoff.json -- its next_entry is authoritative: CP-A2 / T2 ALONE (point transaction.py:172, undoable_operation.py:102 and System/CustomFieldOperations.py:306 at T1's shared helper, keeping each site's own lenient try/except / getattr wrapper AROUND the call per C5; behaviour-preserving; live-verify the three named suites at unchanged pass counts). Do NOT start T3 -- CP-B is gated behind CP-A2. Do NOT re-plan item 1's spec, do NOT reopen C1-C11, and do NOT reopen Q1 (C9/C10) or Q3 (closed spurt 2: NO capability token). Q2 (T3) and Q4 (T5) are the only open questions.",
+  "next_entry": "Item 1 (243-closeproject-save-guard) is STILL ACTIVE. Spec+probe DONE (spurt 1); CP-A1/T1 DONE (spurt 2, commit f3a0f50) -- the P1 depth-read surface (_ReadActionHandlerDepth, CurrentDepth as a PROPERTY, HasOpenSessionTask) is landed in flexicon/code/FLExProject.py, live-verified, 120 insertions / 0 deletions / one file. CP-A2/T2 is DROPPED ON THE MERITS (spurt 3, spec.md C12) -- attempted at all three sites, each broke the offline suite, all reverted, ZERO lines of flexicon/ changed in spurt 3. CP-A is CLOSED IN FULL and CP-B is UNBLOCKED. RESUME from specs/243-closeproject-save-guard/.crew-handoff.json -- its next_entry is authoritative: CP-B / T3 (guard CloseProject()'s line-326 EndNonUndoableTask(): check HasOpenSessionTask() first and skip when no envelope is open; when one is open, wrap the End call so ANY raise cannot skip line 332's usm.Save(); do not reorder 326/332 per C7; decide Q2 and record it as a dated note under spec.md Q2), then T4. LIVE GATE RE-DERIVED FROM MARKERS (do not name live suites by filename): probe (6) + tests/operations/test_undoable_mode_live.py (33) + tests/operations/test_target_live_smoke.py (3) live; tests/operations/test_transaction_rollback.py has ZERO live markers and must be run OFFLINE; plus the offline suite at 1290 passed. Do NOT re-attempt T2 (C12). Do NOT re-plan item 1's spec, do NOT reopen C1-C12, do NOT reopen Q1 (C9/C10) or Q3 (no capability token). Q2 (T3) and Q4 (T5) are the only open questions. Do NOT touch SaveChanges() -- the user's ruling is still outstanding.",
   "queue": [
     {
       "index": 1,
@@ -16,7 +16,7 @@
       ],
       "status": "active",
       "spec_exists": true,
-      "note": "Spec+probe checkpoint DONE (spurt 1); CP-A1 / T1 DONE (spurt 2) -- first code in the campaign under flexicon/code/, purely additive (120 insertions, 0 deletions, one file), live-verified. Contract C1-C11 frozen. Q1 CLOSED as C9/C10; Q3 CLOSED spurt 2 (NO flexicon.CAPABILITIES token -- flexicon/__init__.py and tests/write_path_transactions/test_capabilities.py are out of scope for all remaining tasks); NEW C11 freezes HasOpenSessionTask()'s depth-read-before-mode-check ordering (C4 has no mode carve-out; self._undoable does not exist on a never-opened instance because OpenProject assigns self.project first and FLExProject has no __init__). Q2 (try/finally around the whole CloseProject() body, at T3) and Q4 (CHANGELOG wording, at T5) still open. Standing overrides of the issue prose: (C1) the reorder fix is DISPROVED, the fix GUARDS the line-326 EndNonUndoableTask() call, End-then-Save order unchanged (C7); (C6) P1 is a hard prerequisite of P0. Resume at CP-A2 / T2 per the feature's own .crew-handoff.json. specs/write-path-transactions/ still covers #233-#238, NOT #243."
+      "note": "Spec+probe DONE (spurt 1); CP-A1/T1 DONE (spurt 2) -- first code in the campaign under flexicon/code/, purely additive (120 insertions, 0 deletions, one file), live-verified. CP-A2/T2 DROPPED ON THE MERITS (spurt 3, spec.md C12): the strict helper (raises FP_ProjectError, returns depth verbatim -- C5) and the three internal lenient sites (coerce non-int to 0 for test doubles) want DIFFERENT contracts, so sharing one implementation is a conflation; and the prescribed except-wrapper would swallow the FP_ProjectError the helper exists to raise, which at CustomFieldOperations.py:306 silently disables the issue-#21 corruption guard. All three delegation attempts broke the offline suite and were reverted -- spurt 3 changed ZERO lines of flexicon/. Do NOT re-attempt T2; adding spec= to the bare Mock() project doubles is NOT deferred and NOT owed. CP-A is CLOSED IN FULL; CP-B (T3-T4, the P0 guard) is UNBLOCKED and is the next pickup, then CP-C (T5, docs-only). Contract C1-C12 frozen. Q1 CLOSED as C9/C10; Q3 CLOSED spurt 2 (NO flexicon.CAPABILITIES token -- flexicon/__init__.py and tests/write_path_transactions/test_capabilities.py out of scope); C11 freezes HasOpenSessionTask()'s depth-read-before-mode-check ordering; C12 freezes the T2 drop. Q2 (try/finally around the whole CloseProject() body, at T3) and Q4 (CHANGELOG wording, at T5) still open -- and Q2 is provably still open since spurt 3 changed no code. Standing overrides of the issue prose: (C1) the reorder fix is DISPROVED, the fix GUARDS the line-326 EndNonUndoableTask() call, End-then-Save order unchanged (C7); (C6) P1 is a hard prerequisite of P0 and T1 satisfied it. LIVE-SUITE RULE (new, spurt 3): never name a live suite by filename -- derive it with '-m requires_live_project --collect-only -q' and paste the count into the evidence file; 0 collected is a ZERO, never a pass. T3/T4 gate = probe (6) + test_undoable_mode_live.py (33) + test_target_live_smoke.py (3), with test_transaction_rollback.py OFFLINE. specs/write-path-transactions/ still covers #233-#238, NOT #243."
     },
     {
       "index": 2,
@@ -59,22 +59,25 @@
     "Relay specialist report PATHS + 2-line summaries, never bodies.",
     "One checkpoint per iteration, then update state, commit, stop.",
     "Do not file new GitHub issues inside the loop; append them to QUEUE.md 'Awaiting user approval'.",
-    "No emoji in console output (Windows)."
+    "No emoji in console output (Windows).",
+    "Never name a live test suite by filename. Derive it with '-m requires_live_project --collect-only -q' and paste the count into the evidence file. A 'no tests collected' result is a ZERO, never a pass -- reporting it as green is a false verification claim. (Added spurt 3 after test_transaction_rollback.py, named as a live suite in the T2 brief, was found to carry zero live markers.)",
+    "A specialist returning a FINDING instead of a diff is a legitimate outcome, not a failure to route around. Rule on it, freeze the ruling as a contract decision in spec.md, and mark the task DROPPED in tasks.md with the evidence path so a post-context-reset spurt cannot re-attempt it."
   ],
-  "spurts_completed": 2,
+  "spurts_completed": 3,
   "items_done": [],
   "blocker": null,
   "updated": "2026-09-07",
   "campaign_log_pointer": "specs/tier1-silent-data-loss/QUEUE.md -> 'Campaign Log'",
   "deferred_needs_user_approval_pointer": "specs/tier1-silent-data-loss/QUEUE.md -> 'Awaiting user approval'. Spurt 1 appended one new item: SaveChanges() has no CurrentDepth guard, so under undoable=False it raises 'Commit at wrong place.' and collapses the session envelope -- reachable from its own shipped docstring Example. Fixing its BEHAVIOUR is a fourth ask beyond #243's three and needs a user ruling; the docstring correction is already in scope as item 1's T5.",
   "campaign_progress": {
-    "item_1_243": "in_progress -- CP-A1/T1 done; CP-A2 (T2), CP-B (T3-T4), CP-C (T5) remain",
+    "item_1_243": "in_progress -- CP-A1/T1 done (code landed); CP-A2/T2 DROPPED per spec.md C12 (zero diff, closed on a finding); CP-B (T3-T4, the P0 guard) is UNBLOCKED and next; CP-C (T5) remains",
     "item_2_242": "queued -- untouched",
-    "item_3_feature_structure_sync_gap": "queued -- untouched by spurts 1 and 2; do not enter it",
+    "item_3_feature_structure_sync_gap": "queued -- untouched by spurts 1, 2 and 3; do not enter it",
     "item_4_250": "queued -- untouched, deliberately last"
   },
   "code_landed_so_far": [
-    "flexicon/code/FLExProject.py -- T1 additive P1 depth-read surface (_ReadActionHandlerDepth, CurrentDepth property, HasOpenSessionTask). 120 insertions, 0 deletions. Live-verified, run_mode: live."
+    "flexicon/code/FLExProject.py -- T1 additive P1 depth-read surface (_ReadActionHandlerDepth, CurrentDepth property, HasOpenSessionTask). 120 insertions, 0 deletions. Live-verified, run_mode: live.",
+    "SPURT 3: nothing. T2 dropped (C12); git diff f3a0f50 -- flexicon/ is empty and the offline suite is unchanged at 1290 passed."
   ],
   "github_issues_filed": []
 }

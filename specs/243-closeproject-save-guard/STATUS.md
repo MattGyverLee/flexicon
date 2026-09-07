@@ -1,11 +1,13 @@
 # STATUS -- 243-closeproject-save-guard (flexicon#243)
 
 **Campaign:** `tier1-silent-data-loss`, queue item 1 of 4 (`active`).
-**Last updated:** 2026-09-07, end of spurt 2 (cycle 2).
+**Last updated:** 2026-09-07, end of spurt 3 (cycle 3).
 **Status:** `in_progress`. Spec+probe checkpoint COMPLETE (spurt 1).
 **CP-A1 / T1 COMPLETE (spurt 2)** -- the P1 depth-read surface is landed and
-live-verified. CP-A is SPLIT: **CP-A2 / T2 is the next pickup.** CP-B (the P0
-guard, T3-T4) and CP-C (the CHANGELOG, T5) remain. Not feature-complete.
+live-verified. **CP-A2 / T2 is DROPPED on the merits (spurt 3, `spec.md` C12),
+so CP-A is now CLOSED IN FULL with zero code diff from T2.** **CP-B (the P0
+guard, T3-T4) is UNBLOCKED and is the next pickup**; CP-C (the CHANGELOG, T5)
+follows. Not feature-complete.
 
 ---
 
@@ -105,6 +107,62 @@ because it touches three *different* files (`transaction.py`,
 behaviour-preserving refactor whose whole claim is "zero functional delta" --
 that claim is only auditable in a diff that contains nothing else.
 
+## What landed in spurt 3 (cycle 3) -- CP-A2 / T2 DROPPED
+
+**Zero lines of `flexicon/` changed this spurt, and that is the correct
+outcome.** T2 was attempted exactly as specified and came back as a finding.
+`/lex-lead` verified the claims independently rather than accepting the
+report: `git diff f3a0f50 -- flexicon/` is empty, the offline suite is
+`1290 passed` (the frozen pre-T1 baseline), the static source-grep test at
+`tests/test_custom_field_create_refusal.py:54-60` exists as described, and
+`test_transaction_rollback.py` collects 0 live tests.
+
+**Ruling: T2 is DROPPED, not deferred.** Frozen as `spec.md` **C12**.
+
+- All three prescribed delegations break the offline suite
+  (`transaction.py:172` -> 9 failed, `undoable_operation.py:102` -> 2 failed,
+  `System/CustomFieldOperations.py:306` -> 2 failed). All reverted in full.
+- **The premise was wrong, so the task is wrong.** T1's helper is
+  deliberately STRICT (raises `FP_ProjectError`; returns depth verbatim --
+  C5); the three internal sites are deliberately LENIENT (coerce a non-`int`
+  to `0` so a malformed double degrades to "treat as outermost"). One
+  implementation cannot serve both contracts. Merging them is a conflation,
+  not a de-duplication.
+- **Both escape hatches rejected.** (1) An `isinstance(depth, int)` guard is
+  behaviour-preserving in *production* but makes the doubles stop testing
+  what they claim to -- and, decisively, the prescribed `except` wrapper
+  would swallow the very `FP_ProjectError` the helper exists to raise and
+  substitute `0`, which at `CustomFieldOperations.py:306` silently disables
+  the issue-#21 corruption guard. Three duplicated depth reads are strictly
+  better than that. (2) The static source-grep test is a deliberate pin on
+  that corruption guard's implementation; loosening it to reach a "zero
+  functional delta" refactor is net-negative, and satisfying it by parking
+  the literals in a comment would be gaming it.
+- **Adding `spec=` to the doubles is NOT owed as a follow-up.** T2 died on
+  the merits, so its enabler has no purpose. Recorded in C12 as a
+  non-blocking observation about three test files only -- not a task, not an
+  open question, no issue filed.
+- **Nothing downstream is affected.** C6's prerequisite was always the PUBLIC
+  surface (T1); C5 had already made this consolidation optional.
+
+### Second finding this spurt: a defect in `/lex-lead`'s own verification plan
+
+T2's brief named three live suites **by filename**. Only one of them actually
+verified anything: `test_transaction_rollback.py` carries zero
+`requires_live_project` markers (0 collected, `20 deselected`) and
+`test_custom_field_multistring_best_alt.py` env-skipped. The programmer
+flagged this instead of silently substituting a file -- correct behaviour.
+
+The live set for T3/T4 has been **re-derived from markers** and written into
+`tasks.md`'s boilerplate section as binding: probe file (**6**) +
+`test_undoable_mode_live.py` (**33**) + `test_target_live_smoke.py` (**3**),
+with `test_transaction_rollback.py` run OFFLINE (20 tests) where its coverage
+actually lives. Every future brief must paste the
+`--collect-only -q -m requires_live_project` count into its evidence file. A
+`no tests collected` result is a zero, never a pass.
+
+---
+
 ## The two findings that changed the plan (spurt 1)
 
 1. **The issue's proposed fix is wrong (C1).** Reordering `usm.Save()` ahead
@@ -153,8 +211,9 @@ is out of scope).
 
 - **Q2** -- should the P0 fix also wrap the whole `CloseProject()` body in a
   `try/finally` so `Dispose()` always runs even when `Save()` raises?
-  **STILL OPEN, decided at T3.** Untouched by spurt 2 -- T1's diff never
-  entered `CloseProject()`, so nothing about Q2 was silently decided.
+  **STILL OPEN, decided at T3.** Untouched by spurts 2 and 3 -- T1's diff
+  never entered `CloseProject()` and spurt 3 changed zero lines of
+  `flexicon/`, so nothing about Q2 was silently decided.
 - **Q4** -- exact CHANGELOG placement/wording. `/lex-doc`'s call at T5.
   **STILL OPEN.**
 
@@ -172,35 +231,46 @@ is out of scope).
 
 ### Contract decisions now frozen
 
-C1-C10 (spurt 1) plus **C11** (spurt 2, the `HasOpenSessionTask()` ordering
-ruling above). Do not reopen any of them; overturning C11 specifically
-requires citing it explicitly.
+C1-C10 (spurt 1), **C11** (spurt 2, the `HasOpenSessionTask()` ordering
+ruling) and **C12** (spurt 3, T2 dropped -- the strict helper and the three
+lenient internal sites keep separate depth reads permanently). Do not reopen
+any of them; overturning C11 or C12 specifically requires citing it
+explicitly.
 
 ## Next pickup
 
-**CP-A2 / T2 (alone).** Point the three existing lenient internal depth reads
-(`transaction.py:172`, `undoable_operation.py:102`,
-`System/CustomFieldOperations.py:306`) at T1's shared
-`_ReadActionHandlerDepth()` helper, **keeping each call site's own
-`try/except` / `getattr(..., 0)` fallback WRAPPED AROUND the helper call**
-(C5: the lenient fallback stays out of the public surface, not out of
-existence). Behaviour-preserving -- zero functional delta expected.
+**CP-B / T3 (the P0 guard itself).** CP-B is UNBLOCKED: C6's prerequisite is
+the PUBLIC depth-read surface and T1 shipped it; T2 is dropped (C12) and
+nothing depends on it.
 
-T1's report confirms the helper's signature permits this shape without
-modification: it takes only `self` and either raises or returns the raw int,
-so each call site can wrap `project._ReadActionHandlerDepth()` exactly as it
-wraps its current read.
+Implement the C1/C6 guard around `CloseProject()`'s line-326
+`EndNonUndoableTask()` call, in `flexicon/code/FLExProject.py` only:
 
-Live-verify the three existing suites at UNCHANGED pass counts, one file per
-invocation, `FLEXLIBS_REQUIRE_LIVE=1` with `-m requires_live_project`:
-`tests/operations/test_transaction_rollback.py`,
-`tests/operations/test_custom_field_multistring_best_alt.py`,
-`tests/operations/test_undoable_mode_live.py`.
+1. Check `self.HasOpenSessionTask()` BEFORE attempting the call; if no
+   envelope is open, skip it and log at debug level rather than assuming the
+   mode implies the envelope.
+2. When an envelope IS open, still wrap the `EndNonUndoableTask()` call in
+   try/except (or try/finally) so ANY raise from it -- not just the depth-0
+   case the check already prevents -- cannot skip line 332's `usm.Save()`.
 
-Sandbox fixture only. Evidence file
-`evidence/live-t2-internal-callsite-dedup.md` recording all three commands,
-`run_mode`, and before/after pass counts.
-**Do not start T3** -- CP-B is gated behind CP-A2.
+Do NOT reorder lines 326/332 (C7). Q1 is CLOSED (C9/C10) -- implement against
+it. **Q2 is decided at T3**: if `try/finally`-wrapping the whole
+`CloseProject()` body so `Dispose()` always runs turns out to be right, record
+it as a dated note under `spec.md` Q2 -- do not just change the code and move
+on.
+
+**Live gate, re-derived from markers (binding -- see `tasks.md` boilerplate):**
+`tests/operations/test_issue243_closeproject_probe.py` (6 live tests, grows
+with T4) + `tests/operations/test_undoable_mode_live.py` (33) +
+`tests/operations/test_target_live_smoke.py` (3), each with
+`FLEXLIBS_REQUIRE_LIVE=1` and `-m requires_live_project`, `run_mode: live`,
+`target_sandbox` fixture ONLY. Run `test_transaction_rollback.py` OFFLINE (20
+tests) -- it has NO live markers. Plus the offline suite at `1290 passed`.
+Paste the `--collect-only -q` count into the evidence file for each live file;
+`no tests collected` is a zero, never a pass.
+
+**Do not touch `SaveChanges()`** -- behaviour there is the user's open ruling.
+**Do not re-attempt T2** (C12).
 
 ## Routed to the user (do not act on inside the loop)
 

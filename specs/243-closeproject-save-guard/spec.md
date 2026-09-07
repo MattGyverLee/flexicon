@@ -375,6 +375,81 @@ at `HasOpenSessionTask()` already states the rationale inline; if that
 comment is ever removed, this decision still governs. Any change to this
 ordering must cite and overturn C11 explicitly.
 
+### C12 -- T2 is DROPPED. The three internal lenient call sites keep their own depth read, permanently
+
+**Ruled 2026-09-07 by `/lex-lead` at the cycle-3 review. This supersedes C5's
+"optionally, at the implementer's discretion during T2" clause: the option is
+now CLOSED as declined.** Evidence:
+`evidence/live-t2-internal-callsite-dedup.md`; finding:
+`reviews/cycle3-programmer.md`.
+
+T2 asked that `transaction.py:_current_depth`, `undoable_operation.py:102`
+and `System/CustomFieldOperations.py:306` delegate to T1's
+`_ReadActionHandlerDepth()` with each site's lenient fallback wrapped around
+the call. All three were tried and each broke the offline suite (9 / 2 / 2
+failures). T2 is dropped on the merits, not merely on cost. **Do not
+re-attempt it.** Re-opening requires citing and overturning this decision.
+
+**The premise was wrong.** T2 assumed the three lenient sites and the strict
+public surface want the *same* read semantics and differ only in error
+tolerance. They provably want *different contracts*:
+
+- `_ReadActionHandlerDepth()` (C5) is deliberately STRICT -- it raises
+  `FP_ProjectError` on a closed/never-opened project and returns the depth
+  verbatim, so a caller can never confuse "no envelope" with "no project".
+- The three internal sites are deliberately LENIENT -- they coerce any
+  non-`int` to `0` so a malformed double degrades to "treat as outermost"
+  rather than raising, as `transaction.py:_current_depth`'s own docstring
+  states.
+
+One implementation cannot serve both without one contract corrupting the
+other. Sharing them is not a de-duplication; it is a conflation.
+
+**Both escape hatches named in the cycle-3 report are REJECTED, and for a
+stronger reason than the report gives.**
+
+1. **`isinstance(depth, int)` after delegation -- REJECTED.** The report
+   calls this a join-vs-open logic change. Precise correction, so this is not
+   mis-cited later: in *production* it is behaviour-preserving (the helper
+   returns a real `int`, so the coercion never fires). What it breaks is the
+   *test doubles*, and it breaks them in a way that matters. The doubles
+   configure `project.project.ActionHandlerAccessor.CurrentDepth = 1`
+   explicitly, but mock the project *wrapper*; delegating routes the read
+   through a new wrapper method the bare `Mock()` auto-vivifies, so the code
+   reads an auto-stub instead of the value the fixture configured, and the
+   `isinstance` guard then silently rewrites it to `0`. The refactor does not
+   merely fail the tests -- it makes them stop testing what they claim to.
+   **The decisive objection is separate and applies to production too:** the
+   prescribed `except`-wrapper would swallow the `FP_ProjectError` the helper
+   exists to raise (C5/C4) and substitute `0`. At
+   `CustomFieldOperations.py:306` that `0` disables a corruption guard -- the
+   issue-#21 guard that refuses `CreateField` inside an open UnitOfWork.
+   Degrading a corruption guard to "no open UoW" because a *closed project*
+   raised is strictly worse than three duplicated depth reads.
+2. **Editing the static source-grep test -- REJECTED.** `tests/test_custom_field_create_refusal.py:54-60`
+   asserts the literal substrings `"ActionHandlerAccessor"` and
+   `"CurrentDepth"` remain in `CustomFieldOperations.py`. Verified present and
+   deliberate: it pins the #21 guard's implementation, not just its output.
+   Delegation removes both literals. Loosening a test that exists to pin a
+   corruption guard, in order to reach a refactor whose stated upside is "zero
+   functional delta", is net-negative. Satisfying it by leaving the strings in
+   a comment would be gaming it and is equally rejected.
+3. **Adding `spec=` to the doubles -- REJECTED as a means to T2.** Since T2
+   itself is dropped on the merits, the test-suite change that would unblock
+   it has no remaining purpose. It is NOT deferred and NOT a follow-up ask; no
+   ticket is owed.
+
+**Non-blocking observation, recorded so it is not rediscovered as a
+surprise** (deliberately NOT a task, NOT an open question, NOT a filed
+issue): the doubles in `tests/test_b1t_action_handler_double.py`,
+`tests/operations/test_transaction_rollback.py` and
+`tests/test_custom_field_create_refusal.py` use bare `Mock()`/`MagicMock()`
+with no `spec=`, so they auto-vivify any attribute and cannot detect a
+call-site change that reroutes a read through a new wrapper method. That is a
+latent blind spot in those three files only. If a future feature independently
+needs `spec=`-tightened project doubles it may do so on its own merits; issue
+#243 does not.
+
 ---
 
 ## Open questions -- do not silently decide

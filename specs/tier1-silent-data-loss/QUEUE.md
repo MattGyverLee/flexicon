@@ -25,7 +25,7 @@ promise, so it cannot exit the loop early.
 
 | # | status | slug | issues | why here |
 |---|--------|------|--------|----------|
-| 1 | `active` (CP-A1/T1 done, next CP-A2/T2) | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
+| 1 | `active` (CP-A1/T1 done, CP-A2/T2 DROPPED per C12, next CP-B/T3) | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
 | 2 | `queued` | `242-paragraph-whitespace` | #242 | Cheap, self-contained, real corruption. Paragraph/Segment text writers silently strip leading/trailing whitespace. |
 | 3 | `queued` | `feature-structure-sync-gap` | #251 #252 #253 #256 | **Already in flight** -- contract frozen (C1-C8), live ground truth captured, spurt 1 done. RESUME, do not re-plan. Biggest item (T1-T17). Ships data loss today: `Allomorph` and `POS` are live sync object types. |
 | 4 | `queued` | `250-writingsystem-activation` | #250 | Deliberately LAST: resolving it requires an **API-surface policy decision** (active-only `Exists` plus a separately-named whole-store predicate, vs. an `Ensure()` that activates a store-present WS). That is the item most likely to end `needs_human`, so everything landable unattended lands first. |
@@ -52,12 +52,33 @@ C1-C11), `tasks.md` (T1-T5) and `STATUS.md` are written;
 with `run_mode: live`, offline suite 1290 passed (unchanged baseline), and
 `git diff --stat flexicon/code/` = **120 insertions, 0 deletions, one file**,
 so `CloseProject()` (T3) and `SaveChanges()` (the user-approval item below)
-are provably untouched. **CP-A is SPLIT: CP-A1 = T1 (done), CP-A2 = T2
-(next).** **Resume from
-`specs/243-closeproject-save-guard/.crew-handoff.json` -- its `next_entry`
-is authoritative: CP-A2 / T2 ALONE, the three internal call sites delegating
-to T1's helper with their own lenient wrappers kept. Do NOT start T3; CP-B is
-gated behind CP-A2.**
+are provably untouched.
+
+**CP-A2 / T2 DROPPED (spurt 3, 2026-09-07) -- CP-A is now CLOSED IN FULL, and
+CP-B is UNBLOCKED.** T2 (delegate the three internal lenient depth reads to
+T1's helper) was attempted at all three sites and each broke the offline suite
+(`transaction.py:172` -> 9 failed, `undoable_operation.py:102` -> 2 failed,
+`System/CustomFieldOperations.py:306` -> 2 failed). All were reverted: **spurt
+3 changed zero lines of `flexicon/`** (`git diff f3a0f50 -- flexicon/` empty
+and offline at `1290 passed`, both re-verified by `/lex-lead`). It is dropped
+**on the merits and frozen as `spec.md` C12** -- the strict helper (raises
+`FP_ProjectError`, returns depth verbatim, C5) and the three lenient sites
+(coerce non-`int` to `0` for test doubles) want DIFFERENT contracts, so sharing
+one implementation is a conflation, not a de-duplication; and the prescribed
+`except` wrapper would swallow the `FP_ProjectError` the helper exists to
+raise, which at `CustomFieldOperations.py:306` silently disables the issue-#21
+corruption guard. **Do NOT re-attempt T2**; adding `spec=` to the doubles is
+NOT deferred and NOT owed. Nothing in P0/P1/P2 depended on it.
+
+**Resume from `specs/243-closeproject-save-guard/.crew-handoff.json` -- its
+`next_entry` is authoritative: CP-B / T3, the P0 guard around
+`CloseProject()`'s line-326 `EndNonUndoableTask()`, then T4's regression
+tests.** Live gate for T3/T4 was RE-DERIVED FROM MARKERS this spurt (a defect
+in the T2 brief: `test_transaction_rollback.py` was named as a live suite but
+carries ZERO `requires_live_project` markers and collected 0 tests). Binding
+set: probe (6 live) + `test_undoable_mode_live.py` (33) +
+`test_target_live_smoke.py` (3), with `test_transaction_rollback.py` run
+OFFLINE, plus the offline suite at 1290 passed.
 
 Two further rulings were recorded in spurt 2 and must not be re-litigated:
 **Q3 is CLOSED -- NO `flexicon.CAPABILITIES` token** (so `flexicon/__init__.py`
@@ -65,8 +86,11 @@ and `tests/write_path_transactions/test_capabilities.py` are out of scope for
 every remaining task), and **new contract decision C11** freezes
 `HasOpenSessionTask()`'s depth-read-before-mode-check ordering (C4 has no mode
 carve-out, and `self._undoable` does not even exist on a never-opened
-instance). **Q2** (try/finally around the whole `CloseProject()` body) and
-**Q4** (CHANGELOG wording) remain genuinely open, at T3 and T5.
+instance). Spurt 3 added **C12** (T2 dropped; the strict helper and the three
+lenient internal sites keep separate depth reads permanently). **Q2**
+(try/finally around the whole `CloseProject()` body) and **Q4** (CHANGELOG
+wording) remain genuinely open, at T3 and T5 -- and Q2 is provably still open,
+since spurt 3 changed no code at all.
 
 Two cycle-1 findings changed the plan and must not be re-litigated:
 
@@ -205,6 +229,36 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   `active`; next entry is **CP-A2 / T2 alone**, then CP-B (T3-T4) and CP-C
   (T5). No GitHub issues filed; the `SaveChanges()` depth-guard item below is
   still awaiting the user's ruling and was NOT acted on.
+
+- **2026-09-07 -- item 1, spurt 3 (cycle 3) COMPLETE: CP-A2 / T2 DROPPED.**
+  The first spurt in this campaign to land **zero lines of production code by
+  design** -- and the correct outcome. Crew: `lex-programmer` alone. T2 was
+  executed exactly as specified, came back as a FINDING rather than a diff, and
+  `/lex-lead` ruled on it: **T2 is DROPPED on the merits, frozen as `spec.md`
+  C12**, with both escape hatches the report named explicitly REJECTED (an
+  `isinstance(depth, int)` guard, and editing the static source-grep test at
+  `tests/test_custom_field_create_refusal.py:54-60`) and the third option --
+  adding `spec=` to the bare `Mock()` project doubles -- declined outright
+  rather than deferred, since T2's death removes its purpose. Decisive reason
+  beyond the report's: the prescribed `except` wrapper would swallow the
+  `FP_ProjectError` T1's helper exists to raise and substitute `0`, which at
+  `CustomFieldOperations.py:306` silently disables the issue-#21 corruption
+  guard -- three duplicated depth reads are strictly better. `/lex-lead`
+  re-verified every claim rather than trusting the report: empty
+  `git diff f3a0f50 -- flexicon/`, offline `1290 passed`, the grep test
+  present as described, and the live-collection counts. **Second finding, in
+  `/lex-lead`'s own plan:** the T2 brief named live suites BY FILENAME, and
+  `tests/operations/test_transaction_rollback.py` carries zero
+  `requires_live_project` markers (0 collected / 20 deselected), so one of the
+  three named "live suites" verified nothing while a second env-skipped. The
+  programmer flagged it instead of substituting a file -- correct. The rule is
+  now binding in `tasks.md`: derive every live set with
+  `--collect-only -q -m requires_live_project` and paste the count into the
+  evidence file; `no tests collected` is a ZERO, never a pass. Item 1 remains
+  `active`; next entry is **CP-B / T3** (the P0 guard), then T4, then CP-C
+  (T5). No GitHub issues filed; the `SaveChanges()` depth-guard item below is
+  STILL awaiting the user's ruling and was not acted on, planned around, or
+  prototyped.
 
 ### Awaiting user approval (do not file inside the loop)
 

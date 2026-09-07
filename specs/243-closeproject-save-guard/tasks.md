@@ -9,8 +9,8 @@ of the checkpoints below. The three checkpoints in this file are the
 IMPLEMENTATION checkpoints and start after it. To remove the collision they
 are referred to as **CP-A (T1-T2)**, **CP-B (T3-T4)** and **CP-C (T5)**;
 the older "Checkpoint 1/2/3" headings below are retained only so existing
-cross-references still resolve. T1 is DONE (spurt 2); **the next spurt starts
-at CP-A2 / T2.**
+cross-references still resolve. T1 is DONE (spurt 2). **T2 is DROPPED (spurt 3
+-- spec.md C12); CP-A is CLOSED in full. The next spurt starts at CP-B / T3.**
 
 **Q1 is CLOSED (spec.md C9/C10, ruled 2026-09-07).** No task below may
 reopen it, and no task may wait on owner repro steps -- the owner's
@@ -28,9 +28,16 @@ because C4's closed/never-opened `FP_ProjectError` has no mode carve-out and
 because `self._undoable` does not exist on a never-opened instance. Do not
 reorder it. T3 must consume the surface as shipped.
 
-**CP-A IS SPLIT (spurt 2, 2026-09-07).** T1 landed alone; T2 was gated into
-its own sub-checkpoint. Read CP-A below as **CP-A1 = T1 (DONE)** and
-**CP-A2 = T2 (NEXT)**. CP-B may not begin until CP-A2 closes.
+**CP-A IS CLOSED IN FULL (spurt 3, 2026-09-07).** T1 landed alone (CP-A1);
+T2 was gated into CP-A2 and is now **DROPPED ON THE MERITS** -- see `spec.md`
+**C12**, `reviews/cycle3-programmer.md` and
+`evidence/live-t2-internal-callsite-dedup.md`. Read CP-A below as
+**CP-A1 = T1 (DONE)** and **CP-A2 = T2 (DROPPED -- closed on a finding, zero
+diff in `flexicon/`)**. **CP-B is UNBLOCKED and is the next pickup.** C6's
+prerequisite was always the PUBLIC depth-read surface, which T1 alone
+delivered; C5 itself made the internal-call-site consolidation optional, and
+C12 declines that option permanently. **Do NOT re-attempt T2** -- three
+independent attempts are already on file with their failure counts.
 
 **Ordering rule (binding):** P1 (the depth-read surface) is a PREREQUISITE of
 P0's final shape, not a follow-on -- `spec.md` C6. Tasks below are sequenced
@@ -60,6 +67,38 @@ file at `specs/243-closeproject-save-guard/evidence/live-<task>.md` with the
 exact command, the `run_mode` value from `tests/live_status.json`, and
 pre/post values RE-READ from the LCM (re-querying after the write, not
 asserting on the value passed in).
+
+**LIVE SET RE-DERIVED FROM MARKERS, NOT FILENAMES (spurt 3, 2026-09-07 --
+binding for T3/T4).** T2's brief named three "live suites" chosen by filename.
+One of them, `tests/operations/test_transaction_rollback.py`, carries **zero**
+`requires_live_project` markers -- it is a fully offline Mock/patch file
+despite its name, and it collected **0 tests** under `-m requires_live_project`
+(`20 deselected`). A second, `test_custom_field_multistring_best_alt.py`,
+`1 skipped` on a pre-existing environment-dependent skip. So only one of the
+three named files verified anything. **Never name a live suite by its
+filename again.** Derive it, and paste the derivation into the evidence file:
+
+```
+python -m pytest <file> -m requires_live_project --collect-only -q
+```
+
+A file that reports `no tests collected` is NOT a live pass -- it is zero
+tests, and reporting it as green is a false verification claim. Counts
+confirmed at the cycle-3 review:
+
+| File | Live tests collected | Use for |
+|---|---|---|
+| `tests/operations/test_issue243_closeproject_probe.py` | **6** (module-level `pytestmark`) | T3/T4 PRIMARY -- extended in place by T4 |
+| `tests/operations/test_undoable_mode_live.py` | **33** | T3 regression: the mode/depth/session-envelope path |
+| `tests/operations/test_target_live_smoke.py` | **3** | T3 regression: canonical open/close lifecycle |
+| `tests/operations/test_transaction_rollback.py` | **0** -- OFFLINE FILE | run OFFLINE only (20 tests, `-m "not requires_live_project"`); it IS the real coverage of the rollback path |
+| `tests/operations/test_custom_field_multistring_best_alt.py` | 1, env-skips here | do NOT rely on it as a gate |
+
+T3/T4's live gate is therefore: probe (6, growing with T4) + 33 + 3, all
+green with `run_mode: live`, PLUS the offline suite at `1290 passed` (the
+frozen pre-T1 baseline, unchanged through T1 and T2) via
+`python -m pytest tests -m "not requires_live_project" -q`. T5 is DOCS-ONLY
+and stays live-exempt -- no derivation needed there.
 
 ---
 
@@ -108,7 +147,10 @@ Prerequisite for everything else per C6. Touches
       and CONFIRMED as correct, now frozen as **spec.md C11**.
       Evidence: `evidence/live-t1-depth-read-surface.md`.
       Report: `reviews/cycle2-programmer.md`.
-- [ ] **T2** (LIVE) **<-- NEXT PICKUP (CP-A2).** Point the three existing internal lenient call sites
+- [~] **T2** (LIVE) **DROPPED 2026-09-07 (spurt 3, cycle 3) -- see `spec.md`
+      C12. Closed on a FINDING, not a diff. Do NOT re-attempt; do NOT re-tick
+      as open work after a context reset.** The task as specified was: point
+      the three existing internal lenient call sites
       (`transaction.py:172`, `undoable_operation.py:102`,
       `System/CustomFieldOperations.py:306`, all currently
       `getattr(action_handler, "CurrentDepth", 0)` or equivalent) at T1's
@@ -133,18 +175,45 @@ Prerequisite for everything else per C6. Touches
       is the pass count, not an LCM read, since it is a behaviour-preserving
       refactor with no new state to assert on).
 
+      **T2 OUTCOME -- DROPPED (ruled by `/lex-lead`, cycle 3; claims verified,
+      not taken on report):** all three sites were attempted with the
+      prescribed wrapped-lenient shape and each broke the offline suite
+      (`transaction.py:172` -> 9 failed; `undoable_operation.py:102` -> 2
+      failed; `System/CustomFieldOperations.py:306` -> 2 failed). All three
+      were reverted; `git diff f3a0f50 -- flexicon/` is EMPTY (independently
+      re-verified at the cycle-3 review) and the offline suite is 1290 passed
+      before and after, i.e. the pre-T2 baseline. **The premise was wrong:**
+      the strict helper (raises `FP_ProjectError`, returns depth verbatim --
+      C5) and the three lenient sites (coerce non-`int` to `0` to tolerate
+      doubles) want DIFFERENT contracts, so sharing one implementation is a
+      conflation, not a de-duplication. Both escape hatches are REJECTED with
+      the full reasoning in `spec.md` C12; the decisive point is that the
+      prescribed `except` wrapper would swallow the `FP_ProjectError` the
+      helper exists to raise and substitute `0`, which at
+      `CustomFieldOperations.py:306` silently disables the issue-#21
+      corruption guard. Adding `spec=` to the doubles is NOT deferred and NOT
+      owed as a follow-up -- T2 is dropped on the merits, so the enabling
+      test change has no purpose. Nothing in P0/P1/P2 depends on T2.
+      Evidence: `evidence/live-t2-internal-callsite-dedup.md`.
+      Report: `reviews/cycle3-programmer.md`.
+
 **Checkpoint CP-A1 (T1) -- REACHED 2026-09-07 (spurt 2).** `FLExProject`
 exposes `HasOpenSessionTask()`/`CurrentDepth` matching the frozen P-2 table
 exactly, including both new closed/never-opened raise cases, live-verified
 with `run_mode: live` and zero offline regression. C6's PUBLIC-SURFACE
 prerequisite for the P0 guard is satisfied by T1 alone.
 
-**Checkpoint CP-A2 (T2) -- NEXT.** The three pre-existing internal call
-sites delegate to T1's shared helper with their own lenient wrapper intact
-and unchanged in behaviour, all three named live suites green at unchanged
-pass counts, evidence filed.
+**Checkpoint CP-A2 (T2) -- CLOSED 2026-09-07 (spurt 3) ON A FINDING.** The
+exit condition as originally written (three sites delegating to T1's helper)
+is UNREACHABLE and has been withdrawn -- `spec.md` C12. CP-A2's actual, met
+exit condition is: the delegation was attempted at all three sites, empirically
+shown to break the offline suite, fully reverted (zero diff in `flexicon/`),
+the offline baseline re-confirmed at 1290 passed, and the finding frozen as a
+contract decision so it is not rediscovered. CP-A is closed; CP-B is open.
 
-**Why T2 does not block CP-B.** C6's prerequisite is the PUBLIC depth-read
+**Why T2 did not block CP-B** (retained for the record; T2 is now dropped
+outright per C12, so this paragraph's conclusion stands with the stronger
+reason that there is no longer any T2 to block anything). C6's prerequisite is the PUBLIC depth-read
 surface, which T1 delivers; C5 itself calls the internal-call-site
 consolidation optional ("optionally, at the implementer's discretion during
 T2"). T2 is a behaviour-preserving refactor of three files T1 never touched.
@@ -226,6 +295,17 @@ only.
       name `live-t4-p0-guard-regression.md`, explicitly quoting the before
       (unfixed, from `evidence/live-cycle1-probe.md`) and after (fixed)
       survivor counts for both P-3 and P-5.
+
+**CP-B ENTRY NOTE (spurt 3).** CP-B is UNBLOCKED as of 2026-09-07: T1
+shipped the public surface C6 requires, and T2 is dropped (C12). Start at T3.
+Use the re-derived live set in the boilerplate section above -- probe (6) +
+`test_undoable_mode_live.py` (33) + `test_target_live_smoke.py` (3) -- and run
+`test_transaction_rollback.py` OFFLINE. Q2 is still OPEN and T3 is where it
+gets decided: record the decision as a dated note under `spec.md` Q2, do not
+just change the code. **`SaveChanges()` remains untouchable** -- its missing
+depth guard is a behaviour change awaiting the USER's ruling in the campaign
+QUEUE.md; T3 must not add, plan or prototype it, and T5 may only fix its
+docstring prose.
 
 **Checkpoint:** T3 landed, T4's extended P-3 and P-5 tests both green
 against the patched `FLExProject.py`, `test_p1_mode_matrix` and
