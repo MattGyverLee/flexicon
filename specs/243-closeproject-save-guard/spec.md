@@ -452,6 +452,130 @@ needs `spec=`-tightened project doubles it may do so on its own merits; issue
 
 ---
 
+### C13 -- What the T4 P-5 measurement DOES and DOES NOT establish
+
+Ruled by `/lex-lead` 2026-09-07 (spurt 4, cycle 4). **T3's guard is confirmed
+CORRECT by this measurement and needs no rework** -- C1, C6 and C7 all stand.
+Three facts are frozen below; one asserted mechanism is explicitly NOT.
+
+**FROZEN as established:**
+
+1. **The "the guard skipped an `End` that should have run" hypothesis is
+   DISPROVED, by measurement inside the same run.** The P-5 probe
+   force-calls `EndNonUndoableTask()` manually immediately before
+   `CloseProject()`, and that forced call **still raised** `Cannot end task
+   that has not been started.` The envelope was genuinely gone, so an `End`
+   could not have succeeded whether the guard attempted it or skipped it.
+   **T3's fix shape is therefore not implicated by the 0/25 result** -- do
+   not re-litigate C1/C6/C7 on the strength of it.
+2. **Black box, measured live:** after a failed mid-session `SaveChanges()`
+   at `CurrentDepth=1`, `CloseProject()` reaches `usm.Save()` at depth 0,
+   does NOT raise, and 0/25 objects persist across a read-only reopen.
+3. **Therefore `usm.Save()` returned successfully having persisted
+   nothing.** `CloseProject()`'s `usm.Save()` call is bare -- there is no
+   `try/except` around it -- so any raise there would have propagated out of
+   `CloseProject()`. This is a sound INFERENCE, not a direct measurement, and
+   it rests on fact 2's "did not raise", which T4 recorded in prose but **did
+   not assert**: `test_p5_save_before_forced_end` captures `close_exc_msg`
+   and never checks it, whereas `test_p3_p6_reproduction_and_symptom` asserts
+   `close_exc_msg is None`. **T6 must close that gap before T7's remedy is
+   built on it.**
+
+**NOT frozen -- do NOT cite as settled:** *"the `UnitOfWorkService` cannot
+commit after a failed `CheckReadyForCommit`."* That is a claim about liblcm
+INTERNALS inferred from a single black-box survivor count. At least three
+rival mechanisms produce identical observations:
+
+- **(i)** the UOW / `UndoStack` is poisoned and refuses to commit for the
+  rest of the session (the claim as written in cycle 4);
+- **(ii)** `SaveChanges()`'s failure path DISCARDED the pending change set,
+  so the loss already happened before `CloseProject()` was entered and there
+  was nothing left for `usm.Save()` to write;
+- **(iii)** collapsing the envelope unregistered the dirty objects from any
+  commitable unit of work, so `usm.Save()` correctly flushed an empty change
+  set.
+
+Distinguishing **(ii)** from (i)/(iii) is decisive for scope, not academic:
+**under (ii) the data is already gone when `CloseProject()` is entered, so no
+`CloseProject()`-side change could ever reach 25/25** -- which settles
+whether #243 alone could ever fix the owner's sequence. Routed to **T6**.
+Freezing an unproven internals mechanism would be the same failure mode
+`CLAUDE.md` warns about for same-name LCM fields: inferring a target's
+behaviour from one adjacent observation.
+
+**Bearing on the user's pending ruling:** all three mechanisms imply the SAME
+shape for the queued fourth ask (make `SaveChanges()` refuse to call
+`usm.Save()` at `CurrentDepth > 0`, failing fast before any damage occurs).
+So the mechanism uncertainty does NOT block the user's decision on whether to
+approve that ask; it only bounds what #243 may claim without it.
+
+### C14 -- T3's quiet path is a NEW silent-loss surface, and closing it is IN SCOPE for #243
+
+Ruled 2026-09-07 (spurt 4, cycle 4). For the owner's actual P-5 -> P-3 chain
+(C9), T3 changes the outcome as follows:
+
+| | data | signal on the close path |
+|---|---|---|
+| before T3 | 0/25 lost | `CloseProject()` **RAISED** |
+| after T3 | 0/25 lost | `CloseProject()` **returns normally**; one `debug` line |
+
+The loss is identical, and the only signal on the close path was removed. On
+the P-3 path (a stray or forced `End` with an INTACT change set) T3 is a
+genuine and complete fix -- 0/25 -> 25/25 -- and that stands unqualified. But
+on the path C9 names as the owner's REAL incident, T3 is an **observability
+regression**, and observability is the filed complaint verbatim: *"the only
+symptom logged was a single `[WARN] Commit at wrong place.`"* Post-T3 the
+close path is quieter than that. We have not made the loss worse; we have
+made the SILENCE worse, on precisely the path this campaign is named after.
+
+**The instruction was wrong, not the implementation.** `tasks.md` T3 said
+"skip the call and log at debug level" and the programmer followed it
+exactly. But in Phase 1 (`writeEnabled and not _undoable`),
+`HasOpenSessionTask()` reading `False` inside `CloseProject()` is **anomalous
+by construction**: the envelope is opened at `OpenProject()` and the frozen
+P-2 table shows depth holds at 1 for the whole session. Reaching that branch
+therefore means the envelope was already destroyed -- i.e. we are standing
+inside the owner's incident. Logging that at the quietest level available and
+returning normally is the defect. Same class as C11: a brief-wording error
+owned by `/lex-lead`, not a programmer deviation.
+
+**Remedy = T7**, in `flexicon/code/FLExProject.py` only, `SaveChanges()` NOT
+touched:
+
+1. the Phase-1 `else:` branch logs at **ERROR**, not `debug`;
+2. `CloseProject()` still ALWAYS attempts `usm.Save()` (C1/C6 stand -- it is
+   never skipped), and then **refuses to return normally** when it has
+   detected that the save cannot be trusted: raise `FP_ProjectError` stating
+   explicitly that the session's changes may not have been written to disk,
+   and naming the anomaly. Attempt everything, THEN fail loudly;
+3. detector, chosen by T6/P-9: prefer a live `IUndoStackManager`
+   still-has-unsaved-changes read taken after `Save()`
+   (mechanism-independent -- it detects any no-op save); fall back to the
+   Phase-1-envelope-missing anomaly, already computable from T1's P1 surface;
+4. T4's P-5 assertions are re-pointed at the new contract (`CloseProject()`
+   RAISES on the P-5 sequence; survivors stay 0/25) and gain the
+   `close_exc_msg` assertion C13 fact 3 shows is missing.
+
+**This remedy restores LOUDNESS, not DATA.** It makes total loss impossible
+to miss. It cannot make the owner's sequence save -- only the queued
+`SaveChanges()` fourth ask can do that. T5's CHANGELOG must say exactly that
+and must not overstate it (same discipline as C10).
+
+### C15 -- Q2(a) RESOLVED: `Dispose()` moves into a `try/finally`
+
+Ruled 2026-09-07 (spurt 4). Q2's original question -- should
+`CloseProject()`'s body get a `try/finally` so `Dispose()` always runs? --
+was correctly left OPEN by T3, whose scope genuinely did not force an answer,
+and it was not silently decided in any of spurts 1-3. **C14 forces it now:**
+T7 makes `CloseProject()` raise after attempting `usm.Save()`, and a raise
+emitted at that point must not leak the live LCM handle, so
+`self.project.Dispose()` / `del self.project` move into a `finally`. RESOLVED
+as a consequence of C14, not deferred a fourth time. The probe harness's
+hand-rolled `_dispose_if_open()` teardown (cited in Q2's original text)
+becomes belt-and-braces rather than load-bearing -- leave it in place.
+
+---
+
 ## Open questions -- do not silently decide
 
 ### Q1 -- RESOLVED 2026-09-07 by `/lex-lead`: reconcile the probe with the owner's report
@@ -504,6 +628,21 @@ with exactly this gap (P-3, P-5). Should the P0 fix also wrap the whole
 failure -- separately from the End-guard's own try/finally? Not decided;
 left to the implementation cycle, informed by whichever answer Q1 produces.
 
+**RESOLVED 2026-09-07 (spurt 4) as C15.** T3 correctly did NOT decide this
+-- its own scope never forced an answer, and as of T3 the `Dispose()` call
+is still reached only via the un-guarded `try: ... except Exception: raise`
+at `FLExProject.py:333-338`. What forces the answer is **C14**: T7 makes
+`CloseProject()` raise after attempting `usm.Save()`, and that raise must
+not leak the live LCM handle, so `Dispose()` moves into a `finally`. See
+**C15**. Not deferred a fourth time.
+
+**The T4 P-5 measurement (0/25 post-guard) was filed under this heading by
+cycle 4 and has been MOVED to Q5.** It does not belong here: Q2 asks what
+happens if `usm.Save()` **raises** after the guard runs; the P-5 finding is
+the exact complement -- `usm.Save()` does **not** raise and silently
+persists nothing. Opposite branch, different remedy. Facts frozen as
+**C13**, severity and remedy ruled as **C14**, mechanism routed to **T6**.
+
 ### Q3 -- RESOLVED 2026-09-07 by `/lex-lead`: NO capability token
 
 **CLOSED. The answer is NO** -- `HasOpenSessionTask()`/`CurrentDepth` do NOT
@@ -536,3 +675,35 @@ Whether the P2 entry lands under a new `[Unreleased]` heading or amends the
 existing `[4.4.0]` entry with a forward pointer, and its exact prose, is
 `/lex-doc`'s call per the Doc Handoff discipline (see C8) -- not decided
 here.
+
+### Q5 -- `usm.Save()` returns SUCCESSFULLY having persisted nothing: how must `CloseProject()` detect and report that?
+
+Opened 2026-09-07 (spurt 4, cycle 4) by MOVING the T4 P-5 finding out from
+under Q2, where cycle 4 filed it. Q2 is about `usm.Save()` **raising**; this
+is the complement -- it returns cleanly and writes nothing. Different
+question, opposite branch, different remedy, so it gets its own heading
+instead of sharing Q2's.
+
+Already decided and NOT open here: the established facts are frozen as
+**C13**; the severity ruling (this is a new silent-loss surface) and the
+remedy shape are frozen as **C14**; the internals mechanism is routed to
+**T6** (probes P-7/P-8/P-9) and must not be cited as settled until T6
+reports.
+
+**What is genuinely open:** the DETECTOR. Does the live `IUndoStackManager`
+expose a usable "still has unsaved/pending changes" read that would let
+`CloseProject()` detect a no-op save DIRECTLY, rather than inferring it from
+the Phase-1-envelope-missing anomaly? T6/P-9 answers that; T7 implements
+whichever answer comes back. A direct read is strongly preferred because it
+is mechanism-independent -- it catches any no-op save, not only the one
+rival mechanism we happened to measure.
+
+**Also blocked on the USER** -- see the `needs_human` blocker in
+`.crew-handoff.json`. C14's new raise is a public-behaviour change to
+`CloseProject()` in the same failure path as the still-unruled
+`SaveChanges()` depth-guard (the campaign's fourth ask), and the two must be
+ruled together: if `SaveChanges()` is approved to fail fast, the envelope is
+never collapsed, the P-5 chain never forms, and C14's raise becomes
+near-unreachable defensive code; if it is declined, C14's raise is the only
+thing standing between the owner and silent total loss, and its wording and
+severity matter a great deal.

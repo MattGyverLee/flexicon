@@ -233,7 +233,7 @@ the campaign `QUEUE.md` / `.crew-handoff.json`, commit.
 Consumes T1's public surface per C6. Touches `flexicon/code/FLExProject.py`
 only.
 
-- [ ] **T3** (LIVE) Implement the C1/C6 guard around
+- [x] **T3** (LIVE) Implement the C1/C6 guard around
       `CloseProject()`'s line-326 `EndNonUndoableTask()` call:
       1. Before attempting the call, check `self.HasOpenSessionTask()` (or
          the equivalent `CurrentDepth > 0` read via T1's helper). If no
@@ -250,7 +250,7 @@ only.
       do not silently resolve it while implementing T3. If implementation
       reveals a concrete answer, record it as a new dated note under Q2 in
       `spec.md`, do not just change the code and move on.
-- [ ] **T4** (LIVE) EXTEND the probe file's own regression tests to prove T3
+- [x] **T4** (LIVE) EXTEND the probe file's own regression tests to prove T3
       fixes the bug:
       - `test_p3_p6_reproduction_and_symptom`: re-run the exact P-3 sequence
         (create 25 entries, manually end the envelope early, call
@@ -316,9 +316,118 @@ shows all tests passing with `run_mode: live`. Update `STATUS.md` /
 `.crew-handoff.json`, commit. Acceptance criteria 1, 2, 3, 4 in `spec.md`
 section 5 are satisfied at this checkpoint.
 
+**CP-B REACHED 2026-09-07 (spurt 4, cycle 4) -- PASSED, with two P1 defects
+found by `/lex-lead` that are NOT T3 rework.** T3 and T4 both landed green:
+probe 6/6, `test_undoable_mode_live.py` 33/33, `test_target_live_smoke.py`
+3/3, all `run_mode: live`; `test_transaction_rollback.py` 20/20 offline;
+offline suite unchanged at `1290 passed`. Acceptance criteria 1, 2, 3 and 4
+are satisfied. **P-3: 0/25 -> 25/25 with no raise** -- the loss mechanism is
+fixed, and the guard is correct-and-shippable on its own merits. **P-5
+measured 0/25**, the branch T4 named in advance; frozen as **spec.md C13**
+(what that measurement does and does not establish) and **C14** (it is a new
+silent-loss surface). Two defects, both `/lex-lead`'s own to own:
+
+1. **T3's brief was wrong**, not its implementation. "log at debug level"
+   made the Phase-1 no-envelope branch -- which is anomalous by construction
+   and means we are standing inside the owner's incident -- the quietest
+   thing in the method. C14 remedies it at T7. Same class of brief-wording
+   error as C11.
+2. **T4's P-5 "CloseProject() did not raise" is unasserted and unquoted.**
+   `test_p5_save_before_forced_end` captures `close_exc_msg` and never checks
+   it (P-3 asserts it), and the evidence file transcribes pass-counts rather
+   than the `[PROBE][P5]` console lines from its `-s` run. That claim is
+   load-bearing for C13 fact 3 (silent no-op vs loud raise), so T6 must pin
+   it.
+
+**NEXT IS NOT T5.** New sequencing: **T6 (probe) -> T7 (the C14 loudness
+remedy) -> T5 (CHANGELOG, LAST)**. T5's wording depends on T7's outcome and
+on the user's ruling, so it cannot go first. **Item 1 is `needs_human` as of
+this checkpoint** -- see the blocker in `.crew-handoff.json`; T7 must not be
+designed before the user rules on the `SaveChanges()` fourth ask.
+
+---
+
+## Checkpoint 2c -- Q5: the no-op-save probe and the loudness remedy (T6-T7)
+
+Opened by the CP-B ruling (spurt 4). Both tasks arise from `spec.md`
+C13/C14/Q5. `SaveChanges()` remains untouchable throughout -- T6 only
+OBSERVES it, T7 does not modify it.
+
+- [ ] **T6** (LIVE, probe-only -- **safe to run WITHOUT the user's ruling**)
+      Extend `tests/operations/test_issue243_closeproject_probe.py` in place
+      with three probes that settle C13's open mechanism question and find
+      T7's detector. Sandbox fixture (`target_sandbox_path`) ONLY; no
+      behaviour change to any `flexicon/` file, so this task is
+      ruling-independent and may be greenlit on its own.
+      - **P-7 -- is the data still there?** Run the P-5 setup; after
+        `SaveChanges()` raises at `CurrentDepth=1`, re-read the 25 `TEST_`
+        entries from the STILL-OPEN project. Present => rival mechanism
+        (ii) is ruled out (the change set survived into `CloseProject()`).
+        **Absent => (ii) is CONFIRMED and no `CloseProject()`-side change
+        can ever reach 25/25** -- report that immediately, it settles #243's
+        ceiling.
+      - **P-8 -- is the UOW globally poisoned, or only the existing dirty
+        set?** After `SaveChanges()` raises, open a fresh
+        `BeginNonUndoableTask()`, create ONE new `TEST_` entry, `End`, then
+        `CloseProject()`, then reopen read-only and count. The new entry
+        persists => not globally poisoned, so (iii)/(ii) over (i). Nothing
+        persists => (i), session-wide poisoning.
+      - **P-9 -- the detector, and CP-B defect 2.** Reflect over the live
+        `IUndoStackManager` and record its actual member list in the
+        evidence file; look for a "has unsaved / pending changes" read. If
+        one exists, measure it immediately BEFORE and AFTER `usm.Save()` in
+        both the P-4 control (a real save) and the P-5 sequence (the no-op
+        save), and report whether the two are distinguishable. Also **add
+        the missing `close_exc_msg` assertion to
+        `test_p5_save_before_forced_end` and QUOTE the `[PROBE][P5]` console
+        lines verbatim in the evidence file**, closing CP-B defect 2 and
+        pinning C13 fact 3 as a measurement rather than an inference.
+      Live gate per the boilerplate, re-derived with `--collect-only`
+      (the probe file's count grows again here). Evidence:
+      `evidence/live-t6-noop-save-mechanism.md`. Do NOT modify
+      `SaveChanges()`, do NOT implement any part of T7 here, and do NOT
+      change `CloseProject()`.
+- [ ] **T7** (LIVE) **BLOCKED on the user's ruling -- do not start it inside
+      the loop.** Implement the C14 remedy in `flexicon/code/FLExProject.py`
+      only: (1) the Phase-1 `else:` branch logs at **ERROR**, not `debug`;
+      (2) `CloseProject()` still always attempts `usm.Save()`, then raises
+      `FP_ProjectError` when the save cannot be trusted, saying explicitly
+      that the session's changes may not have been written to disk;
+      (3) use the detector T6/P-9 found, preferring the direct
+      `IUndoStackManager` read over the envelope-missing heuristic;
+      (4) move `Dispose()` / `del self.project` into a `finally` per
+      **C15**; (5) re-point T4's P-5 assertions at the new contract
+      (`CloseProject()` RAISES; survivors stay 0/25). Do NOT touch
+      `SaveChanges()`. Evidence: `evidence/live-t7-loud-close.md`.
+      **Why blocked:** C14's raise is a public-behaviour change in the same
+      failure path as the unruled `SaveChanges()` fourth ask, and the two
+      interact -- if `SaveChanges()` is approved to fail fast the raise
+      becomes near-unreachable defensive code; if declined it is the only
+      signal the owner gets. Building it on one branch of that coin is the
+      wrong sequence.
+
+**Checkpoint:** T6's three probes green and its evidence file naming which
+rival mechanism (i)/(ii)/(iii) holds plus the detector verdict; then, after
+the user's ruling, T7 landed with the full live gate green. Only then does
+CP-C (T5) open.
+
 ---
 
 ## Checkpoint 3 -- P2: CHANGELOG entry (T5)
+
+**RE-GATED 2026-09-07 (spurt 4): T5 is now LAST, after T6 and T7.** It was
+originally third of three; the CP-B ruling inserted Checkpoint 2c ahead of
+it. T5 cannot be written before T7 lands and before the user rules, because
+its wording depends on both. Two hard constraints on that wording, on top of
+Q4:
+
+- **It must NOT claim #243 fixes the owner's filed incident.** Per C9 the
+  incident is the P-5 -> P-3 chain, and P-5 still measures 0/25 (C13).
+  #243 fixes the P-3 loss mechanism (25/25) and, via T7, makes the remaining
+  loss impossible to miss -- it does not make the owner's sequence save.
+- **It must not overstate T7 either.** C14: the remedy restores LOUDNESS,
+  not DATA. Same discipline as C10's ban on claiming the `.fwdata` swap is
+  fixed.
 
 - [ ] **T5** (DOCS-ONLY, EXEMPT FROM LIVE VERIFICATION) Dispatch `/lex-doc`
       with this spec (`spec.md` sections 3, C8, Q4) and the `[4.4.0]`

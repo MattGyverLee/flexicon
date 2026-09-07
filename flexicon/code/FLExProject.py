@@ -318,12 +318,60 @@ class FLExProject(object):
     def CloseProject(self):
         """
         Save any pending changes and dispose of the LCM object.
+
+        Guard added for issue #243 (spec.md C1/C6/C7): the Phase 1
+        ``EndNonUndoableTask()`` mirror call below is guarded two ways so
+        that a raise there can never skip ``usm.Save()``, which would
+        otherwise discard the whole session's in-memory work with no
+        data written to disk:
+
+        1. ``HasOpenSessionTask()`` is checked first. If no envelope is
+           open (e.g. a prior mid-session ``SaveChanges()`` call already
+           collapsed it -- spec.md C9), the ``End`` call is skipped
+           entirely rather than assuming ``writeEnabled and not
+           _undoable`` implies the envelope is still present.
+        2. Even when the check says an envelope IS open, the ``End``
+           call itself is wrapped in try/except so an unexpected raise
+           there (not just the already-prevented depth-0 case) still
+           cannot prevent ``usm.Save()`` from running.
+
+        End-then-Save order is unchanged (C7) -- this does not reorder
+        ``usm.Save()`` ahead of the ``End`` call; P-5 (spec.md section 2)
+        proved that shape trades one guaranteed raise for another with
+        no save occurring either way.
         """
         if hasattr(self, "project"):
             if self.writeEnabled:
                 if not self._undoable:
-                    # Phase 1: This must be called to mirror the call to BeginNonUndoableTask().
-                    self.project.MainCacheAccessor.EndNonUndoableTask()
+                    # Phase 1: This must be called to mirror the call to
+                    # BeginNonUndoableTask() -- but only if that envelope
+                    # is actually still open (issue #243, spec.md C6).
+                    if self.HasOpenSessionTask():
+                        try:
+                            self.project.MainCacheAccessor.EndNonUndoableTask()
+                        except Exception as e:
+                            # Any raise here -- not just the depth-0 case
+                            # already prevented by the check above -- must
+                            # not be allowed to skip usm.Save() below
+                            # (spec.md C6 part 2). Log loudly: a single,
+                            # easy-to-miss [WARN] elsewhere in this exact
+                            # failure path is the defect issue #243 exists
+                            # to fix, so swallowing this silently would
+                            # repeat it.
+                            logging.getLogger(__name__).warning(
+                                "CloseProject: EndNonUndoableTask() raised "
+                                "even though HasOpenSessionTask() reported "
+                                "an open envelope; continuing to "
+                                "usm.Save() below regardless. %s: %s",
+                                type(e).__name__, e,
+                            )
+                    else:
+                        logging.getLogger(__name__).debug(
+                            "CloseProject: HasOpenSessionTask() is False; "
+                            "skipping EndNonUndoableTask() rather than "
+                            "assuming the mode implies the envelope is "
+                            "present."
+                        )
                 # Phase 2: In undoable mode, no EndNonUndoableTask() to call
                 # (each UndoableOperation handles its own Begin/End)
 

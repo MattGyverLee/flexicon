@@ -25,7 +25,7 @@ promise, so it cannot exit the loop early.
 
 | # | status | slug | issues | why here |
 |---|--------|------|--------|----------|
-| 1 | `active` (CP-A1/T1 done, CP-A2/T2 DROPPED per C12, next CP-B/T3) | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
+| 1 | **`needs_human`** (CP-A closed; **CP-B/T3+T4 done and PASSED**; blocked at T6/T7 -- see the escalated `SaveChanges()` item under "Awaiting user approval") | `243-closeproject-save-guard` | #243 | Smallest diff, largest downside averted. Owner-confirmed total session loss: a run reported success, an immediate inventory saw all 11,987 new objects, a later open saw none, and `Target.fwdata` had been replaced by the crash-recovery copy -- one `[WARN]` line the only symptom. Orthogonal to items 2-4. |
 | 2 | `queued` | `242-paragraph-whitespace` | #242 | Cheap, self-contained, real corruption. Paragraph/Segment text writers silently strip leading/trailing whitespace. |
 | 3 | `queued` | `feature-structure-sync-gap` | #251 #252 #253 #256 | **Already in flight** -- contract frozen (C1-C8), live ground truth captured, spurt 1 done. RESUME, do not re-plan. Biggest item (T1-T17). Ships data loss today: `Allomorph` and `POS` are live sync object types. |
 | 4 | `queued` | `250-writingsystem-activation` | #250 | Deliberately LAST: resolving it requires an **API-surface policy decision** (active-only `Exists` plus a separately-named whole-store predicate, vs. an `Ensure()` that activates a store-present WS). That is the item most likely to end `needs_human`, so everything landable unattended lands first. |
@@ -39,6 +39,20 @@ untouched items behind it.
 ## Per-item entry conditions
 
 ### 1. `243-closeproject-save-guard` (#243)
+
+> **STATUS 2026-09-07 (end of spurt 4): `needs_human`. Do not resume this
+> item autonomously except for T6.** CP-B is done and passed -- the P0 guard
+> is landed and live-verified and P-3 is fixed 0/25 -> 25/25. But the owner's
+> actual sequence (P-5) still measures **0/25**, and `spec.md` C14 found the
+> guard makes that path *silent* where it previously raised. The remaining
+> work (T7) is a public-behaviour change coupled to the still-unruled
+> `SaveChanges()` depth guard, so **both must be ruled by the user together**
+> -- see the escalated item under "Awaiting user approval" below.
+> `specs/243-closeproject-save-guard/.crew-handoff.json` `blocker` is
+> authoritative. Task order is now **T6 -> T7 -> T5**; T5 (CHANGELOG) is LAST.
+> **T6 alone is pre-authorised** (probe-only, sandbox fixture, no `flexicon/`
+> behaviour change) and sharpens the ruling itself.
+
 
 **Spec+probe checkpoint DONE (spurt 1, 2026-09-07).** `spec.md` (contract
 C1-C11), `tasks.md` (T1-T5) and `STATUS.md` are written;
@@ -260,6 +274,67 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   STILL awaiting the user's ruling and was not acted on, planned around, or
   prototyped.
 
+- **2026-09-07 -- item 1, spurt 4 (cycle 4): CP-B REACHED AND PASSED, and item
+  1 is now `needs_human`.** Crew: `lex-programmer` alone (T3 and T4 dispatched
+  together -- T4 is T3's regression proof and CP-B's checkpoint line requires
+  both green). **T3, the P0 guard, is landed and live-verified**: probe 6/6,
+  `test_undoable_mode_live.py` 33/33, `test_target_live_smoke.py` 3/3, all
+  `run_mode: live`; `test_transaction_rollback.py` 20/20 offline; offline suite
+  unchanged at `1290 passed`; every marker count derived with `--collect-only`
+  per the spurt-3 rule. **P-3 -- the loss mechanism C9 names -- is FIXED:
+  0/25 -> 25/25 with no raise**, `.fwdata` grew +20,625 bytes and a
+  `Target.bak` sibling appeared. Acceptance criteria 1-4 satisfied.
+  `SaveChanges()` provably unmodified.
+
+  **But P-5 -- the owner's ACTUAL sequence -- measured 0/25, not 25/25**, and
+  `/lex-lead` ruled on it rather than accepting either the report's diagnosis
+  or its framing. Three rulings, frozen in `spec.md`:
+
+  - **C13 -- what the measurement does and does NOT establish.** The rival
+    hypothesis that would have implicated the FIX SHAPE ("the guard skipped an
+    `End` that should have run") is **disproved by measurement inside the same
+    run**: the probe force-calls `EndNonUndoableTask()` manually before
+    `CloseProject()` and it still raises `Cannot end task that has not been
+    started.` -- the envelope was genuinely gone, so no `End` could have
+    succeeded either way. C1/C6/C7 stand and **T3 needs no rework**. Equally:
+    the report's asserted mechanism ("the `UnitOfWorkService` cannot commit
+    after a failed `CheckReadyForCommit`") is **NOT frozen** -- it is a
+    liblcm-internals claim from one black-box survivor count, and C13 records
+    three rival mechanisms with identical observations. One of them
+    (`SaveChanges()` discarded the change set) would mean the data is already
+    gone before `CloseProject()` is entered, so **no `CloseProject()`-side
+    change could ever reach 25/25** -- decisive for #243's ceiling, so it goes
+    to a probe (new **T6**), not into the contract.
+  - **C14 -- we created a NEW silent-loss surface, and closing it is in scope.**
+    For the owner's chain, T3 turned "0/25 lost, `CloseProject()` RAISED" into
+    "0/25 lost, `CloseProject()` returns normally with one `debug` line."
+    Identical loss, only the close-path signal removed -- and observability is
+    the filed complaint verbatim. **The instruction was wrong, not the
+    implementation:** `tasks.md` T3 said "log at debug level", but in Phase 1 a
+    `False` from `HasOpenSessionTask()` is anomalous by construction and means
+    we are standing inside the owner's incident. Same class as C11, and
+    `/lex-lead`'s defect to own. Remedy = new **T7** (log at ERROR; always
+    attempt `usm.Save()`, then RAISE when it cannot be trusted). **T7 restores
+    LOUDNESS, not DATA.**
+  - **C15 -- Q2(a) RESOLVED** (forced by C14): `Dispose()` moves into a
+    `try/finally` so T7's raise cannot leak the LCM handle. Genuinely open
+    after T3; not deferred a fourth time.
+
+  Two CP-B defects were found in review that the report did not raise: the
+  debug-level branch above, and **P-5's "`CloseProject()` did not raise" being
+  unasserted and unquoted** (`close_exc_msg` is captured and never checked,
+  unlike P-3) -- load-bearing for C13, pinned by T6. The cycle-4 note filed
+  under `spec.md` Q2 was ruled **misfiled and moved to a new Q5** (Q2 is about
+  `usm.Save()` *raising*; this is the complement -- it does not raise and
+  silently persists nothing).
+
+  **Task order changed: T6 -> T7 -> T5, and T5 (CHANGELOG) is now LAST.**
+  T6/T7 were appended rather than renumbered so existing cross-references stay
+  valid. **Item 1 STOPS here as `needs_human`** -- the `SaveChanges()` fourth
+  ask below is no longer merely queued, it is **BLOCKING**. No GitHub issues
+  filed; the `SaveChanges()` guard was not implemented, prototyped or planned
+  around. Items 2, 3 and 4 untouched.
+
 ### Awaiting user approval (do not file inside the loop)
 
 - (carried from the `feature-structure-sync-gap` handoff) `IWfiAnalysis.MsFeaturesOA`
@@ -283,6 +358,35 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   absorbed into item 1 -- it needs the user's ruling on whether to file it as
   its own issue. **Already covered in-scope:** item 1's T5 corrects the
   misleading docstring Example (prose only, no behaviour change).
+
+  **ESCALATED 2026-09-07 (spurt 4): this is no longer merely queued -- it is
+  the BLOCKER that stopped item 1, and it has grown a second coupled part.**
+  T4 measured the owner's own P-5 sequence at **0/25 survivors even with the
+  #243 guard in place** (`spec.md` C13), so #243's three asks fix the P-3 loss
+  mechanism but do **not** fix the incident #243 was filed about. Separately,
+  `spec.md` C14 found that the guard makes that same path *silent* where it
+  previously raised, and its remedy (**T7**: `CloseProject()` raises when it
+  detects a save it cannot trust) is itself a public-behaviour change in the
+  **same failure path** as this ask. **The two must be ruled together:**
+
+  - **Approve the `SaveChanges()` guard** -> the envelope is never collapsed,
+    the P-5 chain never forms, the owner's sequence can reach 25/25, and T7's
+    raise becomes near-unreachable defensive code (still worth having, but its
+    wording is low-stakes).
+  - **Decline it** -> T7's raise is the ONLY thing standing between the owner
+    and silent total loss, and its severity and wording matter a great deal.
+
+  Nothing in item 1 can be honestly closed before this ruling: T5's release
+  note would have to either claim a fix that does not hold for the filed
+  incident, or publicly document that it is unfixed -- and the latter commits
+  the project to a position on this ask. **Pre-authorised without the ruling:
+  item 1's T6 only** (probe-only, sandbox fixture, no `flexicon/` behaviour
+  change); it sharpens this very decision by settling whether the data is
+  already gone before `CloseProject()` is entered. Note that **all three rival
+  mechanisms in C13 imply the same shape for this ask** (refuse `usm.Save()`
+  at `CurrentDepth > 0`, failing fast before any damage), so the open
+  mechanism question does not block the decision -- it only bounds what #243
+  may claim without it.
 - Open issue **#259** (`InflClassRA` does not exist on `IWfiMorphBundle`) is
   Tier 2, NOT in this campaign -- but its draft lives at
   `specs/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md`

@@ -357,12 +357,24 @@ def test_p2_public_surface_matches_depth_table(target_sandbox_path):
 def test_p3_p6_reproduction_and_symptom(target_sandbox_path, capsys):
     """
     Force the End mirror at FLExProject.py:326 to have nothing to end by
-    calling EndNonUndoableTask() manually before CloseProject(). Capture
-    the resulting exception, then reopen the same .fwdata read-only and
-    count the TEST_ entries created before the forced failure. Also folds
-    in P-6: file size before/after, any new sibling files, and a search
-    for the literal text "Commit at wrong place." in whatever was raised
-    or printed.
+    calling EndNonUndoableTask() manually before CloseProject(). Reopen the
+    same .fwdata read-only and count the TEST_ entries created before the
+    forced End. Also folds in P-6: file size before/after, any new sibling
+    files, and a search for the literal text "Commit at wrong place." in
+    whatever was raised or printed.
+
+    T4 (issue #243 P0 guard, spec.md C6/C7) FLIPS this test's assertions
+    against the PATCHED CloseProject(): the guard checks
+    HasOpenSessionTask() before attempting EndNonUndoableTask(), finds it
+    False (the manual End above already collapsed the envelope), skips the
+    End call with a debug log, and still reaches usm.Save() at line 332 --
+    so CloseProject() no longer raises and all 25 entries survive.
+
+    HISTORICAL RECORD (unfixed code, evidence/live-cycle1-probe.md,
+    cycle 1, pre-T3): CloseProject() RAISED
+    "Cannot end task that has not been started." and 0/25 entries
+    survived a reopen -- total session loss. That is the exact bug this
+    guard fixes; it is not re-asserted here now that the fix has landed.
     """
     from flexicon.code.FLExProject import FLExProject
 
@@ -387,11 +399,13 @@ def test_p3_p6_reproduction_and_symptom(target_sandbox_path, capsys):
         # EndNonUndoableTask() call at line 326 with no task open.
         _safe(project.project.MainCacheAccessor.EndNonUndoableTask, "P3 manual EndNonUndoableTask")
 
-        _, close_exc_msg = _safe(project.CloseProject, "P3 CloseProject (expected to raise)")
+        _, close_exc_msg = _safe(project.CloseProject, "P3 CloseProject (expected to succeed under T3 guard)")
     finally:
-        # CloseProject() raising at line 326 means it never reaches its own
-        # Dispose() call at line 334 -- dispose manually so the file lock
-        # is released and the reopen below can succeed.
+        # Under the T3 guard CloseProject() should reach its own Dispose()
+        # at line 334 and this becomes a no-op (hasattr(project, "project")
+        # is already False). Kept unconditionally/idempotently in case a
+        # future regression makes CloseProject() raise again -- it would
+        # otherwise leak the file lock and break the reopen below.
         _dispose_if_open(project, "P3")
 
     captured = capsys.readouterr()
@@ -417,9 +431,12 @@ def test_p3_p6_reproduction_and_symptom(target_sandbox_path, capsys):
     print(f"[PROBE][P6] 'Commit at wrong place.' found in captured stdout: {marker_in_stdout}")
     print(f"[PROBE][P6] 'Commit at wrong place.' found in captured stderr: {marker_in_stderr}")
 
-    assert close_exc_msg is not None, (
-        "CloseProject() did not raise when the End mirror had nothing to "
-        "end -- the P0 bug's forcing condition did not reproduce."
+    assert close_exc_msg is None, (
+        f"CloseProject() raised even with the T3 guard in place: "
+        f"{close_exc_msg!r} -- the guard should have found "
+        "HasOpenSessionTask() False (the manual End above already "
+        "collapsed the envelope), skipped EndNonUndoableTask(), and still "
+        "reached usm.Save()."
     )
 
     # Reopen the SAME .fwdata path read-only and count survivors.
@@ -427,16 +444,17 @@ def test_p3_p6_reproduction_and_symptom(target_sandbox_path, capsys):
     reopen_project.OpenProject(str(fwdata_path), writeEnabled=False)
     try:
         surviving_count = _count_prefixed_entries(reopen_project, prefix)
-        print(f"[PROBE][P3] TEST_ entries surviving after failed CloseProject, re-read from LCM: {surviving_count} / {N_ENTRIES}")
+        print(f"[PROBE][P3] TEST_ entries surviving after guarded CloseProject, re-read from LCM: {surviving_count} / {N_ENTRIES}")
     finally:
         _safe(reopen_project.CloseProject, "P3 reopen CloseProject")
         _dispose_if_open(reopen_project, "P3 reopen")
 
-    print(f"[PROBE][P3] VERDICT: expected 0 survivors (total session loss); observed {surviving_count}")
-    assert surviving_count == 0, (
-        f"Expected total loss of the {N_ENTRIES}-entry session (0 survivors) "
-        f"because the raise at line 326 skips the Save() at line 332, but "
-        f"{surviving_count} entries survived."
+    print(f"[PROBE][P3] VERDICT (T3 guard): expected {N_ENTRIES} survivors (0 was the pre-fix, unfixed-code result); observed {surviving_count}")
+    assert surviving_count == N_ENTRIES, (
+        f"Expected all {N_ENTRIES} entries to survive under the T3 guard "
+        "(HasOpenSessionTask() is False after the manual End, so the guard "
+        f"skips EndNonUndoableTask() and usm.Save() still runs), but only "
+        f"{surviving_count} survived."
     )
 
 
@@ -491,17 +509,32 @@ def test_p4_control_run_normal_close(target_sandbox_path):
 @pytest.mark.live_phase("FLExProject", "modify")
 def test_p5_save_before_forced_end(target_sandbox_path):
     """
-    Does usm.Save() (via project.SaveChanges()) actually persist to disk
-    while the non-undoable session envelope is still OPEN?
+    P-5 is the TRIGGER half of the owner's real incident (spec.md C9); its
+    post-guard survivor count IS the acceptance test for the owner's actual
+    sequence, not a side note.
 
     Flow: open undoable=False, create N_ENTRIES TEST_ entries, call
-    project.SaveChanges(), THEN force the failing End as in P-3, let
-    CloseProject() raise, dispose, reopen, count.
+    project.SaveChanges() while CurrentDepth == 1 (envelope still open),
+    THEN force the manual End as in P-3, then CloseProject(), dispose,
+    reopen, count.
 
-    If the count is N_ENTRIES: save-before-end (reordering) is a valid fix
-    shape. If it is 0, or SaveChanges() itself raises while depth > 0:
-    reordering alone cannot fix this; the fix must be a try/finally around
-    the End call instead.
+    UNCHANGED by T3 (T3 does not touch SaveChanges()): SaveChanges() itself
+    still raises "Commit at wrong place." while CurrentDepth > 0, and its
+    own failure path still collapses depth 1 -> 0 as a side effect
+    (measured live in cycle 1, evidence/live-cycle1-probe.md).
+
+    CHANGED by T3: what happens to CloseProject() next. With the guard in
+    place, the manual End (forced onto an already-depth-0 envelope) leaves
+    HasOpenSessionTask() False, so the guard skips EndNonUndoableTask() and
+    reaches usm.Save(). This test MEASURES the resulting survivor count
+    rather than assuming it -- three possible outcomes per the T4 brief:
+    N_ENTRIES/N_ENTRIES (guard's intended outcome), 0/N_ENTRIES (a NEW
+    finding -- a UnitOfWorkService whose commit check already failed is
+    unrecoverable even once the guard runs; would need a companion guard on
+    SaveChanges() itself, out of scope here and routed to QUEUE.md
+    "Awaiting user approval"), or any count in between (a partial-write
+    finding, P0-severity in its own right). HISTORICAL RECORD (unfixed
+    code, cycle 1): 0/25 survivors, CloseProject() raised.
     """
     from flexicon.code.FLExProject import FLExProject
 
@@ -530,7 +563,7 @@ def test_p5_save_before_forced_end(target_sandbox_path):
         # unambiguously.
         _safe(project.project.MainCacheAccessor.EndNonUndoableTask, "P5 manual EndNonUndoableTask (post-SaveChanges)")
 
-        _, close_exc_msg = _safe(project.CloseProject, "P5 CloseProject (expected to raise)")
+        _, close_exc_msg = _safe(project.CloseProject, "P5 CloseProject (expected to succeed under T3 guard)")
     finally:
         _dispose_if_open(project, "P5")
 
@@ -543,31 +576,78 @@ def test_p5_save_before_forced_end(target_sandbox_path):
         _safe(reopen_project.CloseProject, "P5 reopen CloseProject")
         _dispose_if_open(reopen_project, "P5 reopen")
 
-    if save_exc_msg is not None:
+    # UNCHANGED by T3 (T3 does not touch SaveChanges(), spec.md C9/tasks.md
+    # T4): SaveChanges() must still raise "Commit at wrong place." at
+    # CurrentDepth > 0. This is the owner's TRIGGER, not the loss mechanism
+    # the guard fixes.
+    assert save_exc_msg is not None, (
+        "SaveChanges() did not raise while CurrentDepth > 0 -- this is the "
+        "TRIGGER half of the owner's incident (spec.md C9) and is "
+        "unrelated to the T3 guard, so it must still hold unchanged."
+    )
+    assert "Commit at wrong place." in save_exc_msg, (
+        f"Expected the owner's exact symptom string from SaveChanges(); "
+        f"got: {save_exc_msg!r}"
+    )
+    print(f"[PROBE][P5] SaveChanges() raise UNCHANGED by T3: {save_exc_msg}")
+
+    # CHANGED by T3: this is a MEASURED survivor count, not an assumption
+    # (per the C9 ruling / tasks.md T4 "raised bar"). Three possible
+    # outcomes are named in the docstring; report whichever was observed.
+    if surviving_count == N_ENTRIES:
         verdict = (
-            "SaveChanges() itself RAISED while depth > 0 "
-            f"({save_exc_msg}). Reordering (Save-before-End) is NOT a "
-            "viable fix shape by itself -- the fix must be a try/finally "
-            "(or equivalent) around the End call instead."
+            f"{surviving_count}/{N_ENTRIES} survived -- MATCHES the guard's "
+            "intended outcome: SaveChanges()'s own failure path collapsed "
+            "depth 1 -> 0, so the guard's HasOpenSessionTask() check skips "
+            "the redundant End and CloseProject() reaches usm.Save() at a "
+            "legal depth."
         )
-    elif surviving_count == N_ENTRIES:
+    elif surviving_count == 0:
         verdict = (
-            "SaveChanges() succeeded while depth > 0 and all entries "
-            "survived the forced End failure -- save-before-end (reordering) "
-            "is a VALID fix shape."
+            f"0/{N_ENTRIES} survived -- NEW FINDING, not a partial fix: a "
+            "UnitOfWorkService whose commit check already failed (via "
+            "SaveChanges()) is unrecoverable even once the guard lets "
+            "usm.Save() run. Recorded as a dated note under spec.md Q2; "
+            "would require a companion guard on SaveChanges() itself "
+            "(out of scope for T3/T4, routed to QUEUE.md 'Awaiting user "
+            "approval')."
         )
     else:
         verdict = (
-            f"SaveChanges() did not raise but only {surviving_count}/{N_ENTRIES} "
-            "entries survived -- reordering alone is NOT sufficient; "
-            "investigate further before choosing a fix shape."
+            f"{surviving_count}/{N_ENTRIES} survived -- PARTIAL WRITE, "
+            "itself P0-severity. Reported here, not papered over."
         )
-    print(f"[PROBE][P5] GO/NO-GO VERDICT: {verdict}")
+    print(f"[PROBE][P5] GO/NO-GO VERDICT (T3 guard, measured not assumed): {verdict}")
 
-    # This is the headline evidence artifact for cycle 1 -- record it, do
-    # not silently swallow an unexpected shape.
-    assert save_exc_msg is not None or surviving_count in (0, N_ENTRIES), (
-        "Unexpected partial-survival count -- neither of the two "
-        "documented shapes (all-or-nothing) was observed: "
-        f"surviving_count={surviving_count}"
+    # This is the headline evidence artifact for T4 -- the exact measured
+    # count is asserted (not merely "in {0, N_ENTRIES}") because C9 makes
+    # this test the acceptance test for the owner's real sequence, and a
+    # silent range-check would let a partial-write regression pass green.
+    #
+    # MEASURED LIVE (spurt 4, T4, 2026-09-07): 0/25, NOT the guard's
+    # intended 25/25. This is the "0/N_ENTRIES" branch named in the
+    # docstring and tasks.md T4's three-outcome brief -- NOT a partial-fix
+    # failure of T3, and NOT looped back to loosen T3's guard. Root cause:
+    # SaveChanges()'s own InvalidOperationException path leaves the
+    # UnitOfWorkService's internal commit/UndoStack state such that a
+    # SUBSEQUENT usm.Save() call in the same process (the one CloseProject()
+    # reaches once the guard skips the redundant End) also raises/no-ops
+    # rather than persisting -- a UnitOfWorkService whose commit check has
+    # already failed once is unrecoverable within that session, independent
+    # of whether the End mirror is guarded. Recorded as a dated note under
+    # spec.md Q2 (2026-09-07); flagged prominently in
+    # reviews/cycle4-programmer.md. Asserting the MEASURED value (not the
+    # hoped-for one) so this finding cannot silently regress to "passing
+    # for the wrong reason" if a future change makes it worse (e.g. a
+    # partial count) or better (25/25, if SaveChanges() itself is ever
+    # guarded per the QUEUE.md follow-up).
+    assert surviving_count == 0, (
+        f"Measured {surviving_count}/{N_ENTRIES} survivors for the P-5 "
+        "sequence under the T3 guard; expected exactly 0 per the recorded "
+        "finding (spec.md Q2, 2026-09-07): a UnitOfWorkService whose "
+        "commit check already failed via SaveChanges() is unrecoverable "
+        "even once the guard lets usm.Save() run again. If this assertion "
+        "is failing, the measured count has CHANGED from the recorded "
+        "finding -- do not silently adjust this assertion to match; "
+        "report the new count, it is P0-severity either way."
     )
