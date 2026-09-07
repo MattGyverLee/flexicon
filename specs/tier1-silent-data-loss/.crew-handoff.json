@@ -5,40 +5,62 @@
   "completion_promise": "TIER1 COMPLETE",
   "promise_condition": "all four queue items status=done, gates green, live evidence on file. A per-feature feature_complete from lex-lead does NOT satisfy this.",
   "loop_status": "CANCELLED. The ralph-loop Stop hook was removed at iteration 5 of 40 on item 1's needs_human handoff. Nothing re-enters on its own; the main session drives lex-lead spurts directly on explicit user authorisation, one queue item at a time.",
-  "active_index": 2,
-  "active_feature": "242-paragraph-whitespace",
-  "next_entry": "Item 2 (242-paragraph-whitespace, flexicon#242) is ACTIVE and AUTHORISED by the user (2026-09-07). No spec, tasks, STATUS or handoff json exists for it yet; specs/242-paragraph-whitespace/{reviews,evidence}/ are scaffolded and empty. Checkpoint 1 = spec + tasks + a LIVE probe measuring what is actually stripped, on which of the four writers, and whether any caller depends on the stripping. The stripping may be load-bearing for the FLEx null-marker path -- check Shared/string_utils.normalize_text BEFORE proposing a behaviour change. Item 1's sign-off authorised NO work on items 3 or 4.",
+  "active_index": null,
+  "active_feature": null,
+  "next_entry": "Items 3 and 4 remain NOT AUTHORISED. Nothing is active. Item 3 (feature-structure-sync-gap, #251/252/253/256) is RESUME-not-replan: its own .crew-handoff.json next_entry is authoritative (T1 ALONE). Item 4 (250-writingsystem-activation) needs an API-surface policy decision and is the item most likely to end needs_human. Do not start either without explicit user authorisation. Three new approval asks from item 2 sit in QUEUE.md: Q-242A, Q-242B, Q-242C. Q-242B (CheckOperations non-str branch loses the payload ENTIRELY) is Tier-1 silent data loss on its own merits and may warrant promotion into the queue proper rather than sitting as a follow-up.",
   "items_done": [
     {
       "index": 1,
       "slug": "243-closeproject-save-guard",
-      "issues": [243],
+      "issues": [
+        243
+      ],
       "closed": "2026-09-07, spurt 9 / cycle 9, feature_complete APPROVED by lex-lead",
       "outcome": "#243's filed loss chain FIXED and measured 0/25 -> 25/25 survivors, in memory and on disk, re-read from the LCM after close-and-reopen. Two guards: SaveChanges() refuses at CurrentDepth > 0 with FP_TransactionError before usm.Save() is attempted (C21, a PUBLIC BEHAVIOUR CHANGE), and CloseProject()'s End mirror can no longer skip usm.Save() (C1/C6/C7). Contract C1-C30 frozen. Commits 8629d25, f3a0f50, 702f96b, 9dfd55d, f19304e, 0c82535, b0e3d14.",
       "not_claimed": "The Target.fwdata replacement by the crash-recovery copy is UNEXPLAINED and NOT fixed (C10) -- nothing in the fix surface could cause or prevent it. One narrow residual is unmeasured: a state where the depth read raises while ObjectRepository() and usm.Save() both still succeed at depth > 0 (C28), claimed neither safe nor a bug. All measurements are single-client on a target_sandbox_path copy; no shared/multi-client recovery behaviour was measured.",
       "github": "flexicon#243 deliberately left OPEN. The crew files and closes nothing; lex-lead recommends keeping it open to carry the unexplained .fwdata half rather than closing and depending on a follow-up being written."
+    },
+    {
+      "index": 2,
+      "slug": "242-paragraph-whitespace",
+      "issues": [
+        242
+      ],
+      "closed": "2026-09-07, cycle 4, feature_complete APPROVED by lex-lead",
+      "outcome": "Four writers (ParagraphOperations Create/SetText/InsertAt, SegmentOperations AppendSentence) validated emptiness on a .strip()ed copy then persisted that stripped copy. They now validate on a throwaway and persist the caller's original bytes; 8 payloads confirmed round-tripping byte-for-byte through all four writers, the layer-B raw-MakeString bypass, and in-memory/on-disk. Whitespace-only input still raises FP_ParameterError at all four, verbatim messages, no write before the raise. AppendSentence's non-str branch no longer strips, harmonising str/non-str. C12 additionally fixed a PRE-EXISTING AppendSentence join-boundary defect exposed (not introduced) by the whitespace fix: the terminator was inserted past a paragraph's trailing whitespace ('foo ' + 'bar' gave 'foo . bar'; 'foo.  ' gave the double terminator 'foo.  . bar'). It now anchors at the last non-whitespace char and reuses the existing whitespace as the separator ('foo. bar', 'foo.  bar'), deleting ZERO characters, and is provably inert whenever trailing whitespace is absent -- i.e. on every input reachable before this fix. 9/9 predictions matched, zero misses. Independent gate GREEN, zero P0s, all six checks re-derived from source and git history. Contract C1-C14 frozen.",
+      "not_claimed": "The owner's field figures (44/104 paragraph contents, 41/86 segment baselines, Ejagham Mini -> Target) were NOT reproduced; Checkpoint 4 was DECLINED, not deferred (C13). All verification is single-client against target_sandbox copies. The 8 sibling sites (Q-242A), CheckOperations' total non-str payload loss (Q-242B) and coercion policy (Q-242C) are untouched.",
+      "github": "flexicon#242 left as-is. The crew files and closes nothing."
     }
   ],
   "queue": [
     {
       "index": 1,
       "slug": "243-closeproject-save-guard",
-      "issues": [243],
+      "issues": [
+        243
+      ],
       "status": "done",
       "spec_exists": true
     },
     {
       "index": 2,
       "slug": "242-paragraph-whitespace",
-      "issues": [242],
-      "status": "active",
-      "spec_exists": false,
+      "issues": [
+        242
+      ],
+      "status": "done",
+      "spec_exists": true,
       "note": "User authorised 2026-09-07. Four writers strip leading/trailing whitespace but persist the STRIPPED value: ParagraphOperations.py:171 (Create), :576 (SetText), :716 (InsertAt), SegmentOperations.py:589 (AppendSentence). The strip is only needed for the emptiness check. Owner field evidence, Ejagham Mini -> Target: 44 of 104 paragraph contents and 41 of 86 segment baselines DIFFERED, every difference lost trailing whitespace. Irony on the record: Create and AppendSentence gained guid= in #239 specifically so objects could be reproduced faithfully -- they now preserve identity perfectly but still cannot preserve the text. Owner suggested fix: validate on a stripped copy, write the caller's original. Owner also offered a preserve_whitespace kwarg as an alternative and offered to open a PR. CHECK Shared/string_utils.normalize_text for null-marker ('***') interaction before ruling on the shape."
     },
     {
       "index": 3,
       "slug": "feature-structure-sync-gap",
-      "issues": [251, 252, 253, 256],
+      "issues": [
+        251,
+        252,
+        253,
+        256
+      ],
       "status": "queued",
       "spec_exists": true,
       "note": "NOT AUTHORISED. RESUME, do not re-plan. Contract C1-C8 frozen, rulings D1-D5 settled, spurt 1 complete. Its own .crew-handoff.json next_entry is authoritative: T1 ALONE (13 owner classes into lcm_casting._interface_cache + caller-delta enumeration + green offline suite and NC/Phoneme live tests) before T2."
@@ -46,7 +68,9 @@
     {
       "index": 4,
       "slug": "250-writingsystem-activation",
-      "issues": [250],
+      "issues": [
+        250
+      ],
       "status": "queued",
       "spec_exists": false,
       "note": "NOT AUTHORISED. LAST on purpose -- needs an API-surface policy decision, so it is the item most likely to end needs_human. Must cover both routes into the silent skip: store-vs-active AND case/separator normalization. Note the cycle-6 lex-domain finding on item 1: writing-system add/remove/change is one instance of a broader class of schema/metadata-mutating operations, which is itself a separate queued approval ask -- this item is the instance, not the class audit."
@@ -63,14 +87,15 @@
     "Do not file new GitHub issues inside crew work; append them to QUEUE.md 'Awaiting user approval'.",
     "A task that states an a-priori prediction commits it BEFORE the measuring run, so temporal order is provable from history (C28 forward rule).",
     "No spurt may close with a top-of-file state summary that contradicts the record (C27). This campaign-level .crew-handoff.json is the MAIN SESSION's to maintain -- it went stale at item 1's closure (left reading spurt 5 / needs_human / active_index 1) and was rewritten by the main session on 2026-09-07. Doc agents are explicitly out of scope for it; whoever closes a queue item must update it in the same pass.",
-    "No emoji in console output (Windows)."
+    "No emoji in console output (Windows).",
+    "A rise in the offline DESELECTED count equal to the number of newly added requires_live_project tests is expected and needs only the new tests named; a change in the offline PASSED count always requires explanation. Baseline: 1292 passed (483 deselected as of ed428f7)."
   ],
-  "spurts_completed": 9,
+  "spurts_completed": 13,
   "blocker": null,
   "campaign_log_pointer": "specs/tier1-silent-data-loss/QUEUE.md -> 'Campaign Log'",
-  "deferred_needs_user_approval_pointer": "specs/tier1-silent-data-loss/QUEUE.md -> 'Awaiting user approval'. As of item 1's closure this holds: (1) C25 -- does UndoableUnitOfWorkHelper.Dispose() + set_RollBack(True) actually discard anything? P-11 measured 25/25 SURVIVING an escaping exception, contradicting undoable_operation.py's own claim; (2) C29 -- transaction.py:146-153 records the OPPOSITE outcome for a created POS and is the record's only counter-measurement, with four uncontrolled variables between them; (3) the docs/TRANSACTION_GUIDE.md API-reference gap, gated behind (1); (4) the depth-guard-coverage audit of the broader schema-mutating class (lex-domain cycle-6 Q2), overlapping issue #250. Plus ONE ungated cleanup needing no approval: C30 -- bound test_transaction_honesty.py's source-slice windows by the next 'def ' rather than a magic width; do NOT widen 6000 to 8000.",
-  "campaign_progress": "1 of 4 items done (#243). Item 2 (#242) active and authorised. Items 3 and 4 untouched and NOT authorised.",
-  "code_landed_so_far": "flexicon/code/FLExProject.py (CurrentDepth, HasOpenSessionTask(), _ReadActionHandlerDepth(), the SaveChanges() depth guard, the CloseProject() End-guard plus ERROR log and try/finally Dispose), flexicon/code/undoable_operation.py (P-11 measured caveat, docstring only). Nothing else under flexicon/ has been modified by this campaign.",
+  "deferred_needs_user_approval_pointer": "specs/tier1-silent-data-loss/QUEUE.md -> 'Awaiting user approval'. As of item 1's closure this holds: (1) C25 -- does UndoableUnitOfWorkHelper.Dispose() + set_RollBack(True) actually discard anything? P-11 measured 25/25 SURVIVING an escaping exception, contradicting undoable_operation.py's own claim; (2) C29 -- transaction.py:146-153 records the OPPOSITE outcome for a created POS and is the record's only counter-measurement, with four uncontrolled variables between them; (3) the docs/TRANSACTION_GUIDE.md API-reference gap, gated behind (1); (4) the depth-guard-coverage audit of the broader schema-mutating class (lex-domain cycle-6 Q2), overlapping issue #250. Plus ONE ungated cleanup needing no approval: C30 -- bound test_transaction_honesty.py's source-slice windows by the next 'def ' rather than a magic width; do NOT widen 6000 to 8000. Item 2 added three more: Q-242A (8 sibling validate-stripped/persist-stripped sites, blocked on a dedup-identity ruling), Q-242B (CheckOperations non-str TOTAL payload loss -- Tier-1 in its own right, filed separately and more severely so it is not triaged at whitespace severity), Q-242C (str/non-str coercion policy harmonisation). Item 2 also DECLINED, rather than deferred, the corpus-shaped reproduction of the owner's 41/86 figure (C13): the mechanism was proven directly at unit level, so the field figure is NOT claimed as reproduced.",
+  "campaign_progress": "2 of 4 items done (#243, #242). Items 3 and 4 untouched and NOT authorised. No item is active; the next one requires explicit user authorisation.",
+  "code_landed_so_far": "flexicon/code/FLExProject.py (CurrentDepth, HasOpenSessionTask(), _ReadActionHandlerDepth(), the SaveChanges() depth guard, the CloseProject() End-guard plus ERROR log and try/finally Dispose), flexicon/code/undoable_operation.py (P-11 measured caveat, docstring only). Nothing else under flexicon/ has been modified by this campaign. Item 2 added flexicon/code/TextsWords/ParagraphOperations.py (Create/SetText/InsertAt: validate on a throwaway strip, persist the original) and flexicon/code/TextsWords/SegmentOperations.py (AppendSentence: same, plus the C12 join-boundary terminator anchor). Nothing else under flexicon/ has been modified by this campaign.",
   "github_issues_filed": [],
   "updated": "2026-09-07"
 }
