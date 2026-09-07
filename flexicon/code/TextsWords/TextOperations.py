@@ -149,7 +149,6 @@ class TextOperations(BaseOperations):
         """
         self._EnsureWriteEnabled()
         self._ValidateStringNotEmpty(name, "text name")
-        name = name.strip()
 
         # Check if text with this name already exists
         if self.Exists(name):
@@ -455,13 +454,16 @@ class TextOperations(BaseOperations):
             Create, GetAll, GetName
         """
         self._ValidateStringNotEmpty(name, "text name")
-        name = name.strip()
 
-        # Check all texts for matching name
-        target = normalize_match_key(name, casefold=False)
+        # Check all texts for matching name. Both sides of the comparison
+        # are stripped inline (C4) -- the needle so a padded caller
+        # argument still matches, and the haystack so a name persisted
+        # with its original whitespace (see Create/SetName, which no
+        # longer strip before persisting) is not invisible to this check.
+        target = normalize_match_key(name, casefold=False).strip()
         for text in self.project.ObjectsIn(ITextRepository):
             text_name = ITsString(text.Name.BestAnalysisAlternative).Text
-            if normalize_match_key(text_name, casefold=False) == target:
+            if normalize_match_key(text_name, casefold=False).strip() == target:
                 return True
 
         return False
@@ -605,7 +607,13 @@ class TextOperations(BaseOperations):
 
         self._ValidateParam(name, "name")
 
-        name = name.strip()
+        # Throwaway .strip() call: not reassigned to `name`, so the persist
+        # below writes the caller's original, unstripped bytes (C4). The
+        # call is still MADE (result discarded) so a non-str payload still
+        # raises AttributeError here, exactly as before -- per C7(b), this
+        # site's exception TYPE on non-str input is Q-242C's concern, not
+        # this feature's, and must not change.
+        name.strip()
         self._ValidateParam(name, "name")
 
         text_obj = self.__GetTextObject(text_or_hvo)

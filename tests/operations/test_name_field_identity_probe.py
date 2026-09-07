@@ -147,17 +147,27 @@ def test_pn1_control_padded_needle_finds_unpadded_public_api_name(target_sandbox
 @pytest.mark.live_phase("TextOperations", "modify")
 def test_pn2_core_texts_haystack_never_stripped(target_sandbox):
     """
-    PN2 (CORE, binding under the refutation clause): create a text, then
-    set its Name DIRECTLY via TsStringUtils.MakeString to "TEST_NF_Raw "
-    (layer B, bypassing Texts.SetName/Create's own strip -- simulates
-    POST-FIX stored state). Then:
-      - Exists("TEST_NF_Raw")  -> PREDICTED False
-      - Exists("TEST_NF_Raw ") -> PREDICTED False
-    Both predicted False because the needle is stripped either way but the
-    haystack (raw stored name, with its trailing space) is never stripped
-    by Exists() (TextOperations.py:458 strips only the `name` PARAMETER;
-    :464 builds the haystack key straight from `text.Name`, and
-    normalize_match_key does no stripping at all).
+    PN2 (CORE), FLIPPED to assert T2's FIXED behaviour (tasks.md T2,
+    spec.md C4): create a text, then set its Name DIRECTLY via
+    TsStringUtils.MakeString to "TEST_NF_Raw " (layer B, bypassing
+    Texts.SetName/Create -- simulates a name persisted with its original
+    whitespace, which is now the REAL behaviour of Create/SetName post-fix,
+    not just a simulation of it). Then:
+      - Exists("TEST_NF_Raw")  -> PREDICTED True
+      - Exists("TEST_NF_Raw ") -> PREDICTED True
+    Both predicted True because Exists() now strips BOTH the needle and the
+    haystack inline before comparing (TextOperations.py:461/:464), so a
+    padded stored name is found by either a padded or unpadded needle.
+
+    PRE-FIX BEHAVIOUR (historical record, cycle 1, `spec.md` C1): before
+    T2's comparison-symmetry fix, Exists() stripped only the needle
+    parameter (old `:458`) and built the haystack key straight from the
+    raw `text.Name` with no stripping at all -- so BOTH
+    Exists("TEST_NF_Raw") and Exists("TEST_NF_Raw ") returned False against
+    this same padded haystack. That was the measured, binding result this
+    test originally locked down (see `evidence/live-probe-cycle1.md`); this
+    flip is the intended, authorised consequence of C3/C4 landing, not a
+    silent behaviour change discovered by accident.
     """
     from SIL.LCModel.Core.Text import TsStringUtils
 
@@ -199,22 +209,22 @@ def test_pn2_core_texts_haystack_never_stripped(target_sandbox):
 
     print(
         f"[VERDICT][PN2] Exists({unpadded_needle!r}) -> {found_unpadded!r} "
-        f"(PREDICTED False); Exists({padded_needle!r}) -> {found_padded!r} "
-        f"(PREDICTED False)"
+        f"(PREDICTED True, post-fix); Exists({padded_needle!r}) -> "
+        f"{found_padded!r} (PREDICTED True, post-fix)"
     )
 
-    if found_unpadded is not False or found_padded is not False:
+    if found_unpadded is not True or found_padded is not True:
         print(
             "[REFUTATION][PN2] MEASURED OPPOSITE TO PREDICTION -- the needle "
-            "DID find the padded haystack. This REFUTES the ruling's premise "
-            "that dedup paths strip the needle only, never the haystack. "
-            "Reported plainly, NOT reconciled."
+            "did NOT find the padded haystack even after T2's comparison-"
+            "symmetry fix. This REFUTES the fix's premise (both sides "
+            "stripped inline). Reported plainly, NOT reconciled."
         )
-    assert found_unpadded is False, (
-        f"PN2 MISS (unpadded needle): expected False, got {found_unpadded!r}"
+    assert found_unpadded is True, (
+        f"PN2 MISS (unpadded needle, post-fix): expected True, got {found_unpadded!r}"
     )
-    assert found_padded is False, (
-        f"PN2 MISS (padded needle): expected False, got {found_padded!r}"
+    assert found_padded is True, (
+        f"PN2 MISS (padded needle, post-fix): expected True, got {found_padded!r}"
     )
 
 
@@ -548,24 +558,36 @@ def test_pn7_three_way_split_nonstr_payload(target_sandbox):
 @pytest.mark.live_phase("TextOperations", "add")
 def test_pn8_duplicate_explosion_via_unstripped_haystack(target_sandbox):
     """
-    PN8 (binding under the refutation clause): layer-B store a text named
-    "TEST_NF_Dup " (trailing space, bypassing Create's own strip), then
-    call Texts.Create("TEST_NF_Dup ") through the PUBLIC API ->
-    PREDICTED it SUCCEEDS (no FP_ParameterError for "already exists"),
-    because Create()'s own duplicate check (:155) calls
-    self.Exists(name) where `name` has ALREADY been stripped (:152) to
-    "TEST_NF_Dup", and per PN2's mechanism Exists("TEST_NF_Dup") against
-    the raw unstripped haystack "TEST_NF_Dup " returns False.
+    PN8, FLIPPED to assert T2's FIXED behaviour -- THE C8 anti-regression
+    pin (tasks.md T2, spec.md C8): layer-B store a text named
+    "TEST_NF_Dup " (trailing space -- this now matches what the REAL,
+    fixed Create() itself would persist, not merely a simulation of a
+    future state). Then call Texts.Create("TEST_NF_Dup ") through the
+    PUBLIC API with the SAME padded name -> PREDICTED it RAISES
+    FP_ParameterError ("already exists"), because Exists() now strips
+    BOTH sides of the comparison (T2's fix), so the second call's padded
+    needle matches the first (bypass-written) record's padded haystack.
 
-    FLAGGED NUANCE (stated in the predictions file before this run):
-    because Create() persists the ALREADY-STRIPPED local `name` (not the
-    original argument), the SECOND text's stored Name is predicted to be
-    "TEST_NF_Dup" (no trailing space) -- not byte-identical to the first
-    (bypass-created) text's stored "TEST_NF_Dup " (with trailing space).
-    The BINDING claim under the refutation clause is "Create SUCCEEDS
-    despite a pre-existing collision, yielding two text objects" -- that
-    is asserted below. The byte-identical-name sub-detail is measured and
-    reported separately, plainly, not smoothed into the headline verdict.
+    C8's SECOND half is also checked here: the FIRST (bypass-written)
+    text's stored Name must re-read BYTE-IDENTICAL (trailing space
+    intact) -- re-read from the LCM, not merely the value passed in.
+
+    PRE-FIX BEHAVIOUR (historical record, cycle 1, `spec.md` C2/C8): before
+    T2's fix, this same scenario measured the OPPOSITE -- Create()'s own
+    duplicate check called self.Exists(name) where `name` had ALREADY been
+    stripped (old `:152`) to "TEST_NF_Dup", and Exists("TEST_NF_Dup")
+    against the raw unstripped haystack "TEST_NF_Dup " returned False (PN2's
+    mechanism), so the SECOND Create() call SUCCEEDED, producing two
+    distinct IText objects -- the duplicate-explosion this feature exists
+    to close. That run also flagged a non-binding sub-detail: the second
+    (public-API) record's stored name was NOT byte-identical to the first,
+    because pre-fix Create() persisted its own already-stripped local
+    `name`, not the caller's original argument. Per `spec.md` C2's own
+    prediction, once C4 lands both persist AND comparison together, that
+    intermediate "duplicate persists non-byte-identically" state is no
+    longer reachable in practice -- this flipped test confirms exactly
+    that: there is no longer a second record to compare at all, because
+    the second call now raises instead of persisting.
     """
     from SIL.LCModel.Core.Text import TsStringUtils
     from SIL.LCModel.Core.KernelInterfaces import ITsString
@@ -598,56 +620,50 @@ def test_pn8_duplicate_explosion_via_unstripped_haystack(target_sandbox):
     second_text, create_exc = _safe(
         lambda: project.Texts.Create(dup_name), "PN8 Create(padded, public API)"
     )
-    print(f"[VERDICT][PN8] Create({dup_name!r}) via public API -> exc={create_exc!r} (PREDICTED None/success)")
+    print(
+        f"[VERDICT][PN8] Create({dup_name!r}) via public API -> exc={create_exc!r} "
+        f"(PREDICTED FP_ParameterError, post-fix)"
+    )
 
-    if create_exc is not None:
+    if create_exc is None:
         print(
             "[REFUTATION][PN8] MEASURED OPPOSITE TO PREDICTION -- Create() "
-            "raised instead of succeeding, meaning the duplicate guard DID "
-            "fire despite the padded haystack. This REFUTES the ruling's "
-            "premise. Reported plainly, NOT reconciled."
+            "SUCCEEDED instead of raising, meaning the duplicate guard did "
+            "NOT fire despite T2's comparison-symmetry fix. This REFUTES "
+            "the fix's premise. Reported plainly, NOT reconciled."
         )
-    assert create_exc is None, (
-        f"PN8 MISS (BINDING): expected Texts.Create({dup_name!r}) to SUCCEED "
-        f"(duplicate guard bypassed by the unstripped haystack) -- it raised "
-        f"{create_exc!r} instead"
+    assert create_exc is not None and create_exc.startswith("FP_ParameterError"), (
+        f"PN8 MISS (BINDING, C8 pin half 1): expected Texts.Create({dup_name!r}) "
+        f"to RAISE FP_ParameterError ('already exists'), post-fix -- got "
+        f"{create_exc!r} instead (second_text={second_text!r})"
     )
-    assert second_text is not None, "PN8: Create() returned no object despite no exception"
 
-    second_raw = ITsString(second_text.Name.BestAnalysisAlternative).Text
-    print(f"[TABLE][PN8] second (public-API) text stored Name: {second_raw!r}")
+    # C8 pin half 2: the FIRST (bypass-written) text's stored Name must
+    # re-read BYTE-IDENTICAL from the LCM after the write -- re-read here,
+    # not merely re-asserted against the value passed in earlier.
+    first_reread = ITsString(first_text.Name.BestAnalysisAlternative).Text
+    print(f"[TABLE][PN8] first text stored Name, re-read after the rejected duplicate attempt: {first_reread!r}")
+    assert first_reread == dup_name, (
+        f"PN8 MISS (BINDING, C8 pin half 2): expected the first text's "
+        f"stored Name to re-read byte-identical to {dup_name!r} -- got "
+        f"{first_reread!r}"
+    )
 
-    # Count distinct IText objects a naive normalized-substring search would
-    # consider "the Dup text", by re-reading from the LCM.
+    # Confirm exactly ONE IText matches this name post-fix -- no duplicate
+    # was created (the rejected second Create() call must not have
+    # persisted a partial/second record).
     dup_texts = []
     for t in project.Texts.GetAll():
         t_name = ITsString(t.Name.BestAnalysisAlternative).Text
         if t_name and t_name.strip() == dup_name.strip():
             dup_texts.append((str(t.Guid), t_name))
-    print(f"[SUMMARY][PN8] texts whose stripped name matches {dup_name.strip()!r}: {dup_texts}")
+    print(f"[SUMMARY][PN8] texts matching {dup_name!r} post-fix (stripped comparison): {dup_texts}")
 
-    assert len(dup_texts) == 2, (
-        f"PN8 MISS (BINDING): expected exactly TWO distinct IText objects "
-        f"matching {dup_name.strip()!r} after the duplicate-explosion -- "
-        f"found {len(dup_texts)}: {dup_texts}"
+    assert len(dup_texts) == 1, (
+        f"PN8 MISS (BINDING): expected exactly ONE IText object matching "
+        f"{dup_name!r} post-fix (the duplicate must have been REJECTED, "
+        f"not persisted) -- found {len(dup_texts)}: {dup_texts}"
     )
-
-    if second_raw == first_raw:
-        print(
-            "[VERDICT][PN8] sub-detail CONFIRMED: both texts' stored Name "
-            "values are byte-identical."
-        )
-    else:
-        print(
-            f"[VERDICT][PN8] sub-detail MISS (non-binding, reported plainly): "
-            f"the two texts' stored Name values are NOT byte-identical -- "
-            f"first={first_raw!r} (raw bypass, trailing space preserved) vs "
-            f"second={second_raw!r} (public-API Create(), which strips "
-            f"BEFORE persisting at TextOperations.py:152, so its own "
-            f"trailing space never reaches storage). The BINDING duplicate-"
-            f"explosion claim (two objects, same effective identity to a "
-            f"human) still holds regardless of this sub-detail."
-        )
 
 
 # ===========================================================================
