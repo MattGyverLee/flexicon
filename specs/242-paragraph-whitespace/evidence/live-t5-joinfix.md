@@ -61,4 +61,50 @@ file), NOT through `Paragraphs.Create`.
 
 ## Results
 
-(added after the live run, second commit)
+Command run:
+```
+$env:FLEXLIBS_REQUIRE_LIVE="1"
+python -m pytest tests/operations/test_issue242_whitespace_probe.py -m requires_live_project -q -s
+```
+Result: **8 passed**. `tests/live_status.json` `"run_mode": "live"` (re-checked
+directly after the run). Fixtures: `target_sandbox`/`target_sandbox_path`
+only; the real Target was never opened.
+
+### Prediction vs measured (all re-read from the LCM after the write)
+
+| Existing Contents | Predicted | Measured | Match |
+|---|---|---|---|
+| `''` | `'bar'` | `'bar'` | MATCH |
+| `'foo'` | `'foo. bar'` | `'foo. bar'` | MATCH |
+| `'foo.'` | `'foo. bar'` | `'foo. bar'` | MATCH |
+| `'foo!'` | `'foo! bar'` | `'foo! bar'` | MATCH |
+| `'foo '` | `'foo. bar'` | `'foo. bar'` | MATCH (P8 FIXED) |
+| `'foo   '` | `'foo.   bar'` | `'foo.   bar'` | MATCH |
+| `'foo.  '` | `'foo.  bar'` | `'foo.  bar'` | MATCH |
+| `'foo\t'` | `'foo.\tbar'` | `'foo.\tbar'` | MATCH |
+| `'   '` (whitespace-only, layer-B bypass) | `'   bar'` | `'   bar'` | MATCH |
+
+Zero MISSes. All 9 rows match, including the whitespace-only row, built
+via the layer-B bypass (`test_p8b`) exactly as planned -- not faked, and
+the emptiness-raise on the public API was not relaxed.
+
+### C12.4 inertness proof
+
+The first four rows (`''`, `'foo'`, `'foo.'`, `'foo!'`) -- all `trail == 0`,
+the only paragraph shapes reachable through the public API before this
+feature landed -- are byte-for-byte identical to cycle 2's `test_p1`/
+`test_p2` post-T1/T2 behaviour. The C12 ruling is NOT falsified.
+
+### Offline baseline
+
+`python -m pytest tests -m "not requires_live_project" -q` -> **1292
+passed, 483 deselected** (cycle 2 was 482 deselected; the +1 delta is
+`test_p8b`, a new `requires_live_project` test added this cycle -- explained,
+not absorbed). Re-run both before and after the live run with an identical
+result.
+
+### Commits
+
+- Predictions: `a580f7b` (this file, committed before any code/test change).
+- Results + code + tests: see the cycle-3 programmer report for the SHA
+  (committed together, matching cycle 2's `066bab0` pattern).

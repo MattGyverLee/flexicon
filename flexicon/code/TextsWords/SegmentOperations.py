@@ -610,21 +610,59 @@ class SegmentOperations(BaseOperations):
             current_length = para.Contents.Length
 
             if current_length > 0:
-                # Check the last character of the current contents
-                last_char_pos = current_length - 1
-                last_char = para.Contents.Text[last_char_pos] if para.Contents.Text else ""
+                # NOTE (#242 C12): AppendSentence may INSERT at the join
+                # boundary. It may never DELETE at the join boundary. Now
+                # that Create/SetText/InsertAt preserve caller-supplied
+                # whitespace (#242), para.Contents can legitimately end in
+                # whitespace, so the RAW last character is no longer a
+                # reliable signal of "already terminated". rstrip() below
+                # is used ONLY to compute an index (`anchor`); the
+                # stripped string it returns is never written and never
+                # passed to MakeString -- ZERO characters are removed by
+                # this branch in any case.
+                raw = para.Contents.Text or ""
+                # anchor: index one past the last non-whitespace character.
+                anchor = len(raw.rstrip())
+                # trail: count of trailing whitespace characters.
+                trail = current_length - anchor
 
-                if last_char not in (".", "!", "?"):
-                    # Insert ". " as sentence terminator
+                if raw == "" and current_length > 0:
+                    # Degenerate case (Contents.Text is None/empty while
+                    # Length > 0) -- preserve today's behaviour exactly;
+                    # do not route this through the new logic below.
                     terminator = TsStringUtils.MakeString(". ", ws)
                     bldr.ReplaceTsString(current_length, current_length, terminator)
-                    # Recalculate insertion point after terminator
                     insert_at = current_length + 2
+                elif anchor == 0:
+                    # Contents is non-empty but entirely whitespace -- no
+                    # sentence to terminate. Insert no terminator and no
+                    # separator; place the new text at the end.
+                    insert_at = current_length
+                elif raw[anchor - 1] in (".", "!", "?"):
+                    # Already terminated at the last non-whitespace char.
+                    if trail > 0:
+                        # The existing trailing whitespace IS the
+                        # separator -- insert nothing.
+                        insert_at = current_length
+                    else:
+                        # Unchanged from today: insert a space separator.
+                        sep = TsStringUtils.MakeString(" ", ws)
+                        bldr.ReplaceTsString(current_length, current_length, sep)
+                        insert_at = current_length + 1
                 else:
-                    # Already terminated — just insert a space separator
-                    sep = TsStringUtils.MakeString(" ", ws)
-                    bldr.ReplaceTsString(current_length, current_length, sep)
-                    insert_at = current_length + 1
+                    # Not yet terminated -- needs a terminator.
+                    if trail > 0:
+                        # Insert "." ONLY (one character, NOT ". ") at the
+                        # anchor -- the existing trailing whitespace
+                        # becomes the separator after it.
+                        terminator = TsStringUtils.MakeString(".", ws)
+                        bldr.ReplaceTsString(anchor, anchor, terminator)
+                        insert_at = current_length + 1
+                    else:
+                        # Unchanged from today: insert ". " as terminator.
+                        terminator = TsStringUtils.MakeString(". ", ws)
+                        bldr.ReplaceTsString(current_length, current_length, terminator)
+                        insert_at = current_length + 2
 
                 new_text_ts = TsStringUtils.MakeString(text_str, ws)
                 bldr.ReplaceTsString(insert_at, insert_at, new_text_ts)

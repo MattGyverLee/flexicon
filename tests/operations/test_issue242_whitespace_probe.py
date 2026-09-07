@@ -15,6 +15,17 @@
 #   Checkpoint 3 (see specs/242-paragraph-whitespace/evidence/
 #   live-t1-t2-fix.md for the PREDICTIONS committed before this run).
 #
+#   CHECKPOINT 3, T5 UPDATE (2026-09-07): the join-boundary anomaly
+#   measured (not fixed) by cycle 2's test_p8 is now FIXED per ruling C12
+#   (specs/242-paragraph-whitespace/spec.md). test_p8 is renamed
+#   test_p8_terminator_branch_join_boundary_fixed and converted from a
+#   measurement of the anomaly into an assertion of the fixed behaviour;
+#   test_p8b is a NEW addition covering the one prediction row
+#   unreachable through the public API (a whitespace-only paragraph,
+#   built via the layer-B bypass). See specs/242-paragraph-whitespace/
+#   evidence/live-t5-joinfix.md for the PREDICTIONS committed before this
+#   run.
+#
 #   THE FOUR SITES UNDER STUDY (post-fix line numbers; see
 #   `git diff --stat -- flexicon/` for the exact patch):
 #     flexicon/code/TextsWords/ParagraphOperations.py       Create
@@ -647,76 +658,185 @@ def test_p7_whitespace_only_still_raises(target_sandbox):
 
 
 # ===========================================================================
-# P-8 -- MEASURE (DO NOT FIX): TERMINATOR BRANCH READS THE RAW LAST CHAR
+# P-8 -- FIXED (Checkpoint 3, T5): TERMINATOR BRANCH NO LONGER DELETES,
+# JOIN BOUNDARY IS COMPUTED FROM AN ANCHOR, NOT THE RAW LAST CHARACTER
 # ===========================================================================
 
+# Prediction table (evidence/live-t5-joinfix.md, committed BEFORE this run):
+#   existing Contents -> AppendSentence(para, "bar") -> expected re-read
+P8_JOIN_PREDICTIONS = [
+    ("", "bar"),
+    ("foo", "foo. bar"),
+    ("foo.", "foo. bar"),
+    ("foo!", "foo! bar"),
+    ("foo ", "foo. bar"),          # P8 FIXED; pre-fix was "foo . bar"
+    ("foo   ", "foo.   bar"),      # all 3 trailing spaces preserved as separator
+    ("foo.  ", "foo.  bar"),       # pre-fix was "foo.  . bar" (double terminator)
+    ("foo\t", "foo.\tbar"),
+]
+
+
 @pytest.mark.live_phase("SegmentOperations", "add")
-def test_p8_terminator_branch_reads_raw_trailing_space(target_sandbox):
+def test_p8_terminator_branch_join_boundary_fixed(target_sandbox):
     """
-    P8: MEASURE ONLY, per the ruling -- do not fix, report it.
+    P8 (Checkpoint 3, T5): the terminator branch is FIXED per ruling C12.
 
-    AppendSentence's terminator branch (SegmentOperations.py, untouched by
-    this fix) reads the RAW last character of para.Contents to decide
-    whether the paragraph is already sentence-terminated. Before this fix,
-    a paragraph's Contents could not end in a literal trailing space
-    (Create/SetText/InsertAt all stripped it). After this fix, they no
-    longer strip, so a paragraph can now genuinely end in " ".
+    HISTORICAL RECORD (pre-fix, cycle 2): AppendSentence's terminator
+    branch read the RAW last character of para.Contents to decide whether
+    the paragraph was already sentence-terminated. Before Checkpoint 2's
+    fix, a paragraph's Contents could not end in a literal trailing space
+    (Create/SetText/InsertAt all stripped it), so this was unreachable.
+    After Checkpoint 2, they no longer strip, so a paragraph can genuinely
+    end in whitespace, and the old logic produced anomalies such as
+    Create(text, "foo ") + AppendSentence(para, "bar") -> "foo . bar" (a
+    space BEFORE the period) -- measured and locked in as test_p8 at
+    Checkpoint 3 cycle 2, NOT fixed there per the ruling at the time.
 
-    PREDICTION (P8, committed before this run in
-    evidence/live-t1-t2-fix.md): create a paragraph via
-    Paragraphs.Create() with content "foo " (trailing space, now
-    preserved). Append "bar" via AppendSentence. The terminator branch
-    reads the last char as " ", which is NOT in (".", "!", "?"), so it
-    takes the "insert '. ' as sentence terminator" branch -- producing
-    "foo . bar" (a space BEFORE the period), a state that was UNREACHABLE
-    before this fix (because Contents could never end in a raw space).
+    C12 FIX (this cycle): AppendSentence may INSERT at the join boundary;
+    it may never DELETE at the join boundary. The branch now computes
+    `anchor = len(raw.rstrip())` (an INDEX, never written) and decides
+    behaviour from the character at `anchor - 1` plus the trailing-
+    whitespace count `trail = current_length - anchor`, instead of the raw
+    last character. Every prediction row below was committed BEFORE this
+    test ran, in evidence/live-t5-joinfix.md.
 
-    This test measures and asserts the PREDICTED (if anomalous) behaviour
-    to lock it in as a regression-detectable fact. It does NOT change
-    SegmentOperations.py's terminator logic (lines left untouched per the
-    ruling). /lex-lead rules on whether this is acceptable next cycle.
+    The first four rows ('', 'foo', 'foo.', 'foo!') all have trail == 0 --
+    unreachable before #242 landed -- and are the C12.4 inertness proof:
+    they MUST be byte-for-byte identical to cycle-2's test_p1/test_p2
+    behaviour. If any of them move, this falsifies the C12 ruling.
     """
     project = target_sandbox
     text = project.Texts.Create(f"{TEST_PREFIX}p8_text")
 
-    para, create_exc = _safe(
-        lambda: project.Paragraphs.Create(text, "foo "), "P8 Create('foo ', trailing space)"
+    results = {}
+    for seed_contents, expected in P8_JOIN_PREDICTIONS:
+        if seed_contents == "":
+            # current_length == 0 branch -- no seed paragraph write needed,
+            # but Paragraphs.Create requires non-empty content, so seed via
+            # a placeholder then SetText is not applicable either (SetText
+            # also rejects empty). Use the layer-B bypass to build a
+            # genuinely empty-contents paragraph (Length == 0).
+            from SIL.LCModel.Core.Text import TsStringUtils
+
+            ws = project.project.DefaultVernWs
+            para, seed_exc = _safe(
+                lambda: project.Paragraphs.Create(text, "placeholder."),
+                f"P8 seed empty para({seed_contents!r})",
+            )
+            assert para is not None, f"Could not seed placeholder paragraph: {seed_exc}"
+
+            def _bypass_empty(p=para, ws=ws):
+                with project.Transaction("P8 bypass empty"):
+                    p.Contents = TsStringUtils.MakeString("", ws)
+
+            _, bypass_exc = _safe(_bypass_empty, f"P8 bypass-empty({seed_contents!r})")
+            assert bypass_exc is None, f"Bypass empty-write raised: {bypass_exc}"
+        else:
+            para, seed_exc = _safe(
+                lambda raw=seed_contents: project.Paragraphs.Create(text, raw),
+                f"P8 Create({seed_contents!r})",
+            )
+            assert seed_exc is None, f"Create({seed_contents!r}) raised: {seed_exc}"
+
+        pre_append = project.Paragraphs.GetText(para)
+        assert pre_append == seed_contents, (
+            f"Precondition failed for {seed_contents!r}: expected seed "
+            f"paragraph Contents to equal {seed_contents!r}, got {pre_append!r}"
+        )
+
+        _, append_exc = _safe(
+            lambda p=para: project.Segments.AppendSentence(p, "bar"),
+            f"P8 AppendSentence('bar') after {seed_contents!r}",
+        )
+        assert append_exc is None, f"AppendSentence('bar') raised for seed {seed_contents!r}: {append_exc}"
+
+        post_append = project.Paragraphs.GetText(para)
+        results[seed_contents] = post_append
+        print(f"[TABLE][P8] seed={seed_contents!r} expected={expected!r} actual={post_append!r}")
+
+    print(f"[SUMMARY][P8] full join-boundary fix table: {results}")
+
+    for seed_contents, expected in P8_JOIN_PREDICTIONS:
+        actual = results[seed_contents]
+        if actual == expected:
+            print(f"[VERDICT][P8] seed={seed_contents!r}: CONFIRMED -- {actual!r}")
+        else:
+            print(
+                f"[VERDICT][P8] seed={seed_contents!r}: PREDICTION MISS -- "
+                f"expected {expected!r}, got {actual!r}"
+            )
+        assert actual == expected, (
+            f"P8 join-boundary fix: seed Contents {seed_contents!r} -- "
+            f"expected {expected!r} (predicted in evidence/live-t5-joinfix.md "
+            f"BEFORE this run), got {actual!r}."
+        )
+
+
+@pytest.mark.live_phase("SegmentOperations", "add")
+def test_p8b_terminator_branch_whitespace_only_contents(target_sandbox):
+    """
+    P8b: the final prediction row -- a paragraph whose Contents is
+    ENTIRELY whitespace ('   ') -- cannot be built through the public API
+    (Paragraphs.Create/SetText/InsertAt all raise FP_ParameterError on a
+    whitespace-only payload, per test_p7, unchanged by this fix). Built
+    here via the same direct-LCM / layer-B bypass used by test_p3/test_p4,
+    NOT by relaxing the raise and NOT by faking the result.
+
+    PREDICTION (committed before this run in evidence/live-t5-joinfix.md):
+    AppendSentence(para, "bar") on a paragraph whose raw Contents is "   "
+    (anchor == 0 -- no non-whitespace character at all) inserts NEITHER a
+    terminator NOR a separator, producing "   bar". Pre-fix (cycle 2) this
+    would have been "   . bar" (the raw last character " " is not in
+    ".!?", so the pre-fix code would have inserted ". " after the raw
+    length, exactly test_p8's superseded anomaly, in this even-more
+    degenerate all-whitespace form).
+    """
+    from SIL.LCModel.Core.Text import TsStringUtils
+
+    project = target_sandbox
+    text = project.Texts.Create(f"{TEST_PREFIX}p8b_text")
+    ws = project.project.DefaultVernWs
+
+    para, seed_exc = _safe(
+        lambda: project.Paragraphs.Create(text, "placeholder."), "P8b seed placeholder para"
     )
-    assert create_exc is None, f"Create('foo ') raised: {create_exc}"
+    assert para is not None, f"Could not seed placeholder paragraph: {seed_exc}"
+
+    def _bypass_whitespace_only(p=para, ws=ws):
+        with project.Transaction("P8b bypass whitespace-only"):
+            p.Contents = TsStringUtils.MakeString("   ", ws)
+
+    _, bypass_exc = _safe(_bypass_whitespace_only, "P8b bypass-write('   ')")
+    assert bypass_exc is None, f"Bypass whitespace-only write raised: {bypass_exc}"
+
     pre_append = project.Paragraphs.GetText(para)
-    print(f"[TABLE][P8] pre-append Contents: {pre_append!r}")
-    assert pre_append == "foo ", (
-        f"Precondition failed: expected the seed paragraph to end in a raw "
-        f"trailing space post-fix -- got {pre_append!r}"
+    print(f"[TABLE][P8b] pre-append Contents: {pre_append!r}")
+    assert pre_append == "   ", (
+        f"Precondition failed: expected the bypassed paragraph to hold raw "
+        f"whitespace-only Contents -- got {pre_append!r}"
     )
 
     _, append_exc = _safe(
-        lambda: project.Segments.AppendSentence(para, "bar"), "P8 AppendSentence('bar')"
+        lambda: project.Segments.AppendSentence(para, "bar"), "P8b AppendSentence('bar')"
     )
     assert append_exc is None, f"AppendSentence('bar') raised: {append_exc}"
 
     post_append = project.Paragraphs.GetText(para)
-    print(f"[TABLE][P8] post-append Contents: {post_append!r}")
+    print(f"[TABLE][P8b] post-append Contents: {post_append!r}")
 
-    predicted = "foo . bar"
+    predicted = "   bar"
     if post_append == predicted:
         print(
-            f"[VERDICT][P8] CONFIRMED: terminator branch read the raw trailing "
-            f"space as the last char (not in '.!?'), inserting '. ' and "
-            f"producing {post_append!r} -- a space-before-period state that "
-            f"was UNREACHABLE before this fix. NOT FIXED here per the ruling; "
-            f"/lex-lead rules on it next cycle."
+            f"[VERDICT][P8b] CONFIRMED: whitespace-only Contents (anchor == 0) "
+            f"-- no terminator, no separator inserted, producing {post_append!r}."
         )
     else:
         print(
-            f"[VERDICT][P8] PREDICTION MISS: expected {predicted!r}, got "
-            f"{post_append!r}. Reporting the actual measured value, not "
-            f"adjusting the prediction after the fact."
+            f"[VERDICT][P8b] PREDICTION MISS: expected {predicted!r}, got "
+            f"{post_append!r}."
         )
 
     assert post_append == predicted, (
-        f"P8 measurement: expected {predicted!r} (the predicted anomaly), "
-        f"got {post_append!r}. This assertion locks in the MEASURED "
-        f"behaviour so a future change to the terminator logic shows up "
-        f"here as a diff, not a silent regression."
+        f"P8b: expected {predicted!r} (predicted in evidence/live-t5-joinfix.md "
+        f"BEFORE this run), got {post_append!r}."
     )
