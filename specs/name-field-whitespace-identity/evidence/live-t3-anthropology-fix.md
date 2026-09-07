@@ -156,4 +156,185 @@ never `scripts/restore_*.py`.
 ## RESULTS (filled in AFTER the live measuring run; predictions above were
 not edited)
 
-*(pending measuring run)*
+**Diff proof:** `git show --stat ab638aae` --
+`flexicon/code/Notebook/AnthropologyOperations.py` (27 changed lines) and
+`tests/operations/test_name_field_identity_probe.py` (349 insertions / 21
+deletions) only. `Create` -- reassigning `name = name.strip()` and the
+duplicate trailing `_ValidateParam` both replaced by a single throwaway
+`name.strip()` call plus a rationale comment. `CreateSubitem` -- identical
+shape. `Find` -- needle rebinding deleted; `target =` line and the loop's
+comparison line each gained `.strip()` on their `normalize_match_key(...)`
+calls, `casefold=False` unchanged. `Exists` -- byte-for-byte untouched
+(confirmed by the diff showing zero hunks in that method).
+
+**Collect count:**
+```
+python -m pytest tests/operations/test_name_field_identity_probe.py --collect-only -q -m requires_live_project
+```
+-> **15 tests collected** (11 existing, PN3 modified in place + PN12-PN15
+added). Nonzero.
+
+**Live run:**
+```
+$env:FLEXLIBS_REQUIRE_LIVE = "1"
+python -m pytest tests/operations/test_name_field_identity_probe.py -m requires_live_project -q -s
+```
+-> `15 passed, 58 warnings in 8.60s`. `tests/live_status.json` confirms
+`"run_mode": "live"`, `"run_timestamp": "2026-09-07T20:43:15Z"`, and lists
+`AnthropologyOperations` add/modify/read (PN12/PN13/PN15, PN3, PN14) all
+`"status": "pass"`.
+
+**T3-P1 (Create persist) -- MATCHED, confirmed directly by PN12:**
+```
+[TABLE][PN12] first item stored Name (direct read, before duplicate attempt): 'TEST_NF_Anth '
+```
+and, after the rejected duplicate attempt, re-read again as `'TEST_NF_Anth '`
+(see T3-P4 below) -- byte-identical, trailing space intact.
+
+**T3-P2 (CreateSubitem persist) -- MATCHED exactly, PN13:**
+```
+[TABLE][PN13] subitem stored Name (direct read): 'TEST_NF_Sub '
+[VERDICT][PN13] CreateSubitem('TEST_NF_Sub ') stored Name -> 'TEST_NF_Sub ' (PREDICTED byte-identical to 'TEST_NF_Sub ')
+```
+
+**T3-P3 (Find/Exists comparison symmetry, PN3 flip) -- MATCHED exactly.**
+Live output:
+```
+[TABLE][PN3] raw stored Name (direct read): 'TEST_NF_Anthro_Raw '
+[PROBE] PN3 Find(unpadded): OK -> <SIL.LCModel.ICmAnthroItem object ...>
+[PROBE] PN3 Find(padded): OK -> <SIL.LCModel.ICmAnthroItem object ...>
+[PROBE] PN3 Exists(unpadded): OK -> True
+[PROBE] PN3 Exists(padded): OK -> True
+```
+Both the unpadded and padded needle now find the padded haystack -- the
+exact opposite of cycle 1's measured result, confirming T3's `Find` fix
+landed correctly.
+
+**T3-P4 (duplicate rejection -- THE C8 pin, Create only) -- MATCHED
+exactly, BOTH halves.** Live output:
+```
+[TABLE][PN12] first item stored Name (direct read, before duplicate attempt): 'TEST_NF_Anth '
+[PROBE] PN12 Create #2 (padded, duplicate): RAISED FP_ParameterError: Anthropology item 'TEST_NF_Anth ' already exists
+[TABLE][PN12] first item stored Name, re-read after the rejected duplicate attempt: 'TEST_NF_Anth '
+[SUMMARY][PN12] items matching 'TEST_NF_Anth ' post-fix (stripped comparison): [('6f333b89-a2b8-45d9-b3b8-194693b8bebc', 'TEST_NF_Anth ')]
+```
+- **C8 pin half 1 (second call raises "already exists"):** CONFIRMED --
+  `FP_ParameterError: Anthropology item 'TEST_NF_Anth ' already exists`.
+- **C8 pin half 2 (first item re-reads byte-identical):** CONFIRMED --
+  re-read (not re-asserted against the value passed in) as
+  `'TEST_NF_Anth '`, trailing space intact, GUID
+  `6f333b89-a2b8-45d9-b3b8-194693b8bebc`.
+- Exactly ONE `ICmAnthroItem` matches the name post-fix -- no duplicate was
+  persisted by the rejected second call.
+
+**T3-P5 (Shape-B preservation) -- MATCHED exactly, PN14 (plus PN7's
+pre-existing Create coverage, unaffected):**
+```
+[PROBE] PN14 Anthropology.Create(non-str): RAISED AttributeError: '_NonStrPayload' object has no attribute 'strip'
+[PROBE] PN14 Anthropology.CreateSubitem(non-str): RAISED AttributeError: '_NonStrPayload' object has no attribute 'strip'
+```
+Both sites still raise `AttributeError`, unchanged from pre-fix, confirming
+the throwaway-strip mechanism (not plain deletion) was used correctly at
+both C7(b)-named sites. PN7's own `Anthropology.Create(non-str)` assertion
+(untouched by this task) also still passed with the identical exception.
+
+**T3-P6 (Q-242D disclosure measurement) -- MATCHED exactly, PN15:**
+```
+[VERDICT][PN15] Create('   ') -> exc=None (PREDICTED None, disclosure only)
+[TABLE][PN15] Create('   ') stored Name (direct read, MEASURED): '   '
+[SUMMARY][PN15] Q-242D disclosure: Anthropology.Create('   ') post-fix persists '   ' (predicted '   ') -- measured, NOT fixed, per spec.md C7(b)/tasks.md T3 rule 6.
+```
+Measured value recorded verbatim: post-fix, `Create("   ")` raises no
+exception and persists the literal three-space string. This is the
+disclosed, not-fixed Q-242D consequence -- no whitespace-only rejection was
+added.
+
+## OFFLINE DELTA
+
+| | passed | failed | deselected |
+|---|---|---|---|
+| Before | 1292 | 3 | 501 |
+| After | 1292 | 3 | 501 |
+| Delta | +0 | +0 | +0 |
+
+Measured by stashing this task's own uncommitted edit to
+`AnthropologyOperations.py` (`git stash push -- <that path>`, an
+author-owned path), running the offline suite for the "before" figure,
+then `git stash pop` to restore the edit and running it again for the
+"after" figure -- since the edit had already been made before this
+measurement was taken this cycle. `3 failed` before AND after are the SAME
+three known-foreign tests, same messages, confirmed by name:
+`test_transaction_rollback.py::TestPhase2JoinOrOpen::test_rollback_flag_set_true_on_exception`,
+`::test_depth_restored_on_exception`,
+`test_flexlibs2_alias_ratchet.py::...::test_no_executable_flexlibs2_imports_outside_alias_package`.
+No fourth failure at any point. `passed`/`deselected` both unchanged
+offline (expected -- the four new tests are all `requires_live_project`,
+so they are deselected from this run, not counted in `passed`).
+
+## CONTRACT CONTRADICTIONS FOUND
+
+None. T2's `SetName` mechanism-deviation note (`reviews/cycle2-t2-
+programmer.md`) predicted exactly this shape for T3's two persist sites,
+and it held: `Create`/`CreateSubitem`'s only upstream guard is the
+null-check-only `_ValidateParam` (confirmed by symbol lookup, no
+`isinstance` branch), so the throwaway-strip shape (not T1's plain
+deletion) was required and used at both sites, live-confirmed unchanged by
+PN14. `Find`'s comparison-symmetry shape was identical to T2's `Exists`,
+as predicted -- no per-family variation was needed there. One incidental
+process note, not a C1-C8 contradiction: this task's FIRST commit attempt
+of the predictions evidence file accidentally swept in the other crew's
+then-staged, uncommitted files (`BaseOperations.py`,
+`Grammar/InflectionFeatureOperations.py`,
+`Grammar/PhonFeatureOperations.py`, and two
+`feature-structure-sync-gap/` files) due to a race between this session's
+`git status` check and the other crew's concurrent `git add`. Caught
+immediately by inspecting `git show --stat HEAD` after the commit;
+corrected via `git reset --soft HEAD~1` followed by `git reset HEAD --
+<foreign paths>` (index-only operations, zero working-tree content
+touched) and a clean re-commit containing only this feature's own file.
+No foreign file content was read, altered, or lost at any point --
+confirmed by diffing the foreign files' working-tree state before and
+after the correction (identical). Recorded here as a process-safety
+finding for later tasks: **always re-run `git status --porcelain`
+immediately before `git commit`, not just before `git add`**, when a
+concurrent crew is active in the same tree.
+
+## WHAT I DID NOT DO
+
+- Did not touch `BaseOperations.py` or `Shared/string_utils.py` (fenced, C4).
+- Did not touch `Exists` (`AnthropologyOperations.py:505-510`), per the
+  task brief's explicit rule 4 -- confirmed byte-for-byte unchanged by the
+  diff proof above.
+- Did not add a dedup check to `CreateSubitem` (C5) -- confirmed by PN13's
+  docstring/scope and by the diff showing no new `Exists`/`Find` call
+  introduced in that method.
+- Did not add a whitespace-only rejection to `Create`/`CreateSubitem`, and
+  did not swap `_ValidateParam` for `_ValidateStringNotEmpty` (Q-242C/
+  Q-242D, explicitly ruled out this cycle) -- PN15 measures and discloses
+  the resulting behaviour change instead of fixing it.
+- Did not harmonise `Create`/`CreateSubitem`'s `AttributeError`-on-non-str
+  exception type (C7(b), Q-242C, out of scope) -- confirmed still raises
+  `AttributeError` live via PN7 and PN14.
+- Did not file a GitHub issue for anything found this cycle.
+- Did not stage or commit `.claude/ralph-loop.local.md` (deleted, not
+  mine), `.vscode/`, `specs/duplicate-signature-harmonisation/`,
+  `specs/name-field-whitespace-identity/reviews/cycle3-archivist.md` (the
+  Archivist's file), or any other-crew file -- only this task's own two
+  files (code+test commit `ab638aae`) plus this evidence file (predictions
+  commit `7bc6d01c`) were staged, each confirmed via `git diff --cached
+  --stat` immediately before commit after the race described above was
+  corrected.
+- Did not run `scripts/restore_*.py` or touch the real Target; used
+  `target_sandbox` exclusively.
+
+## WHAT WAS NOT EXERCISED
+
+None -- every pin half named in the task brief was exercised live: Create
+persist (PN12), CreateSubitem persist (PN13), Find/Exists comparison
+symmetry both directions (PN3), the C8 pin's both halves for Create
+(PN12), Shape-B AttributeError preservation at both sites (PN14, plus
+PN7's pre-existing Create coverage), and the Q-242D disclosure measurement
+(PN15). `Exists` itself was not independently re-exercised beyond PN3's
+existing calls (it delegates entirely to `Find` and was not modified), but
+that is a request to touch untouched code, not a pin half left
+unmeasured.
