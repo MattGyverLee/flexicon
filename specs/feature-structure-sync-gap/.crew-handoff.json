@@ -239,7 +239,43 @@
     "266": "Grammar/PhonemeOperations.__ApplyBasicIPASymbol -- the genuine one-line C-D4-7 substitution: route the lookup through _resolve_ws_handle.",
     "267": "Lexicon/ExampleOperations TranslationsOC loop -- scoped as a CORRECTNESS change, NOT a substitution. The ICmTranslation is created and attached BEFORE any writing system resolves, so a naive one-line fix leaves an ORPHANED translation with zero alts when the ambiguity error fires mid-loop. #267 carries a regression-test requirement for that orphan.",
     "ratchet_consequence_recorded_on_both": "Closing a resolution site turns the three-site ratchet red BY DESIGN. Update the frozen set in the SAME commit. NEVER disable the test.",
-    "d4_t6_comment": "UNPOSTED. The draft (specs/250-writingsystem-activation/reviews/cycle8-D4-T6-comment-draft.md) now cites #266/#267 instead of restating them longhand (18d6310). Posting needs the USER's approval -- no agent may post it."
+    "d4_t6_comment": "RULED POST (lead, cycle 8). The user delegated the decision to /lex-lead, so it is ruled, not escalated. Authorisation is exactly: post the body of specs/250-writingsystem-activation/reviews/cycle8-D4-T6-comment-draft.md VERBATIM as a comment on flexicon#250 via 'gh issue comment 250'. Do NOT close #250; do NOT edit its body, title or labels. Decisive reason: the Name/Description-saves-but-BasicIPASymbol-silently-drops asymmetry is in main TODAY and undisclosed, and it is confirmed FROM THE SHIPPED SOURCE, not inferred. The hold argument fails because T6-T9 touch neither WS-resolution site nor Defects 1-3, so nothing in the comment can be invalidated by them. #250/#266/#267 were each confirmed to exist and be OPEN before authorising. The draft file's header was updated in the same commit so no artifact says 'NOT POSTED' next to a posted comment."
+  },
+  "cycle10_gate_flags": {
+    "do_not_interrupt_t6": "Raised while cycle 9 was thought to be in flight. T6 had in fact already landed and committed (HEAD a60cc83), so the lead read the flagged line directly; no agent was interrupted.",
+    "flag_1_clr_getclrtype_DOWNGRADED_does_not_survive_inspection": {
+      "original_concern": "Pyright showed clr.GetClrType at ~:1170 of MSAOperations.py. Since T6's premise is HOW MSA subtype discrimination is done, a CLR-type-identity approach could satisfy the prompt's 'zero hasattr gates' grep while still not being the frozen C1/R2 .ClassName-plus-cast pattern -- and CLR type identity is the same static-vs-runtime family as the original trap. Sound thing to flag.",
+      "what_inspection_found": "NOT a discrimination site. :1170 is inside __CreateAndAttach and reads ServiceLocator.GetService(clr.GetClrType(factory_interface)) -- the service-locator idiom, because pythonnet's GetService overload needs the System.Type form of the interface. It performs no type discrimination at all. It is also PRE-EXISTING, at the identical :1165/:1170 in T6's parent; it surfaced only because T6 added ~330 lines above it and Pyright re-reported a shifted line.",
+      "verdict": "DOWNGRADED from P0. Not a fourth variant of the #251 trap."
+    },
+    "flag_2_actual_discrimination_looks_CORRECT_but_gate_must_still_settle_it_by_mutation": {
+      "what_inspection_found": "__ResolveMsa at :1149-1158 reads getattr(obj,'ClassName',None), looks it up in a {ClassName: interface} dict, casts only on a hit, and returns the object UNCHANGED on a miss. The Get/Apply dispatchers at :898 and :992 branch on msa.ClassName. The docstring at :891 states 'Zero hasattr gates on any feature-struct property: dispatch is entirely .ClassName-driven'. The out-of-table path returns rather than raising = ruling R2 satisfied.",
+      "gate_must_still_answer": [
+        "1. Is __ResolveMsa the ONLY discrimination path the new Get/Apply methods use?",
+        "2. Does it hold for MSAs obtained through the BASE-INTERFACE VIEW (GetAll() / Find() / Object()), not merely for factory-fresh concrete objects?"
+      ],
+      "how_to_settle": "BY MUTATION with a live base-interface MSA, NOT by reading. The lead's read is not a substitute -- the 0-true/2088-false measurement is exactly why reading is insufficient here. Run it in a disposable git worktree per mutation_testing_isolation_rule.",
+      "why_T6s_own_green_live_run_does_NOT_settle_it": "T6's live tests obtain their MSAs from sandbox.MSA.CreateStem(...) etc -- FACTORY-FRESH handles. The #251 failure mode is precisely 'correct on factory-fresh objects, silently dead on anything RETRIEVED'. So a green live run on factory-fresh handles is consistent with the bug still being present. The gate MUST re-fetch the MSA back through GetAll() / Find() / Object() and run THAT object through the discrimination path.",
+      "residual_risk_if_skipped": "A 'zero hasattr gates' grep plus a green live suite can both be true while the discrimination is wrong in exactly #251's original shape. This is the single highest-value question in the cycle-10 gate."
+    },
+    "flag_3_NEW_pre_existing_hasattr_gates_on_LCM_properties_survive_at_545_550_555": {
+      "finding": "ChangeAffixVariant contains hasattr(deriv_src,'FromInflectionClassRA') at :545, hasattr(deriv_src,'ToInflectionClassRA') at :550, hasattr(deriv_src,'StratumRA') at :555.",
+      "why_it_matters": "These are NOT feature-struct properties, so they were outside T6's scope and outside the cycle-9 prompt's grep -- which is exactly how they survived. But they are hasattr probes against LCM properties on an MSA, which is the #251 trap's own shape. If deriv_src is ever base-interface-viewed there, all three are silently False and those branches are dead code that quietly drops data.",
+      "instruction_to_cycle_10": "DETERMINE whether deriv_src is base-interface-viewed at that point and REPORT. Do NOT fix it inline -- separate defect, own blast radius; folding it into T6's gate repeats the scope creep this campaign keeps ruling against."
+    },
+    "pyright_on_the_new_test_file_TRIAGED_ALREADY_do_not_burn_a_gate_leg": {
+      "file": "tests/operations/test_issue251_msa_feature_sync.py",
+      "note": "Triaged by the main session, NOT gate findings. Recorded so they are not mistaken for one.",
+      "items": [
+        ":741 Import 'SIL.LCModel' could not be resolved -- EXPECTED. pythonnet assembly, invisible to offline Pyright. Ignore.",
+        ":898 'FP_ParameterError' is unknown import symbol -- BENIGN, verified at runtime: from flexicon.code.BaseOperations import FP_ParameterError resolves to flexicon.code.exceptions.FP_ParameterError. Pyright flags only 1 of the 5 byte-identical imports of that symbol in the same file (315, 501, 507, 703, 898); BaseOperations declares no __all__, which makes Pyright's re-export strictness fire inconsistently. Lint-level, not correctness. Same category as the false positives already recorded in the spec (_obj-on-bool, cx/cv possibly-unbound). DO NOT CHASE.",
+        "Eight 'self'/'entry'/'slot' is not accessed -- unused-binding noise in test scaffolding. Cosmetic at most."
+      ]
+    },
+    "P2_pyright_same_file": [
+      "MSAOperations.py:1155 passes Any | None where a str key is expected.",
+      "MSAOperations.py:60-61 import FP_ReadOnlyError and FP_NullParameterError but neither is used. Do NOT reflexively delete: the project rule is that write operations check writeEnabled first, so an unused FP_ReadOnlyError import may be the symptom of a MISSING WRITE GUARD rather than dead code. Decide which, then act."
+    ]
   },
   "checkpoint_2c": "CLOSED and it HOLDS -- it does NOT reopen. Cycle 6 closed it on a structural re-derivation of T14a tests 2 and 3 and named that as weaker-than-mutation residue. Cycle 8 paid the debt: M-T14a-2 (slot routing forced to rows[0]) and M-T14a-3 (no-slot branch picks rows[0] instead of raising) EACH KILLED their test, live. T14a's coverage is genuine and non-tautological. Cycle-6 ruling 2's residue is DISCHARGED."
 }

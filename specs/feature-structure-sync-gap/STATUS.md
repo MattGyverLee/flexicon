@@ -1103,3 +1103,117 @@ loudly, which is acceptable and must not be swallowed.
 
 **Next checkpoint: Checkpoint 3a = T6 implemented + live-verified + gated.**
 T7/T8 stay closed behind it.
+
+---
+
+# Cycle 8 addendum -- two lead rulings made after the cycle-9 dispatch
+
+## RULING -- the D4-T6 comment on `#250`: **POST.** Not held.
+
+The user delegated this decision to `/lex-lead` ("let the /lex-lead team
+decide"). It is therefore ruled, not escalated. **Post the body of
+`specs/250-writingsystem-activation/reviews/cycle8-D4-T6-comment-draft.md`
+verbatim as a comment on flexicon#250. Do NOT close #250. Do NOT edit its body,
+title or labels.** That is the entire authorisation.
+
+**Why post.** The draft's own stated precondition was the cycle-8 gate returning
+PASS, and it did, on every leg. The decisive argument is disclosure, not
+tidiness: the asymmetry is in `main` **today** and is undisclosed. A phoneme
+synced across a case- or separator-divergent writing system now saves its `Name`
+and `Description` alts and **still silently drops its `BasicIPASymbol` alt** --
+one object, one sync call, two outcomes, no warning either way. Anyone syncing
+right now is exposed and cannot learn it from the issue. A campaign whose entire
+purpose is eliminating silent partial coverage does not get to sit on a silent
+partial-coverage disclosure because a later comment would be neater.
+
+**The hold argument, answered rather than waved off.** "T6-T9 will change what
+#250's neighbourhood looks like" is true of the feature area and false of this
+comment: T6-T9 are feature-structure sync work on MSA/POS/Allomorph/Phoneme;
+they touch neither WS-resolution site (`#266`/`#267`) nor Defects 1-3. Nothing in
+the comment is at risk of being invalidated, so the "post now plus a correction
+later" scenario does not arise. A follow-up when `#266`/`#267` close is an
+ordinary additive comment, not a correction. And the real alternative to posting
+now is not "post later" -- it is "the information stays in a repo file no issue
+reader will ever find".
+
+**Facts re-verified before authorising** (a public comment is hard to retract,
+so none of it was taken on trust):
+
+- `#250`, `#266`, `#267` all exist, all OPEN, titles matching the draft's
+  descriptions.
+- The three-site frozen set is confirmed by cycle 8's tracked, hash-verified
+  ratchet probe, whose failure message named the 4th site exactly as predicted.
+- The asymmetry is confirmed **from the shipped source**, not inferred.
+  `PhonemeOperations.ApplySyncableProperties` carries the comment "BasicIPASymbol
+  and Features need dedicated handling; everything else (Name, Description, and
+  any future plain scalars) goes through the base loop", and
+  `__ApplyBasicIPASymbol` then builds its own `{ws.Id: ws.Handle}` map and runs
+  its own resolution loop.
+- Gate leg 6 found zero artifacts claiming D4-c is live-verified; the comment
+  does not claim it either.
+
+The draft file's header was updated in the same commit, because leaving a file
+that says "NOT POSTED / needs the user's approval" next to a posted comment is
+exactly the artifact-contradicts-the-world defect leg 6 went looking for.
+
+## FLAG FOR THE CYCLE-10 GATE -- the `clr.GetClrType` alarm, and what checking it actually turned up
+
+The flag raised was: Pyright shows **`clr.GetClrType` at `~:1170`** of
+`flexicon/code/Lexicon/MSAOperations.py`, and since T6's entire premise is *how*
+MSA subtype discrimination is done, a CLR-type-identity approach could satisfy
+the cycle-9 prompt's "zero hasattr gates, prove it with a grep" while still not
+being the frozen C1/R2 `.ClassName`-plus-cast pattern. CLR type identity is the
+same family of hazard as the original trap -- static-versus-runtime type -- so it
+could work for factory-fresh concrete objects and fail for objects arriving via
+`GetAll()` / `Find()` / `Object()`. That was a sound thing to flag.
+
+**T6 had already landed and committed by the time this reached the lead** (HEAD
+`a60cc83`), so reading the shipped line cost nothing and no agent was
+interrupted. Three findings, and they do not all point the same way.
+
+**Finding 1 -- the GetClrType alarm does NOT survive inspection. Downgrade it.**
+`:1170` is inside `__CreateAndAttach`, and it reads
+`ServiceLocator.GetService(clr.GetClrType(factory_interface))`. That is the
+service-locator idiom -- pythonnet's `GetService` overload needs the
+`System.Type` form of the interface -- and it performs **no type discrimination
+whatsoever**. It is also **pre-existing**: it sits at the identical `:1165`/`:1170`
+in T6's parent. It surfaced now only because T6 added ~330 lines above it and
+Pyright re-reported a shifted line. Not a fourth variant of the trap.
+
+**Finding 2 -- the actual discrimination is CORRECT, and is the frozen pattern.**
+`__ResolveMsa` at `:1149-1158` reads `getattr(obj, "ClassName", None)` and looks
+it up in a `{ClassName: interface}` dict, casting only on a hit and returning the
+object **unchanged** on a miss. The Get/Apply dispatchers at `:898` and `:992`
+likewise branch on `msa.ClassName`. The docstring at `:891` states "Zero
+`hasattr` gates on any feature-struct property: dispatch is entirely
+`.ClassName`-driven". The out-of-table path returns rather than raising, which is
+ruling R2 satisfied. **The gate still confirms this rather than taking the lead's
+read for it** -- specifically that `__ResolveMsa` is the *only* discrimination
+path the new methods use, and it must be settled **by mutation with a live
+base-interface MSA** (`GetAll()` / `Find()` / `Object()`), not by reading. The
+0-true/2088-false measurement is exactly why reading is not enough here.
+
+**Finding 3 -- NEW, and the genuinely interesting one. Pre-existing `hasattr`
+gates on LCM properties survive at `:545`, `:550`, `:555`**, inside
+`ChangeAffixVariant`: `hasattr(deriv_src, "FromInflectionClassRA")`,
+`"ToInflectionClassRA")`, `"StratumRA")`. These are **not** feature-struct
+properties, so they are outside T6's scope and outside the cycle-9 prompt's
+grep -- which is precisely how they survived. But they are `hasattr` probes
+against LCM properties on an MSA, which is the **#251 trap's own shape**. If
+`deriv_src` there is ever base-interface-viewed, all three are silently False and
+those branches are dead code that quietly drops data. **Cycle 10 must determine
+whether `deriv_src` is base-interface-viewed at that point and report; it must
+NOT fix it inline** -- that is a separate defect with its own blast radius, and
+folding it into T6's gate would repeat the scope creep this campaign keeps
+ruling against.
+
+**Two smaller Pyright findings in the same file, for the gate:**
+
+- `:1155` passes `Any | None` where a `str` key is expected. (Note this is inside
+  the `.ClassName` dict lookup -- benign as written, since `.get(None)` simply
+  misses, but the type should be narrowed.)
+- `FP_ReadOnlyError` and `FP_NullParameterError` are imported but unused at
+  `:60-61`. An unused `FP_ReadOnlyError` deserves a second look rather than a
+  reflexive delete: the project rule is that write operations check
+  `writeEnabled` first, so an unused import may be the symptom of a **missing
+  write guard** rather than dead code. Decide which, then act.

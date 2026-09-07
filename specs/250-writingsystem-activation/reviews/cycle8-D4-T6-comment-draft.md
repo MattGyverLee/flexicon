@@ -1,10 +1,49 @@
-# DRAFT -- NOT POSTED
+# APPROVED FOR POSTING -- lead ruling, cycle 8
 
-**Status:** DRAFT ONLY. Needs the user's explicit approval before anything is
-posted to GitHub. Contingent on the cycle-8 #250 Defect-4 gate returning
-PASS (cycle-8 archivist audit of commit `269b6a7`: PASS, no FAIL/CONCERN
-rows -- see `cycle8-archivist-269b6a7-audit.md` in this same directory).
-Do not run `gh` against this text without a separate, explicit go-ahead.
+**Status:** **POST.** The user delegated this decision to `/lex-lead`
+("let the /lex-lead team decide"), so it is no longer held for their
+approval. The draft's own stated precondition -- the cycle-8 Defect-4 gate
+returning PASS -- is **satisfied**: PASS on every leg, no mutation left
+NOT-KILLED (`cycle8-verification-D4-gate.md`), and the archivist audit of
+`269b6a7` returned PASS on all seven clauses with 0 FAIL / 0 CONCERN
+(`cycle8-archivist-269b6a7-audit.md`), both in this directory.
+
+**Scope of the authorisation, exactly:** post the body below -- everything
+under "Proposed comment body for issue #250" -- **verbatim**, as a comment
+on flexicon#250, via `gh issue comment 250`. **Do NOT close #250. Do NOT
+edit the issue body, title, or labels.** Nothing else on GitHub is
+authorised by this ruling.
+
+**Facts re-verified by the lead before authorising** (a public comment is
+hard to retract, so none of this was taken on trust):
+
+- `#250`, `#266` and `#267` all exist and are all OPEN, with titles
+  matching how this comment describes them.
+- The three-site frozen set is confirmed correct by cycle 8's tracked,
+  hash-verified ratchet probe, whose failure message named the fourth site
+  exactly as predicted. `PhonemeOperations.py:1336` was separately checked
+  and is correctly EXCLUDED as a read path, not a resolution site.
+- The Name/Description-vs-`BasicIPASymbol` asymmetry is confirmed **from
+  the shipped source**, not inferred: `PhonemeOperations`'
+  `ApplySyncableProperties` carries the comment "BasicIPASymbol and
+  Features need dedicated handling; everything else (Name, Description, and
+  any future plain scalars) goes through the base loop", and
+  `__ApplyBasicIPASymbol` then builds its own `{ws.Id: ws.Handle}` map and
+  runs its own resolution loop.
+- No artifact anywhere claims D4-c is live-verified (gate leg 6, zero
+  hits), and this comment does not either.
+
+**Why post now rather than after T6-T9** (the hold argument, answered):
+T6-T9 are feature-structure sync work on MSA/POS/Allomorph/Phoneme. They do
+not touch either WS-resolution site, and they do not touch Defects 1-3. So
+nothing in this comment is at risk of being invalidated by them, and the
+"one comment now plus a correction later" scenario does not arise -- a
+follow-up when `#266`/`#267` close is a normal additive comment, not a
+correction. Against that, the asymmetry is in `main` **today**, undisclosed,
+and anyone syncing phonemes right now is exposed to it with no way to learn
+it from the issue. A campaign whose whole purpose is eliminating silent
+partial coverage does not get to sit on a silent partial-coverage
+disclosure for tidiness.
 
 ---
 
