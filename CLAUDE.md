@@ -1,10 +1,10 @@
-# FlexLibs2 Claude Code Guidelines
+# Flexicon Claude Code Guidelines
 
 This document outlines conventions and best practices for Claude Code when working on this project.
 
 ## Project Overview
 
-FlexLibs2 is a Python library for accessing FieldWorks Language Explorer (FLEx) projects via the Language and Culture Model (LCM) API. It provides comprehensive CRUD operations for FLEx data types across Grammar, Lexicon, Texts & Words, Notebook, Lists, and System modules.
+Flexicon is a Python library for accessing FieldWorks Language Explorer (FLEx) projects via the Language and Culture Model (LCM) API. It provides comprehensive CRUD operations for FLEx data types across Grammar, Lexicon, Texts & Words, Notebook, Lists, and System modules.
 
 ## Code Style & Standards
 
@@ -56,8 +56,8 @@ Example:
 ## Project Structure
 
 ```
-flexlibs2/
-├── flexlibs2/
+flexicon/
+├── flexicon/
 │   ├── code/
 │   │   ├── BaseOperations.py          # Parent class for all operations
 │   │   ├── FLExProject.py             # Main project interface
@@ -75,13 +75,26 @@ flexlibs2/
 └── docs/                              # API documentation and guides
 ```
 
+### The `flexlibs2` name is a deprecated alias -- never write it in new code
+
+The library was formerly published as `flexlibs2`; it is now **`flexicon`**
+(distribution name `pyflexicon`). A `flexlibs2/` package still exists, but it
+is an **inbound-only compatibility shim** for external callers (FlexTools /
+FlexTrans scripts on disk), and it is **removed in flexicon v5.0.0**.
+
+Nothing internal may reference it -- not library code, not example scripts,
+not docstrings, not tests. This is enforced by
+`tests/test_flexlibs2_alias_ratchet.py` (issue #240); every internal
+reference would become a hard break at the v5.0.0 boundary. Use `flexicon`
+in everything you write.
+
 ## Testing
 
 ### Test Organization
 - Use `tests/operations/` for operation-specific unit tests
 - Use `tests/test_*.py` for integration tests
 - Test files follow pattern: `test_[feature]_[aspect].py` or `test_[module].py`
-- Tests in `flexlibs2/sync/tests/` for sync engine functionality
+- Tests in `flexicon/sync/tests/` for sync engine functionality
 
 ### Test Naming
 - Test classes: `Test[FeatureName]`
@@ -217,7 +230,7 @@ escalate. Per the LEX crew protocol, that is a `needs_human` handoff.
 ## Documentation
 
 ### API Documentation
-- HTML API documentation is generated and accessible via `flexlibs2.APIHelpFile`
+- HTML API documentation is generated and accessible via `flexicon.APIHelpFile`
 - Keep docstrings accurate with parameter descriptions
 - Update API_ISSUES_CATEGORIZED.md when API changes are made
 - Document breaking changes in migration guides
@@ -240,7 +253,7 @@ escalate. Per the LEX crew protocol, that is a `needs_human` handoff.
 
 ### Core Principle: User-Centric Not Technology-Centric
 
-The FlexLibs2 API should match how users naturally think about objects, hiding LCM/pythonnet complexity while maximizing functionality.
+The Flexicon API should match how users naturally think about objects, hiding LCM/pythonnet complexity while maximizing functionality.
 
 **Users think in two ways simultaneously:**
 - **Abstractly:** "phonological rules", "merge entries", "filter by name"
@@ -427,7 +440,7 @@ When implementing a wrapper for a new domain:
 
 1. **Review** `docs/ARCHITECTURE_WRAPPERS.md` - "Creating Domain-Specific Wrappers" section
 2. **Identify** the base interface and concrete types
-3. **Follow** the pattern from `flexlibs2/code/Shared/wrapper_base.py`
+3. **Follow** the pattern from `flexicon/code/Shared/wrapper_base.py`
 4. **Add** type capability checks and convenience properties
 5. **Consult** if wrapper needs special handling beyond standard pattern
 
@@ -454,15 +467,15 @@ When implementing a collection for filtering and display:
 - `CLAUDE.md` (this file) - Design philosophy and conventions
 
 ### Core Infrastructure
-- `flexlibs2/code/BaseOperations.py` - Parent class with shared validation
-- `flexlibs2/code/FLExProject.py` - Main project interface
-- `flexlibs2/code/Shared/wrapper_base.py` - LCMObjectWrapper base class
-- `flexlibs2/code/Shared/smart_collection.py` - SmartCollection base class
-- `flexlibs2/code/lcm_casting.py` - Casting utilities (internal use only)
+- `flexicon/code/BaseOperations.py` - Parent class with shared validation
+- `flexicon/code/FLExProject.py` - Main project interface
+- `flexicon/code/Shared/wrapper_base.py` - LCMObjectWrapper base class
+- `flexicon/code/Shared/smart_collection.py` - SmartCollection base class
+- `flexicon/code/lcm_casting.py` - Casting utilities (internal use only)
 
 ### Utilities & Documentation
-- `flexlibs2/code/Shared/string_utils.py` - Text normalization utilities
-- `flexlibs2/code/PythonicWrapper.py` - Suffix-free property access wrapper
+- `flexicon/code/Shared/string_utils.py` - Text normalization utilities
+- `flexicon/code/PythonicWrapper.py` - Suffix-free property access wrapper
 - `docs/API_ISSUES_CATEGORIZED.md` - Known API issues and workarounds
 - `docs/EXCEPTION_HANDLING.md` - Error handling patterns
 - `README.rst` - User-facing documentation
