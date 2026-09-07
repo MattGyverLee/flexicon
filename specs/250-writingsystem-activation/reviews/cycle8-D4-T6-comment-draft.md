@@ -25,8 +25,9 @@ The fix reaches `BaseOperations._apply_props_loop` only -- **1 of 3**
 self-resolving writing-system resolution sites in the codebase. It does
 **not** reach:
 
-- `Grammar/PhonemeOperations.__ApplyBasicIPASymbol`
-- `Lexicon/ExampleOperations.ApplySyncableProperties`'s `TranslationsOC` loop
+- `Grammar/PhonemeOperations.__ApplyBasicIPASymbol` -- tracked as **#266**
+- `Lexicon/ExampleOperations.ApplySyncableProperties`'s `TranslationsOC`
+  loop -- tracked as **#267**
 
 Both build their own exact-case map and run their own resolution loop
 rather than delegating to the now-fixed helper.
@@ -38,12 +39,19 @@ alts -- but will **still silently drop that same phoneme's `BasicIPASymbol`
 alt**, with no warning either way. One object, one sync operation, two
 different outcomes depending on which property is being written.
 
-Closing these two sites is tracked as separate follow-up work, understood
-to be two differently-sized efforts: the `PhonemeOperations` site is a
-one-line substitution against the new `_resolve_ws_handle` helper; the
-`ExampleOperations` site is not, since its loop attaches the new
-`ICmTranslation` before writing-system resolution runs, so a raising
-resolver needs the loop reordered (or a proven rollback), not a swap.
+These are deliberately **two** issues rather than one, because they are
+differently-sized efforts. **#266** is the genuine one-line substitution
+against the new module-level `_resolve_ws_handle` helper. **#267** is a
+correctness change, not a substitution: its loop creates and attaches the
+`ICmTranslation` *before* any writing system resolves, so a naive one-line
+fix would leave an orphaned translation with zero alts whenever the
+ambiguity `FP_ParameterError` fires mid-loop. #267 therefore carries an
+explicit regression-test requirement for that orphan -- the exact bug the
+obvious fix would introduce.
+
+Note for whoever picks either up: closing a site turns the three-site
+resolution-ratchet test red **by design**. Update the frozen set in the
+same commit; do not disable the test.
 
 ### Live vs. offline verification
 
@@ -67,8 +75,9 @@ Of the three ways this defect fires:
 - Fixed: writing-system id resolution in `_apply_props_loop` (the shared
   sync write path).
 - Not fixed, tracked separately: the same resolution gap in
-  `PhonemeOperations.__ApplyBasicIPASymbol` and
-  `ExampleOperations.ApplySyncableProperties`'s `TranslationsOC` loop.
+  `PhonemeOperations.__ApplyBasicIPASymbol` (**#266**) and
+  `ExampleOperations.ApplySyncableProperties`'s `TranslationsOC` loop
+  (**#267**).
 - Not fixed, this issue's original scope: Defects 1-3 (activation,
   `Create` semantics, silent-drop diagnostics).
 
