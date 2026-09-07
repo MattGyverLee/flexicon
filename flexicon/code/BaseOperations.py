@@ -316,6 +316,107 @@ class OperationsMethod:
             return func.__get__(obj, objtype)
 
 
+def _normalize_ws_tag(tag):
+    """Fold a writing-system Id to canonical hyphen-lowercase form.
+
+    Replicates ``WritingSystemOperations._NormalizeLangTag``'s
+    ``tag.replace("_", "-").lower()`` locally rather than importing it:
+    ``BaseOperations`` must not depend on a ``System`` Operations subclass
+    (spec 250, fence 1.2), and that is the only reason this is a second
+    copy rather than a shared call. Note ``FLExProject.__NormaliseLangTag``
+    uses the OPPOSITE convention (underscore-lowercase, e.g. ``en_us``) --
+    see spec 250 finding F3; do not conflate the two forms.
+    """
+    return tag.replace("_", "-").lower()
+
+
+def _resolve_ws_handle(target_ws_by_id, tgt_ws_id, _index_cache=None):
+    """Resolve a target ws_id to its handle: exact match first, then a
+    normalized (case/separator tolerant) fallback (spec 250, Defect 4).
+
+    Module-level and independent of any enclosing state -- takes every
+    input as a parameter, depends on no ``self`` and no project handle
+    (spec 250 C-D4-7) -- so that other self-resolving writing-system
+    lookups (e.g. ``PhonemeOperations.__ApplyBasicIPASymbol``,
+    ``ExampleOperations.ApplySyncableProperties``'s ``TranslationsOC``
+    loop) can later be routed through this same helper with a one-line
+    substitution. Neither of those two call sites is changed by this
+    function's introduction; they still self-resolve today.
+
+    Args:
+        target_ws_by_id: dict of {ws_id: handle}, exact-case, built by the
+            caller from ``WritingSystems.GetAll()`` (active-only writing
+            systems; spec 250 C-D4-6 -- this helper never widens that set,
+            never consults ``AllWritingSystems``, and never activates or
+            creates anything).
+        tgt_ws_id: The (possibly case- or separator-divergent) ws_id to
+            resolve, already passed through any caller-supplied ``ws_map``
+            indirection.
+        _index_cache: Optional mutable dict used to memoize the normalized
+            side-index across repeated calls within one apply operation
+            (spec 250 C-D4-4: build the index at most once per apply call).
+            Pass the SAME dict across every call within one
+            ``_apply_props_loop`` invocation; this function populates
+            ``_index_cache['index']`` in place on the first exact-match
+            miss and reuses it thereafter. If None, an index is (re)built
+            on every miss with no memoization.
+
+    Returns:
+        The resolved handle, or None if the ws_id is genuinely absent from
+        ``target_ws_by_id`` under both exact and normalized matching (spec
+        250 Defect 3, deliberately unchanged: callers fall through to the
+        existing silent ``continue``).
+
+    Raises:
+        FP_ParameterError: if the normalized ``tgt_ws_id`` matches two or
+            more DISTINCT handles in ``target_ws_by_id`` (spec 250 C-D4-3
+            step 2b: an ambiguous spelling -- never guessed, never picked
+            arbitrarily). Keys that normalize together but share ONE
+            handle are not ambiguous and do not raise (step 2a).
+    """
+    # Step 1: exact match. Untouched and unaffected by anything below --
+    # every write that succeeds today takes this path byte-for-byte
+    # unchanged (spec 250 C-D4-3 step 1 / zero-regression basis).
+    handle = target_ws_by_id.get(tgt_ws_id)
+    if handle is not None:
+        return handle
+
+    # Step 2: normalized fallback. Build the side-index lazily on first
+    # miss and reuse it via _index_cache for the rest of this apply call
+    # (C-D4-4) -- the common case is all-exact-hits, which must stay
+    # allocation-free, so this branch only runs on a miss.
+    if _index_cache is not None and "index" in _index_cache:
+        norm_index = _index_cache["index"]
+    else:
+        norm_index = {}
+        for ws_id, ws_handle in target_ws_by_id.items():
+            norm_key = _normalize_ws_tag(ws_id)
+            norm_index.setdefault(norm_key, {})[ws_id] = ws_handle
+        if _index_cache is not None:
+            _index_cache["index"] = norm_index
+
+    candidates = norm_index.get(_normalize_ws_tag(tgt_ws_id))
+    if not candidates:
+        # Step 2c: genuinely absent under both exact and normalized
+        # matching. Falls through to the caller's existing silent
+        # `continue` (Defect 3, deliberately out of scope here).
+        return None
+
+    distinct_handles = set(candidates.values())
+    if len(distinct_handles) > 1:
+        raise FP_ParameterError(
+            "Ambiguous writing-system spelling for '{}': matches {} which "
+            "resolve to distinct handles {}. Refusing to guess -- supply "
+            "an exact-case ws_map entry to disambiguate.".format(
+                tgt_ws_id, sorted(candidates.keys()), sorted(distinct_handles)
+            )
+        )
+    # Step 2a: exactly one distinct handle -- either a single normalized
+    # match, or two-or-more spellings that happen to share one handle
+    # (not ambiguous; deduped by handle before counting).
+    return next(iter(distinct_handles))
+
+
 def _apply_props_loop(item, props, target_ws_by_id, fill_gaps=False,
                       ws_map=None, _default_ws_getter=None, _ts_string_utils=None):
     """Pure loop body of ApplySyncableProperties. No project handle required.
@@ -343,6 +444,13 @@ def _apply_props_loop(item, props, target_ws_by_id, fill_gaps=False,
         _ts_string_utils: The imported TsStringUtils class, passed in to avoid
             a re-import inside the pure helper.
     """
+    # Lazily-built normalized WS-id side-index, shared across every
+    # writing-system alt resolved within this single _apply_props_loop
+    # call (spec 250 C-D4-4: built at most once per apply call, never
+    # eagerly). Populated in place by _resolve_ws_handle on first
+    # exact-match miss; stays empty and unused when every alt hits exactly.
+    _ws_resolve_cache = {}
+
     for prop_name, value in props.items():
         if value is None:
             continue
@@ -357,7 +465,12 @@ def _apply_props_loop(item, props, target_ws_by_id, fill_gaps=False,
                 tgt_ws_id = (
                     ws_map.get(src_ws_id, src_ws_id) if ws_map else src_ws_id
                 )
-                tgt_handle = target_ws_by_id.get(tgt_ws_id)
+                # Exact match first, normalized (case/separator tolerant)
+                # fallback second; ambiguity raises rather than guessing
+                # (spec 250 Defect 4, C-D4-1..C-D4-5).
+                tgt_handle = _resolve_ws_handle(
+                    target_ws_by_id, tgt_ws_id, _index_cache=_ws_resolve_cache
+                )
                 if tgt_handle is None:
                     # Target lacks this WS; skip silently. Callers wanting
                     # strict mapping should pre-validate ws_map.
