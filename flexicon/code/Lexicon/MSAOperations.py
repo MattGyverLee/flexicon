@@ -817,9 +817,345 @@ class MSAOperations(BaseOperations):
 
         return RemoveOrphanedResult(removed_count, kept_count, removed, by_entry)
 
+    # ========== SYNC INTEGRATION METHODS ==========
+    #
+    # Closes issue #251 (spec feature-structure-sync-gap, task T6):
+    # MSAOperations previously had ZERO sync methods, so every MSA synced
+    # across projects carried a correct ClassName/POS but a permanently
+    # null feature structure -- an MoStemMsa's MsFeaturesOA, an
+    # MoInflAffMsa's InflFeatsOA, or an MoDerivAffMsa's From/ToMsFeaturesOA
+    # (contract C1). Shape mirrors NaturalClassOperations'
+    # GetSyncableProperties/ApplySyncableProperties (:1039/:1169), the
+    # reference implementation for this whole feature family, but the
+    # dispatch itself is unique to MSA: unlike a natural class (reached via
+    # PhonologicalDataOA.NaturalClassesOS, always base-``IPhNaturalClass``-
+    # typed), an MSA reached via ``entry.MorphoSyntaxAnalysesOC`` is
+    # likewise base-``IMoMorphSynAnalysis``-typed, so ``hasattr`` on any of
+    # ``MsFeaturesOA``/``InflFeatsOA``/``From``/``ToMsFeaturesOA`` is
+    # 0/2088 True under pythonnet (spec D5, live probe) -- discriminating on
+    # ``.ClassName`` (always visible on the base interface) and casting
+    # explicitly via ``_ResolveFeatureStrucOwner`` (C1) is the only fix that
+    # is not dead code.
+
+    @OperationsMethod
+    def GetSyncableProperties(self, item):
+        """
+        Get dictionary of syncable properties for cross-project
+        synchronization of an MSA's feature structure(s).
+
+        Args:
+            item: An IMoStemMsa / IMoInflAffMsa / IMoDerivAffMsa /
+                IMoUnclassifiedAffixMsa (or its HVO/GUID -- resolved and
+                cast to the concrete interface via ``__GetMsaObject``,
+                contract C2).
+
+        Returns:
+            dict: Keyed by ``ClassName`` (frozen C1 table rows for MSA):
+
+            - ``MoStemMsa``: ``MsFeatures`` (C4 recursive-dict spec of
+              ``MsFeaturesOA``) / ``MsFeaturesGuid`` (str GUID).
+            - ``MoInflAffMsa``: ``InflFeats`` / ``InflFeatsGuid``
+              (``InflFeatsOA``).
+            - ``MoDerivAffMsa``: BOTH ``FromMsFeatures``/
+              ``FromMsFeaturesGuid`` (``FromMsFeaturesOA``) AND
+              ``ToMsFeatures``/``ToMsFeaturesGuid`` (``ToMsFeaturesOA``) --
+              a derivational affix MSA has two independent feature-struct
+              slots (C1 ``slot="From"``/``"To"``), each captured
+              independently; either, both, or neither key-pair may be
+              present depending on which slots are actually populated.
+            - ``MoUnclassifiedAffixMsa``: always ``{}`` -- confirmed by the
+              live probe to carry NO feature-struct property at all (R2).
+              This ClassName is discriminated FIRST, before any resolver
+              call, so capturing one of these (routinely created by
+              ``CreateUnclassifiedAffix``) never raises.
+            - Any other ``ClassName`` (e.g. ``MoDerivStepMsa`` -- out of
+              the C1 table by design): always ``{}``. The resolver is
+              never consulted for an out-of-table ClassName either, so
+              this defensive fallback cannot raise -- mirrors
+              ``NaturalClassOperations.GetSyncableProperties``'s own
+              unknown-``ClassName`` fallback.
+
+            An owning property that is present but genuinely empty (an
+            ``IFsFeatStruc`` with zero ``FeatureSpecsOC`` entries) still
+            emits BOTH its ``<Name>``/``<Name>Guid`` keys -- ``<Name>``
+            serialises to ``{"TypeGuid": ..., "specs": {}}``, never
+            ``None`` (C4). A NULL owning property (e.g. ``MsFeaturesOA``
+            was never populated) omits both keys entirely -- gate on key
+            PRESENCE (C6), never on the value's truthiness.
+
+        Notes:
+            - Emits ONLY the four C1 MSA rows -- no plain scalar or
+              multistring MSA properties are captured here (POS
+              references are T7's territory via ``POSOperations``, not
+              this method's).
+            - Zero ``hasattr`` gates on any feature-struct property:
+              dispatch is entirely ``.ClassName``-driven, then delegates
+              to ``BaseOperations._ResolveFeatureStrucOwner`` (cast) and
+              ``_GetFeatureStruc`` (recursive C4 serialize).
+        """
+        msa = self.__GetMsaObject(item)
+        props = {}
+        class_name = msa.ClassName
+
+        if class_name == "MoUnclassifiedAffixMsa":
+            # R2 (lead ruling): MoUnclassifiedAffixMsa is EXCLUDED from
+            # FEATURE_STRUC_OWNER_TABLE and the resolver raises on it BY
+            # DESIGN -- but CreateUnclassifiedAffix (this very module)
+            # manufactures these routinely, so capture meets them in
+            # normal use. Discriminate here, BEFORE ever consulting the
+            # resolver, so routine capture of an unclassified affix MSA
+            # never raises. The live probe confirmed this ClassName
+            # carries no feature-struct property at all.
+            return props
+
+        if class_name == "MoStemMsa":
+            self.__CaptureFeatureStrucProp(props, msa, None, "MsFeatures")
+        elif class_name == "MoInflAffMsa":
+            self.__CaptureFeatureStrucProp(props, msa, None, "InflFeats")
+        elif class_name == "MoDerivAffMsa":
+            self.__CaptureFeatureStrucProp(props, msa, "From", "FromMsFeatures")
+            self.__CaptureFeatureStrucProp(props, msa, "To", "ToMsFeatures")
+        # else: ClassName outside the C1 table's four in-scope MSA rows
+        # (e.g. MoDerivStepMsa, excluded by C1 -- never created by this
+        # module). No feature-struct keys captured; the resolver is never
+        # called here, so this defensive fallback cannot raise.
+
+        return props
+
+    @OperationsMethod
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
+        """
+        Apply syncable properties (from GetSyncableProperties) onto an MSA.
+
+        Handles the four C1 MSA feature-struct key-pairs
+        (``MsFeatures``/``MsFeaturesGuid``, ``InflFeats``/
+        ``InflFeatsGuid``, ``FromMsFeatures``/``FromMsFeaturesGuid``,
+        ``ToMsFeatures``/``ToMsFeaturesGuid``) directly; everything else in
+        ``props`` (currently nothing, since ``GetSyncableProperties`` emits
+        only these keys, but a caller-constructed ``props`` dict may carry
+        more) is delegated to ``BaseOperations.ApplySyncableProperties``
+        unchanged.
+
+        Args:
+            item: Target MSA (already created + owned + GUID-assigned by
+                the caller), or its HVO/GUID (cast via ``__GetMsaObject``,
+                C2).
+            props: dict produced by GetSyncableProperties (or built by a
+                caller following the same shape).
+            ws_map: Optional source->target writing-system Id mapping.
+                Unused by the feature-struct branches (which resolve by
+                GUID, not writing system); passed through to the base
+                loop for forward compatibility with any future plain
+                scalar/multistring MSA property.
+            fill_gaps: Passed through to the base loop. Has no additional
+                effect on the feature-struct branches, which are always
+                purely additive/idempotent by GUID (mirrors
+                NaturalClassOperations' equivalent note).
+
+        Raises:
+            FP_ParameterError: If ``item`` is None, ``props`` is not a
+                dict, or (C7) a ``<Name>``/``<Name>Guid`` spec references a
+                feature, value, or feature-structure-type GUID that does
+                not exist in the target project -- naming the unresolved
+                GUID and instructing the caller to sync the feature system
+                first. Silently dropping a spec would leave the target's
+                MSA feature structure incomplete with no visible error
+                (same bug class as the NaturalClassOperations/#222
+                lineage).
+
+        Notes:
+            - The four feature-struct keys are POPPED out of ``props``
+              (via a filtered copy) BEFORE calling ``super()`` (C6):
+              ``BaseOperations._apply_props_loop`` dispatches on
+              ``isinstance(value, dict)`` and would otherwise route a C4
+              dict into the multi-writing-system multistring path and
+              silently drop it.
+            - Gates on KEY PRESENCE, never truthiness (C6): a present-but-
+              empty feature structure (``<Name>Guid`` set, ``<Name>``
+              absent/``{}``) is a real, empty-but-attached
+              ``IFsFeatStruc`` on the source and must still create/attach
+              an empty struct on the target, not be treated as "source has
+              none".
+            - ``MoUnclassifiedAffixMsa`` (R2) and any out-of-C1-table
+              ClassName: no feature-struct branch runs; only the base
+              loop's (here, empty) pass-through has any effect.
+        """
+        if item is None:
+            raise FP_ParameterError("ApplySyncableProperties: item is None")
+        if not isinstance(props, dict):
+            raise FP_ParameterError(
+                f"ApplySyncableProperties: props must be a dict, got "
+                f"{type(props).__name__}"
+            )
+
+        msa = self.__GetMsaObject(item)
+        class_name = msa.ClassName
+
+        # Pop the four feature-struct key-pairs out of props BEFORE
+        # calling super() (C6) -- BaseOperations._apply_props_loop
+        # dispatches a dict value into the multistring path and would
+        # drop a C4 dict silently at that layer instead of raising.
+        base_props = {
+            k: v for k, v in props.items() if k not in self.__FEATURE_STRUC_KEYS
+        }
+        super().ApplySyncableProperties(msa, base_props, ws_map, fill_gaps=fill_gaps)
+
+        if class_name == "MoUnclassifiedAffixMsa":
+            # R2: no feature-struct property on this ClassName; the
+            # resolver is never consulted, so this cannot raise.
+            return
+
+        if class_name == "MoStemMsa":
+            self.__ApplyFeatureStrucProp(msa, None, "MsFeatures", props)
+        elif class_name == "MoInflAffMsa":
+            self.__ApplyFeatureStrucProp(msa, None, "InflFeats", props)
+        elif class_name == "MoDerivAffMsa":
+            self.__ApplyFeatureStrucProp(msa, "From", "FromMsFeatures", props)
+            self.__ApplyFeatureStrucProp(msa, "To", "ToMsFeatures", props)
+        # else: ClassName outside the C1 table's four in-scope MSA rows --
+        # nothing to apply; the resolver is never consulted here either.
+
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
+
+    # The eight props keys handled directly by ApplySyncableProperties'
+    # feature-struct branches -- must be excluded from the base-loop
+    # pass-through (C6). Kept as one tuple so the pop-filter and any
+    # future audit share a single source of truth.
+    __FEATURE_STRUC_KEYS = (
+        "MsFeatures", "MsFeaturesGuid",
+        "InflFeats", "InflFeatsGuid",
+        "FromMsFeatures", "FromMsFeaturesGuid",
+        "ToMsFeatures", "ToMsFeaturesGuid",
+    )
+
+    def __CaptureFeatureStrucProp(self, props, msa, slot, key):
+        """
+        Capture one C1 feature-struct row into ``props``, in place.
+
+        Args:
+            props: The dict being built by GetSyncableProperties;
+                mutated in place.
+            msa: The MSA object (any ClassName already confirmed by the
+                caller to have a row in FEATURE_STRUC_OWNER_TABLE for
+                this ``slot``).
+            slot: ``None`` | ``"From"`` | ``"To"`` -- passed straight
+                through to ``_ResolveFeatureStrucOwner`` (C1).
+            key: The props key stem (e.g. ``"MsFeatures"``) -- the C1
+                table's props-key column. ``f"{key}Guid"`` is the sibling
+                GUID key.
+
+        Notes:
+            - Delegates the owner/property resolution entirely to
+              ``BaseOperations._ResolveFeatureStrucOwner`` -- no
+              ``hasattr`` probe, no local cast.
+            - Only emits keys when the owning property is non-None (a
+              present-but-empty struct still emits both keys, since
+              ``_GetFeatureStruc`` never returns ``None`` for a non-None
+              struct -- C4). A null owning property emits neither key,
+              which is the PRESENCE gate C6 requires on the apply side.
+        """
+        concrete_owner, prop_name = self._ResolveFeatureStrucOwner(msa, slot=slot)
+        struct = getattr(concrete_owner, prop_name)
+        if struct is not None:
+            props[key] = self._GetFeatureStruc(struct)
+            props[f"{key}Guid"] = str(struct.Guid)
+
+    def __ApplyFeatureStrucProp(self, msa, slot, key, props):
+        """
+        Apply one C1 feature-struct row from ``props`` onto ``msa``, if
+        present.
+
+        Args:
+            msa: The MSA object (any ClassName already confirmed by the
+                caller to have a row in FEATURE_STRUC_OWNER_TABLE for
+                this ``slot``).
+            slot: ``None`` | ``"From"`` | ``"To"`` -- passed straight
+                through to ``_ResolveFeatureStrucOwner`` (C1).
+            key: The props key stem (e.g. ``"MsFeatures"``).
+            props: The ORIGINAL (unfiltered) props dict passed to
+                ``ApplySyncableProperties`` -- read-only here.
+
+        Notes:
+            - Gates on KEY PRESENCE, never truthiness (C6):
+              ``if key in props or guid_key in props`` -- a present-but-
+              empty source struct carries ``<Name>Guid`` with ``<Name>``
+              absent (or ``{}``), and must still create/attach an empty
+              target struct, not be skipped as "source has none".
+            - ``on_unresolved="raise"`` unconditionally (C7): an
+              unresolvable feature/value/type GUID must never be
+              silently dropped for an MSA sync -- a rule referencing an
+              incomplete MSA would otherwise fail to match anything with
+              no visible error (same policy as
+              ``NaturalClassOperations.ApplySyncableProperties``).
+        """
+        guid_key = f"{key}Guid"
+        if key in props or guid_key in props:
+            concrete_owner, prop_name = self._ResolveFeatureStrucOwner(
+                msa, slot=slot
+            )
+            spec = props.get(key) or {}
+            struct_guid = props.get(guid_key)
+            self._ApplyFeatureStruc(
+                concrete_owner,
+                prop_name,
+                spec,
+                struct_guid=struct_guid,
+                on_unresolved="raise",
+                label=f"MSA ({msa.ClassName}, {prop_name})",
+            )
+
+    def __GetMsaObject(self, msa_or_hvo):
+        """
+        Internal helper to resolve an MSA parameter to a concrete LCM
+        object, accepting an object, HVO (int), or GUID (str).
+
+        Casts to the concrete MSA interface -- ``IMoStemMsa`` /
+        ``IMoInflAffMsa`` / ``IMoDerivAffMsa`` / ``IMoUnclassifiedAffixMsa``
+        -- by ``ClassName`` BEFORE returning (contract C2).
+        ``FLExProject.Object(hvo_or_guid)`` returns a bare ``ICmObject``;
+        without this cast, a caller reaching ``GetSyncableProperties``/
+        ``ApplySyncableProperties`` via an HVO or GUID string (rather than
+        an already-typed object from, e.g., ``sense.MorphoSyntaxAnalysisRA``)
+        would silently omit the feature-struct keys downstream wherever a
+        subtype-only member were read directly -- this module avoids that
+        specific failure mode by routing all subtype access through
+        ``_ResolveFeatureStrucOwner`` (which casts internally regardless),
+        but the eager cast here still keeps this resolver symmetric with
+        the sibling ``__GetNaturalClassObject``/``__GetPhonemeObject``
+        C2 fix sites and gives every downstream caller a properly
+        concrete-typed object regardless of entry path.
+
+        Args:
+            msa_or_hvo: An MSA object, a wrapper exposing one via
+                ``._obj``, an HVO (``int``), or a GUID (``str``).
+
+        Returns:
+            The resolved MSA, cast to its concrete interface when its
+            ``ClassName`` is one of the four recognised MSA subtypes.
+            Any other ``ClassName`` (e.g. ``MoDerivStepMsa``) is returned
+            unchanged -- ``.ClassName`` stays readable either way, and the
+            dispatching callers above treat an unrecognised ClassName as
+            a no-op, never a cast attempt.
+        """
+        if isinstance(msa_or_hvo, (int, str)):
+            obj = self.project.Object(msa_or_hvo)
+        elif hasattr(msa_or_hvo, "_obj"):
+            obj = msa_or_hvo._obj
+        else:
+            obj = msa_or_hvo
+
+        class_name = getattr(obj, "ClassName", None)
+        cast_iface = {
+            "MoStemMsa": IMoStemMsa,
+            "MoInflAffMsa": IMoInflAffMsa,
+            "MoDerivAffMsa": IMoDerivAffMsa,
+            "MoUnclassifiedAffixMsa": IMoUnclassifiedAffixMsa,
+        }.get(class_name)
+        if cast_iface is not None:
+            return cast_iface(obj)
+        return obj
 
     def __CreateAndAttach(self, sense, sandbox, factory_interface):
         """
