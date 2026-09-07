@@ -1,14 +1,15 @@
 {
   "feature": "feature-structure-sync-gap",
   "status": "in_progress",
-  "last_cycle": 5,
-  "spurts_completed": 4,
+  "last_cycle": 6,
+  "spurts_completed": 5,
   "issues": [
     251,
     252,
     256,
     253,
-    264
+    264,
+    265
   ],
   "tasks_done": [
     "cycle1-verification-live-probe-run_mode-live-8of8-evidence-live-cycle1-probe.md",
@@ -60,10 +61,20 @@
     "cycle5-lead-ruling-4 Defect 4 runs BEFORE T6 and gets its OWN spurt, not shared with T14a. All three of #250 spec 6.3 conditions now hold. Decisive reason unchanged: T6-T8 add five new sync implementations whose multistring alts inherit the fix for free if it lands first, versus five fresh instances of a known bug to sweep later. NOT shared with T14a because both need FLEXLIBS_REQUIRE_LIVE=1 and ONLY ONE AGENT RUNS LIVE PYTEST AT A TIME in this tree -- #264 is literally about global init order-dependence and cycle 5 saw a live run leave residue in a shared in-place project.",
     "cycle5-correction #264 figure is 3, NOT 11. Of the 13 modules in flexicon/sync/tests/ and flexicon/tests/, 11 are unmarked but only THREE actually call FLExInitialize (test_base_operations.py, test_FLExInit.py, test_FLExProject.py). The other 8 call no init and are genuinely offline-safe -- blanket-marking those trees would WRONGLY DELETE REAL OFFLINE COVERAGE. #264 amended upstream; its suggested-fix item 2 targets the three. Supersedes cycle4-lead-ruling-A2 figure.",
     "cycle5-note two Pyright diagnostics in T5-touched files are PRE-EXISTING and benign: InflectionFeatureOperations.py:415 (empty-generator idiom, 588a8591) and PhonFeatureOperations.py:658 (heterogeneous-dict typing gap, e1603c7f, on the capture side C4b freezes). No action; recorded so nobody re-derives them.",
-    "cycle5-hazard writable_project opens the real shared Sena 3 IN PLACE, not a sandbox -- a failing live assertion leaves residue, and residue can make a LATER clean run report wrong numbers even with the source hash-verified identical to HEAD. Both cycle-5 agents hit this; both cleared it with python scripts/restore_sena3.py. Prefer target_sandbox for anything that writes."
+    "cycle5-hazard writable_project opens the real shared Sena 3 IN PLACE, not a sandbox -- a failing live assertion leaves residue, and residue can make a LATER clean run report wrong numbers even with the source hash-verified identical to HEAD. Both cycle-5 agents hit this; both cleared it with python scripts/restore_sena3.py. Prefer target_sandbox for anything that writes.",
+    "T14a DONE commit b3ba083b -- tests/operations/test_makefeatstruc_c3_live.py, 3 requires_live_project tests on target_sandbox (nested recursive-dict round-trip, slot=From/To disambiguation THROUGH MakeFeatStruc on ONE MoDerivAffMsa, ambiguous-owner-without-slot). Evidence evidence/live-T14a.md, run_mode live, 3/3 passed. TEST-ONLY: zero diff to flexicon/code/BaseOperations.py, tests/conftest.py untouched, independently confirmed by the main session.",
+    "cycle6-finding the ambiguous-owner test landed as a RAISE test, not a silent-guess test -- _ResolveFeatureStrucOwner raises FP_ParameterError naming the ClassName and the valid slots (BaseOperations.py:1728-1745). The 'silent guess' risk flagged at T14a dispatch did NOT materialise; the C1 never-guess rule is enforced in code and now pinned by a shipped test.",
+    "cycle6-lead-ruling-1 CHECKPOINT 2c CLOSES WITHOUT a separate live verification cycle. Falsifiable reason, three parts: (a) T14a is test-only with independently-confirmed ZERO production diff, so the failure mode a gate catches has no surface; (b) test 1 carries a real mutation kill (__NormalizeFeatStrucLevel recursion disabled -> nested round-trip failed, other two correctly stayed green, restore git hash-object identical); (c) tests 2 and 3 have NO mutation kill, so the lead READ THE TEST SOURCE and re-derived non-tautology structurally -- test 2 uses ONE MoDerivAffMsa (same deriv_hvo, two fresh Object() lookups) and asserts both slots non-None AND From.Hvo != To.Hvo AND each slot carries its own distinct value (sg vs pl), so ignoring slot= cannot pass it; test 3 asserts the raise message contains BOTH 'MoDerivAffMsa' and 'slot' and re-fetches to assert no partial attach, so an unrelated raise does not satisfy it.",
+    "cycle6-lead-ruling-2 the two MISSING mutation kills are FOLDED INTO the Defect-4 gate, not given their own cycle. Only one agent runs live pytest in this tree, so a standalone T14a gate costs a full serialised cycle; the D4 gate already holds the live token, already mutates and hash-restores BaseOperations.py, already uses target_sandbox. M-T14a-2 = break slot= routing in _ResolveFeatureStrucOwner (force first table row regardless of slot) -> expect test_slot_disambiguates_from_and_to_through_makefeatstruc to FAIL. M-T14a-3 = make the ambiguous-ClassName-no-slot branch pick a row instead of raising -> expect test_ambiguous_owner_without_slot_raises_through_makefeatstruc to FAIL. If either test stays GREEN under its mutation it is tautological, T14a is NOT done, and Checkpoint 2c REOPENS regardless of the D4 result.",
+    "cycle6-lead-ruling-3 Defect 4 anchors re-confirmed UNIQUE by the lead at b3ba083b before dispatch: def _apply_props_loop( :319 (spec said :319), 'tgt_handle = target_ws_by_id.get(tgt_ws_id)' :360 grep -c == 1, '# Target lacks this WS; skip silently.' :362, 'ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()' :1307. NO DRIFT -- T5's ~276 added lines all landed AFTER :1307, so the D4 target region is exactly where the frozen contract said. Contract does NOT need re-freezing. Implementers still re-confirm before editing (spec 6.1).",
+    "cycle6-lead-ruling-4 __ResolveFeatStrucOperand's twin _obj branches (BaseOperations.py ~:2656-2661, new in T5) are a NOTE, not a T-task. Both branches return raw._obj and are collapsible; the uncovered case (wrapper has BOTH _obj and Hvo, inner raw._obj lacks Hvo) falls through and returns the WRAPPER -- but that fails LOUD at the CLR property setter (cv.FeatureRA/cv.ValueRA reject a Python wrapper), so it is not silent corruption. Fixing it now would re-open BaseOperations.py exactly when #250 spec 6.3 condition 3 requires it quiet. TRIGGER: fold the collapse into T12 (CopyFeatStruc) as a one-line rider PLUS a test pinning the uncovered case. Pyright's _obj-on-bool complaint there is a FALSE POSITIVE (no narrowing through hasattr).",
+    "cycle6-lead-ruling-5 CREW ROUTING TABLE now tracks WRITE and COMMIT as SEPARATE columns -- see STATUS.md for the full table. lex-doc has Write but NO Bash so it CANNOT git commit (cycle 6 cost a manual rescue: main session committed 6b54059 on its behalf). lex-verification (Bash, no Write/Edit) and lex-archivist (Bash + Edit, no Write) can only CREATE a new report via a Bash HEREDOC -- Edit cannot create a nonexistent file. lex-qc/lex-domain/lex-synthesis/lex-author are fully read-only and cannot persist anything. Every future dispatch plan must (1) give Bash-only roles an explicit heredoc instruction, (2) name who commits lex-doc's output in the same response, (3) never ask a read-only role to write a file.",
+    "cycle6-doc DONE spec.md errata commit 6b54059 (committed by the MAIN SESSION on lex-doc's behalf -- lex-doc has no Bash): C3 operand list corrected to objects/HVOs/GUIDs, C4 name-tolerant contrast rewritten, T18 + section 5.1 given additive cycle-5 correction notes (11 unmarked but only 3 call FLExInitialize; original text left in place per no-rewrite-history), T14 split into T14a/T14b, section 7 candidate follow-up added.",
+    "cycle6-lead-state-update spec.md section 7 updated by the LEAD: the name-operand follow-up is now recorded as FILED = flexicon#265 (OPEN, user-approved), superseding the 'needs user approval / not filed' wording. T14a checkbox ticked with commit, evidence, the raise-test finding, and the named falsifiability residue.",
+    "cycle6-open-item #256 CLOSURE STILL PENDING THE USER -- draft at reviews/cycle6-issue256-closure-draft.md, NOT posted, may stay open. The main session corrected a SUBSTANTIVE error first: the draft illustrated nesting with NAME keys while four lines later stating names are not accepted operands, so the example would have RAISED if the reporter pasted it; replaced with {agreement_feat.Hvo: {number_feat.Hvo: sg_val.Hvo}} plus an explicit paragraph that nesting is solved but NOT with the name-based operands #256's own example used. LEAD NOTE: #256's ask 2 is therefore answered STRUCTURALLY, not in the form the reporter asked for -- #265 is where the requested form lives, and the closing comment must not read as a full grant."
   ],
-  "next_checkpoint": "Checkpoint 2c -- T14a (the promoted C3 live coverage: nested recursive-dict round-trip, slot=From/To on a live MoDerivAffMsa, ambiguous-owner error path) committed and gated PASS, with the spec.md C3/C4 errata + #264-figure correction + T14 split landed and the #256 closure comment DRAFTED for the user approval. Closing 2c leaves the #250 Defect 4 micro-spurt as the immediately next spurt, then T6.",
-  "next_entry": "T14a ALONE plus two docs/record items. (1) T14a, LIVE on target_sandbox: promote the gate probes into a SHIPPED test file. The gate original probe file test_verify_t5_c3_gate.py is GONE -- its worktree was removed -- so RECONSTRUCT from evidence/live-cycle5-verification-t5.md section 5; do not hunt for the file. TEST-ONLY: add no production code and do NOT re-open BaseOperations.py, which is what keeps #250 spec 6.3 condition 3 satisfied for the Defect-4 spurt right behind it. Use target_sandbox, never the in-place Sena 3 (writable_project leaves residue on failure). FLEXLIBS_REQUIRE_LIVE=1, evidence file mandatory, run_mode must be live. (2) spec.md docs-only: C3/C4 'a name' errata, #264 figure 11 -> 3, T14 split into T14a/T14b. (3) #256 closure comment DRAFTED to a file, NOT posted -- gh issue close needs the user approval. Explicit-path staging always; the other crew is still active in this tree and a git-index collision already occurred during T5.",
+  "next_checkpoint": "Checkpoint D4 (#250 Defect 4 micro-spurt) -- the lookup-only normalized writing-system fallback committed in BaseOperations._apply_props_loop per C-D4-1..C-D4-6, offline tests (D4-T2) + live evidence on target_sandbox (D4-T3, predictions committed BEFORE the run and the UNFIXED side measured first) + CHANGELOG (D4-T5) landed, the section-3 13-site inventory re-verified with finding F2 settled (D4-T4, report only), the verification gate PASS, and the two folded T14a mutations M-T14a-2 / M-T14a-3 each killing their test. Closing Checkpoint D4 leaves T6 as the immediately next work.",
+  "next_entry": "Cycle 7 = the Defect-4 micro-spurt, TWO SEQUENTIAL GROUPS (only ONE agent runs live pytest in this tree at a time). GROUP 1, read-only, no pytest, no edits: D4-T4 -- re-grep the spec's section-3 13-site {ws.Id: ws.Handle} inventory PINNED TO COMMIT b3ba083b, report drift (T4 already moved PhonemeOperations to :1441), and SETTLE FINDING F2 explicitly (does PhonemeOperations' apply path self-resolve and therefore NOT inherit the fix?). GROUP 2, holds the live-pytest token: D4-T1 + D4-T2 + D4-T3 + D4-T5. Lookup-only is FROZEN (C-D4-2) -- if it proves infeasible, STOP and hand off needs_human; do NOT expand to the 13 build sites. Anchors, not line numbers (the lead already confirmed all four unique at b3ba083b; re-confirm anyway). Cycle 8 = the gate + M-T14a-2/M-T14a-3 + the D4-T6 #250 comment DRAFTED not posted.",
   "deferred": [
     "OUT of feature, needs USER APPROVAL to file: IWfiAnalysis.MsFeaturesOA never captured (WfiAnalysisOperations.py:335) -- cross-reference the unfiled InflClassRA draft at specs/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md, which touches the same file",
     "OUT of feature, needs USER APPROVAL to file: IFsFeatStruc.FeatureDisjunctionsOC never traversed by any reader (new capability, not a resolver defect)",
@@ -77,7 +88,7 @@
     "Crew config: Explore and lex-domain have no Write tool, so cycle-1 reports were persisted by the main session. Grant write access to specs/<feature>/reviews/ or route report-writing through a write-capable agent"
   ],
   "updated": "2026-09-07",
-  "known_non_regression": "tests/.../test_apply_raises_on_type_mismatch_segments_target FAILS identically before and after every change so far (AttributeError: 'ICmObject' object has no attribute 'Name', NaturalClassOperations.py:1270). Pre-existing C2/HVO-cast symptom, expected to fall out of T10. Do NOT re-diagnose as a T4/T5 regression. ALSO EXPECTED RED (foreign, other crew's baseline, do NOT fix or re-diagnose): tests/operations/test_transaction_rollback.py::TestPhase2JoinOrOpen::test_rollback_flag_set_true_on_exception and ::test_depth_restored_on_exception, and tests/test_flexlibs2_alias_ratchet.py::TestFlexlibs2AliasIsInboundOnly::test_no_executable_flexlibs2_imports_outside_alias_package (ec54432 rename fallout). A FOURTH failure, or a changed message on any of these, means STOP and report.",
+  "known_non_regression": "tests/.../test_apply_raises_on_type_mismatch_segments_target FAILS identically before and after every change so far (AttributeError: 'ICmObject' object has no attribute 'Name', NaturalClassOperations.py:1270). Pre-existing C2/HVO-cast symptom, expected to fall out of T10. Do NOT re-diagnose as a T4/T5 regression. ALSO EXPECTED RED (foreign, other crew's baseline, do NOT fix or re-diagnose): tests/operations/test_transaction_rollback.py::TestPhase2JoinOrOpen::test_rollback_flag_set_true_on_exception and ::test_depth_restored_on_exception, and tests/test_flexlibs2_alias_ratchet.py::TestFlexlibs2AliasIsInboundOnly::test_no_executable_flexlibs2_imports_outside_alias_package (ec54432 rename fallout). A FOURTH failure, or a changed message on any of these, means STOP and report. T14a's three tests in tests/operations/test_makefeatstruc_c3_live.py are GREEN and live-only; they are deselected (not failed) in the pinned offline subset, which is why the cycle-6 offline delta reads +0 passed / +3 deselected.",
   "sequencing_ruling_250": {
     "verdict": "sequential-after-feature_complete, NOT parallel",
     "reasons": [
@@ -94,7 +105,7 @@
       "id": "250-defect-4",
       "contract": "specs/250-writingsystem-activation/spec.md (FROZEN at commit a26d39c; scope = Defect 4 ONLY, Defects 1-3 stay queued behind feature_complete)",
       "window": "AFTER the Checkpoint 2b gate (T4 AND T5) and BEFORE T6",
-      "window_state": "OPEN as of cycle 5 -- T5 is committed (6643b483) and gated PASS, so Checkpoint 2b is CLOSED. Runs as its OWN spurt immediately after Checkpoint 2c (T14a), and BEFORE T6. Not shared with T14a because only one agent runs live pytest at a time in this tree.",
+      "window_state": "DISPATCHED as cycle 7 (spurt 6). Checkpoint 2b CLOSED at cycle 5 (T5 6643b483) and Checkpoint 2c CLOSED at cycle 6 (T14a b3ba083b, test-only, zero production diff). All three section-6.3 dispatch conditions re-checked by the lead at close and all three hold.",
       "why_not_open_yet": "spec.md defines Checkpoint 2b as T4-T5 and cycle 4's PASS was T4's task gate only. That spec's section 6.3 condition 3 requires that BaseOperations.py hold no uncommitted FS work -- and T5 puts the single generalized MakeFeatStruc into that same file. Letter and purpose agree: serialise. Cycle 3 already came within one 'git checkout --' of losing an uncommitted BaseOperations.py; serialising costs one spurt and removes the whole class of risk.",
       "opens_when": "OPENED. T5 committed 6643b483 and gate PASS reviews/cycle5-verification-T5.md.",
       "dispatch_conditions_all_three_must_hold": [
@@ -104,7 +115,40 @@
       ],
       "why_before_T6_rather_than_after_T8": "T6-T8 add five new sync implementations whose multistring alts inherit the fix immediately, instead of shipping five fresh instances of a known-buggy resolution and sweeping them later (spec 6.3).",
       "carry_in": "D4-T4 must re-verify the section-3 13-site inventory by grep and report drift -- T4 already moved PhonemeOperations' WS-map build to :1441. Report only; do not edit those sites. Settle finding F2 (whether PhonemeOperations' apply path self-resolves and therefore will NOT inherit the fix) explicitly.",
-      "anchors_not_line_numbers": "def _apply_props_loop(, literal 'tgt_handle = target_ws_by_id.get(tgt_ws_id)', literal '# Target lacks this WS; skip silently.' -- confirm each is unique in BaseOperations.py before editing; if an anchor is missing or duplicated, T5 restructured the function and the contract needs re-freezing."
+      "anchors_not_line_numbers": "def _apply_props_loop(, literal 'tgt_handle = target_ws_by_id.get(tgt_ws_id)', literal '# Target lacks this WS; skip silently.' -- confirm each is unique in BaseOperations.py before editing; if an anchor is missing or duplicated, T5 restructured the function and the contract needs re-freezing.",
+      "anchors_verified_at": "b3ba083b, by the lead, 2026-09-07: def _apply_props_loop( = :319; 'tgt_handle = target_ws_by_id.get(tgt_ws_id)' = :360, grep -c == 1; '# Target lacks this WS; skip silently.' = :362; 'ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()' = :1307. NO DRIFT -- T5's ~276 added lines all landed after :1307. Contract does NOT need re-freezing."
     }
-  ]
+  ],
+  "crew_routing": {
+    "note": "cycle-6 ruling 5. WRITE and COMMIT are different capabilities. Verified from the agent definitions 2026-09-07.",
+    "can_commit": [
+      "lex-programmer",
+      "lex-logscan",
+      "lex-verification",
+      "lex-archivist"
+    ],
+    "cannot_commit": [
+      "lex-doc",
+      "lex-simplify",
+      "lex-qc",
+      "lex-domain",
+      "lex-synthesis",
+      "lex-author"
+    ],
+    "bash_only_must_use_heredoc": [
+      "lex-verification",
+      "lex-archivist"
+    ],
+    "edit_cannot_create_a_new_file": [
+      "lex-archivist",
+      "lex-simplify"
+    ],
+    "fully_read_only_cannot_persist": [
+      "lex-qc",
+      "lex-domain",
+      "lex-synthesis",
+      "lex-author"
+    ],
+    "lex_doc": "has Write but NO Bash -- it can author a file and can NEVER commit it. Any plan using lex-doc must name the committer in the same response. Cost cycle 6 a manual rescue (6b54059 committed by the main session)."
+  }
 }

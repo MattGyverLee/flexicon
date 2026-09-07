@@ -627,7 +627,15 @@ file. The #250 Defect 4 window opens **after T5's gate**, not after T4's.
 - [ ] **T12** `CopyFeatStruc` (C8).
 - [ ] **T13** Latent truthiness gates: `PhonemeOperations.py:1428`,
       `PhonFeatureOperations.py:760`.
-- [ ] **T14a** (split out cycle 5, 2026-09-07) Promote the C3 live coverage
+- [x] **T14a** DONE cycle 6, commit `b3ba083b` --
+      `tests/operations/test_makefeatstruc_c3_live.py` (3 live tests,
+      `target_sandbox`), evidence `evidence/live-T14a.md`, `run_mode: live`,
+      3/3 passed. Test 3 landed as a **raise** test: the resolver raises
+      `FP_ParameterError` on an ambiguous `ClassName` with no `slot=`, so the
+      "silent guess" risk flagged at dispatch did not materialise. Falsifiability
+      residue: only test 1 carries a mutation kill; the mutations for tests 2/3
+      are folded into the Defect-4 gate (see STATUS.md, cycle-6 ruling 2).
+      (split out cycle 5, 2026-09-07) Promote the C3 live coverage
       into the shipped suite: nested recursive-dict round-trip (write nested ->
       re-read from the LCM -> compare), `slot="From"/"To"` disambiguation
       exercised **through `MakeFeatStruc` itself**, and the ambiguous-owner-
@@ -790,16 +798,20 @@ Affected: the "Project Structure" tree, the file-header example, the
 name. Fix `CLAUDE.md` in this feature (docs-only, zero risk); the code/test
 alias sweep stays deferred as its own PR.
 
-**Candidate follow-up (cycle 5, 2026-09-07): `MakeFeatStruc` does not accept a
-plain feature/value NAME as an operand.** See the C3 errata above -- this was
+**FILED as flexicon#265 (user-approved, cycle 6, 2026-09-07): `MakeFeatStruc`
+does not accept a plain feature/value NAME as an operand.** See the C3 errata
+above -- this was
 never implemented in either pre-T5 twin, so it is a pre-existing specification
 gap, not a T5 regression. It needs its own freeze cycle rather than a quick
 patch here, because a bare-name lookup requires four undecided policy choices:
 which `Find`-style lookup to use, what scope to search (project-wide vs. a
 single feature system), what ambiguity policy applies when the same name
 occurs in more than one feature system, and what case/writing-system rule
-governs the match. **Filing this as a GitHub issue needs the user's approval --
-it is not filed, and no `gh` command has been run for it.**
+governs the match. **Status (cycle 6, 2026-09-07): the user approved filing and
+the issue is now OPEN as flexicon#265, recording those four undecided policy
+choices as its content.** It is OUT of this feature's scope; nothing in
+`feature-structure-sync-gap` waits on it. Supersedes the earlier "needs user
+approval / not filed" wording.
 
 **Tooling limitations found during the sweep (recorded so future sweeps do not
 repeat them):**

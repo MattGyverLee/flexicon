@@ -2,7 +2,210 @@
 
 Repo: flexicon (main). Issues: flexicon#251, #252, #256, and **#253 (folded in)**.
 
-## Where things stand (as of 2026-09-07, spurt 4 / cycle 5 end)
+## Where things stand (as of 2026-09-07, spurt 5 / cycle 6 end)
+
+**CHECKPOINT 2c IS CLOSED.** T14a landed (`b3ba083b`) --
+`tests/operations/test_makefeatstruc_c3_live.py`, three
+`requires_live_project` tests on `target_sandbox`, `run_mode: live`, 3/3
+passed, evidence `evidence/live-T14a.md`. The C3/C4 errata landed
+(`6b54059`, five `spec.md` edits). flexicon**#265 is FILED** and open
+(user-approved) for the name-operand policy gap. The #256 closure comment is
+**drafted and corrected but NOT posted** -- it stays with the user.
+
+**The #250 Defect 4 micro-spurt is DISPATCHED as cycle 7.** All three of
+`specs/250-writingsystem-activation/spec.md` section 6.3's conditions were
+re-checked at close and all three hold (see ruling 3).
+
+### Cycle-6 lead rulings (five)
+
+**Ruling 1 -- Checkpoint 2c closes WITHOUT a separate live verification cycle,
+and here is the falsifiable reason.**
+
+Cycle 5's plan called for a narrow gate whose one question was falsifiability:
+"a promoted probe that passes against mutated code is worthless coverage."
+That question is answered, but only partly by the implementer, so the lead
+answered the rest directly instead of spending a live cycle on it:
+
+- **Structural risk absent.** T14a is test-only. `b3ba083b` is three files
+  (`test_makefeatstruc_c3_live.py`, the evidence file, the report) with **zero
+  diff to `flexicon/code/BaseOperations.py`** and `tests/conftest.py`
+  untouched -- independently confirmed by the main session. The failure mode a
+  verification gate exists to catch (a production behaviour change riding along
+  unnoticed) has no surface here.
+- **Test 1 has a mutation kill.** `__NormalizeFeatStrucLevel`'s recursion was
+  disabled; the nested round-trip failed, the other two correctly stayed green,
+  and `BaseOperations.py` was restored `git hash-object`-identical (never via
+  `git checkout`).
+- **Tests 2 and 3 have NO mutation kill.** The lead read the test source rather
+  than taking the report's word, and re-derived their non-tautology
+  structurally: test 2 applies `slot="From"` and `slot="To"` to **one**
+  `MoDerivAffMsa` (the same `deriv_hvo`, two fresh `sandbox.Object()` lookups),
+  then asserts both slots are non-`None`, that `FromMsFeaturesOA.Hvo !=
+  ToMsFeaturesOA.Hvo`, **and** that each slot carries its own distinct value
+  (sg vs pl). If `slot=` were ignored, either one property stays `None` or the
+  two Hvos are equal -- the test cannot pass vacuously. Test 3 asserts the raise
+  message contains **both** `"MoDerivAffMsa"` and `"slot"` and then re-fetches
+  to assert neither slot got a partial attach, so a raise from an unrelated
+  cause does not satisfy it.
+- **Residue, named not hidden.** Structural re-derivation is weaker evidence
+  than a mutation kill. It is not dropped, it is **rescheduled**: see ruling 2.
+
+**Ruling 2 -- the two missing mutation kills are FOLDED INTO the Defect-4 gate,
+not given their own cycle.**
+
+Only one agent runs live pytest in this tree at a time, so a standalone T14a
+gate would cost a full serialised cycle. The Defect-4 verification gate is
+already holding the live-pytest token, already mutating and hash-restoring
+`flexicon/code/BaseOperations.py`, and already running `target_sandbox`. Adding
+two one-line mutations there is close to free:
+
+- **M-T14a-2:** break `slot=` routing in `_ResolveFeatureStrucOwner` (force it
+  to return the first table row regardless of `slot`). Expect
+  `test_slot_disambiguates_from_and_to_through_makefeatstruc` to FAIL.
+- **M-T14a-3:** make the ambiguous-`ClassName`-no-`slot` branch pick a row
+  instead of raising -- i.e. mutate the C1 "never guessed" rule itself. Expect
+  `test_ambiguous_owner_without_slot_raises_through_makefeatstruc` to FAIL.
+
+If either mutation leaves its test GREEN, that test is tautological, T14a is
+**not** actually done, and Checkpoint 2c reopens as a defect regardless of the
+Defect-4 result. Restore via a scratchpad backup + `git hash-object` compare,
+never `git checkout` (concurrency rule).
+
+**Ruling 3 -- Defect 4's three dispatch conditions re-checked at close; all
+hold.**
+
+1. *Lookup-only.* Contract `C-D4-2` is frozen and the fence lists exactly two
+   permitted symbols. Unchanged.
+2. *`target_sandbox`, not the in-place Target.* Frozen in section 6.4; carried
+   into the cycle-7 prompts verbatim.
+3. *`BaseOperations.py` holds no uncommitted FS work.* Re-verified at close:
+   T14a was test-only by design and `b3ba083b` shows zero diff to that file;
+   `git status --porcelain` is clean for it.
+
+Anchors re-confirmed **unique** in `flexicon/code/BaseOperations.py` at
+`b3ba083b`, by the lead, before dispatch (spec 6.1 requires this and forbids
+trusting the line numbers):
+
+| Anchor | Found at | Spec said | Unique? |
+|---|---|---|---|
+| `def _apply_props_loop(` | `:319` | `:319` | yes |
+| `tgt_handle = target_ws_by_id.get(tgt_ws_id)` | `:360` | `~:354-364` | yes (count 1) |
+| `# Target lacks this WS; skip silently.` | `:362` | -- | yes |
+| `ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()` | `:1307` | `:1306-1308` | yes in this file |
+
+**No drift.** T5 added ~276 lines to `BaseOperations.py` but all of it landed
+*after* `:1307`, so the Defect-4 target region is where the frozen contract said
+it would be. The contract does **not** need re-freezing. Implementers still
+re-confirm the anchors themselves before editing.
+
+**Ruling 4 -- `__ResolveFeatStrucOperand`'s twin `_obj` branches are a NOTE, not
+a task, and the note has a named trigger.**
+
+`flexicon/code/BaseOperations.py` `__ResolveFeatStrucOperand` (`~:2656-2661`,
+new in T5 `6643b483`) has two branches that both `return raw._obj`:
+
+```python
+if hasattr(raw, "_obj") and not hasattr(raw, "Hvo"):
+    return raw._obj
+if hasattr(raw, "_obj") and hasattr(raw._obj, "Hvo"):
+    return raw._obj
+return raw
+```
+
+They are collapsible to one condition, and there is an uncovered case: a wrapper
+having **both** `_obj` and `Hvo` whose `raw._obj` lacks `Hvo` falls through and
+returns the **wrapper**. Ruling: **NOTE.**
+
+- It is not a silent-corruption defect. The returned value is assigned to
+  `cv.FeatureRA` / `cv.ValueRA`; a Python wrapper handed to a CLR property
+  setter raises. The uncovered path **fails loud**, which is the behaviour C1
+  requires anyway.
+- Fixing it now would mean opening `BaseOperations.py` for a cosmetic change at
+  exactly the moment Defect 4's condition 3 requires that file to be quiet. The
+  cost of touching it now strictly exceeds the benefit.
+- **Trigger:** fold the collapse into **T12** (`CopyFeatStruc`), the next task
+  that legitimately edits this file's feature-struct code -- as a one-line rider
+  **plus** a test pinning the uncovered case (wrapper has `_obj` and `Hvo`,
+  inner `_obj` lacks `Hvo`), so the collapse is proven behaviour-preserving
+  rather than assumed.
+- Pyright's `_obj`-on-`bool` complaint at that site is a **false positive** (it
+  does not narrow through `hasattr`). Recorded so nobody re-derives it.
+
+**Ruling 5 -- the crew routing table now tracks WRITE and COMMIT separately.
+This is a real process defect and it cost cycle 6 a manual rescue.**
+
+`lex-doc` has `Write` but **no `Bash`**, so it physically cannot run
+`git commit`; its cycle-6 report correctly reported "BLOCKED / NOT DONE" for the
+commit step and the main session had to commit `6b54059` on its behalf. The old
+mental model was one column ("who can persist"). Write and commit are different
+capabilities. Verified from the agent definitions, 2026-09-07:
+
+| Agent | Read/Grep/Glob | Edit | Write | Bash | Can CREATE a file | Can COMMIT |
+|---|---|---|---|---|---|---|
+| `lex-programmer` | yes | yes | yes | yes | yes | **yes** |
+| `lex-logscan` | yes | yes | yes | yes | yes | **yes** |
+| `lex-verification` | yes | -- | -- | yes | **only via Bash heredoc** | **yes** |
+| `lex-archivist` | yes | yes | -- | yes | **only via Bash heredoc** (`Edit` cannot create) | **yes** |
+| `lex-doc` | yes | yes | yes | -- | yes | **NO -- someone else must commit** |
+| `lex-simplify` | yes | yes | -- | -- | no (`Edit` cannot create) | no |
+| `lex-qc` | yes | -- | -- | -- | no | no |
+| `lex-domain` | yes (+WebFetch) | -- | -- | -- | no | no |
+| `lex-synthesis` | yes | -- | -- | -- | no | no |
+| `lex-author` | yes | -- | -- | -- | no | no |
+
+Binding consequences for every future dispatch plan:
+
+1. **Bash-only roles must be told to write their report with a heredoc.**
+   `lex-archivist` has `Edit` but no `Write`, and `Edit` cannot create a file
+   that does not exist -- so "just Edit it" silently fails for a new report.
+2. **If `lex-doc` is dispatched, the plan must name who commits its output** --
+   in the same response, not discovered afterwards.
+3. **Read-only roles (`lex-qc`, `lex-domain`, `lex-synthesis`, `lex-author`)
+   cannot persist anything at all.** This is the same finding cycle 1 recorded
+   for `Explore`/`lex-domain`; it is now a table rather than a paragraph so it
+   stops being rediscovered.
+
+### Cycle-6 items NOT closed (deliberately)
+
+- **#256 closure -- PENDING THE USER.** Draft at
+  `reviews/cycle6-issue256-closure-draft.md`, **not posted**, and it may stay
+  open. The main session corrected a substantive error in it first: the draft
+  illustrated nesting with **name** keys (`{"noun agreement": {...}}`) while
+  four lines later stating names are not accepted operands -- that example would
+  have **raised** if the reporter pasted it. It now shows the shape that works
+  (`{agreement_feat.Hvo: {number_feat.Hvo: sg_val.Hvo}}`) plus an explicit
+  paragraph that nesting is solved **but not with the name-based operands**
+  #256's own example used. Lead note: this means **#256's ask 2 is answered
+  structurally, not in the form the reporter asked for**, and #265 is where the
+  requested form lives. Whoever posts it must not let that read as a full grant.
+- **T14a mutation kills for tests 2 and 3** -- rescheduled into the Defect-4
+  gate (ruling 2), not dropped.
+
+## Next pickup
+
+**Spurt 6 = the #250 Defect 4 micro-spurt, ALONE. Then T6.**
+
+Contract: `specs/250-writingsystem-activation/spec.md` (FROZEN at `a26d39c`;
+Defect 4 only -- Defects 1-3 stay queued behind this feature reaching
+`feature_complete`).
+
+- **Cycle 7, group 1 (read-only, no pytest):** D4-T4 -- re-verify the section-3
+  13-site inventory by grep, pinned to a named commit, and settle finding F2
+  (does `PhonemeOperations`' apply path self-resolve and therefore NOT inherit
+  the fix?). **Report only; edit nothing.**
+- **Cycle 7, group 2 (holds the live-pytest token):** D4-T1 (the lookup-only
+  normalized fallback), D4-T2 (offline tests), D4-T3 (live on
+  `target_sandbox`, predictions committed BEFORE the run, unfixed side measured
+  first), D4-T5 (CHANGELOG).
+- **Cycle 8:** the Defect-4 verification gate, **plus** the two folded T14a
+  mutations M-T14a-2 / M-T14a-3 (ruling 2), plus the D4-T6 #250 comment
+  DRAFTED, not posted.
+- **Checkpoint D4** closes when the fix is committed, gated PASS, and both
+  folded mutations killed their tests.
+- If lookup-only proves infeasible -> **STOP, `needs_human`.** Do not expand to
+  the 13 build sites (C-D4-2).
+
+## Where things stood (as of 2026-09-07, spurt 4 / cycle 5 end)
 
 **CHECKPOINT 2b IS CLOSED.** T5 landed (`6643b483`) and its verification gate is
 **PASS** (`reviews/cycle5-verification-T5.md`). One generalized
@@ -126,7 +329,7 @@ concurrent live sessions is an unforced error.
   both cleared it with `python scripts/restore_sena3.py`. Prefer
   `target_sandbox` for anything that writes.
 
-## Next pickup
+## Next pickup (spurt 5 -- SUPERSEDED; T14a is DONE, Checkpoint 2c CLOSED)
 
 **Spurt 5 = T14a + the two docs/record items, then a narrow gate. Nothing else.**
 
