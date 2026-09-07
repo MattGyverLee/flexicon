@@ -786,9 +786,26 @@ subset proves unobtainable without touching it, **STOP and hand off
 
 ## 7. Recorded ancillary findings (not code changes to this feature's targets)
 
-**`CLAUDE.md` is stale on the package directory name (T16).** The project
-instructions say `flexlibs2/code/` and `flexlibs2/sync/`; the actual package is
-**`flexicon/code/` and `flexicon/sync/`** (`flexlibs2/` does not exist).
+**`CLAUDE.md` is stale on the package directory name (T16).** DONE -- landed
+as `9e0f9710` by the concurrent session `flexicon-cd`. The project
+instructions said `flexlibs2/code/` and `flexlibs2/sync/`; the actual package
+is **`flexicon/code/` and `flexicon/sync/`**.
+
+**Errata (cycle 8, 2026-09-07), correcting this entry's own premise.** An
+earlier revision of this paragraph asserted "(`flexlibs2/` does not exist)".
+**That is false, and the error understated the finding.** `flexlibs2/` DOES
+exist -- as the **inbound-only compatibility shim** created by `ec54432`
+(#241) for external FlexTools / FlexTrans callers on disk, deprecated and
+**removed at v5.0.0**. Verified present and tracked at cycle 8.
+
+The correction matters because it changes the severity. `#240`'s ratchet
+(`tests/test_flexlibs2_alias_ratchet.py`) forbids **any** internal reference
+to the alias, so a stale `CLAUDE.md` was not merely out of date -- it was
+actively instructing every agent to write exactly what that ratchet rejects,
+and what would become a hard break at the v5.0.0 boundary. A footgun, not a
+typo. Credit to `flexicon-cd`, which caught it while doing T16 and could not
+correct this file itself (it is locked to this session).
+
 Affected: the "Project Structure" tree, the file-header example, the
 `Shared.string_utils` / `flexlibs2.APIHelpFile` references, and every path under
 "Key Files to Know". This has already cost real work --
