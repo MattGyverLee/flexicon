@@ -29,11 +29,17 @@ isn't. #232 fixed one instance in `LexSenseOperations.GetPartOfSpeechObject`. Th
 scopes the remaining instances the same sweep surfaced across the rest of
 `flexicon/code/`.
 
-## 2. CONFIRMED sites (16), carried over verbatim from the sweep report
+## 2. CONFIRMED sites (19 = 16 carried over + 3 appended)
 
 Source: `specs/232-getpos-object/reviews/cycle1-sweep.md`, "CONFIRMED BUG (16)" table.
 Grouped by file below; the sweep's file:line, variable, property, and rationale are
 reproduced unmodified.
+
+**Two provenances, kept separate on purpose.** The first 16 rows are the
+verbatim sweep carry-over. The three `Grammar/NaturalClassOperations.py`
+`SegmentsRC` rows at the end of this section were appended later, from a
+different review, and are labelled as such — do not cite them as sweep
+findings.
 
 ### `Lexicon/AllomorphOperations.py` (4 sites)
 
@@ -92,6 +98,46 @@ files (`AllomorphOperations.py`, `LexEntryOperations.py`,
 `ConstChartWordGroupOperations.py`, `InflectionFeatureOperations.py`,
 `annotation.py` — 7 files; the sweep's "6 files" framing groups the two
 `ConstChart*Operations.py` files under one "Discourse" heading).
+
+### `Grammar/NaturalClassOperations.py` (3 sites) — APPENDED, not from the sweep
+
+**Provenance.** These three rows did **not** come from
+`specs/232-getpos-object/reviews/cycle1-sweep.md`. They were appended on
+2026-09-07 by task **T17** of `specs/feature-structure-sync-gap/spec.md`,
+whose review found that Explore's do-not-double-file list had named the
+`AllomorphOperations` `PhoneEnvRC` ×4, `LexEntryOperations.py:433` and
+`PhonologicalRuleOperations` `RightHandSidesOS` ×4 rows as already scoped
+here, but had **missed NC `SegmentsRC`**. They are recorded here rather than
+double-filed as a new issue. Same defect family as the rest of this section:
+a base-typed object reaching a subtype-only member.
+
+| file:line | variable | property read | why |
+|---|---|---|---|
+| `Grammar/NaturalClassOperations.py:655` | `nc` | `SegmentsRC` | `GetPhonemes` — `__GetNaturalClassObject` (line 106) returns `self.project.Object(hvo)` or the caller's object **uncast**, so it is base `IPhNaturalClass`; `SegmentsRC` is declared on the concrete `IPhNCSegments` only. `hasattr(nc, "SegmentsRC")` is therefore always False and the method **silently returns `[]`** for a genuinely segment-based class. |
+| `Grammar/NaturalClassOperations.py:711` | `nc` | `SegmentsRC` | `AddPhoneme` — same uncast resolver, inverted gate: `not hasattr(...)` is always True, so **every** call raises `FP_ParameterError("Cannot add phoneme to feature-based natural class")`. The message misdiagnoses the cause — the class may well be segment-based; only the *cast* is missing. |
+| `Grammar/NaturalClassOperations.py:766` | `nc` | `SegmentsRC` | `RemovePhoneme` — identical to `:711`, message `"Cannot remove phoneme from feature-based natural class"`. |
+
+**Corroboration inside the same file.** `Duplicate` at
+`Grammar/NaturalClassOperations.py:472` already performs the correct
+`IPhNCSegments(source).SegmentsRC` cast, and its in-code comment states the
+root cause verbatim: *"SegmentsRC is declared on the concrete IPhNCSegments,
+not on the base IPhNaturalClass that __GetNaturalClassObject returns; cast
+before reading it."* One site was fixed; these three were not. The file
+contains **zero** `cast_to_concrete` calls (`:472` casts via a direct
+`IPhNCSegments(...)` interface call), so it is untouched by the section-3
+`lcm_casting.py` interface-cache blocker.
+
+**Severity note.** `:711`/`:766` are more severe than a typical row in this
+section: they do not degrade silently but raise an exception whose text
+asserts a false fact about the user's data, which sends the caller to debug
+their natural class instead of the library.
+
+**Revised totals:** 16 carried over + 3 appended = **19 CONFIRMED sites**
+across 8 files. ⚠ Do not confuse this with the **19 NEEDS RUNTIME** sites
+referenced under "Success criteria" — the two 19s are unrelated counts that
+now collide numerically. The sweep-total arithmetic elsewhere in this spec
+(`16 + 19 + 9 + 20 = 64`) still uses the **original 16** and is deliberately
+left unchanged, because it reconciles against the sweep report.
 
 ## 3. BLOCKER — interface-cache gaps in `lcm_casting.py`
 
@@ -244,8 +290,17 @@ that discipline:
 
 ## Success criteria
 
-- All 16 CONFIRMED sites (Section 2) fixed, each cast through `cast_to_concrete()` or
-  an equivalent typed resolver, with a regression test per fixed method/call pattern.
+- All 16 carried-over CONFIRMED sites (Section 2) fixed, each cast through
+  `cast_to_concrete()` or an equivalent typed resolver, with a regression test per
+  fixed method/call pattern.
+- The 3 appended `NaturalClassOperations.py` `SegmentsRC` sites (Section 2, appended
+  subsection) fixed to the same standard. **Flagged for this spec's owner:** T17 was
+  scoped as a docs-only append, so it recorded the rows but did not decide whether
+  they belong in *this* spec's definition of done or in a follow-up. They are listed
+  here as the consistent default; move them out if that is the wrong call. Note
+  `:711`/`:766` raise a misleading `FP_ParameterError` rather than degrading
+  silently, so a regression test should assert the *absence* of that raise on a
+  segment-based class, not merely a corrected return value.
 - C1's cache additions land and are covered by unit tests before C4/C5 begin (BLOCKER
   in Section 3 respected — no call-site edit lands ahead of its cache prerequisite).
 - The 19 NEEDS RUNTIME sites are each resolved to a final classification (LIKELY SAFE,
