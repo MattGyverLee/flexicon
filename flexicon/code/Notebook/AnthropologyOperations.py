@@ -262,8 +262,13 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         self._ValidateParam(name, "name")
 
-        name = name.strip()
-        self._ValidateParam(name, "name")
+        # Throwaway, non-reassigning strip: the only upstream guard here is
+        # the null-check-only _ValidateParam above (no isinstance check), so
+        # this call is what raises AttributeError for a non-str payload
+        # today. Deliberately NOT reassigned, so the persist below keeps the
+        # caller's original, unstripped bytes. Preserves the pre-existing
+        # exception type per C7(b) -- do not "simplify" to plain deletion.
+        name.strip()
 
         # Check if item already exists
         if self.Exists(name):
@@ -371,8 +376,12 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         self._ValidateParam(name, "name")
 
-        name = name.strip()
-        self._ValidateParam(name, "name")
+        # Throwaway, non-reassigning strip: same rationale as Create() above
+        # -- the only upstream guard is the null-check-only _ValidateParam,
+        # so this call is what raises AttributeError for a non-str payload
+        # today. Not reassigned, so the persist below keeps the caller's
+        # original, unstripped bytes. Per C7(b).
+        name.strip()
 
         parent = self.__GetItemObject(parent_item)
 
@@ -555,14 +564,16 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         if not name or not name.strip():
             return None
 
-        name = name.strip()
         wsHandle = self.project.project.DefaultAnalWs
 
-        # Search through all items
-        target = normalize_match_key(name, casefold=False)
+        # Search through all items. Strip inline on BOTH sides of the
+        # comparison (C4) -- needle and haystack -- so whitespace-padded
+        # names are treated as duplicates of their unpadded counterparts.
+        # casefold=False preserved unchanged.
+        target = normalize_match_key(name, casefold=False).strip()
         for item in self.GetAll():
             item_name = ITsString(item.Name.get_String(wsHandle)).Text
-            if normalize_match_key(item_name, casefold=False) == target:
+            if normalize_match_key(item_name, casefold=False).strip() == target:
                 return item
 
         return None

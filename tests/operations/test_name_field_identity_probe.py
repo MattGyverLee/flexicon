@@ -235,11 +235,29 @@ def test_pn2_core_texts_haystack_never_stripped(target_sandbox):
 @pytest.mark.live_phase("AnthropologyOperations", "modify")
 def test_pn3_anthropology_haystack_never_stripped(target_sandbox):
     """
-    PN3: same layer-B shape as PN2, applied to Anthropology.Find/Exists.
-    Find's needle-strip is at AnthropologyOperations.py:558; the haystack
-    key is built raw at :565 (via item.Name.get_String(wsHandle), no
-    .strip() in that line or in normalize_match_key). Predicted None (Find)
-    / False (Exists) for both the unpadded and padded needle.
+    PN3, FLIPPED to assert T3's FIXED behaviour (tasks.md T3, spec.md C4):
+    layer-B store an item named "TEST_NF_Anthro_Raw " (trailing space --
+    this now matches what the REAL, fixed Create()/CreateSubitem()
+    themselves persist, not merely a simulation of a future state). Then:
+      - Find(unpadded)   -> PREDICTED the item (not None)
+      - Find(padded)     -> PREDICTED the item (not None)
+      - Exists(unpadded) -> PREDICTED True
+      - Exists(padded)   -> PREDICTED True
+    All four predicted to find the item because Find() now strips BOTH the
+    needle and the haystack inline before comparing
+    (AnthropologyOperations.py:562/:565), so a padded stored name is found
+    by either a padded or unpadded needle. `casefold=False` unchanged.
+
+    PRE-FIX BEHAVIOUR (historical record, cycle 1, `spec.md` C1): before
+    T3's comparison-symmetry fix, Find() stripped only the needle
+    parameter (old `:558`) and built the haystack key straight from the
+    raw `item.Name` with no stripping at all -- so Find(unpadded) and
+    Find(padded) BOTH returned None, and Exists(unpadded)/Exists(padded)
+    BOTH returned False, against this same padded haystack. That was the
+    measured, binding result this test originally locked down (see
+    `evidence/live-probe-cycle1.md`); this flip is the intended, authorised
+    consequence of C3/C4 landing, not a silent behaviour change discovered
+    by accident.
     """
     from SIL.LCModel.Core.Text import TsStringUtils
 
@@ -283,16 +301,24 @@ def test_pn3_anthropology_haystack_never_stripped(target_sandbox):
     )
 
     print(
-        f"[VERDICT][PN3] Find(unpadded) -> {find_unpadded!r} (PREDICTED None); "
-        f"Find(padded) -> {find_padded!r} (PREDICTED None); "
-        f"Exists(unpadded) -> {exists_unpadded!r} (PREDICTED False); "
-        f"Exists(padded) -> {exists_padded!r} (PREDICTED False)"
+        f"[VERDICT][PN3] Find(unpadded) -> {find_unpadded!r} (PREDICTED the "
+        f"item, post-fix); Find(padded) -> {find_padded!r} (PREDICTED the "
+        f"item, post-fix); Exists(unpadded) -> {exists_unpadded!r} "
+        f"(PREDICTED True, post-fix); Exists(padded) -> {exists_padded!r} "
+        f"(PREDICTED True, post-fix)"
     )
 
-    assert find_unpadded is None, f"PN3 MISS: Find(unpadded) expected None, got {find_unpadded!r}"
-    assert find_padded is None, f"PN3 MISS: Find(padded) expected None, got {find_padded!r}"
-    assert exists_unpadded is False, f"PN3 MISS: Exists(unpadded) expected False, got {exists_unpadded!r}"
-    assert exists_padded is False, f"PN3 MISS: Exists(padded) expected False, got {exists_padded!r}"
+    if find_unpadded is None or find_padded is None:
+        print(
+            "[REFUTATION][PN3] MEASURED OPPOSITE TO PREDICTION -- the "
+            "needle did NOT find the padded haystack even after T3's "
+            "comparison-symmetry fix. This REFUTES the fix's premise (both "
+            "sides stripped inline). Reported plainly, NOT reconciled."
+        )
+    assert find_unpadded is not None, f"PN3 MISS: Find(unpadded) expected the item, got None"
+    assert find_padded is not None, f"PN3 MISS: Find(padded) expected the item, got None"
+    assert exists_unpadded is True, f"PN3 MISS: Exists(unpadded) expected True, got {exists_unpadded!r}"
+    assert exists_padded is True, f"PN3 MISS: Exists(padded) expected True, got {exists_padded!r}"
 
 
 # ===========================================================================
@@ -916,4 +942,295 @@ def test_pn11_t1_createchart_whitespace_only_still_rejected(target_sandbox):
     print(f"[VERDICT][PN11] CreateChart('   ') -> {create_exc!r} (PREDICTED FP_ParameterError)")
     assert create_exc is not None and create_exc.startswith("FP_ParameterError"), (
         f"PN11 MISS: CreateChart('   ') expected FP_ParameterError -- got {create_exc!r}"
+    )
+
+
+# ===========================================================================
+# PN12 -- T3 -- AnthropologyOperations.Create: THE C8 anti-regression pin,
+# BOTH halves, through the real public API (spec.md C8, tasks.md T3).
+# ===========================================================================
+
+@pytest.mark.live_phase("AnthropologyOperations", "add")
+def test_pn12_t3_anthropology_create_duplicate_explosion_pin(target_sandbox):
+    """
+    PN12, THE C8 anti-regression pin for AnthropologyOperations.Create
+    (tasks.md T3, spec.md C8), through the REAL public API end to end (no
+    layer-B bypass needed here, unlike PN3/PN8, because Create() itself is
+    now the thing under test for BOTH halves):
+
+      Anthropology.Create("TEST_NF_Anth ") (trailing space) called TWICE ->
+      - the SECOND call is PREDICTED to RAISE FP_ParameterError ("already
+        exists"), because Create()'s own `self.Exists(name)` check
+        (:269-270) now reaches Find()'s symmetric, inline-stripped
+        comparison (T3's fix) with the SAME padded name that the first
+        call persisted.
+      - the FIRST item's stored Name is PREDICTED to re-read
+        BYTE-IDENTICAL ('TEST_NF_Anth ', trailing space intact) from the
+        LCM, re-read AFTER the rejected duplicate attempt -- a genuine
+        re-query, not a re-assertion of the value passed in (same pattern
+        as T2's PN8 `first_reread`).
+
+    PRE-FIX BEHAVIOUR (historical record): before T3 landed, Create()'s own
+    non-reassigning `.strip()` did not exist yet -- the local `name` was
+    REASSIGNED to its stripped form at old `:265`, so (a) the SECOND
+    Create() call's `self.Exists(name)` check ran against an unstripped
+    haystack that was itself the STRIPPED local from the first persist,
+    making the duplicate check pass trivially in the single-call-family
+    case tested here (both calls persist "TEST_NF_Anth" with no trailing
+    space, since the stripped local -- not the caller's original argument
+    -- was what reached `TsStringUtils.MakeString`), and (b) the first
+    item's stored Name never carried the caller's trailing space at all.
+    This test's post-fix assertions (byte-identical WITH the trailing
+    space, second call REJECTED) are only reachable once T3's persist fix
+    (throwaway strip, no reassignment) and comparison fix (Find's inline
+    symmetric strip) are BOTH in place together, per C2/C8.
+    """
+    from SIL.LCModel.Core.KernelInterfaces import ITsString
+
+    project = target_sandbox
+    padded_name = f"{TEST_PREFIX}Anth "  # trailing space, byte-for-byte
+
+    first_item, first_exc = _safe(
+        lambda: project.Anthropology.Create(padded_name), "PN12 Create #1 (padded)"
+    )
+    assert first_exc is None, f"PN12: first Create raised unexpectedly: {first_exc}"
+    assert first_item is not None, "PN12: first Create returned no object despite no exception"
+
+    wsHandle = project.project.DefaultAnalWs
+    first_raw = ITsString(first_item.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN12] first item stored Name (direct read, before duplicate attempt): {first_raw!r}")
+    assert first_raw == padded_name, (
+        f"PN12 precondition failed: expected the first Create() to persist "
+        f"{padded_name!r} verbatim -- got {first_raw!r}"
+    )
+
+    second_item, second_exc = _safe(
+        lambda: project.Anthropology.Create(padded_name), "PN12 Create #2 (padded, duplicate)"
+    )
+    print(
+        f"[VERDICT][PN12] Create({padded_name!r}) called a second time -> "
+        f"exc={second_exc!r} (PREDICTED FP_ParameterError, post-fix)"
+    )
+
+    if second_exc is None:
+        print(
+            "[REFUTATION][PN12] MEASURED OPPOSITE TO PREDICTION -- the "
+            "second Create() SUCCEEDED instead of raising, meaning the "
+            "duplicate guard did NOT fire despite T3's comparison-symmetry "
+            "fix. This REFUTES the fix's premise. Reported plainly, NOT "
+            "reconciled."
+        )
+    assert second_exc is not None and second_exc.startswith("FP_ParameterError"), (
+        f"PN12 MISS (BINDING, C8 pin half 1): expected the second "
+        f"Anthropology.Create({padded_name!r}) to RAISE FP_ParameterError "
+        f"('already exists'), post-fix -- got {second_exc!r} instead "
+        f"(second_item={second_item!r})"
+    )
+
+    # C8 pin half 2: the FIRST item's stored Name must re-read
+    # BYTE-IDENTICAL from the LCM after the rejected duplicate attempt --
+    # a genuine re-query, not merely re-asserted against the value read
+    # before the second call.
+    first_reread = ITsString(first_item.Name.get_String(wsHandle)).Text
+    print(
+        f"[TABLE][PN12] first item stored Name, re-read after the "
+        f"rejected duplicate attempt: {first_reread!r}"
+    )
+    assert first_reread == padded_name, (
+        f"PN12 MISS (BINDING, C8 pin half 2): expected the first item's "
+        f"stored Name to re-read byte-identical to {padded_name!r} -- got "
+        f"{first_reread!r}"
+    )
+
+    # Confirm exactly ONE item matches this name post-fix -- no duplicate
+    # was created (the rejected second Create() call must not have
+    # persisted a partial/second record).
+    dup_items = []
+    for it in project.Anthropology.GetAll():
+        it_name = ITsString(it.Name.get_String(wsHandle)).Text
+        if it_name and it_name.strip() == padded_name.strip():
+            dup_items.append((str(it.Guid), it_name))
+    print(f"[SUMMARY][PN12] items matching {padded_name!r} post-fix (stripped comparison): {dup_items}")
+
+    assert len(dup_items) == 1, (
+        f"PN12 MISS (BINDING): expected exactly ONE ICmAnthroItem matching "
+        f"{padded_name!r} post-fix (the duplicate must have been REJECTED, "
+        f"not persisted) -- found {len(dup_items)}: {dup_items}"
+    )
+
+
+# ===========================================================================
+# PN13 -- T3 -- AnthropologyOperations.CreateSubitem: persist half ONLY.
+# No dedup check exists here (spec.md C5's explicit observation) -- do NOT
+# assert a duplicate-rejection half for CreateSubitem.
+# ===========================================================================
+
+@pytest.mark.live_phase("AnthropologyOperations", "add")
+def test_pn13_t3_anthropology_createsubitem_persists_raw_bytes(target_sandbox):
+    """
+    PN13 (persist-only pin, tasks.md T3): CreateSubitem(parent,
+    "TEST_NF_Sub ") (trailing space) is PREDICTED to persist the subitem's
+    Name BYTE-IDENTICAL to the caller's original argument, because
+    CreateSubitem no longer reassigns `name = name.strip()` before
+    `TsStringUtils.MakeString(name, wsHandle)` -- same throwaway-strip
+    mechanism as Create() above.
+
+    NO dedup assertion here, deliberately: `spec.md` C5 observes
+    CreateSubitem has no dedup check at all, unlike Create, and this
+    feature does NOT add one. Calling CreateSubitem twice with the same
+    padded name is expected to SUCCEED both times, producing two distinct
+    subitems -- that is pre-existing, out-of-scope behaviour, not
+    re-verified here.
+    """
+    from SIL.LCModel.Core.KernelInterfaces import ITsString
+
+    project = target_sandbox
+    padded_name = f"{TEST_PREFIX}Sub "  # trailing space
+
+    parent, parent_exc = _safe(
+        lambda: project.Anthropology.Create(f"{TEST_PREFIX}Sub_parent"), "PN13 seed parent Create"
+    )
+    assert parent_exc is None, f"PN13: seed parent Create raised: {parent_exc}"
+
+    subitem, sub_exc = _safe(
+        lambda: project.Anthropology.CreateSubitem(parent, padded_name), "PN13 CreateSubitem(padded)"
+    )
+    assert sub_exc is None, f"PN13: CreateSubitem raised unexpectedly: {sub_exc}"
+    assert subitem is not None, "PN13: CreateSubitem returned no object despite no exception"
+
+    wsHandle = project.project.DefaultAnalWs
+    stored = ITsString(subitem.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN13] subitem stored Name (direct read): {stored!r}")
+    print(
+        f"[VERDICT][PN13] CreateSubitem({padded_name!r}) stored Name -> "
+        f"{stored!r} (PREDICTED byte-identical to {padded_name!r})"
+    )
+    assert stored == padded_name, (
+        f"PN13 MISS: expected CreateSubitem to persist {padded_name!r} "
+        f"byte-identically -- got {stored!r}"
+    )
+
+
+# ===========================================================================
+# PN14 -- T3 -- Shape-B preservation: a non-str payload still raises
+# AttributeError at BOTH Create and CreateSubitem, unchanged from pre-fix
+# (proves T3's throwaway-strip mechanism, not plain deletion, was used).
+# ===========================================================================
+
+@pytest.mark.live_phase("AnthropologyOperations", "read")
+def test_pn14_t3_shapeb_nonstr_payload_still_attributeerror(target_sandbox):
+    """
+    PN14 (Shape-B preservation pin, tasks.md T3 rule 1): a plain non-str
+    payload (no .strip() method) passed as `name` is PREDICTED to still
+    raise AttributeError at BOTH Create() and CreateSubitem(), unchanged
+    from pre-fix -- because both sites' only upstream guard is the
+    null-check-only `_ValidateParam` (no isinstance check), so the
+    throwaway, non-reassigning `name.strip()` call T3 introduced is
+    STILL the thing that raises, exactly as it did before this fix (when
+    `.strip()` was the reassignment target instead of a throwaway call).
+    This is the live proof that T3 followed cycle-2's T2 precedent
+    (`reviews/cycle2-t2-programmer.md`) rather than T1's plain-deletion
+    shape, which would have silently swallowed this AttributeError and
+    changed the exception type -- forbidden by C7(b).
+
+    Anthropology.Create(non-str) is ALSO covered by PN7 above (unchanged
+    by this task); PN14 adds CreateSubitem's own non-str check, which PN7
+    does not cover, and re-confirms Create's for completeness in one place
+    alongside it.
+    """
+    project = target_sandbox
+    payload = _NonStrPayload()
+
+    parent, parent_exc = _safe(
+        lambda: project.Anthropology.Create(f"{TEST_PREFIX}ShapeB_parent"), "PN14 seed parent Create"
+    )
+    assert parent_exc is None, f"PN14: seed parent Create raised: {parent_exc}"
+
+    _, create_exc = _safe(
+        lambda: project.Anthropology.Create(payload), "PN14 Anthropology.Create(non-str)"
+    )
+    _, subitem_exc = _safe(
+        lambda: project.Anthropology.CreateSubitem(parent, payload), "PN14 Anthropology.CreateSubitem(non-str)"
+    )
+
+    print(
+        f"[TABLE][PN14] Anthropology.Create(non-str)->{create_exc!r} "
+        f"Anthropology.CreateSubitem(non-str)->{subitem_exc!r}"
+    )
+    print(
+        "[VERDICT][PN14] predicted: Create=AttributeError, "
+        "CreateSubitem=AttributeError (both unchanged from pre-fix)"
+    )
+
+    assert create_exc is not None and create_exc.startswith("AttributeError"), (
+        f"PN14 MISS: Anthropology.Create(non-str) expected AttributeError -- got {create_exc!r}"
+    )
+    assert subitem_exc is not None and subitem_exc.startswith("AttributeError"), (
+        f"PN14 MISS: Anthropology.CreateSubitem(non-str) expected AttributeError -- got {subitem_exc!r}"
+    )
+
+
+# ===========================================================================
+# PN15 -- T3 -- Q-242D disclosure measurement (NOT a fix): what does
+# Create("   ") actually do post-fix? Measure and record; do not "fix" it.
+# ===========================================================================
+
+@pytest.mark.live_phase("AnthropologyOperations", "add")
+def test_pn15_t3_q242d_whitespace_only_create_measurement(target_sandbox):
+    """
+    PN15 (Q-242D disclosure measurement, tasks.md T3 rule 6 / spec.md C7(b)
+    boundary -- explicitly NOT a fix): Anthropology.Create("   ")
+    (whitespace-only string) is PREDICTED to raise NO exception and to
+    persist the literal three-space string "   " verbatim, because:
+      - `_ValidateParam("   ", "name")` (:263) is a null-check only -- it
+        does not reject a non-empty (even whitespace-only) string.
+      - The throwaway `name.strip()` call T3 introduced (:265-270) is
+        NON-REASSIGNING, so it has no effect on what gets persisted either
+        way -- pre-fix, "   ".strip() == "" WAS reassigned and persisted as
+        an empty name; post-fix, "   " itself reaches
+        `TsStringUtils.MakeString`.
+      - `self.Exists("   ")` (:269) delegates to Find("   "), whose own
+        `if not name or not name.strip(): return None` guard (:555,
+        UNCHANGED by T3) returns None for an all-whitespace needle, so the
+        dedup check never rejects this call regardless of what has already
+        been persisted.
+
+    This is a DELIBERATE, DISCLOSED behaviour change (post-fix: persists
+    "   "; pre-fix: persisted ""), explicitly ruled OUT OF SCOPE to fix by
+    `spec.md` C7(b) / tasks.md T3 rule 6 (Q-242C/Q-242D territory, not this
+    feature's). This test measures and records the value; it does NOT
+    assert any particular value is "correct" beyond confirming the
+    measurement matches the stated prediction, and it does NOT add a
+    whitespace-only rejection.
+    """
+    from SIL.LCModel.Core.KernelInterfaces import ITsString
+
+    project = target_sandbox
+    whitespace_only = "   "
+
+    item, create_exc = _safe(
+        lambda: project.Anthropology.Create(whitespace_only), "PN15 Create('   ')"
+    )
+    print(f"[VERDICT][PN15] Create('   ') -> exc={create_exc!r} (PREDICTED None, disclosure only)")
+    assert create_exc is None, (
+        f"PN15 MEASUREMENT NOTE: expected Create('   ') to raise NO "
+        f"exception (Q-242D, disclosed not fixed) -- got {create_exc!r}. "
+        f"If this now raises, Q-242C/Q-242D's premise for this family has "
+        f"changed; escalate, do not silently update this assertion."
+    )
+    assert item is not None, "PN15: Create('   ') returned no object despite no exception"
+
+    wsHandle = project.project.DefaultAnalWs
+    stored = ITsString(item.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN15] Create('   ') stored Name (direct read, MEASURED): {stored!r}")
+    print(
+        f"[SUMMARY][PN15] Q-242D disclosure: Anthropology.Create('   ') "
+        f"post-fix persists {stored!r} (predicted {whitespace_only!r}) -- "
+        f"measured, NOT fixed, per spec.md C7(b)/tasks.md T3 rule 6."
+    )
+    assert stored == whitespace_only, (
+        f"PN15 MEASUREMENT: expected the persisted name to measure as "
+        f"{whitespace_only!r} -- got {stored!r}. Record the MEASURED value "
+        f"in the evidence file either way; do not silently adjust this "
+        f"prediction after the fact per the C28 forward rule."
     )
