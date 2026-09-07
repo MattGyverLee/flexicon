@@ -746,3 +746,52 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   `specs/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md`
   and touches the same file as the `IWfiAnalysis` item above. Keep them together
   when the user rules on filing.
+- **NEW (item 2, cycle 2, 2026-09-07) -- Q-242A: 8 sibling name-field
+  whitespace sites, routed here by `/lex-lead`'s R3 ruling
+  (`specs/242-paragraph-whitespace/spec.md` C10).** Explore's full
+  AST-verified table (`specs/242-paragraph-whitespace/reviews/cycle1-explore.md`
+  Bucket 1), file:line / method / transform line / persist line:
+
+  | site | method | transform line | persist line |
+  |---|---|---|---|
+  | `flexicon/code/System/CheckOperations.py:196` | `CreateCheckType` | 196 | 218 |
+  | `flexicon/code/System/CheckOperations.py:432` | `SetName` | 432 | 439 |
+  | `flexicon/code/TextsWords/TextOperations.py:152` | `Create` | 152 | 170 |
+  | `flexicon/code/TextsWords/TextOperations.py:608` | `SetName` | 608 | 616 |
+  | `flexicon/code/TextsWords/DiscourseOperations.py:327` | `CreateChart` | 327 | 351 |
+  | `flexicon/code/TextsWords/DiscourseOperations.py:482` | `SetChartName` | 482 | 492 |
+  | `flexicon/code/Notebook/AnthropologyOperations.py:265` | `Create` | 265 | 301 |
+  | `flexicon/code/Notebook/AnthropologyOperations.py:374` | `CreateSubitem` | 374 | 391 |
+
+  **The blocker is a name-field identity ruling, not effort.** Three of
+  the four families feed the *stripped* value into a uniqueness check
+  ahead of the persist (`CheckOperations.py:196`->`FindCheckType`
+  at `:200`; `TextOperations.py:152`->`Exists` at `:155`;
+  `AnthropologyOperations.py:265`->`Exists` at `:269`) -- per
+  `#242/spec.md` C10, preserving the unstripped payload here would leave
+  an unanswered question ("is `\"Genesis \"` the same text as
+  `\"Genesis\"`?") that #242's own four filed sites never had to answer,
+  because none of them has a name-uniqueness check. No work happens on
+  this until the user rules on the dedup-identity question.
+- **NEW (item 2, cycle 2, 2026-09-07) -- Q-242B:
+  `CheckOperations.py:196` and `:432`
+  (`name.strip() if isinstance(name, str) else ""` against a None-only
+  `_ValidateParam`) persists a non-`str` argument as an EMPTY NAME with
+  no exception -- total payload loss, silently.** `:341`
+  (`FindCheckType`) is the read-path twin of the same coercion. This is
+  flagged as **Tier-1 silent data loss in its own right**, and it is
+  **DISTINCT from and MORE SEVERE than #242's whitespace loss** --
+  #242's sites lose padding around real content; this site can lose the
+  entire name. It is deliberately **NOT bundled with Q-242A** so it is
+  not triaged at whitespace severity (`specs/242-paragraph-whitespace/spec.md`
+  C10, C6 item 3). No work happens on this until the user approves it.
+- **NEW (item 2, cycle 2, 2026-09-07) -- Q-242C: coerce-vs-reject for
+  non-`str` payloads.** `BaseOperations._ValidateParam`
+  (`BaseOperations.py:2377`) is a `None`-check plus a stale-LCM guard
+  ONLY, with no type check, so `str(obj)` can silently persist a value
+  like `"<Foo object at 0x...>"` at 12+ sites sharing this shape across
+  the codebase. Per `specs/242-paragraph-whitespace/spec.md` C11, this
+  needs a `_ValidateParam` / shared-code decision -- CLAUDE.md requires
+  consultation before changing shared validation methods, so this is
+  queued rather than implemented incidentally inside #242. No work
+  happens on this until the user rules on it.

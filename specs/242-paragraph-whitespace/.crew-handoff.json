@@ -1,0 +1,72 @@
+{
+  "feature": "242-paragraph-whitespace",
+  "campaign": "tier1-silent-data-loss",
+  "campaign_index": 2,
+  "issues": [
+    242
+  ],
+  "status": "active",
+  "last_cycle": 3,
+  "spurts_completed": 3,
+  "contract_authority": "specs/242-paragraph-whitespace/spec.md -- C1-C13 FROZEN as of cycle 3. C8/C9/C10/C11 are the /lex-lead rulings on R1/R2/R3 and the coercion question; C12 is the cycle-3 AppendSentence join-boundary ruling; C13 is the cycle-3 Checkpoint-4/Q2 DECLINED ruling (all formerly RECOMMENDATIONS or open questions, now DISCHARGED). Do NOT reopen C1-C13 without citing and overturning them by number.",
+  "prose_status_authority": "specs/242-paragraph-whitespace/STATUS.md -- current through cycle 3 (Checkpoint 3 CLOSED, Checkpoint 4 DECLINED). Feature is pending only the cycle-3 independent verification gate -- /lex-lead sets feature_complete, not this file.",
+  "loop_status": "Directed dispatch, not a ralph-loop iteration. The campaign's ralph loop was cancelled at item 1 spurt 5 and never restarted; this feature has run three cycles, dispatched directly by the main session.",
+  "tasks_done": [
+    "CP-RULING (tasks.md Checkpoint 2) -- /lex-lead ruled on R1 (spec.md C8), R2 (spec.md C9, OVERTURNS cycle-1 domain's Q4), R3 (spec.md C10, routes the 8 sibling sites to the campaign QUEUE.md as Q-242A), and the coercion question (spec.md C11, routes to Q-242C). Q3 disposed via C10, routed as Q-242B.",
+    "Checkpoint 3, T1/T2 (tasks.md) -- direct fix landed at the four named sites per C8's binding shape, cycle 2. Live-verified, evidence/live-t1-t2-fix.md, commits be42aaf/066bab0. P8 anomaly (AppendSentence terminator + preserved trailing space) measured and reported, not yet fixed.",
+    "Checkpoint 3, T3/T4 (tasks.md) -- docstring Note: and CHANGELOG ### Changed + BREAKING (behavioural) entry landed via /lex-doc, cycle 2 (reviews/cycle2-doc.md).",
+    "Checkpoint 3, T5 (tasks.md) -- AppendSentence join-boundary fix per /lex-lead's cycle-3 ruling C12 (spec.md). Live-verified, 9/9 prediction rows MATCH, evidence/live-t5-joinfix.md, commits a580f7b/608200c2.",
+    "Checkpoint 3, T6 (tasks.md) -- CHANGELOG/docstring follow-up for C12 (standalone ### Fixed entry; deletes T4's 'Known interaction, not yet resolved' sub-paragraph). Dispatched to /lex-doc, in flight in parallel with this Archivist pass.",
+    "Checkpoint 3, T7 (tasks.md) -- this Archivist record of C12/C13 as frozen contract items. Checkpoint 3 CLOSED.",
+    "Checkpoint 4 -- CLOSED, DECLINED per /lex-lead's cycle-3 ruling C13 (spec.md). Explicit negative claim recorded: does NOT claim to have reproduced the owner's 41/86 figure. Q2 DISCHARGED."
+  ],
+  "tasks_dropped": [
+    "Checkpoint 5 (the 8 sibling sites) -- DELETED per spec.md C10; routed to specs/tier1-silent-data-loss/QUEUE.md 'Awaiting user approval' (Q-242A) instead of being folded into this feature.",
+    "Checkpoint 4, T5 (corpus-shaped 41/86 reproduction) -- DECLINED per spec.md C13, not run. Distinct from Checkpoint 3's own T5 (the C12 code fix) -- a numbering collision between two different checkpoints, not a duplicate task."
+  ],
+  "tasks_open": [
+    "None inside this feature's task list. The only remaining item is the cycle-3 independent verification gate, which is /lex-lead's to run and rule on -- not a tasks.md checkpoint."
+  ],
+  "next_checkpoint": "None scheduled inside this feature. Pending: the cycle-3 independent verification gate (/lex-lead). Do not set status feature_complete from this file -- that is /lex-lead's call once the gate returns.",
+  "next_entry": "Await /lex-lead's cycle-3 independent verification gate result. If it returns green, /lex-lead sets feature_complete; if it finds a gap, /lex-lead issues a new ruling citing spec.md by number.",
+  "live_evidence": {
+    "run_mode": "live",
+    "fixture": "target_sandbox / target_sandbox_path ONLY -- tempdir copy of the Target .fwbackup",
+    "real_target_touched": false,
+    "restore_script_run": false,
+    "latest_gate_cycle_1": "tests/operations/test_issue242_whitespace_probe.py 5/5 live (test_p1..test_p5), run_mode: live; offline suite 1292 passed / 480 deselected (deselected rose 475 -> 480, exactly +5 for the new live tests).",
+    "latest_gate_cycle_2": "test_p1-p5 flipped to 'preserved' assertions, plus new test_p7/test_p8: 7/7 live, run_mode: live; offline suite 1292 passed / 482 deselected.",
+    "latest_gate_cycle_3": "test_p8 converted to assert the C12 fix, plus new test_p8b (layer-B whitespace-only-Contents row): 8/8 live, run_mode: live; offline suite 1292 passed / 483 deselected. 9/9 C12 prediction rows MATCH, 0 MISS.",
+    "marker_count_rule": "Never name a live suite by filename. Derive the count with '-m requires_live_project --collect-only -q' and paste it into the evidence file. 'no tests collected' is a ZERO, never a pass. Never run bare pytest.",
+    "c28_forward_rule": "Predictions committed BEFORE the live measuring command ran; results added in a second commit after, at every cycle: cycle 1 b28c8640/558654e, cycle 2 be42aaf/066bab0, cycle 3 a580f7b/608200c2. Applies to every future extension of this probe file."
+  },
+  "evidence_files": [
+    "specs/242-paragraph-whitespace/evidence/live-probe-cycle1.md",
+    "specs/242-paragraph-whitespace/evidence/live-t1-t2-fix.md",
+    "specs/242-paragraph-whitespace/evidence/live-t5-joinfix.md"
+  ],
+  "code_diff_scope_cumulative": "flexicon/code/TextsWords/ParagraphOperations.py (Create/SetText/InsertAt, C8, cycle 2) and flexicon/code/TextsWords/SegmentOperations.py (AppendSentence non-str branch, C8, cycle 2; AppendSentence join-boundary current_length>0 branch, C12, cycle 3). No other file under flexicon/code/ has been touched. Checkpoint 5's 8 sibling sites (C10) remain untouched, routed to the campaign QUEUE.md.",
+  "public_surface_added": {},
+  "github_issues_filed": [],
+  "deferred_needs_user_approval": [
+    "Q-242A (specs/tier1-silent-data-loss/QUEUE.md, per spec.md C10): 8 newly-found sibling sites sharing the exact bug shape (CheckOperations.py:196/:432, TextOperations.py:152/:608, DiscourseOperations.py:327/:482, AnthropologyOperations.py:265/:374). Blocker is a name-field identity/dedup ruling, not effort.",
+    "Q-242B (specs/tier1-silent-data-loss/QUEUE.md, per spec.md C10/C6 item 3): CheckOperations.py:196/:432/:341 -- non-str -> '' -> silently persisted empty name, no exception. Filed SEPARATELY from Q-242A and flagged as MORE SEVERE, so it is not triaged at whitespace severity.",
+    "Q-242C (specs/tier1-silent-data-loss/QUEUE.md, per spec.md C11): coerce-vs-reject for non-str payloads at BaseOperations._ValidateParam; a shared-code/API-surface decision affecting 12+ sites, out of scope for this feature."
+  ],
+  "hard_constraints_for_any_future_spurt": [
+    "target_sandbox / target_sandbox_path ONLY. NEVER the real Target, NEVER scripts/restore_*.py.",
+    "Live verification REQUIRED for code tasks; mock-only is 'FAIL: unverified', never a clean result.",
+    "Derive every live count with --collect-only; 'no tests collected' is a ZERO, never a pass.",
+    "Offline baseline is 1292 passed as of b0e3d14. Never bare pytest.",
+    "The C28 forward rule: commit predictions BEFORE the measuring run -- applied at every cycle so far; carries forward to any future extension of this probe file.",
+    "tests/operations/test_issue242_whitespace_probe.py already exists -- EXTEND, do not duplicate.",
+    "No GitHub issues filed from inside this feature. Q-242A/B/C are now appended to specs/tier1-silent-data-loss/QUEUE.md 'Awaiting user approval' -- do not disturb, reword or reorder the entries that preceded them.",
+    "Do not touch specs/feature-structure-sync-gap/ or campaign queue items 3 and 4 from inside this feature.",
+    "Do not edit specs/tier1-silent-data-loss/.crew-handoff.json from inside this feature -- that campaign-level file is the main session's to maintain.",
+    "C1-C13 are FROZEN. Do not implement C8's fix shape or C12's join-boundary fix with any variation (e.g. re-adding a preserve_whitespace kwarg, stripping the non-str branch, or an rstrip-anchor-that-discards-whitespace shape) without citing and overturning the relevant contract item by number.",
+    "Checkpoint 5 is DELETED (spec.md C10) -- do not re-add tasks for the 8 sibling sites inside this feature without a new ruling overturning C10.",
+    "Checkpoint 4 is DECLINED, not deleted (spec.md C13) -- it is a deliberate choice not to measure, and must remain visible in tasks.md as such; do not silently reopen it without a new ruling overturning C13.",
+    "Do not set status to feature_complete from this file or STATUS.md -- that is /lex-lead's call, made only after the cycle-3 independent verification gate returns."
+  ],
+  "updated": "2026-09-07"
+}

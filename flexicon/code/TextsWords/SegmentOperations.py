@@ -564,6 +564,9 @@ class SegmentOperations(BaseOperations):
         Args:
             paragraph_or_hvo: The IStTxtPara object or HVO.
             text: The sentence text to append. Must be non-empty.
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (#242); a value that is entirely whitespace still
+                raises FP_ParameterError.
             wsHandle: Optional writing system handle. Defaults to project
                       default vernacular WS.
             guid (optional): GUID to assign to the new segment, as a
@@ -587,6 +590,13 @@ class SegmentOperations(BaseOperations):
 
         See Also:
             SplitSegment, MergeSegments, ReparseParagraph
+
+        Note:
+            AppendSentence may INSERT at the join boundary between the
+            existing contents and the appended text; it never DELETES
+            there. If the existing contents end in whitespace, that
+            whitespace is preserved and reused as the sentence separator
+            (#242).
         """
         self._EnsureWriteEnabled()
         self._ValidateParam(paragraph_or_hvo, "paragraph_or_hvo")

@@ -92,6 +92,49 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `undoable=False`'s single-envelope mode at all, and this guard is what
   now stops that mode's `SaveChanges()` from destroying it.
 
+- **BREAKING (behavioural): `ParagraphOperations.Create`,
+  `ParagraphOperations.SetText`, `ParagraphOperations.InsertAt`, and
+  `SegmentOperations.AppendSentence` no longer strip leading/trailing
+  whitespace from the persisted `content`/`text` value** (#242). All four
+  previously validated emptiness against a `.strip()`ed copy but then
+  persisted that same stripped copy via `TsStringUtils.MakeString`,
+  silently discarding whitespace that was genuinely part of the caller's
+  string. The `.strip()` is now a throwaway used only for the emptiness
+  check; the caller's original, unstripped value is what reaches
+  `MakeString` and is written to `IStTxtPara.Contents` /
+  `ISegment.BaselineText`.
+
+  This is a correctness fix, not a cleanup, because trailing whitespace is
+  structural in FLEx paragraph/segment data: `AppendSentence` itself
+  builds multi-sentence paragraphs by inserting `". "` -- period plus a
+  trailing space -- as its own sentence terminator, then steps its next
+  insertion point by `current_length + 2` to land past that space. The
+  same file was, until this fix, stripping equivalent trailing whitespace
+  out of the *next* call's input -- refusing from a caller the same shape
+  of data it manufactures internally. Preserving the caller's whitespace
+  brings the four writers into line with the structure FLEx itself uses.
+
+  **A caller who relied on the old stripping now silently persists
+  different data.** Code that built text by padding a separator into the
+  string itself -- e.g. `f"{sentence} "` or `" ".join(parts) + " "` --
+  expecting the library to absorb the trailing space, now gets that space
+  written verbatim. Call `.strip()` at the call site to restore the old
+  behaviour; the library no longer does it for you.
+
+  Whitespace-only input (e.g. `"   "`) still raises `FP_ParameterError` at
+  all four sites -- the emptiness contract is unchanged; only what gets
+  persisted for non-empty, whitespace-bearing input changes.
+
+  The non-`str` coercion branch is no longer stripped either:
+  `SegmentOperations.AppendSentence`'s `str(text).strip()` is now
+  `str(text)`, matching the three `ParagraphOperations` sites, which never
+  stripped their non-`str` branch. `str` and non-`str` payloads now behave
+  identically at all four methods.
+
+  This same fix is also what makes a pre-existing join-boundary defect in
+  `AppendSentence`'s terminator branch reachable through this API for the
+  first time -- see **Fixed**, below.
+
 ### Fixed
 - **`FLExProject.CloseProject()` no longer skips `usm.Save()` if its own
   `EndNonUndoableTask()` mirror call raises** (#243). Under
@@ -161,6 +204,32 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `undoable=False` task envelope is currently open; unconditionally
   `False` under `undoable=True`). Both raise `FP_ProjectError` on a closed
   or never-opened project rather than silently returning `0`/`False`.
+
+- **`SegmentOperations.AppendSentence`'s sentence-terminator branch no
+  longer inserts a period before existing trailing whitespace** (#242).
+  This is a **pre-existing defect that the #242 whitespace fix above made
+  reachable through this API for the first time -- it was not introduced
+  by that fix.** The terminator branch reads the raw last character of
+  the paragraph's *existing* `Contents`, whatever wrote it: `Create`/
+  `SetText`/`InsertAt`, an import, a sync, or a direct LCM write could
+  always have left a trailing space there, independently of #242. Before:
+  appending to `'foo '` produced `'foo . bar'` (a space inserted before
+  the period); appending to the already-terminated `'foo.  '` (two
+  trailing spaces) produced the double-terminator `'foo.  . bar'`. After:
+  `'foo '` produces `'foo. bar'`, and `'foo.  '` produces `'foo.  bar'`.
+  The branch now anchors "already terminated?" and its insertion point on
+  the last *non-whitespace* character, and reuses any existing trailing
+  whitespace as the sentence separator instead of inserting a new one
+  next to it. Zero characters are ever removed by this change --
+  `rstrip()` is used only to compute an index; its stripped output is
+  never written. The change is inert whenever the paragraph has no
+  trailing whitespace, i.e. for every paragraph shape reachable through
+  the public API before #242 landed (`Create`/`SetText`/`InsertAt`
+  previously stripped all trailing whitespace unconditionally). Live-
+  verified against `target_sandbox`: 9/9 predicted rows matched measured
+  output, including the four-row inertness proof on shapes reachable
+  before #242
+  (`specs/242-paragraph-whitespace/evidence/live-t5-joinfix.md`).
 
 ## [4.5.2] - 2026-08-19
 

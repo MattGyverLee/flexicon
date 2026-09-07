@@ -145,6 +145,9 @@ class ParagraphOperations(BaseOperations):
         Args:
             text_or_hvo: Either an IText object or its HVO (integer identifier).
             content (str): The text content for the new paragraph. Must be non-empty.
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (#242); a value that is entirely whitespace still
+                raises FP_ParameterError.
             wsHandle (int, optional): Writing system handle. If None, uses the
                 default vernacular writing system. Can also be a language tag string.
             guid (optional): GUID to assign to the new paragraph, as a
@@ -556,6 +559,9 @@ class ParagraphOperations(BaseOperations):
         Args:
             paragraph_or_hvo: Either an IStTxtPara object or its HVO (integer identifier).
             content (str): The new text content for the paragraph. Must be non-empty.
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (#242); a value that is entirely whitespace still
+                raises FP_ParameterError.
             wsHandle (int, optional): Writing system handle. If None, uses the
                 default vernacular writing system. Can also be a language tag string.
 
@@ -694,6 +700,9 @@ class ParagraphOperations(BaseOperations):
             index (int): The position at which to insert the paragraph (0-based).
                 Must be between 0 and the current paragraph count (inclusive).
             content (str): The text content for the new paragraph. Must be non-empty.
+                Note: leading/trailing whitespace in the value is preserved
+                verbatim (#242); a value that is entirely whitespace still
+                raises FP_ParameterError.
             wsHandle (int, optional): Writing system handle. If None, uses the
                 default vernacular writing system. Can also be a language tag string.
 

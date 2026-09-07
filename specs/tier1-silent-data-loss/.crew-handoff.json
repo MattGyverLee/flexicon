@@ -1,91 +1,76 @@
 {
   "campaign": "tier1-silent-data-loss",
   "kind": "campaign",
-  "status": "needs_human",
+  "status": "in_progress",
   "completion_promise": "TIER1 COMPLETE",
   "promise_condition": "all four queue items status=done, gates green, live evidence on file. A per-feature feature_complete from lex-lead does NOT satisfy this.",
-  "active_index": 1,
-  "active_feature": "243-closeproject-save-guard",
-  "next_entry": "STOP -- DO NOT RESUME AUTONOMOUSLY, AND THERE IS NO LOOP TO RESUME (the ralph loop is CANCELLED). Item 1 (243-closeproject-save-guard) is needs_human and NO pre-authorised work remains: T6, the one exception, is DONE as of spurt 5 (run as a one-shot on the user's greenlight, not in the loop; git diff --stat -- flexicon/ EMPTY; probe 6 -> 9 live tests green with run_mode: live; offline 1290 passed, deselected 470 -> 473; CP-B defect 2 closed). WHAT T6 SETTLED: spec.md C16 confirms mechanism (ii) -- P-7 read 0/25 from the STILL-OPEN project before CloseProject() was ever entered -- and C17 turns that into #243's CEILING: no CloseProject()-side change (T3's shipped guard, T7, or any future guard there) can EVER fix the owner's filed incident; ONLY the SaveChanges() fourth ask can. Second half, equally binding: T3 IS a genuine shipped live-verified fix for the independent P-3 path (0/25 -> 25/25) and C17 does not weaken it -- always state both halves. Also ruled: C18 (T7's detector re-scoped; the post-Save() HasUnsavedChanges read is measured INDISTINGUISHABLE and rejected, superseding C14 point 3) and C19 (T5 SPLIT -- T5a, a minimal [Unreleased] CHANGELOG stub, is ruling-independent, zero-churn and RECOMMENDED, and is OFFERED as a second pre-authorised unit for the USER to greenlight; T5b stays gated). THE BLOCKER IS THE ONLY GATE LEFT and it is sharper now: the user is not deciding whether to approve an extra improvement, but whether flexicon fixes #243's incident at all, or ships #243 documenting it as unfixed. See specs/243-closeproject-save-guard/.crew-handoff.json 'blocker' -- it is authoritative. Do NOT enter items 2, 3 or 4 to keep busy -- the queue is strictly ordered and item 1 is unfinished; specs/feature-structure-sync-gap/ was not opened this spurt and must not be. Do NOT file GitHub issues. Do NOT implement, prototype or plan the SaveChanges() guard. Do NOT emit TIER1 COMPLETE -- three of four items are untouched.",
+  "loop_status": "CANCELLED. The ralph-loop Stop hook was removed at iteration 5 of 40 on item 1's needs_human handoff. Nothing re-enters on its own; the main session drives lex-lead spurts directly on explicit user authorisation, one queue item at a time.",
+  "active_index": 2,
+  "active_feature": "242-paragraph-whitespace",
+  "next_entry": "Item 2 (242-paragraph-whitespace, flexicon#242) is ACTIVE and AUTHORISED by the user (2026-09-07). No spec, tasks, STATUS or handoff json exists for it yet; specs/242-paragraph-whitespace/{reviews,evidence}/ are scaffolded and empty. Checkpoint 1 = spec + tasks + a LIVE probe measuring what is actually stripped, on which of the four writers, and whether any caller depends on the stripping. The stripping may be load-bearing for the FLEx null-marker path -- check Shared/string_utils.normalize_text BEFORE proposing a behaviour change. Item 1's sign-off authorised NO work on items 3 or 4.",
+  "items_done": [
+    {
+      "index": 1,
+      "slug": "243-closeproject-save-guard",
+      "issues": [243],
+      "closed": "2026-09-07, spurt 9 / cycle 9, feature_complete APPROVED by lex-lead",
+      "outcome": "#243's filed loss chain FIXED and measured 0/25 -> 25/25 survivors, in memory and on disk, re-read from the LCM after close-and-reopen. Two guards: SaveChanges() refuses at CurrentDepth > 0 with FP_TransactionError before usm.Save() is attempted (C21, a PUBLIC BEHAVIOUR CHANGE), and CloseProject()'s End mirror can no longer skip usm.Save() (C1/C6/C7). Contract C1-C30 frozen. Commits 8629d25, f3a0f50, 702f96b, 9dfd55d, f19304e, 0c82535, b0e3d14.",
+      "not_claimed": "The Target.fwdata replacement by the crash-recovery copy is UNEXPLAINED and NOT fixed (C10) -- nothing in the fix surface could cause or prevent it. One narrow residual is unmeasured: a state where the depth read raises while ObjectRepository() and usm.Save() both still succeed at depth > 0 (C28), claimed neither safe nor a bug. All measurements are single-client on a target_sandbox_path copy; no shared/multi-client recovery behaviour was measured.",
+      "github": "flexicon#243 deliberately left OPEN. The crew files and closes nothing; lex-lead recommends keeping it open to carry the unexplained .fwdata half rather than closing and depending on a follow-up being written."
+    }
+  ],
   "queue": [
     {
       "index": 1,
       "slug": "243-closeproject-save-guard",
-      "issues": [
-        243
-      ],
-      "status": "needs_human",
-      "spec_exists": true,
-      "note": "Spec+probe DONE (spurt 1). CP-A1/T1 DONE (spurt 2). CP-A2/T2 DROPPED ON THE MERITS (spurt 3, C12). CP-B/T3+T4 DONE AND PASSED (spurt 4): the P0 guard is landed (+52 in FLExProject.py), live-verified, and P-3 -- the loss mechanism C9 names -- is FIXED 0/25 -> 25/25 with no raise; acceptance criteria 1-4 satisfied; SaveChanges() provably unmodified. **T6 DONE (spurt 5)**, run as a ONE-SHOT on the user's greenlight of T6 and T6 only -- not in the loop, so nothing could drift into T7/T5. git diff --stat -- flexicon/ EMPTY (re-verified): zero behaviour change, ruling-independent as designed. Probe 6 -> 9 live tests green, run_mode: live; test_undoable_mode_live.py 33/33; test_target_live_smoke.py 3/3; offline 1290 passed, deselected 470 -> 473 (exactly +3). CP-B defect 2 CLOSED (close_exc_msg now asserted at probe line 575; [PROBE][P5] lines quoted verbatim), so C13 fact 3 is a measurement not prose. FOUR RULINGS: **C16** -- mechanism ANSWERED: (ii) CONFIRMED (P-7 read 0/25 from the STILL-OPEN project before CloseProject() was entered), (i) RULED OUT (P-8's fresh envelope commits 1/1, which also contradicts the cycle-4 report's 'cannot commit after a failed CheckReadyForCommit' wording), (iii) INDISTINGUISHABLE from (ii) and LEFT UNRESOLVED BY DESIGN -- the report volunteered that limit itself and it is recorded that way, not tidied into certainty. **C17 -- #243's CEILING, the most consequential fact in the feature**: no CloseProject()-side change can EVER fix the owner's P-5 -> P-3 sequence; only the SaveChanges() fourth ask can -- AND T3's independent P-3 fix stands as shipped, unqualified. Both halves always. **C18** -- T7's detector re-scoped and C14 point 3 SUPERSEDED: the post-Save() HasUnsavedChanges read is measured INDISTINGUISHABLE (False in both the 25/25 and 0/25 cases) and rejected; the envelope-missing anomaly is PRIMARY; a pre-Save() read is diagnostic-only, is not independent information (it is a proxy for 'did an End just succeed'), and must NOT be worded 'there is nothing pending to save' -- a proven false-negative. **C19** -- T5 SPLIT: T5a (minimal [Unreleased] stub, T3 only, scoped to C17's two halves) is ruling-independent, zero-churn, RECOMMENDED and offered for the user to greenlight; T5b (prominent note + SaveChanges() docstring correction + Q4) stays gated behind T7 + the ruling. STILL needs_human, and NO pre-authorised work remains. Contract C1-C19 frozen. Q1 CLOSED (C9/C10), Q2 CLOSED (C15), Q3 CLOSED (no capability token), Q5's DETECTOR half CLOSED (C18); Q4 open at T5b; Q5's remaining half is the user's coupled ruling. Task order: T7 -> T5b, with T5a separable at any time."
+      "issues": [243],
+      "status": "done",
+      "spec_exists": true
     },
     {
       "index": 2,
       "slug": "242-paragraph-whitespace",
-      "issues": [
-        242
-      ],
-      "status": "queued",
+      "issues": [242],
+      "status": "active",
       "spec_exists": false,
-      "note": "Check whether the stripping is load-bearing for the FLEx null-marker path (Shared/string_utils.normalize_text) before changing behaviour."
+      "note": "User authorised 2026-09-07. Four writers strip leading/trailing whitespace but persist the STRIPPED value: ParagraphOperations.py:171 (Create), :576 (SetText), :716 (InsertAt), SegmentOperations.py:589 (AppendSentence). The strip is only needed for the emptiness check. Owner field evidence, Ejagham Mini -> Target: 44 of 104 paragraph contents and 41 of 86 segment baselines DIFFERED, every difference lost trailing whitespace. Irony on the record: Create and AppendSentence gained guid= in #239 specifically so objects could be reproduced faithfully -- they now preserve identity perfectly but still cannot preserve the text. Owner suggested fix: validate on a stripped copy, write the caller's original. Owner also offered a preserve_whitespace kwarg as an alternative and offered to open a PR. CHECK Shared/string_utils.normalize_text for null-marker ('***') interaction before ruling on the shape."
     },
     {
       "index": 3,
       "slug": "feature-structure-sync-gap",
-      "issues": [
-        251,
-        252,
-        253,
-        256
-      ],
+      "issues": [251, 252, 253, 256],
       "status": "queued",
       "spec_exists": true,
-      "note": "RESUME, do not re-plan. Contract C1-C8 frozen, rulings D1-D5 settled, spurt 1 complete. Its own .crew-handoff.json next_entry is authoritative: T1 ALONE (13 owner classes into lcm_casting._interface_cache + caller-delta enumeration + green offline suite and NC/Phoneme live tests) before T2."
+      "note": "NOT AUTHORISED. RESUME, do not re-plan. Contract C1-C8 frozen, rulings D1-D5 settled, spurt 1 complete. Its own .crew-handoff.json next_entry is authoritative: T1 ALONE (13 owner classes into lcm_casting._interface_cache + caller-delta enumeration + green offline suite and NC/Phoneme live tests) before T2."
     },
     {
       "index": 4,
       "slug": "250-writingsystem-activation",
-      "issues": [
-        250
-      ],
+      "issues": [250],
       "status": "queued",
       "spec_exists": false,
-      "note": "LAST on purpose. Needs an API-surface policy decision, so it is the item most likely to end needs_human. Must cover both routes into the silent skip: store-vs-active AND case/separator normalization."
+      "note": "NOT AUTHORISED. LAST on purpose -- needs an API-surface policy decision, so it is the item most likely to end needs_human. Must cover both routes into the silent skip: store-vs-active AND case/separator normalization. Note the cycle-6 lex-domain finding on item 1: writing-system add/remove/change is one instance of a broader class of schema/metadata-mutating operations, which is itself a separate queued approval ask -- this item is the instance, not the class audit."
     }
   ],
   "hard_rules": [
     "Live LCM verification REQUIRED for write-path changes; mock-only is FAIL: unverified.",
-    "Prefer the target_sandbox fixture. Never write to the real Target, and never run scripts/restore_*.py, unattended -- stop with needs_human instead.",
+    "target_sandbox / target_sandbox_path fixtures ONLY. Never the real Target, never scripts/restore_*.py, unattended -- stop with needs_human instead.",
     "Never run bare pytest or pytest --ignore=tests/contract; always FLEXLIBS_REQUIRE_LIVE=1 with -m requires_live_project and an explicit test file.",
+    "Derive every live suite's marker count with --collect-only -q -m requires_live_project and paste it into the evidence file. NO TESTS COLLECTED IS A ZERO, NEVER A PASS. (Added spurt 3, after a named gate was found to carry zero markers.)",
+    "Offline baseline is 1292 passed as of b0e3d14. Any delta is explained, not absorbed.",
     "Relay specialist report PATHS + 2-line summaries, never bodies.",
-    "One checkpoint per iteration, then update state, commit, stop.",
-    "Do not file new GitHub issues inside the loop; append them to QUEUE.md 'Awaiting user approval'.",
-    "No emoji in console output (Windows).",
-    "Never name a live test suite by filename. Derive it with '-m requires_live_project --collect-only -q' and paste the count into the evidence file. A 'no tests collected' result is a ZERO, never a pass -- reporting it as green is a false verification claim. (Added spurt 3 after test_transaction_rollback.py, named as a live suite in the T2 brief, was found to carry zero live markers.)",
-    "A specialist returning a FINDING instead of a diff is a legitimate outcome, not a failure to route around. Rule on it, freeze the ruling as a contract decision in spec.md, and mark the task DROPPED in tasks.md with the evidence path so a post-context-reset spurt cannot re-attempt it.",
-    "A guard that stops an exception must not also stop the SIGNAL. When a fix converts a raise into a swallowed condition on a data-loss path, ask what the caller now sees and rule on it explicitly -- 'no longer raises' is not the same as 'no longer loses'. Added spurt 4 after spec.md C14: the #243 guard turned the owner's path from 'lost + raised' into 'lost + returns cleanly, one debug line', and 'log at debug level' in the task brief was the defect. Log anomalous states at ERROR, and prefer 'attempt everything, then fail loudly' over a quiet success.",
-    "Do not freeze an inferred INTERNALS mechanism as a contract decision on the strength of one black-box measurement. Enumerate the rival mechanisms, state which observations would distinguish them, and route it to a probe. Freeze only what was measured, plus inferences whose premises are named. Added spurt 4 (spec.md C13).",
-    "When a probe settles a mechanism question, freeze BOTH what it proves AND what it still cannot distinguish -- and freeze the SCOPE CEILING that follows, as its own contract item, in the loudest place available. Added spurt 5 (spec.md C16/C17): T6 confirmed mechanism (ii) and ruled out (i), but could not separate (ii) from (iii); recording that honestly cost nothing because both imply the same ceiling, and the ceiling -- 'no CloseProject()-side change can ever fix the filed incident' -- is the single fact the whole feature turns on. Corollary: a ceiling has two halves. State the fix that DOES hold (T3's P-3 path, 0/25 -> 25/25) in the same breath as the one that cannot; either half alone is a misrepresentation.",
-    "A detector must be validated against BOTH the failing and the succeeding case before a remedy is specified on it. Added spurt 5 (spec.md C18): C14 pre-emptively preferred a post-Save() IUndoStackManager 'has unsaved changes' read as 'mechanism-independent'; measured, it reads False in the 25/25 real-save AND the 0/25 no-op case -- indistinguishable, so the preference was void. And never word a diagnostic as more than it measured: HasUnsavedChanges == False means 'no completed-but-unsaved unit of work is registered', NOT 'there is nothing pending to save' (it read False while 25 entries still existed in memory).",
-    "Deferring a CHANGELOG entry is NOT a neutral hold once the code is on main. Added spurt 5 (spec.md C19): CHANGELOG.md's [Unreleased] section accumulates until a version cut, so a shipped-but-unnoted public behaviour change would go out undocumented if a cut happened. Cost the 'wait' option explicitly, and prefer splitting out a minimal, factual stub describing SHIPPED behaviour (which commits the project to no position on any open ask, and has zero churn cost while it sits under [Unreleased]) over deferring the whole entry."
+    "One checkpoint per dispatch, then update state, commit, stop.",
+    "Do not file new GitHub issues inside crew work; append them to QUEUE.md 'Awaiting user approval'.",
+    "A task that states an a-priori prediction commits it BEFORE the measuring run, so temporal order is provable from history (C28 forward rule).",
+    "No spurt may close with a top-of-file state summary that contradicts the record (C27). This campaign-level .crew-handoff.json is the MAIN SESSION's to maintain -- it went stale at item 1's closure (left reading spurt 5 / needs_human / active_index 1) and was rewritten by the main session on 2026-09-07. Doc agents are explicitly out of scope for it; whoever closes a queue item must update it in the same pass.",
+    "No emoji in console output (Windows)."
   ],
-  "spurts_completed": 5,
-  "items_done": [],
-  "blocker": "ONE USER DECISION, TWO COUPLED PARTS, blocking item 1 -- and T6 (spurt 5) has SHARPENED it. (a) Does FLExProject.SaveChanges() get a CurrentDepth guard so it fails fast instead of calling usm.Save() at depth > 0 (the campaign's fourth ask, in QUEUE.md 'Awaiting user approval' since spurt 1, unruled for four spurts)? and (b) given that answer, should CloseProject() raise when it detects a save it cannot trust (spec.md C14/C18, task T7)? WHAT T6 CHANGED: spec.md C16 measured the change set as ALREADY GONE from the still-open project before CloseProject() is ever entered (P-7: 0/25 in memory), and C17 turns that into #243's ceiling -- so (a) is no longer an ask that 'would also help', it is THE ONLY THING THAT CAN FIX THE INCIDENT #243 WAS FILED ABOUT. The user is therefore not deciding whether to approve an extra improvement; they are deciding WHETHER FLEXICON FIXES #243's INCIDENT AT ALL, OR SHIPS #243 DOCUMENTING IT AS UNFIXED. Approve (a): the envelope is never collapsed, the change set is never discarded, the P-5 chain never forms, the owner's sequence can reach 25/25, and T7's raise is near-unreachable defensive code. Decline (a): the incident is PERMANENTLY unfixable by measurement, and T7's ERROR + raise is the entire remedy the owner ever gets, so its severity and wording matter a great deal. Unchanged good news: the shape of (a) is unaffected by the residual (ii)-vs-(iii) uncertainty -- refuse usm.Save() at CurrentDepth > 0, failing fast before any damage. ONE OBSERVATION, NOT A FIFTH ASK: C16 places the loss INSIDE SaveChanges(), so even T7's raise reports it late; if the 'fail fast / prevent' shape is declined, the honest maximum is 'loud at close, already lost at SaveChanges()', so whether this same ask should have a MINIMUM shape (report loudly at the point of loss) is part of the ruling about that one method. Nothing may implement, prototype or plan it. SEPARATELY OFFERED, not part of the blocker: T5a per C19 -- a minimal [Unreleased] CHANGELOG stub noting T3 only, ruling-independent and zero-churn, for the user to greenlight if they want the 'T3 shipped undocumented' gap closed now. It does not unblock T7 or T5b.",
-  "updated": "2026-09-07",
+  "spurts_completed": 9,
+  "blocker": null,
   "campaign_log_pointer": "specs/tier1-silent-data-loss/QUEUE.md -> 'Campaign Log'",
-  "deferred_needs_user_approval_pointer": "specs/tier1-silent-data-loss/QUEUE.md -> 'Awaiting user approval'. Spurt 1 appended one new item: SaveChanges() has no CurrentDepth guard, so under undoable=False it raises 'Commit at wrong place.' and collapses the session envelope -- reachable from its own shipped docstring Example. Fixing its BEHAVIOUR is a fourth ask beyond #243's three and needs a user ruling; the docstring correction is already in scope as item 1's T5.",
-  "campaign_progress": {
-    "item_1_243": "needs_human, NO pre-authorised work left. CP-A closed (T1 landed, T2 dropped); CP-B/T3+T4 DONE AND PASSED (P0 guard live-verified, P-3 fixed 0/25 -> 25/25); T6 DONE (spurt 5, one-shot on the user's greenlight, zero flexicon/ diff). T6 settled the mechanism (C16) and froze #243's CEILING (C17): only the SaveChanges() fourth ask can fix the owner's filed incident -- and T3's P-3 fix stands as shipped. Also ruled C18 (T7's detector; post-Save() HasUnsavedChanges read rejected as indistinguishable) and C19 (T5 split; T5a recommended and separable). Blocked at T7 on the user's coupled ruling, which is now the only gate.",
-    "item_2_242": "queued -- untouched",
-    "item_3_feature_structure_sync_gap": "queued -- untouched by spurts 1, 2 and 3; do not enter it",
-    "item_4_250": "queued -- untouched, deliberately last"
-  },
-  "code_landed_so_far": [
-    "flexicon/code/FLExProject.py -- T1 additive P1 depth-read surface (_ReadActionHandlerDepth, CurrentDepth property, HasOpenSessionTask). 120 insertions, 0 deletions. Live-verified, run_mode: live.",
-    "SPURT 3: nothing. T2 dropped (C12); git diff f3a0f50 -- flexicon/ is empty and the offline suite is unchanged at 1290 passed.",
-    "SPURT 4 (T3): flexicon/code/FLExProject.py +52 -- the P0 CloseProject() End-guard (HasOpenSessionTask() check, then try/except around EndNonUndoableTask(), so no raise there can skip usm.Save(); lines 326/332 order unchanged per C7). Live-verified, run_mode: live, target_sandbox_path fixture only. P-3 fixed 0/25 -> 25/25. SaveChanges() untouched. Also (T4) tests/operations/test_issue243_closeproject_probe.py extended in place. Record note: the spurt's diff also contains .claude/ralph-loop.local.md (+8/-76), the ralph-loop plugin overwriting its own stale scratch state from an unrelated old loop -- not flexicon/, not a spec artifact, harmless.",
-    "SPURT 5 (T6): nothing under flexicon/ -- git diff --stat -- flexicon/ is EMPTY, re-verified by /lex-lead, so the probe was ruling-independent as designed. Changed: tests/operations/test_issue243_closeproject_probe.py (+578, now 9 test functions, 6 -> 9 live) plus the spec/evidence/review/handoff documents. Record note: .claude/ralph-loop.local.md is DELETED in the working tree -- that is the cancelled ralph loop, not a flexicon or spec artifact."
-  ],
+  "deferred_needs_user_approval_pointer": "specs/tier1-silent-data-loss/QUEUE.md -> 'Awaiting user approval'. As of item 1's closure this holds: (1) C25 -- does UndoableUnitOfWorkHelper.Dispose() + set_RollBack(True) actually discard anything? P-11 measured 25/25 SURVIVING an escaping exception, contradicting undoable_operation.py's own claim; (2) C29 -- transaction.py:146-153 records the OPPOSITE outcome for a created POS and is the record's only counter-measurement, with four uncontrolled variables between them; (3) the docs/TRANSACTION_GUIDE.md API-reference gap, gated behind (1); (4) the depth-guard-coverage audit of the broader schema-mutating class (lex-domain cycle-6 Q2), overlapping issue #250. Plus ONE ungated cleanup needing no approval: C30 -- bound test_transaction_honesty.py's source-slice windows by the next 'def ' rather than a magic width; do NOT widen 6000 to 8000.",
+  "campaign_progress": "1 of 4 items done (#243). Item 2 (#242) active and authorised. Items 3 and 4 untouched and NOT authorised.",
+  "code_landed_so_far": "flexicon/code/FLExProject.py (CurrentDepth, HasOpenSessionTask(), _ReadActionHandlerDepth(), the SaveChanges() depth guard, the CloseProject() End-guard plus ERROR log and try/finally Dispose), flexicon/code/undoable_operation.py (P-11 measured caveat, docstring only). Nothing else under flexicon/ has been modified by this campaign.",
   "github_issues_filed": [],
-  "loop_status": "CANCELLED as of spurt 5 (2026-09-07). The ralph-loop in-session Stop hook is gone (.claude/ralph-loop.local.md deleted in the working tree) and will NOT re-feed the standing prompt. This campaign is human-driven from here -- nothing resumes automatically. To restart: rule on item 1's blocker first, then re-issue the standing prompt per lex-lead.md with --completion-promise 'TIER1 COMPLETE' (never 'FEATURE COMPLETE'). Full restart recipe: specs/243-closeproject-save-guard/STATUS.md -> 'How a human restarts this'."
+  "updated": "2026-09-07"
 }
