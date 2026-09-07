@@ -139,7 +139,7 @@ begin without following the READ FIRST rules above, especially item 1
 
 ---
 
-## Checkpoint 2 -- Implement the direct fix, one task per family (UNSTARTED)
+## Checkpoint 2 -- Implement the direct fix, one task per family (**3 of 4 DONE -- only T4 remains**)
 
 Sequenced so the comparison-symmetry fix (C4) and the persist fix land
 TOGETHER per family -- never a persist fix without its comparison fix,
@@ -147,7 +147,9 @@ since that is the C2 duplicate-explosion hazard. Order: Discourse first
 (no comparison, smallest, lowest risk), then Text, then Anthropology, then
 Check (which also carries the distinct Q-242B task).
 
-### T1 -- `DiscourseOperations` (LIVE): persist fix only, no comparison exists
+### [x] T1 -- `DiscourseOperations` (LIVE) -- **DONE, cycle 2** (`3eac4a0`). `SetChartName` fully live-verified; `CreateChart`'s persist half is `FAIL: unverified`, blocked by two pre-existing unrelated defects, recorded as **Q-DISC1**.
+
+Persist fix only, no comparison exists.
 
 **Sites:** `flexicon/code/TextsWords/DiscourseOperations.py:327`
 (`CreateChart`) and `:482` (`SetChartName`).
@@ -169,7 +171,9 @@ C8's family-specific note.)
 Live gate per READ FIRST items 3-7. Evidence:
 `evidence/live-t1-discourse-fix.md`.
 
-### T2 -- `TextOperations` (LIVE): persist fix AND comparison-symmetry fix, together
+### [x] T2 -- `TextOperations` (LIVE) -- **DONE, cycle 2** (`6ff3e5e` / `db95230` / `da580cd`). Fully green; both C8 halves live-confirmed. `SetName` took Shape B per C11(a).
+
+Persist fix AND comparison-symmetry fix, together.
 
 **Sites:** `flexicon/code/TextsWords/TextOperations.py:152` (`Create`),
 `:608` (`SetName`) for persist; `:458/:461/:464` (`Exists`) for
@@ -198,7 +202,9 @@ documented in a comment for historical record (same pattern as
 `242-paragraph-whitespace/tasks.md` T1). Live gate per READ FIRST items
 3-7. Evidence: `evidence/live-t2-text-fix.md`.
 
-### T3 -- `AnthropologyOperations` (LIVE): persist fix AND comparison-symmetry fix, together
+### [x] T3 -- `AnthropologyOperations` (LIVE) -- **DONE, cycle 3** (`7bc6d01` / `ab638aa` / `7409ad6`). Fully green; all six predictions MATCHED live; 15/15, `run_mode: live`; offline delta `+0/+0/+0`; both C8 halves confirmed. Q-242D measured at PN15, not fixed.
+
+Persist fix AND comparison-symmetry fix, together.
 
 **Sites:** `flexicon/code/Notebook/AnthropologyOperations.py:265`
 (`Create`), `:374` (`CreateSubitem`) for persist; `:558/:562/:565`
@@ -220,7 +226,7 @@ RAISES "already exists", AND the stored value re-reads BYTE-IDENTICAL.
 behaviour. Live gate per READ FIRST items 3-7. Evidence:
 `evidence/live-t3-anthropology-fix.md`.
 
-### T4 -- `CheckOperations` (LIVE): Q-242A comparison-symmetry + persist fix, AND the distinct Q-242B fix, landed TOGETHER at the same expressions
+### [ ] T4 -- `CheckOperations` (LIVE) -- **NEXT SPURT, the only Checkpoint-2 task left**: Q-242A comparison-symmetry + persist fix, AND the distinct Q-242B fix, landed TOGETHER at the same expressions
 
 **Sites:** `flexicon/code/System/CheckOperations.py:196`
 (`CreateCheckType`), `:341/:344/:350` (`FindCheckType`), `:432`
@@ -325,8 +331,13 @@ Docs-only, no live-verification requirement.
 
 ## Standing note for every task above
 
-`git status --porcelain` must be checked before every `git add`, and only
-paths this feature's own tasks authored may be staged. Given
+`git status --porcelain` must be checked before every `git add`, **and AGAIN
+immediately before every `git commit`, and `git show --stat HEAD` immediately
+after it** -- see `CONCURRENCY.md` **AMENDMENT 2**, binding from T4 onward. The
+pre-`add` check ALONE is not sufficient: in cycle 3 the other crew's `git add`
+landed in the window between T3's pre-`add` check and T3's commit, and five of
+their files were swept in. Only paths this feature's own tasks authored may be
+staged. Given
 `CONCURRENCY.md`'s live situation, expect `flexicon/code/BaseOperations.py`,
 `flexicon/code/Grammar/NaturalClassOperations.py`, and
 `flexicon/code/Grammar/PhonemeOperations.py` to show as modified at any

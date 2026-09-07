@@ -83,6 +83,19 @@ every line number against HEAD before editing at it.** Cite by symbol name where
 you can; a stale line number is not authority to edit the wrong place -- that
 rule is now proven twice over.
 
+**THIRD DRIFT, measured at HEAD by `/lex-lead` at the cycle-3 checkpoint (same
+day, after the other crew's `6643b48`): the `:3182`/`:3230`/`:3234`/`:3014`
+figures above are ALSO ALREADY STALE.** Now: `_ValidateStringNotEmpty` is
+`BaseOperations.py:3191`, `_ValidateParam` is `:3023`, `_ValidateParamNotEmpty`
+is `:3085`. Do not trust this paragraph either -- **derive the number yourself,
+in your own session, immediately before you edit at it.** Three drifts in one
+day is the measurement; the rule is symbol-first, always.
+
+Not drifted, confirmed at HEAD in the same sweep: `CheckOperations.py`'s three
+coercion sites are UNCHANGED at `:196` (`CreateCheckType`, def `:146`), `:341`
+(`FindCheckType`, def `:300`), `:432` (`SetName`, def `:397`) -- T4's targets
+still match `tasks.md`. Re-confirm anyway.
+
 ## Measure a DELTA, never an absolute
 
 Because their numbers move while you work, an absolute pass count proves nothing.
@@ -100,6 +113,57 @@ Because their numbers move while you work, an absolute pass count proves nothing
 Live verification is unaffected: sandbox fixtures are per-test tempdir copies, so
 `run_mode: live` runs remain trustworthy. The `--collect-only` marker-count rule is
 also unaffected and still binding — no tests collected is a ZERO, never a pass.
+
+## AMENDMENT 2 (2026-09-07, cycle 3) -- the staging window is a RACE; check at COMMIT time too
+
+**Binding from T4 onward. This STRENGTHENS the staging rule above; it does not
+replace it. Authored by `/lex-lead` at the cycle-3 checkpoint, on `/lex-programmer`
+(T3)'s recommendation, after a real incident.**
+
+During cycle 3, T3's first `git commit` swept in five of the other crew's files
+(`flexicon/code/BaseOperations.py`, two `Grammar/` files, two
+`specs/feature-structure-sync-gap/` files). **T3 had followed the rule exactly as
+written**: it ran `git status --porcelain` before its `git add`, and the tree was
+clean at that instant. The other crew's own `git add` landed **in the window
+between that check and T3's commit**, so their paths were already sitting in the
+shared index by commit time. The pre-`add` check is structurally incapable of
+detecting this. It is a race, not a lapse of discipline -- and it will recur.
+
+T3 self-caught it via `git show --stat HEAD`, corrected with `git reset --soft
+HEAD~1` followed by an index-only `git reset HEAD -- <foreign paths>` (zero
+working-tree bytes touched, verified by diff before and after), and re-committed
+clean. `/lex-lead` independently audited the resulting history and confirms it is
+clean: `7bc6d01` contains only its own evidence file, and the other crew's work
+landed separately as their own commit `6643b48`.
+
+Because the index is shared and they can stage at any instant, **every commit made
+while they are active must be bracketed on both sides**:
+
+1. `git status --porcelain` immediately BEFORE `git add` (the existing rule).
+2. `git add <explicit paths>` -- never `-A`, never `.`, never `-u`, never
+   `git commit -a`.
+3. **`git status --porcelain` AGAIN immediately BEFORE `git commit`.** Read the
+   STAGED (first-column) entries specifically. If any staged path is one you did
+   not author, run `git reset HEAD -- <that path>` **before** committing. Never
+   `git checkout` / `git restore` / `git stash` it -- that destroys their
+   unrecoverable uncommitted work.
+4. **`git show --stat HEAD` immediately AFTER `git commit`.** Confirm the file
+   list is exactly what you intended and nothing more.
+5. If a foreign path did get committed anyway: `git reset --soft HEAD~1`, then
+   index-only `git reset HEAD -- <foreign paths>`, then re-commit. `--soft` and
+   an index-only `git reset HEAD -- <path>` are the ONLY two reset forms
+   authorised in this clone; both touch zero working-tree bytes. **`git reset
+   --hard` is FORBIDDEN here while the other crew is active**, as is any rewrite
+   of a commit that is not yours.
+6. **Report the outcome of steps 3 and 4 in your task report, even when clean.**
+   A line of the form "no foreign paths staged at commit time; `git show --stat
+   HEAD` lists only <N> files, all mine" is REQUIRED, not optional. Silence is
+   read as "not checked".
+
+Steps 3 and 4 cost seconds and catch the only failure mode the pre-`add` check
+cannot. Skipping them is a protocol violation **regardless of whether the commit
+happened to come out clean** -- T3's incident is proof that a clean pre-`add`
+check predicts nothing about the index a moment later.
 
 ## If you find yourself needing one of their files
 

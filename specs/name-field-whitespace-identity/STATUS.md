@@ -3,9 +3,15 @@
 **Campaign:** `tier1-silent-data-loss`, spun-out sub-item **2a** (between
 queue item 2, `242-paragraph-whitespace`, and queue item 3,
 `feature-structure-sync-gap`) -- **`active`**.
-**Last updated:** 2026-09-07, Checkpoint 1 (spec + live probe) DONE, cycle 1.
-**Status:** Spec + probe delivered. Contract items C1-C8 FROZEN. No
-behaviour change under `flexicon/code/` has landed from this feature yet.
+**Last updated:** 2026-09-07, **end of cycle 3 (spurt 3)**. Checkpoint 1 DONE;
+Checkpoint 2 is **6 of 8 sites landed** (T1, T2, T3 done; **T4 remains**).
+**Status:** Contract items **C1-C11 FROZEN**. Behaviour change HAS now landed
+under `flexicon/code/` from this feature, in three files:
+`TextsWords/DiscourseOperations.py` (T1), `TextsWords/TextOperations.py` (T2),
+`Notebook/AnthropologyOperations.py` (T3). `System/CheckOperations.py` is
+**untouched** -- that is T4, the next spurt. See the "Cycle 3 close" section at
+the foot of this file for the authoritative next pickup; the older
+"Next pickup" section above it is superseded.
 
 > **A SECOND CREW is committing in this same clone right now** (confirmed
 > by the project owner as theirs and expected). See `CONCURRENCY.md` --
@@ -159,3 +165,86 @@ docs dispatch to `/lex-doc`).
 - **Q-CHK1, Q-DISC1, and Q-242D recorded** in
   `specs/tier1-silent-data-loss/QUEUE.md`'s "Awaiting user approval"
   section, all UNAUTHORISED pending user approval.
+
+---
+
+## Cycle 3 close -- Checkpoint 2 is 6/8 sites landed (AUTHORITATIVE next pickup)
+
+**Spurt 3 ended here by design.** T4 was deliberately NOT chained into this
+spurt; it is the entire next spurt.
+
+### What landed in cycle 3
+
+- **T3 landed fully green** (`Notebook/AnthropologyOperations.py`, commits
+  `7bc6d01` predictions / `ab638aa` code+test / `7409ad6` results). Four sites
+  re-confirmed by symbol lookup before editing: `Create`, `CreateSubitem`
+  (Shape B per C11(a) -- throwaway non-reassigning `.strip()`, duplicate
+  trailing `_ValidateParam` deleted per C11(b)), `Find` (inline strip on BOTH
+  sides, `casefold=False` and the early-return short-circuit unchanged), and
+  `Exists` (untouched, deliberately).
+- **All six T3 predictions MATCHED live.** `15 passed`, `run_mode: live`,
+  collect count 15 (11 existing + PN12-PN15). Offline delta `+0/+0/+0`; the
+  same three known-foreign failures by name and message, no fourth at any
+  point.
+- **C8 pin green on BOTH halves** at Anthropology: the second
+  `Create('TEST_NF_Anth ')` RAISES `FP_ParameterError: ... already exists`, and
+  the first item re-reads byte-identical `'TEST_NF_Anth '` from the LCM after
+  the rejected attempt (genuine re-query, not an echo of the input).
+- **Q-242D measured, not fixed** (PN15): `Create("   ")` now persists the
+  literal three-space string (was `''` pre-fix), raising nothing. Disclosed,
+  per C11(c); T5 must carry it as a known remaining gap.
+- **Archivist scribe pass** (`bdf98cc`): C9/C10/C11 transcribed verbatim into
+  `spec.md`; Q-CHK1/Q-DISC1/Q-242D appended to the campaign QUEUE.md's
+  "Awaiting user approval"; the C10(b) Q-242B correction appended beneath the
+  preserved-verbatim row; tasks.md READ FIRST items 14-16; CONCURRENCY.md line
+  numbers re-derived; `## WHAT WAS NOT EXERCISED` retro-fitted into the T1 and
+  T2 evidence files per C10(a). **Zero transcription deviations.**
+
+### Concurrency incident -- occurred, corrected, and the rule is now stronger
+
+T3's first predictions commit swept in five of the other crew's files because
+their `git add` landed **between** T3's pre-`add` `git status` check and T3's
+own commit. T3 self-caught it via `git show --stat HEAD` and corrected with
+`git reset --soft HEAD~1` + index-only `git reset HEAD -- <foreign paths>`
+(zero working-tree bytes touched), then re-committed clean.
+
+`/lex-lead` independently audited the final history and **confirms it is
+clean**: `7bc6d01` contains only the evidence file, and the other crew's work
+landed separately as their own commit `6643b48`. No cross-contamination
+survived into HEAD.
+
+**`CONCURRENCY.md` now carries AMENDMENT 2 as a binding rule from T4 onward:**
+re-run `git status --porcelain` immediately BEFORE `git commit` (not only
+before `git add`), and verify with `git show --stat HEAD` immediately AFTER.
+The pre-`add` check alone is structurally unable to catch this race.
+
+### Independently verified by /lex-lead this cycle
+
+`normalize_match_key` returns `""` for `None` / empty / `***` inputs, so the
+haystack-side `.strip()` T3 added to `Find` -- applied to a value derived from
+`ITsString(...).Text`, which CAN be `None` -- cannot raise on an item with no
+name. The same reasoning clears T2's landed `Exists`. **No latent crash at
+either site.**
+
+### Line numbers drifted a THIRD time -- re-derive again before T4
+
+Measured at HEAD immediately before this handoff: `_ValidateStringNotEmpty` is
+`BaseOperations.py:3191` (CONCURRENCY.md's own re-derivation earlier the SAME
+DAY said `:3182`); `_ValidateParam` is `:3023` (was recorded `:3014`);
+`_ValidateParamNotEmpty` is `:3085`. The other crew's `6643b48` moved them
+again. **Cite by symbol, never by a line number you did not derive yourself in
+the current session.**
+
+The three `CheckOperations.py` sites, by contrast, were confirmed UNCHANGED at
+HEAD and still carry the coercion verbatim:
+`name = name.strip() if isinstance(name, str) else ""` at **`:196`**
+(`CreateCheckType`, def at `:146`), **`:341`** (`FindCheckType`, def at `:300`),
+and **`:432`** (`SetName`, def at `:397`).
+
+### Next pickup -- Checkpoint 2, T4 (`CheckOperations`), then Checkpoint 3, T5
+
+**T4 is the whole next spurt.** It is the hardest of the four: it lands Q-242A
+AND Q-242B in ONE commit at the SAME expressions (C6), it is the only task
+gated behind the `_GetCheckList` workaround (C9), and it is the only task whose
+target sites are governed by C7's explicit fix shape rather than C11's Shape
+A/B choice. Do not bundle T5 into it.

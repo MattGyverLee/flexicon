@@ -9,12 +9,12 @@
   "issues_not_in_scope": [
     "Q-242C (coercion harmonisation) -- stays queued, unauthorised, per spec.md C7(b) and C11 of specs/242-paragraph-whitespace/spec.md"
   ],
-  "status": "active",
-  "last_cycle": 1,
-  "spurts_completed": 1,
-  "contract_authority": "specs/name-field-whitespace-identity/spec.md -- C1-C8 FROZEN as of cycle 1. C1/C2 are measured mechanism findings; C3 is the whitespace-insensitive-dedup identity ruling (lex-lead's option (i), ACCEPTED by lex-domain under an explicit owner authority override -- see spec.md section 0 for the full provenance chain); C4 is the fix shape and shared-code fence; C5 is the four-file scope; C6 is the Q-242A/Q-242B bundling rationale; C7 is Q-242B's own fix shape and the Q-242C boundary; C8 is the anti-regression pin. Do NOT reopen C1-C8 without citing and overturning them by number.",
-  "prose_status_authority": "specs/name-field-whitespace-identity/STATUS.md -- current through cycle 1 (Checkpoint 1 DONE). No behaviour change under flexicon/code/ has landed from this feature yet.",
-  "loop_status": "Directed dispatch, not a ralph-loop iteration. Dispatched directly by the main session under the concurrency protocol recorded in CONCURRENCY.md.",
+  "status": "in_progress",
+  "last_cycle": 3,
+  "spurts_completed": 3,
+  "contract_authority": "specs/name-field-whitespace-identity/spec.md -- C1-C11 FROZEN. C1-C8 frozen at cycle 1; C9/C10/C11 frozen at cycle 3 and transcribed verbatim by the archivist at bdf98cc (zero deviations). C9 = the CheckOperations _GetCheckList live-verification workaround BOUNDARY (single-seam rule; a wider workaround is STOP/needs_human, and 'FAIL: unverified' is the correct outcome if the seam is insufficient). C10 = the mandatory '## WHAT WAS NOT EXERCISED' evidence-file section (retro-fitted to the T1/T2 evidence files) plus the Q-242B severity correction (also reachable by an ordinary whitespace-only str). C11 = per-site fix SHAPE chosen by the site's OWN upstream guard (Shape A = delete the rebinding, only where a guard already raises on non-str; Shape B = throwaway NON-REASSIGNING .strip(), REQUIRED where the only guard is the null-only _ValidateParam); C11(b) the dead duplicate trailing _ValidateParam is deleted while the LEADING one is always kept; C11(c) the three-site whitespace-only carve-out recorded as Q-242D. Do NOT reopen C1-C11 without citing and overturning them by number.",
+  "prose_status_authority": "specs/name-field-whitespace-identity/STATUS.md -- current through cycle 3. Read the 'Cycle 3 close' section at the FOOT of the file; it is the authoritative next pickup and supersedes the older mid-file 'Next pickup' section.",
+  "loop_status": "Directed dispatch under the CONCURRENCY.md protocol. Spurt 3 closed at a checkpoint by design: T4 was deliberately NOT chained on after T3.",
   "concurrency": {
     "second_crew_active": true,
     "protocol_file": "specs/name-field-whitespace-identity/CONCURRENCY.md",
@@ -26,22 +26,26 @@
       "specs/feature-structure-sync-gap/",
       "specs/250-writingsystem-activation/"
     ],
-    "staging_rule": "Explicit git add <path> only. Never -A, ., -u, or commit -a. Never git checkout/restore/stash/reset a path not authored by this feature.",
-    "offline_baseline_status": "VOID for the duration -- CONCURRENCY.md's DELTA rule replaces the old fixed absolute (1292 passed / 483 deselected). Every future task measures its own before/after delta only."
+    "staging_rule": "Explicit git add <path> only. Never -A, ., -u, or commit -a. Never git checkout/restore/stash a path not authored by this feature. AMENDMENT 2 (CONCURRENCY.md, cycle 3, binding from T4 onward): the index is SHARED and the other crew can stage at any instant, so bracket every commit on BOTH sides -- (1) git status --porcelain before git add, (2) explicit git add, (3) git status --porcelain AGAIN immediately before git commit, unstaging any foreign path with index-only 'git reset HEAD -- <path>', (4) git show --stat HEAD immediately AFTER the commit, (5) if a foreign path did land: git reset --soft HEAD~1 + index-only git reset HEAD -- <paths> + re-commit; git reset --hard is FORBIDDEN in this clone, (6) report the outcome of steps 3 and 4 in the task report EVEN WHEN CLEAN -- silence reads as 'not checked'.",
+    "offline_baseline_status": "VOID for the duration -- the DELTA rule replaces every absolute. Known-foreign set at HEAD (re-derived at 67114c8, unchanged through cycle 3, seen again by T3): exactly three failures -- test_transaction_rollback.py::TestPhase2JoinOrOpen::test_rollback_flag_set_true_on_exception, test_transaction_rollback.py::TestPhase2JoinOrOpen::test_depth_restored_on_exception, and test_flexlibs2_alias_ratchet.py::TestFlexlibs2AliasIsInboundOnly::test_no_executable_flexlibs2_imports_outside_alias_package. A FOURTH failure, or a changed message on any of these three, is STOP-and-report.",
+    "incident_cycle3": "T3's first predictions commit swept in five foreign files (BaseOperations.py, two Grammar files, two specs/feature-structure-sync-gap/ files) because the other crew's git add landed in the window between T3's pre-add git status check and T3's own commit. T3 self-caught it via git show --stat HEAD and corrected with git reset --soft HEAD~1 + index-only git reset HEAD -- <foreign paths> (zero working-tree bytes touched), then re-committed clean. /lex-lead independently audited the final history and CONFIRMS IT IS CLEAN: 7bc6d01 contains only the evidence file; the other crew's work landed separately as their own commit 6643b48. No cross-contamination survived. CLOSED -- do not re-investigate; the durable outcome is AMENDMENT 2.",
+    "line_number_drift": "THREE drifts in one day. Measured at HEAD by /lex-lead at the cycle-3 checkpoint: _ValidateStringNotEmpty = BaseOperations.py:3191 (was recorded :2491, then :2915, then :3182), _ValidateParam = :3023 (was :3014), _ValidateParamNotEmpty = :3085. Treat EVERY line number in spec.md / tasks.md / CONCURRENCY.md / this file as advisory only; re-derive by symbol lookup in your own session immediately before editing. Confirmed UNCHANGED at HEAD in the same sweep: CheckOperations.py's three coercion sites at :196 (CreateCheckType, def :146), :341 (FindCheckType, def :300), :432 (SetName, def :397), each still carrying the strip-else-empty-string coercion. T4's targets still match tasks.md; re-confirm anyway."
   },
   "tasks_done": [
-    "Checkpoint 1 (tasks.md) -- spec.md (C1-C8 transcribed and frozen, authority/provenance section 0, recorded-not-ruled _GetCheckList bug, contradiction check: none found), tasks.md, STATUS.md, this file. Live probe tests/operations/test_name_field_identity_probe.py (PN1-PN8, 8/8, run_mode: live) and evidence/live-probe-cycle1.md delivered by /lex-programmer in cycle 1; reviews/cycle1-programmer.md and reviews/cycle1-domain.md on file. CONCURRENCY.md already on file from the main session."
+    "Checkpoint 1 -- spec.md (C1-C8 frozen, authority/provenance section 0, recorded-not-ruled _GetCheckList bug), tasks.md, STATUS.md, this file, CONCURRENCY.md, and the live probe tests/operations/test_name_field_identity_probe.py (PN1-PN8, 8/8, run_mode: live) with evidence/live-probe-cycle1.md. Reviews: cycle1-programmer.md, cycle1-domain.md, cycle1-archivist.md.",
+    "Checkpoint 2, T1 -- DiscourseOperations, cycle 2, commit 3eac4a0. SetChartName fully live-verified (persist byte-identical, re-read from the LCM). CreateChart's persist half is FAIL: unverified, blocked by two pre-existing defects unrelated to this feature's edit -- recorded as Q-DISC1 (UNAUTHORISED, awaiting user approval). Both sites took Shape A per C11(a). Review: cycle2-t1-programmer.md. Evidence: evidence/live-t1-discourse-fix.md.",
+    "Checkpoint 2, T2 -- TextOperations, cycle 2, commits 6ff3e5e / db95230 / da580cd. Fully green: three methods across two Explore-listed sites (Create, SetName persist; Exists comparison symmetry). Both C8 halves live-confirmed. SetName took Shape B per C11(a). Review: cycle2-t2-programmer.md. Evidence: evidence/live-t2-text-fix.md.",
+    "Cycle 2 baseline re-derivation and the first CONCURRENCY.md amendment, commit 67114c8. Review: cycle2-baseline.md.",
+    "Cycle 3 archivist scribe pass, commit bdf98cc -- C9/C10/C11 into spec.md verbatim; Q-CHK1/Q-DISC1/Q-242D appended to specs/tier1-silent-data-loss/QUEUE.md 'Awaiting user approval'; the C10(b) Q-242B correction appended BENEATH the preserved-verbatim row; tasks.md READ FIRST items 14-16 and the T3/T4/T5 one-liners; STATUS.md 'Cycle 2-3'; CONCURRENCY.md line numbers re-derived; '## WHAT WAS NOT EXERCISED' retro-fitted into the T1 and T2 evidence files per C10(a). Zero transcription deviations. Review: cycle3-archivist.md.",
+    "Checkpoint 2, T3 -- AnthropologyOperations, cycle 3, commits 7bc6d01 (predictions) / ab638aa (code+test) / 7409ad6 (results). Create and CreateSubitem took Shape B with the duplicate trailing _ValidateParam deleted per C11(b); Find strips inline on BOTH sides with casefold=False and the early-return short-circuit unchanged; Exists deliberately untouched. All six predictions MATCHED live. 15 passed, run_mode: live, collect count 15. Offline delta +0/+0/+0, same three known-foreign failures, no fourth. C8 pin green on BOTH halves. Q-242D measured at PN15 (Create with three spaces persists three literal spaces, raises nothing), disclosed not fixed. Review: cycle3-t3-programmer.md. Evidence: evidence/live-t3-anthropology-fix.md."
   ],
   "tasks_dropped": [],
   "tasks_open": [
-    "Checkpoint 2, T1 (tasks.md) -- DiscourseOperations persist fix (CreateChart:327, SetChartName:482), no comparison exists per C3's per-family carve-out.",
-    "Checkpoint 2, T2 (tasks.md) -- TextOperations persist fix (Create:152, SetName:608) AND comparison-symmetry fix (Exists:458/461/464), landed together per C2's duplicate-explosion hazard.",
-    "Checkpoint 2, T3 (tasks.md) -- AnthropologyOperations persist fix (Create:265, CreateSubitem:374) AND comparison-symmetry fix (Find:558/562/565, reached via Exists:507-510), landed together. Observation only: CreateSubitem has no dedup check, do not add one.",
-    "Checkpoint 2, T4 (tasks.md) -- CheckOperations: Q-242A comparison-symmetry + persist fix (FindCheckType:341/344/350, CreateCheckType:196, SetName:432) AND the distinct Q-242B fix (replace the strip-else-empty-string coercion at :196/:341/:432 with a call to BaseOperations._ValidateStringNotEmpty, no reassignment, per C7), landed in ONE commit per C6 but tracked with two separate evidence files/severity labels/CHANGELOG entries. Live-verification dependency: must reuse the cycle-1 probe's _GetCheckList monkeypatch workaround (spec.md section 3).",
-    "Checkpoint 3, T5 (tasks.md) -- CHANGELOG + docstring updates via /lex-doc, two separate entries (Q-242A, Q-242B) per C6."
+    "Checkpoint 2, T4 (tasks.md) -- CheckOperations. THE ONLY CHECKPOINT-2 TASK LEFT and the whole next spurt. Q-242A (comparison symmetry at FindCheckType + persist at CreateCheckType and SetName) AND the distinct Q-242B fix (C7's shape at all three coercion sites), landed in ONE commit per C6 but tracked with TWO evidence files, two severity labels, two CHANGELOG entries. Gated behind C9's single-seam _GetCheckList workaround.",
+    "Checkpoint 3, T5 (tasks.md) -- CHANGELOG + docstring updates via /lex-doc, two separate entries (Q-242A, Q-242B) per C6, and MUST disclose Q-242D as a known remaining gap and record CreateChart's FAIL: unverified persist pin (Q-DISC1) rather than claiming 8/8 verified."
   ],
-  "next_checkpoint": "Checkpoint 2, T1 (DiscourseOperations) -- smallest, lowest-risk, no comparison method to touch.",
-  "next_entry": "Dispatch /lex-programmer for T1 (DiscourseOperations persist fix), live-verified against target_sandbox, following tasks.md READ FIRST items 1-13 in full, especially the CONCURRENCY.md staging rule and the DELTA measurement rule.",
+  "next_checkpoint": "Checkpoint 2, T4 -- CheckOperations (Q-242A + Q-242B in ONE commit, TWO evidence files)",
+  "next_entry": "Dispatch /lex-programmer for T4 alone. On entry it MUST read, in this order: specs/name-field-whitespace-identity/CONCURRENCY.md (especially AMENDMENT 2, the commit-time re-check, binding from T4 onward), tasks.md READ FIRST items 1-16, tasks.md's T4 section in full, spec.md C4/C6/C7/C8/C9/C10/C11, and STATUS.md's 'Cycle 3 close' section. Then re-derive all five line numbers by SYMBOL lookup at HEAD before editing (they drifted three times on 2026-09-07). Do NOT bundle T5 into this spurt.",
   "live_evidence": {
     "run_mode": "live",
     "fixture": "target_sandbox / target_sandbox_path ONLY -- tempdir copy of the Target .fwbackup",
@@ -52,30 +56,43 @@
     "c28_forward_rule": "Predictions committed BEFORE the live measuring command ran (commit bdbce02); results filled in after. Applies to every future extension of this probe file and every new evidence file."
   },
   "evidence_files": [
-    "specs/name-field-whitespace-identity/evidence/live-probe-cycle1.md"
+    "specs/name-field-whitespace-identity/evidence/live-probe-cycle1.md",
+    "specs/name-field-whitespace-identity/evidence/live-t1-discourse-fix.md",
+    "specs/name-field-whitespace-identity/evidence/live-t2-text-fix.md",
+    "specs/name-field-whitespace-identity/evidence/live-t3-anthropology-fix.md"
   ],
-  "code_diff_scope_cumulative": "None yet. This feature has made zero Edit/Write calls under flexicon/ as of cycle 1. Any flexicon/ diff observed in git status at this time belongs to the concurrent crew (see CONCURRENCY.md) and is NOT this feature's contribution.",
+  "code_diff_scope_cumulative": "6 of 8 sites landed, in THREE files, all authored by this feature: flexicon/code/TextsWords/DiscourseOperations.py (T1: CreateChart, SetChartName -- Shape A); flexicon/code/TextsWords/TextOperations.py (T2: Create, SetName persist -- SetName Shape B -- plus Exists comparison symmetry; three methods across two Explore-listed sites); flexicon/code/Notebook/AnthropologyOperations.py (T3: Create, CreateSubitem -- Shape B, duplicate trailing _ValidateParam deleted -- plus Find comparison symmetry; Exists untouched). flexicon/code/System/CheckOperations.py is UNTOUCHED -- confirmed at HEAD by /lex-lead -- and is T4's target. BaseOperations.py and Shared/string_utils.py remain UNTOUCHED by this feature and are fenced by C4.",
   "public_surface_added": {},
   "github_issues_filed": [],
   "deferred_needs_user_approval": [
-    "Q-242C (specs/tier1-silent-data-loss/QUEUE.md, per specs/242-paragraph-whitespace/spec.md C11 and this feature's spec.md C7(b)): coerce-vs-reject for non-str payloads at BaseOperations._ValidateParam; a shared-code/API-surface decision affecting 12+ sites, out of scope for this feature."
+    "Q-242C (specs/tier1-silent-data-loss/QUEUE.md) -- coerce-vs-reject for non-str payloads at BaseOperations._ValidateParam; a shared-code/API-surface decision affecting 12+ sites, out of scope for this feature.",
+    "Q-CHK1 (QUEUE.md, appended cycle 3) -- CheckOperations._GetCheckList's nonexistent ServiceLocator.GetInstance(...) (should be .GetService(...)). NOT authorised; C9 forbids fixing it from inside T4.",
+    "Q-DISC1 (QUEUE.md, appended cycle 3) -- the two pre-existing defects blocking live verification of DiscourseOperations.CreateChart's persist half. NOT authorised.",
+    "Q-242D (QUEUE.md, appended cycle 3) -- a whitespace-only str now persists literal whitespace at the three Shape-B sites (AnthropologyOperations.Create, AnthropologyOperations.CreateSubitem, TextOperations.SetName) instead of an empty string. Measured live at PN15. Declined by C11(c) as belonging to Q-242C's validator-harmonisation decision. NOT authorised; T5 must disclose it."
   ],
   "recorded_not_filed": [
     "CheckOperations._GetCheckList() (flexicon/code/System/CheckOperations.py:1168-1179) is a hardcoded stub whose fallback path calls a nonexistent ServiceLocator.GetInstance(...) (should be .GetService(...), CheckOperations.py:1198), making CreateCheckType() raise AttributeError on every call against a live LCM. Not fixed, not filed as a GitHub issue. Every future task touching CheckOperations.py must reuse the test-instance-only _GetCheckList monkeypatch from the cycle-1 probe to reach CreateCheckType's own name-handling logic. See spec.md section 3."
   ],
   "hard_constraints_for_any_future_spurt": [
-    "Read CONCURRENCY.md before every spurt. Explicit git add <path> only -- never -A, ., -u, or commit -a. Never checkout/restore/stash/reset a path not authored by this feature.",
-    "The DELTA rule replaces the fixed offline baseline for the duration of the concurrency situation -- measure before/after your own edits only; the old 1292/483 (or any other) absolute is VOID.",
+    "Read CONCURRENCY.md before every spurt -- INCLUDING AMENDMENT 2, the commit-time re-check (git status --porcelain again before git commit; git show --stat HEAD after it; report both outcomes even when clean). Explicit git add <path> only. git reset --hard is FORBIDDEN.",
+    "The DELTA rule replaces every fixed offline absolute. Exactly three known-foreign failures are expected; a fourth, or a changed message on any of the three, is STOP-and-report.",
     "target_sandbox / target_sandbox_path ONLY. NEVER the real Target, NEVER scripts/restore_*.py.",
-    "Live verification REQUIRED for code tasks; mock-only is 'FAIL: unverified', never a clean result.",
-    "Derive every live count with --collect-only; 'no tests collected' is a ZERO, never a pass.",
-    "The C28 forward rule: commit predictions BEFORE the measuring run.",
-    "tests/operations/test_name_field_identity_probe.py already exists -- EXTEND per-task, do not duplicate unless a task's scope genuinely needs a dedicated file.",
-    "No GitHub issues filed from inside this feature. Q-242C stays recorded-not-filed; the _GetCheckList bug stays recorded-not-filed.",
-    "C1-C8 are FROZEN. Do not implement C4's fix with any variation (a shared helper, editing normalize_match_key, a per-family exception) without citing and overturning the relevant contract item by number. If Shared/string_utils.py or BaseOperations.py must change: STOP, needs_human.",
-    "Do not touch specs/feature-structure-sync-gap/ or specs/250-writingsystem-activation/ from inside this feature.",
-    "Do not edit specs/tier1-silent-data-loss/.crew-handoff.json from inside this feature -- that campaign-level file is the main session's to maintain.",
-    "T4 (CheckOperations) lands Q-242A and Q-242B in ONE commit at the same expressions, per C6 -- do not split into two sequential edits of the same lines, but DO keep separate evidence files, severity labels, and CHANGELOG entries for the two."
+    "Live verification REQUIRED for code tasks; mock-only is 'FAIL: unverified', never a clean result. 'FAIL: unverified' is an ACCEPTABLE reported outcome (T1 precedent); a widened workaround to manufacture a pass is NOT (C9).",
+    "Derive every live count with --collect-only -q -m requires_live_project; 'no tests collected' is a ZERO, never a pass. Never run bare pytest.",
+    "The C28 forward rule: commit predictions BEFORE the measuring run, fill in results after.",
+    "tests/operations/test_name_field_identity_probe.py already exists (15 live tests, PN1-PN15) -- EXTEND it, do not duplicate.",
+    "Every evidence file from cycle 3 onward MUST carry a '## WHAT WAS NOT EXERCISED' section (C10a), even if it reads 'None -- every pin half was exercised live.'",
+    "No GitHub issues filed from inside this feature. Q-242C, Q-CHK1, Q-DISC1, Q-242D stay recorded-not-filed.",
+    "C1-C11 are FROZEN. If Shared/string_utils.py or BaseOperations.py must change: STOP, needs_human (C4).",
+    "Line numbers everywhere in this feature's docs are ADVISORY. Re-derive by symbol at HEAD in your own session before every edit -- they drifted three times on 2026-09-07 alone.",
+    "Do not touch specs/feature-structure-sync-gap/ or specs/250-writingsystem-activation/.",
+    "Do not edit specs/tier1-silent-data-loss/.crew-handoff.json from inside this feature.",
+    "T4 lands Q-242A and Q-242B in ONE commit at the same expressions (C6) -- but with TWO evidence files, two severity labels, two CHANGELOG entries."
   ],
-  "updated": "2026-09-07"
+  "updated": "2026-09-07",
+  "lead_verified_this_cycle": [
+    "History audit: the cycle-3 concurrency incident left NO cross-contamination in HEAD. 7bc6d01 contains only the T3 evidence file; the other crew's work is their own separate commit 6643b48.",
+    "No latent crash from the new haystack-side .strip(): normalize_match_key returns an empty string for None / empty / '***' inputs, so the .strip() T3 added in Find -- applied to a value derived from ITsString(...).Text, which CAN be None -- cannot raise on an item with no name. The same reasoning clears T2's landed Exists. Checked because the value is LCM-derived and nullable.",
+    "CheckOperations.py's three T4 target sites are UNCHANGED at HEAD and still carry the coercion; BaseOperations symbols drifted a third time (see concurrency.line_number_drift)."
+  ]
 }
