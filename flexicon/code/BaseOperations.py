@@ -2384,6 +2384,282 @@ class BaseOperations:
                 cv.ValueRA = val_obj
             existing_closed[feat_guid.lower()] = cv
 
+    def _MakeFeatStruc(self, specs, owner=None, slot=None):
+        """
+        Build (and attach) an ``IFsFeatStruc`` from user-facing specs.
+
+        Spec ``feature-structure-sync-gap``, contract C3 (FROZEN).
+        Single generalized implementation of what used to be two
+        byte-identical-except-for-the-owner-check bodies --
+        ``InflectionFeatureOperations.MakeFeatStruc`` (``:970``) and
+        ``PhonFeatureOperations.MakeFeatStruc`` (``:553``) are now thin
+        call-throughs to this method (T5). Closes issue **#256**.
+
+        **#256 was NOT a casting bug.** Both pre-T5 bodies gated with
+        ``if not hasattr(owner_unwrapped, "FeaturesOA"): raise`` --
+        which is coincidentally correct ONLY for ``IPhNCFeatures``/
+        ``IPhPhoneme`` (the two owners that happen to be named
+        ``FeaturesOA``) and unconditionally wrong -- 100% dead-code-as-a-
+        fix -- for every other owner (MSA x4, POS x2, Allomorph), which
+        own their struct through a DIFFERENTLY NAMED property
+        (``MsFeaturesOA``, ``InflFeatsOA``, ``FromMsFeaturesOA``, ...).
+        This method replaces that ``hasattr`` gate with T2's
+        ``ClassName``-driven ``_ResolveFeatureStrucOwner``
+        (``Shared/lcm_constants.py::FEATURE_STRUC_OWNER_TABLE``, C1) --
+        never guessing, never gating on ``hasattr`` for a subtype-
+        declared member (spec D5).
+
+        Args:
+            specs: EITHER of two accepted shapes (both resolved via the
+                SAME per-operand resolution the two pre-T5 bodies used --
+                an HVO ``int``, an already-resolved LCM object/wrapper,
+                or (new, additive) a GUID ``str``; see Notes):
+
+                (a) RECURSIVE DICT (canonical, C3)::
+
+                        {"noun agreement": {"class": "1", "number": "sg"},
+                         "polarity": "positive"}
+
+                    A dict VALUE -> ``IFsComplexValue`` whose ``ValueOA``
+                    is a nested ``IFsFeatStruc`` built by recursing. A
+                    SCALAR value -> ``IFsClosedValue``. No depth limit.
+
+                (b) FLAT LIST OF ``(feature, value)`` TUPLES (legacy,
+                    SUPPORTED INDEFINITELY -- 5 internal call sites +
+                    4 shipped test files pass this shape; see spec.md
+                    C3/C4a). Exactly equivalent to a one-level dict. The
+                    REJECTED ``("feat", [(f, v), ...])`` tuple-nesting
+                    overload (a silent ``isinstance`` branch capped at
+                    one extra level) is deliberately NOT special-cased
+                    here -- a list-shaped tuple VALUE falls through to
+                    the scalar branch and fails loudly at the LCM
+                    property-set call, which is the correct outcome for
+                    an overload this contract explicitly rejects.
+
+            owner: LCM object (or wrapper) that owns the struct.
+                **Required -- ``owner=None`` always raises** (issue #28
+                ruling, unchanged by T5): LCM property accessors NPE on
+                free-floating ``IFsFeatStruc`` objects, so an unowned-
+                empty mode would return an unusable struct.
+            slot: Disambiguates owners with more than one feature-
+                structure-owning property (``MoDerivAffMsa``:
+                ``"From"``/``"To"``; ``PartOfSpeech``: ``"Default"``/
+                ``"InherFeatVal"``). Ignored -- not an error -- for a
+                single-property owner, even if supplied. See C1 /
+                ``_ResolveFeatureStrucOwner``.
+
+        Returns:
+            IFsFeatStruc: The populated feature structure, attached to
+            ``owner``'s C1-resolved owning property.
+
+        Raises:
+            FP_ParameterError: If ``owner`` is ``None``; if a spec entry
+                is malformed (legacy shape: not a 2-tuple); if ``owner``'s
+                ``ClassName`` is not a recognized feature-structure owner,
+                or is ambiguous and ``slot`` is missing/invalid (see
+                ``_ResolveFeatureStrucOwner``); or if a GUID-string
+                operand is malformed.
+
+        Notes:
+            - Per-operand resolution mirrors the two pre-T5 bodies
+              EXACTLY for ``int`` (HVO) and already-resolved LCM
+              object/wrapper inputs -- zero behaviour change for any
+              input that worked before. GUID ``str`` support is
+              ADDITIVE: neither pre-T5 body special-cased a string, so
+              one used to fall through unresolved and fail at the LCM
+              property-set call; routing it through ``project.Object()``
+              is a strict improvement with no back-compat risk. Plain
+              NAME-string resolution (e.g. passing ``"back"`` instead of
+              the feature object returned by ``Find("back")``) is
+              deliberately NOT added -- neither pre-T5 body supported it,
+              no shipped test exercises it, and guessing which of
+              several ``Find``-style lookups applies to an arbitrary
+              string would be exactly the kind of silent guess C1's
+              resolver exists to forbid.
+            - Ownership-first (C5 invariant) at EVERY nesting level: the
+              struct/``ValueOA`` is attached to its owner BEFORE its
+              ``FeatureSpecsOC`` is populated or even read -- a free-
+              floating ``IFsFeatStruc``'s own getter raises
+              ``NullReferenceException`` (probe evidence).
+            - Every spec is normalized (resolved, malformed-shape
+              checked) BEFORE the owner is resolved or any transaction is
+              opened -- mirrors both pre-T5 bodies' up-front validation,
+              so a malformed spec never leaves a partially-attached
+              struct behind.
+            - This is the C3 user-facing COMPOSE surface, resolving
+              named/object/HVO/GUID operands directly against LCM --
+              a DIFFERENT recursion from the C4/C5 sync APPLY surface
+              (``_ApplyFeatureStruc``/``_ApplyFeatureStrucSpecMap``,
+              T3/T4), which resolves GUID-only wire-format specs against
+              a target project's feature system. The two are not merged:
+              they solve different problems (compose-from-friendly-
+              specs vs. apply-a-serialized-wire-spec) and merging them
+              would mean round-tripping every already-resolved object
+              through a GUID for no reason.
+        """
+        self._EnsureWriteEnabled()
+        self._ValidateParam(specs, "specs")
+
+        if owner is None:
+            raise FP_ParameterError(
+                "MakeFeatStruc requires an owner. LCM property "
+                "accessors NPE on free-floating IFsFeatStruc objects, "
+                "so the previous unowned-empty mode produced an "
+                "unusable struct (issue #28). Pass owner=phoneme / "
+                "owner=natural_class / owner=msa / owner=pos / "
+                "owner=allomorph / owner=context, plus slot= when the "
+                "owner has more than one feature-structure-owning "
+                "property (MoDerivAffMsa: 'From'/'To'; PartOfSpeech: "
+                "'Default'/'InherFeatVal') -- see "
+                "_ResolveFeatureStrucOwner."
+            )
+
+        # Normalize (resolve + validate shape) ALL specs, recursively,
+        # BEFORE touching owner or opening a transaction -- mirrors both
+        # pre-T5 bodies' up-front normalization pass.
+        normalized = self.__NormalizeFeatStrucLevel(specs)
+
+        # THE #256 FIX: resolve owner via the C1 table instead of the
+        # `hasattr(owner, "FeaturesOA")` gate. Raises FP_ParameterError
+        # for an unrecognized/ambiguous-without-slot ClassName; raises
+        # TypeError (uncaught, by design -- C1 step 5) if the concrete
+        # cast itself fails.
+        concrete_owner, prop_name = self._ResolveFeatureStrucOwner(
+            owner, slot=slot
+        )
+
+        from SIL.LCModel import IFsFeatStrucFactory
+
+        factory = self.project.project.ServiceLocator.GetService(
+            IFsFeatStrucFactory
+        )
+
+        with self._TransactionCM("Make feature structure"):
+            struct = factory.Create()
+            setattr(concrete_owner, prop_name, struct)
+            # Re-fetch via the owning property to hold the LCM view of
+            # the now-owned struct (ownership-first, C5).
+            struct = self._CastFsFeatStruc(
+                getattr(concrete_owner, prop_name)
+            )
+            self.__PopulateFeatStrucLevel(struct, normalized)
+
+            return struct
+
+    def __NormalizeFeatStrucLevel(self, level_specs):
+        """
+        Recursively resolve ONE level of ``_MakeFeatStruc`` specs (either
+        shape from C3) into a list of ``(resolved_feat, resolved_val)``
+        pairs, where ``resolved_val`` is itself such a list for a nested
+        (dict) value, or a resolved scalar LCM object/operand otherwise.
+
+        Pure resolution -- ``project.Object()`` lookups only, no factory
+        calls, no LCM mutation -- so it is safe to run to completion,
+        and raise on a malformed shape, before any transaction opens.
+        """
+        if isinstance(level_specs, dict):
+            raw_pairs = list(level_specs.items())
+        else:
+            raw_pairs = []
+            for i, pair in enumerate(level_specs):
+                if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                    raise FP_ParameterError(
+                        f"specs[{i}] must be a (feature, value) tuple"
+                    )
+                raw_pairs.append(tuple(pair))
+
+        normalized = []
+        for feat_raw, val_raw in raw_pairs:
+            feat = self.__ResolveFeatStrucOperand(feat_raw)
+            if isinstance(val_raw, dict):
+                nested = self.__NormalizeFeatStrucLevel(val_raw)
+                normalized.append((feat, nested))
+            else:
+                val = self.__ResolveFeatStrucOperand(val_raw)
+                normalized.append((feat, val))
+        return normalized
+
+    def __PopulateFeatStrucLevel(self, struct, normalized_pairs,
+                                  _factories=None):
+        """
+        Populate an ALREADY-ATTACHED ``IFsFeatStruc`` ``struct`` from a
+        level of ``(resolved_feat, resolved_val)`` pairs produced by
+        ``__NormalizeFeatStrucLevel``, recursing into nested-list values
+        (a nested value is always a ``list`` -- ``__NormalizeFeatStrucLevel``
+        only ever produces a ``list`` for a dict-shaped spec value; any
+        other value, including a malformed raw ``list``, is treated as a
+        scalar operand and left to fail naturally at the LCM property-set
+        call). Ownership-first (C5) at every level: the nested struct is
+        attached to its owning ``IFsComplexValue.ValueOA`` BEFORE this
+        method recurses into it.
+        """
+        if _factories is None:
+            from SIL.LCModel import (
+                IFsClosedValueFactory,
+                IFsComplexValueFactory,
+                IFsFeatStrucFactory,
+            )
+            _factories = (
+                self.project.project.ServiceLocator.GetService(
+                    IFsClosedValueFactory
+                ),
+                self.project.project.ServiceLocator.GetService(
+                    IFsComplexValueFactory
+                ),
+                self.project.project.ServiceLocator.GetService(
+                    IFsFeatStrucFactory
+                ),
+            )
+        cv_factory, cx_factory, fs_factory = _factories
+
+        for feat, val in normalized_pairs:
+            if isinstance(val, list):
+                # Nested (complex) feature spec -> IFsComplexValue.ValueOA.
+                # Own transaction per mutation (matches
+                # _ApplyFeatureStrucSpecMap's "Add feature value" label for
+                # the identical complex-value-creation shape, and satisfies
+                # the B2g unbracketed-mutation ratchet, which scans each
+                # method's OWN body for a lexically-enclosing
+                # `with self._TransactionCM(...)` -- an outer caller's
+                # transaction does not count).
+                with self._TransactionCM("Add feature value"):
+                    complex_value = cx_factory.Create()
+                    struct.FeatureSpecsOC.Add(complex_value)
+                    cx = self._CastFsComplexValue(complex_value)
+                    cx.FeatureRA = feat
+                    nested_raw = fs_factory.Create()
+                    cx.ValueOA = nested_raw
+                nested = self._CastFsFeatStruc(cx.ValueOA)
+                self.__PopulateFeatStrucLevel(nested, val, _factories)
+            else:
+                with self._TransactionCM("Add feature value"):
+                    closed_value = cv_factory.Create()
+                    struct.FeatureSpecsOC.Add(closed_value)
+                    cv = self._CastFsClosedValue(closed_value)
+                    cv.FeatureRA = feat
+                    cv.ValueRA = val
+
+    def __ResolveFeatStrucOperand(self, raw):
+        """
+        Resolve one ``_MakeFeatStruc`` feature/value operand: an HVO
+        (``int``), a GUID (``str``), or an already-resolved LCM
+        object/wrapper. See ``_MakeFeatStruc``'s Notes for why GUID
+        strings are additive-only and plain name strings are
+        deliberately unsupported.
+        """
+        if isinstance(raw, int) and not isinstance(raw, bool):
+            return self.project.Object(raw)
+        if isinstance(raw, str):
+            return self.project.Object(raw)
+        # Peel off LCMObjectWrapper-style wrappers -- mirrors
+        # InflectionFeatureOperations.__Unwrap / PhonFeatureOperations
+        # .__Unwrap.
+        if hasattr(raw, "_obj") and not hasattr(raw, "Hvo"):
+            return raw._obj
+        if hasattr(raw, "_obj") and hasattr(raw._obj, "Hvo"):
+            return raw._obj
+        return raw
+
     def _RejectLegacyKwargs(self, kwargs, legacy_to_new):
         """
         Trap unexpected legacy keyword arguments with a clear,

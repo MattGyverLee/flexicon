@@ -550,95 +550,46 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
     # ========================================================================
 
     @OperationsMethod
-    def MakeFeatStruc(self, specs, owner=None):
+    def MakeFeatStruc(self, specs, owner=None, slot=None):
         """
-        Build an IFsFeatStruc populated with (feature, value) pairs.
+        Build an IFsFeatStruc populated from user-facing specs.
+
+        Thin call-through to ``BaseOperations._MakeFeatStruc`` (spec
+        ``feature-structure-sync-gap``, contract C3; closes issue #256).
+        The two previously byte-identical-except-for-the-owner-check
+        bodies here and in ``InflectionFeatureOperations.MakeFeatStruc``
+        are now ONE generalized implementation, resolved via T2's
+        ``ClassName``-driven ``_ResolveFeatureStrucOwner`` instead of the
+        ``hasattr(owner, "FeaturesOA")`` gate. See
+        ``BaseOperations._MakeFeatStruc`` for the full contract (both
+        accepted ``specs`` shapes, ``slot=`` disambiguation, per-operand
+        resolution, and the Raises list).
 
         Args:
-            specs (list[tuple]): A list of ``(feature, value)`` tuples.
-                Each side may be an IFsClosedFeature / IFsSymFeatVal
-                object, a wrapper, or an HVO. Items are added to the
-                struct's ``FeatureSpecsOC`` in the order provided.
-
-            owner: LCM object that owns the struct via its
-                ``FeaturesOA`` atomic-owning property. **Required.**
-                The struct is attached to ``owner.FeaturesOA`` BEFORE
-                its FeatureSpecsOC is populated, because LCM property
-                setters and getters both NPE on free-floating
-                IFsFeatStruc objects (Phase 2 ownership rule).
-                Phonemes and natural classes both use ``FeaturesOA``.
-
-                ``owner=None`` is rejected unconditionally (issue #28).
-                The previous unowned-empty mode returned a struct
-                whose property accessors NPE'd inside
-                ``CmObject.get_Services()``; that footgun is now gone.
+            specs: Recursive dict (canonical) OR a flat list of
+                ``(feature, value)`` tuples (legacy, supported
+                indefinitely). See ``BaseOperations._MakeFeatStruc``.
+            owner: LCM object that owns the struct via its C1-resolved
+                owning property. **Required** -- ``owner=None`` always
+                raises (issue #28). Phonemes and natural classes both
+                use ``FeaturesOA``, resolved the same way as every other
+                owner in the C1 table.
+            slot: Disambiguates an owner with more than one
+                feature-structure-owning property. Ignored for
+                single-property owners (phonemes/natural classes always
+                are). See ``BaseOperations._ResolveFeatureStrucOwner``.
 
         Returns:
             IFsFeatStruc: The populated feature structure, attached to
-            ``owner.FeaturesOA``.
+            ``owner``'s C1-resolved owning property.
 
         Raises:
-            FP_ParameterError: If ``owner`` is None, if a spec tuple
-                is malformed, or if ``owner`` has no FeaturesOA
-                property.
+            FP_ParameterError: If ``owner`` is None, if a spec entry
+                is malformed, or if ``owner``'s ``ClassName`` is not a
+                recognized/unambiguous feature-structure owner (see
+                ``BaseOperations._ResolveFeatureStrucOwner``).
         """
-        self._EnsureWriteEnabled()
-        self._ValidateParam(specs, "specs")
-
-        if owner is None:
-            raise FP_ParameterError(
-                "MakeFeatStruc requires an owner. LCM property "
-                "accessors NPE on free-floating IFsFeatStruc objects, "
-                "so the previous unowned-empty mode produced an "
-                "unusable struct (issue #28). Pass owner=phoneme / "
-                "owner=natural_class / owner=context."
-            )
-
-        # Normalize and validate specs up front, before any LCM mutation.
-        normalized = []
-        for i, pair in enumerate(specs):
-            if not isinstance(pair, (list, tuple)) or len(pair) != 2:
-                raise FP_ParameterError(
-                    f"specs[{i}] must be a (feature, value) tuple"
-                )
-            feat_in, val_in = pair
-            feat = self.__Unwrap(self.__ResolveObject(feat_in))
-            val = self.__Unwrap(self.__ResolveObject(val_in))
-            normalized.append((feat, val))
-
-        # Create the struct and attach it to its owner BEFORE any
-        # FeatureSpecsOC mutation. Skipping the attach (or doing it
-        # after) trips the Phase 2 NPE pattern -- LCM property setters
-        # on free-floating structs raise NullReferenceException.
-        owner_unwrapped = self.__Unwrap(owner)
-        if not hasattr(owner_unwrapped, "FeaturesOA"):
-            raise FP_ParameterError(
-                "owner has no FeaturesOA property; cannot attach FsFeatStruc."
-            )
-
-        factory = self.project.project.ServiceLocator.GetService(
-            IFsFeatStrucFactory
-        )
-        with self._TransactionCM("Make feature structure"):
-            struct = factory.Create()
-            owner_unwrapped.FeaturesOA = struct
-            # Re-fetch via the owning property to hold the LCM view of the
-            # now-owned struct.
-            struct = IFsFeatStruc(owner_unwrapped.FeaturesOA)
-
-            # Populate FeatureSpecsOC. Each spec is an IFsClosedValue with
-            # FeatureRA -> feature and ValueRA -> value.
-            cv_factory = self.project.project.ServiceLocator.GetService(
-                IFsClosedValueFactory
-            )
-            for feat, val in normalized:
-                closed_value = cv_factory.Create()
-                struct.FeatureSpecsOC.Add(closed_value)
-                cv = IFsClosedValue(closed_value)
-                cv.FeatureRA = feat
-                cv.ValueRA = val
-
-            return struct
+        return self._MakeFeatStruc(specs, owner=owner, slot=slot)
 
     # ========================================================================
     # SYNC INTEGRATION METHODS
