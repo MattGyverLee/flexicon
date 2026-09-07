@@ -171,6 +171,7 @@ class TestWsCaseDivergenceLive:
     rationale recorded per instruction).
     """
 
+    @pytest.mark.live_phase("POSOperations", "modify")
     def test_d4a_ws_map_case_divergent_resolves(self, _case_divergence_fixture):
         ctx = _case_divergence_fixture
         project = ctx["project"]
@@ -208,6 +209,7 @@ class TestWsCaseDivergenceLive:
         finally:
             pos_ops.Delete(pos)
 
+    @pytest.mark.live_phase("POSOperations", "modify")
     def test_d4b_no_ws_map_source_id_case_divergent_resolves(
         self, _case_divergence_fixture
     ):
@@ -245,6 +247,7 @@ class TestWsCaseDivergenceLive:
         finally:
             pos_ops.Delete(pos)
 
+    @pytest.mark.live_phase("POSOperations", "modify")
     def test_d4c_separator_divergent_resolves(self, _case_divergence_fixture):
         ctx = _case_divergence_fixture
         if ctx["flipped_sep"] == ctx["ws_id"]:
