@@ -7,17 +7,29 @@ Q-242B of `specs/tier1-silent-data-loss/QUEUE.md`
 queue item 2, `242-paragraph-whitespace`, and queue item 3,
 `feature-structure-sync-gap`)
 
-**Status:** CHECKPOINT 1 (spec + live probe) DONE, 2026-09-07. No behaviour
-change under `flexicon/code/` has been authorised by THIS feature yet --
-this feature's own crew made zero Edit/Write calls under `flexicon/`.
-(`git status` shows unrelated modifications to `flexicon/code/BaseOperations.py`,
-`flexicon/code/Grammar/NaturalClassOperations.py`, and
-`flexicon/code/Grammar/PhonemeOperations.py` -- these belong to the second,
-concurrent crew described in `CONCURRENCY.md` and are NOT this feature's
-work; do not attribute them here, do not stage them, do not revert them.)
-Contract items C1-C8 below are FROZEN, transcribed substantially verbatim
-from the ruling that authorised this feature. `tasks.md` derives the
-implementation tasks from them.
+**Status:** CHECKPOINT 3, 2026-09-07. **This header was stale and is
+corrected here (C27): it previously read "no behaviour change under
+`flexicon/code/` has been authorised by THIS feature yet", which was true
+only at cycle 1.** Behaviour changes HAVE landed. All 8 persist sites and
+all 3 comparison sites are fixed and committed by this feature, across
+four files:
+`flexicon/code/TextsWords/DiscourseOperations.py` (T1, `ab638aa`-adjacent),
+`flexicon/code/TextsWords/TextOperations.py` (T2, `db95230`),
+`flexicon/code/Notebook/AnthropologyOperations.py` (T3, `ab638aa`), and
+`flexicon/code/System/CheckOperations.py` (T4, `0ab9c60`). Docs landed at
+T5 (`90cfce7`). Every site is live-verified EXCEPT
+`DiscourseOperations.CreateChart`'s persist half, which is
+**`FAIL: unverified`** (Q-DISC1) -- inspection-correct but unreachable
+through its own public API. **This feature does not claim 8/8 verified.**
+
+Unrelated modifications under `flexicon/code/BaseOperations.py` and
+`flexicon/code/Grammar/` belong to the second, concurrent crew described
+in `CONCURRENCY.md` and are NOT this feature's work; do not attribute them
+here, do not stage them, do not revert them.
+
+Contract items C1-C13 below are FROZEN, transcribed substantially verbatim
+from the rulings that authorised and governed this feature. `tasks.md`
+derives the implementation tasks from them.
 
 **Read first, and read in this order:**
 - `specs/name-field-whitespace-identity/CONCURRENCY.md` -- binding on every
@@ -513,6 +525,20 @@ does not authorise anyone else to perform it.
 **(e) This item authorises no loosening.** AMENDMENT 2 having proven its worth
 is grounds for extending it, never for concluding that the underlying staging
 rule is now sufficient on its own.
+
+**(f) EXTENSION, ruled at the sub-item 2a closure (after C12 was first
+frozen).** C12(d)'s promotion recommendation was authored BEFORE
+`CONCURRENCY.md` AMENDMENT 3 existed. It is extended to cover **AMENDMENT 2 and
+AMENDMENT 3 together, promoted as a single unit**, on the grounds that they are
+one protocol and not two: AMENDMENT 2 brackets the commit, AMENDMENT 3 closes
+the working-tree-destruction gap that the bracket does not reach. Promoting 2
+alone would export the commit-time race protection to campaign items 3 and 4
+while leaving them exposed to the bare-`git stash` hazard that C13(c) exists to
+prevent -- and those items run in the SAME shared clone, against the SAME second
+crew, and will perform the SAME offline-baseline measurement step that occasioned
+T4's slip. All other terms of C12(d) are unchanged: the promotion is the MAIN
+SESSION's action, into `specs/tier1-silent-data-loss/.crew-handoff.json`'s
+`hard_rules`, verbatim, and no agent acting inside this feature may perform it.
 
 ### C13 -- T4's offline-baseline order slip: the delta STANDS AS MEASURED, and the load-bearing outcome is the STASH PATHSPEC RULE
 

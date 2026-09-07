@@ -603,7 +603,12 @@ class TextOperations(BaseOperations):
 
         Raises:
             FP_ReadOnlyError: If project was not opened with writeEnabled=True.
-            FP_NullParameterError: If text_or_hvo or name is None/empty.
+            FP_NullParameterError: If text_or_hvo or name is None. An empty
+                or whitespace-only name is NOT rejected here; it is
+                persisted literally (Q-242D, a known remaining gap -- see
+                Q-242C for the pending harmonisation decision).
+            AttributeError: If name is not a str (from a throwaway .strip()
+                call retained per C7(b); not a deliberate type check).
             FP_ParameterError: If the text does not exist or is invalid.
 
         Example:

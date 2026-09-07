@@ -233,7 +233,12 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
-            FP_NullParameterError: If name is None or empty.
+            FP_NullParameterError: If name is None. An empty or
+                whitespace-only name is NOT rejected here; it is persisted
+                literally (Q-242D, a known remaining gap -- see Q-242C for
+                the pending harmonisation decision).
+            AttributeError: If name is not a str (from a throwaway .strip()
+                call retained per C7(b); not a deliberate type check).
             FP_ParameterError: If an item with this name already exists.
 
         Example:
@@ -349,7 +354,12 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
-            FP_NullParameterError: If parent_item or name is None/empty.
+            FP_NullParameterError: If parent_item or name is None. An empty
+                or whitespace-only name is NOT rejected here; it is
+                persisted literally (Q-242D, a known remaining gap -- see
+                Q-242C for the pending harmonisation decision).
+            AttributeError: If name is not a str (from a throwaway .strip()
+                call retained per C7(b); not a deliberate type check).
             FP_ParameterError: If parent_item is invalid.
 
         Example:
