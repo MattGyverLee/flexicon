@@ -354,7 +354,9 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        domain.Name.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set semantic domain name '{name}'"):
+            domain.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetDescription(self, domain_or_hvo, wsHandle=None):
@@ -425,7 +427,8 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         wsHandle = self.__WSHandle(wsHandle)
 
         # Description is a MultiString
-        domain.Description.set_String(wsHandle, description)
+        with self._TransactionCM("Set semantic domain description"):
+            domain.Description.set_String(wsHandle, description)
 
     @OperationsMethod
     def GetAbbreviation(self, domain_or_hvo, wsHandle=None):
@@ -1022,13 +1025,17 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         # Get the parent or top-level list
         parent = self.GetParent(domain)
 
+        # One bracket per branch inside the parent/top-level dispatch, so the
+        # transaction opens only around the branch that actually mutates (D5).
         if parent:
             # Remove from parent's subdomains
-            parent.SubPossibilitiesOS.Remove(domain)
+            with self._TransactionCM("Delete semantic domain"):
+                parent.SubPossibilitiesOS.Remove(domain)
         else:
             # Remove from top-level list
             domain_list = self.project.lp.SemanticDomainListOA
-            domain_list.PossibilitiesOS.Remove(domain)
+            with self._TransactionCM("Delete semantic domain"):
+                domain_list.PossibilitiesOS.Remove(domain)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):

@@ -124,17 +124,18 @@ class ScrSectionOperations(BaseOperations):
         # Resolve to book object
         book = self.__ResolveBook(book_or_hvo)
 
-        # Create the new section using the factory
-        factory = self.project.project.ServiceLocator.GetService(IScrSectionFactory)
-        new_section = factory.CreateScrSection(
-            book,
-            book.SectionsOS.Count,  # Append to end
-            heading or "",
-            content or "",
-            True,  # Is intro section = False (main content)
-        )
+        with self._TransactionCM("Create scripture section"):
+            # Create the new section using the factory
+            factory = self.project.project.ServiceLocator.GetService(IScrSectionFactory)
+            new_section = factory.CreateScrSection(
+                book,
+                book.SectionsOS.Count,  # Append to end
+                heading or "",
+                content or "",
+                True,  # Is intro section = False (main content)
+            )
 
-        return new_section
+            return new_section
 
     @OperationsMethod
     def Delete(self, section_or_hvo):
@@ -172,8 +173,9 @@ class ScrSectionOperations(BaseOperations):
         # Resolve to section object
         section = self.__ResolveObject(section_or_hvo)
 
-        # Delete the section (LCM handles removal from repository)
-        section.Delete()
+        with self._TransactionCM("Delete scripture section"):
+            # Delete the section (LCM handles removal from repository)
+            section.Delete()
 
     @OperationsMethod
     def Find(self, book_or_hvo, index):

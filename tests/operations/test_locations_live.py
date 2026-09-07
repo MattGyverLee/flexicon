@@ -220,17 +220,20 @@ class TestLocationsPhaseCReorder:
             # Reorder: move loc_a to a position past loc_b. MoveTo's
             # destIndex semantics are "insert before this index"; when
             # moving forward in the same sequence, add 1.
-            possibilities.MoveTo(
-                idx_a_initial, idx_a_initial, possibilities, idx_b_initial + 1
-            )
+            # Raw LCM reorder -> own unit of work (tasks.md D14).
+            with writable_project.UndoableOperation("test: reorder locations"):
+                possibilities.MoveTo(
+                    idx_a_initial, idx_a_initial, possibilities, idx_b_initial + 1
+                )
             assert possibilities.IndexOf(loc_a) > possibilities.IndexOf(loc_b)
 
             # Restore: move loc_a back to its original index. Moving
             # backward, destIndex is used directly.
             current_idx = possibilities.IndexOf(loc_a)
-            possibilities.MoveTo(
-                current_idx, current_idx, possibilities, idx_a_initial
-            )
+            with writable_project.UndoableOperation("test: restore location order"):
+                possibilities.MoveTo(
+                    current_idx, current_idx, possibilities, idx_a_initial
+                )
             assert possibilities.IndexOf(loc_a) == idx_a_initial
             assert possibilities.IndexOf(loc_b) == idx_b_initial
         finally:

@@ -178,6 +178,32 @@ def mock_flex_project():
     mock_lang_project = Mock()
     mock_cache.LanguageProject = mock_lang_project
 
+    # Pin the transaction mode to Phase 1 (undoable=False).
+    #
+    # This MUST be an explicit False. `_undoable` is read by
+    # _NestingAwareTransaction.__enter__ via
+    # `getattr(project, "_undoable", False)`, and on a bare Mock that getattr
+    # returns an auto-created *child Mock*, which is truthy. A mock project
+    # would therefore select Phase 2 and try to construct a real
+    # `UndoableUnitOfWorkHelper` from a Mock action handler, failing with
+    # "TypeError: No method matches given arguments for
+    # UndoableUnitOfWorkHelper..ctor".
+    #
+    # That is not a production defect -- it is only reachable because a Mock
+    # answers every attribute truthily. Phase 1 is also the honest mode for
+    # this fixture: there is no real LcmCache behind it, so there is no undo
+    # stack for Phase 2 to drive. Any test that wants to exercise Phase 2
+    # should set `_undoable = True` itself and patch
+    # `flexicon.code.transaction.UndoableUnitOfWorkHelper` with a double, as
+    # tests/test_b1t_action_handler_double.py does.
+    mock_project._undoable = False
+
+    # Phase 1 delegates to `project.Transaction(label)` and uses the result as
+    # a context manager. A plain Mock does NOT support `__enter__`/`__exit__`
+    # (magic methods raise AttributeError on Mock), so hand back a MagicMock,
+    # which does.
+    mock_project.Transaction = Mock(return_value=MagicMock())
+
     return mock_project
 
 

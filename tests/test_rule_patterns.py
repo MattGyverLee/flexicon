@@ -91,7 +91,7 @@ class TestTopLevelImports:
     """The dataclasses must be exported at the top level of the flexicon package."""
 
     def test_top_level_imports_work(self):
-        """The inner flexicon package's __init__.py exposes Seg, NC, Boundary.
+        """The flexicon package's __init__.py exposes Seg, NC, Boundary.
 
         Notes:
             The project has a root-level ``__init__.py`` (legacy
@@ -104,15 +104,15 @@ class TestTopLevelImports:
         import ast
         import os
 
-        # Locate the REAL inner package __init__.py.
+        # Locate the REAL package __init__.py.
         here = os.path.dirname(os.path.abspath(__file__))
         repo_root = os.path.dirname(here)
-        inner_init = os.path.join(repo_root, "flexicon", "__init__.py")
-        assert os.path.exists(inner_init), (
-            f"Expected real flexicon package at {inner_init}; layout changed"
+        real_init = os.path.join(repo_root, "flexicon", "__init__.py")
+        assert os.path.exists(real_init), (
+            f"Expected real flexicon package at {real_init}; layout changed"
         )
 
-        with open(inner_init, "r", encoding="utf-8") as f:
+        with open(real_init, "r", encoding="utf-8") as f:
             source = f.read()
         tree = ast.parse(source)
 

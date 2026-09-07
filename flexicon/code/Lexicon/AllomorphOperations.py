@@ -368,7 +368,7 @@ class AllomorphOperations(BaseOperations):
                 owner.AlternateFormsOS.Remove(allomorph)
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
         """
         Duplicate an allomorph, creating a new copy with a new GUID.
 
@@ -376,7 +376,7 @@ class AllomorphOperations(BaseOperations):
             item_or_hvo: The IMoForm object or HVO to duplicate.
             insert_after (bool): If True (default), insert after the source allomorph.
                                 If False, insert at end of parent's alternate forms list.
-            deep (bool): Reserved for future use (allomorphs have no owned objects).
+            deep (bool): Accepted for API uniformity across Operations classes. Allomorph has no owned objects, so this parameter is ignored.
 
         Returns:
             IMoForm: The newly created duplicate allomorph with a new GUID.
@@ -428,14 +428,21 @@ class AllomorphOperations(BaseOperations):
         class_name = source.ClassName
         factory = None
 
+        # PhoneEnvRC is declared on the concrete allomorph interfaces, not
+        # on the base IMoForm that __GetAllomorphObject returns; cast
+        # `source` to whichever concrete type class_name identifies so
+        # PhoneEnvRC is reachable below.
+        concrete_source = None
         if class_name == "MoStemAllomorph":
-            from SIL.LCModel import IMoStemAllomorphFactory
+            from SIL.LCModel import IMoStemAllomorph, IMoStemAllomorphFactory
 
             factory = self.project.project.ServiceLocator.GetService(IMoStemAllomorphFactory)
+            concrete_source = IMoStemAllomorph(source)
         elif class_name == "MoAffixAllomorph":
-            from SIL.LCModel import IMoAffixAllomorphFactory
+            from SIL.LCModel import IMoAffixAllomorph, IMoAffixAllomorphFactory
 
             factory = self.project.project.ServiceLocator.GetService(IMoAffixAllomorphFactory)
+            concrete_source = IMoAffixAllomorph(source)
         else:
             # Unrecognized allomorph type - raise error instead of defaulting
             raise FP_ParameterError(
@@ -469,7 +476,7 @@ class AllomorphOperations(BaseOperations):
             duplicate.MorphTypeRA = source.MorphTypeRA
 
             # Copy Reference Collection (RC) properties
-            for env in source.PhoneEnvRC:
+            for env in concrete_source.PhoneEnvRC:
                 duplicate.PhoneEnvRC.Add(env)
 
             return duplicate
@@ -672,7 +679,9 @@ class AllomorphOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(form, wsHandle)
-        allomorph.Form.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set allomorph form '{form}'"):
+            allomorph.Form.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def SetFormAudio(self, allomorph_or_hvo, file_path, wsHandle=None):
@@ -936,7 +945,9 @@ class AllomorphOperations(BaseOperations):
         self._ValidateParam(morphType, "morphType")
 
         allomorph = self.__GetAllomorphObject(allomorph_or_hvo)
-        allomorph.MorphTypeRA = morphType
+
+        with self._TransactionCM("Set allomorph morph type"):
+            allomorph.MorphTypeRA = morphType
 
     @OperationsMethod
     def GetPhoneEnv(self, allomorph_or_hvo):
@@ -1022,7 +1033,8 @@ class AllomorphOperations(BaseOperations):
         allomorph = self.__GetAllomorphObject(allomorph_or_hvo)
         env = self.__GetEnvironmentObject(env_or_hvo)
 
-        allomorph.PhoneEnvRC.Add(env)
+        with self._TransactionCM("Add phonological environment"):
+            allomorph.PhoneEnvRC.Add(env)
 
     @OperationsMethod
     def RemovePhoneEnv(self, allomorph_or_hvo, env_or_hvo):
@@ -1063,9 +1075,11 @@ class AllomorphOperations(BaseOperations):
         allomorph = self.__GetAllomorphObject(allomorph_or_hvo)
         env = self.__GetEnvironmentObject(env_or_hvo)
 
-        # Only remove if it's actually in the collection
+        # Membership test stays outside the bracket so a redundant remove is a
+        # true no-op rather than an empty named undo entry (D5).
         if env in allomorph.PhoneEnvRC:
-            allomorph.PhoneEnvRC.Remove(env)
+            with self._TransactionCM("Remove phonological environment"):
+                allomorph.PhoneEnvRC.Remove(env)
 
     # --- Private Helper Methods ---
 

@@ -592,22 +592,27 @@ class BaseOperations:
         else:
             items_with_indices.sort(key=lambda x: x[1], reverse=reverse)
 
-        # Apply new order using MoveTo
-        # We need to move items from their current position to their target position
-        # Process from end to beginning to avoid index shifting issues
-        for target_index in range(count):
-            # Find where the item that should be at target_index currently is
-            current_index = target_index
-            for j in range(target_index, count):
-                if sequence[j] == items_with_indices[target_index][1]:
-                    current_index = j
-                    break
+        # Apply new order using MoveTo. Bracketed as ONE transaction: a sort
+        # issues up to `count` MoveTo calls, and a failure partway through
+        # leaves the sequence in a half-sorted order that is neither the old
+        # nor the new one. This is exactly the multi-mutation case
+        # _TransactionCM exists for.
+        with self._TransactionCM("Sort sequence"):
+            # We need to move items from their current position to their target position
+            # Process from end to beginning to avoid index shifting issues
+            for target_index in range(count):
+                # Find where the item that should be at target_index currently is
+                current_index = target_index
+                for j in range(target_index, count):
+                    if sequence[j] == items_with_indices[target_index][1]:
+                        current_index = j
+                        break
 
-            # Move it to the target position if not already there
-            if current_index != target_index:
-                sequence.MoveTo(current_index, current_index, sequence, target_index)
+                # Move it to the target position if not already there
+                if current_index != target_index:
+                    sequence.MoveTo(current_index, current_index, sequence, target_index)
 
-        return count
+            return count
 
     @OperationsMethod
     def MoveUp(self, parent_or_hvo, item, positions=1):
@@ -701,7 +706,8 @@ class BaseOperations:
         # Move using FLEx's MoveTo method
         # When moving backward (up), use target index directly
         if actual_moved > 0:
-            sequence.MoveTo(current_index, current_index, sequence, new_index)
+            with self._TransactionCM(f"Move item up {actual_moved} position(s)"):
+                sequence.MoveTo(current_index, current_index, sequence, new_index)
 
         return actual_moved
 
@@ -798,7 +804,8 @@ class BaseOperations:
         # Move using FLEx's MoveTo method
         # When moving forward (down), need to use new_index + 1 due to FLEx behavior
         if actual_moved > 0:
-            sequence.MoveTo(current_index, current_index, sequence, new_index + 1)
+            with self._TransactionCM(f"Move item down {actual_moved} position(s)"):
+                sequence.MoveTo(current_index, current_index, sequence, new_index + 1)
 
         return actual_moved
 
@@ -878,12 +885,13 @@ class BaseOperations:
         # Move using FLEx's MoveTo method
         # Adjust destination index based on direction
         if current_index != new_index:
-            if current_index < new_index:
-                # Moving forward - use new_index + 1
-                sequence.MoveTo(current_index, current_index, sequence, new_index + 1)
-            else:
-                # Moving backward - use new_index directly
-                sequence.MoveTo(current_index, current_index, sequence, new_index)
+            with self._TransactionCM(f"Move item to index {new_index}"):
+                if current_index < new_index:
+                    # Moving forward - use new_index + 1
+                    sequence.MoveTo(current_index, current_index, sequence, new_index + 1)
+                else:
+                    # Moving backward - use new_index directly
+                    sequence.MoveTo(current_index, current_index, sequence, new_index)
 
         return True
 
@@ -953,12 +961,13 @@ class BaseOperations:
 
         # Move using FLEx's MoveTo method
         if move_index != -1 and target_index != -1 and move_index != target_index:
-            if move_index < target_index:
-                # Moving forward - use target_index (will end up before target)
-                sequence.MoveTo(move_index, move_index, sequence, target_index)
-            else:
-                # Moving backward - use target_index directly
-                sequence.MoveTo(move_index, move_index, sequence, target_index)
+            with self._TransactionCM("Move item before target"):
+                if move_index < target_index:
+                    # Moving forward - use target_index (will end up before target)
+                    sequence.MoveTo(move_index, move_index, sequence, target_index)
+                else:
+                    # Moving backward - use target_index directly
+                    sequence.MoveTo(move_index, move_index, sequence, target_index)
 
         return True
 
@@ -1028,13 +1037,14 @@ class BaseOperations:
 
         # Move to position after target
         if move_index != -1 and target_index != -1 and move_index != target_index:
-            # When moving after, we want to end up at target_index + 1
-            # If moving forward: use target_index + 1 (will insert after due to removal)
-            # If moving backward: use target_index + 1 directly
-            if move_index < target_index:
-                sequence.MoveTo(move_index, move_index, sequence, target_index + 1)
-            else:
-                sequence.MoveTo(move_index, move_index, sequence, target_index + 1)
+            with self._TransactionCM("Move item after target"):
+                # When moving after, we want to end up at target_index + 1
+                # If moving forward: use target_index + 1 (will insert after due to removal)
+                # If moving backward: use target_index + 1 directly
+                if move_index < target_index:
+                    sequence.MoveTo(move_index, move_index, sequence, target_index + 1)
+                else:
+                    sequence.MoveTo(move_index, move_index, sequence, target_index + 1)
 
         return True
 
@@ -1101,23 +1111,27 @@ class BaseOperations:
                 idx2 = index
             index += 1
 
-        # Swap using MoveTo operations
+        # Swap using MoveTo operations. Bracketed as ONE transaction: the swap
+        # is a deliberate two-step MoveTo dance, and failing between the steps
+        # leaves the sequence in an order that is neither the original nor the
+        # swapped one.
         # Strategy: Move lower-index item after higher-index item, then move higher item to original position
         if idx1 != -1 and idx2 != -1 and idx1 != idx2:
-            if idx1 < idx2:
-                # item1 is before item2
-                # Step 1: Move item1 to after item2 (this pushes item2 earlier)
-                # After this: [..., item2 at idx1, ..., item1 at idx2, ...]
-                sequence.MoveTo(idx1, idx1, sequence, idx2 + 1)
-                # Step 2: Now item2 is at idx1, move it to idx2
-                # But idx2 is now idx2-1 because we removed item1
-                sequence.MoveTo(idx1, idx1, sequence, idx2)
-            else:
-                # item2 is before item1
-                # Step 1: Move item2 to after item1
-                sequence.MoveTo(idx2, idx2, sequence, idx1 + 1)
-                # Step 2: Now item1 is at idx2, move it to idx1
-                sequence.MoveTo(idx2, idx2, sequence, idx1)
+            with self._TransactionCM("Swap items"):
+                if idx1 < idx2:
+                    # item1 is before item2
+                    # Step 1: Move item1 to after item2 (this pushes item2 earlier)
+                    # After this: [..., item2 at idx1, ..., item1 at idx2, ...]
+                    sequence.MoveTo(idx1, idx1, sequence, idx2 + 1)
+                    # Step 2: Now item2 is at idx1, move it to idx2
+                    # But idx2 is now idx2-1 because we removed item1
+                    sequence.MoveTo(idx1, idx1, sequence, idx2)
+                else:
+                    # item2 is before item1
+                    # Step 1: Move item2 to after item1
+                    sequence.MoveTo(idx2, idx2, sequence, idx1 + 1)
+                    # Step 2: Now item1 is at idx2, move it to idx1
+                    sequence.MoveTo(idx2, idx2, sequence, idx1)
 
         return True
 
@@ -1293,10 +1307,23 @@ class BaseOperations:
             ws.Id: ws.Handle for ws in self.project.WritingSystems.GetAll()
         }
 
-        _apply_props_loop(item, props, target_ws_by_id, fill_gaps,
-                          ws_map=ws_map,
-                          _default_ws_getter=self.project.GetDefaultAnalysisWSHandle,
-                          _ts_string_utils=TsStringUtils)
+        # B2/D5 bracket. This one was missed by the original 295-site sweep
+        # because the sweep enumerated Operations *methods* and the writes
+        # actually live in `_apply_props_loop`, a module-level helper -- so no
+        # per-method scheme reached them. It was latent under `undoable=False`
+        # (the session envelope covered every write) and became a hard failure
+        # the moment DEF made `undoable=True` the default: with no envelope
+        # open, `MultiUnicodeAccessor.set_String` raises
+        # `InvalidOperationException: Not in the right state to register a
+        # change.` One bracket for the whole loop, not per property: a partial
+        # sync that failed halfway would otherwise leave the target item with
+        # some fields updated and some stale, which is precisely the
+        # half-applied state this method's callers cannot detect.
+        with self._TransactionCM("Apply syncable properties"):
+            _apply_props_loop(item, props, target_ws_by_id, fill_gaps,
+                              ws_map=ws_map,
+                              _default_ws_getter=self.project.GetDefaultAnalysisWSHandle,
+                              _ts_string_utils=TsStringUtils)
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):
@@ -1816,9 +1843,13 @@ class BaseOperations:
               name checked). ``_TransactionCM`` in Phase 1 is a labelling and
               nesting construct only; the atomicity unit is the whole
               session, not this block. See ``docs/EXCEPTION_HANDLING.md``.
-            - Phase 2 (``UndoableOperation``) wraps the changes in a single
-              named undo task; it does NOT auto-rollback on exception either,
-              but the partial work is undoable by the FLEx user via Ctrl+Z.
+            - Phase 2 (``UndoableOperation``) IS rollback-capable (see B1,
+              `specs/write-path-transactions/spec.md`): ``_TransactionCM``
+              constructs liblcm's own ``UndoableUnitOfWorkHelper`` directly
+              for the outermost block. An exception raised inside the block
+              rolls back every mutation that block made, in addition to the
+              partial work remaining undoable by the FLEx user via Ctrl+Z up
+              until the point of rollback.
             - ``_undoable`` is only ever True when the project is also
               write-enabled, so Phase 2 selection cannot collide with the
               read-only guard already enforced by ``_EnsureWriteEnabled``.
@@ -1827,18 +1858,24 @@ class BaseOperations:
               * Phase 1 (``Transaction``) nests without error. Each ``with``
                 block enters and exits cleanly, but since neither the inner
                 nor the outer block can roll back, "nesting" here means only
-                that labels compose and the depth counter balances -- there
-                is no independent rollback point to speak of at any depth.
+                that labels compose -- there is no independent rollback point
+                to speak of at any depth.
               * Phase 2 (``UndoableOperation``) does NOT nest at the LCM level:
                 ``BeginUndoTask``/``EndUndoTask`` cannot be nested without
                 corrupting the undo stack. ``_TransactionCM`` guards against
-                this automatically using ``project._transaction_depth``: only
-                the OUTERMOST block opens an undo task; any ``_TransactionCM``
-                entered while one is already active becomes a no-op and lets
-                the outer task group all of its mutations into the single
-                named undo entry (the desired Phase 2 behavior). This means an
-                inner method's mutations are not separately undoable in Phase 2
-                - they are absorbed into the enclosing operation's undo task.
+                this automatically by asking LCM's own
+                ``cache.ActionHandlerAccessor.CurrentDepth`` at every
+                ``__enter__`` -- never by tracking depth itself in Python
+                (that hand-rolled counter was issue #234, and is gone). Only
+                the OUTERMOST block (``CurrentDepth == 0``) opens a new
+                ``UndoableUnitOfWorkHelper``; any ``_TransactionCM`` entered
+                while one is already active (``CurrentDepth > 0``) becomes a
+                no-op and lets the outer task group all of its mutations into
+                the single named undo entry (the desired Phase 2 behavior).
+                This means an inner method's mutations are not separately
+                undoable (or separately rolled back) in Phase 2 -- they are
+                absorbed into the enclosing operation's undo task, and its
+                rollback decision covers them too.
         """
         from .transaction import _NestingAwareTransaction
 
@@ -1892,9 +1929,15 @@ class BaseOperations:
         """
         import logging
 
-        if guid is None:
-            return factory.Create()
+        label = f"Create {kind}" if kind else "Create object"
 
+        if guid is None:
+            with self._TransactionCM(label):
+                return factory.Create()
+
+        # GUID parsing happens BEFORE the transaction: a malformed GUID is a
+        # caller error and must raise without opening an undo task (decision
+        # D5's validate-then-mutate discipline).
         guid_arg = guid
         if isinstance(guid, str):
             from System import Guid as _DotNetGuid
@@ -1903,14 +1946,20 @@ class BaseOperations:
             except Exception as exc:
                 raise FP_ParameterError(
                     "guid %r is not a valid GUID" % (guid,)) from exc
-        try:
-            return factory.Create(guid_arg)
-        except Exception as exc:
-            logging.getLogger("flexicon").warning(
-                "%s: Create(Guid=%s) failed (%s: %s); falling back to a new "
-                "identity. The requested GUID was NOT preserved.",
-                kind or type(factory).__name__, guid, type(exc).__name__, exc)
-            return factory.Create()
+
+        # The attempt-then-fallback pair is ONE transaction. The failed
+        # Create(Guid) is caught here rather than escaping, so the block still
+        # exits cleanly and commits the fallback object -- the identity-loss
+        # warning, not a rollback, is the documented outcome.
+        with self._TransactionCM(label):
+            try:
+                return factory.Create(guid_arg)
+            except Exception as exc:
+                logging.getLogger("flexicon").warning(
+                    "%s: Create(Guid=%s) failed (%s: %s); falling back to a new "
+                    "identity. The requested GUID was NOT preserved.",
+                    kind or type(factory).__name__, guid, type(exc).__name__, exc)
+                return factory.Create()
 
     def _ValidateParam(self, param: Any, param_name: str = "parameter") -> None:
         """

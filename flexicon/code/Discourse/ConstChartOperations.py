@@ -220,8 +220,9 @@ class ConstChartOperations(BaseOperations):
         # Resolve to chart object
         chart = self.__ResolveObject(chart_or_hvo)
 
-        # Delete the chart (LCM handles removal from repository)
-        chart.Delete()
+        with self._TransactionCM("Delete constituent chart"):
+            # Delete the chart (LCM handles removal from repository)
+            chart.Delete()
 
     @OperationsMethod
     def Find(self, name):
@@ -381,8 +382,9 @@ class ConstChartOperations(BaseOperations):
         chart = self.__ResolveObject(chart_or_hvo)
         wsHandle = self.__WSHandleAnalysis()
 
-        mkstr = TsStringUtils.MakeString(name, wsHandle)
-        chart.Name.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set chart name '{name}'"):
+            mkstr = TsStringUtils.MakeString(name, wsHandle)
+            chart.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetTemplate(self, chart_or_hvo):
@@ -453,7 +455,8 @@ class ConstChartOperations(BaseOperations):
 
         chart = self.__ResolveObject(chart_or_hvo)
 
-        chart.TemplateRA = template
+        with self._TransactionCM("Set chart template"):
+            chart.TemplateRA = template
 
     @wrap_enumerable
     @OperationsMethod
@@ -536,13 +539,19 @@ class ConstChartOperations(BaseOperations):
         """
         discourse = self.project.lp.DiscourseDataOA
 
+        # The `is None` guard stays OUTSIDE the transaction so an
+        # already-initialised container is a true no-op and does not open an
+        # empty undo task. The bracket lives here rather than at the callers
+        # because this helper runs before Create's own transaction is entered;
+        # the CM is nesting-aware, so a future caller may still wrap it safely.
         if discourse is None:
             # Create DsDiscourseData container
             from SIL.LCModel import IDsDiscourseDataFactory
 
             factory = self.project.project.ServiceLocator.GetService(IDsDiscourseDataFactory)
-            discourse = factory.Create()
-            self.project.lp.DiscourseDataOA = discourse
+            with self._TransactionCM("Initialise discourse data"):
+                discourse = factory.Create()
+                self.project.lp.DiscourseDataOA = discourse
 
         return discourse
 

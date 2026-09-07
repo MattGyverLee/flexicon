@@ -319,7 +319,8 @@ class LexReferenceOperations(BaseOperations):
         # Remove from the references list
         ref_types_list = self.project.lexDB.ReferencesOA
         if ref_types_list:
-            ref_types_list.PossibilitiesOS.Remove(ref_type)
+            with self._TransactionCM("Delete lexical reference type"):
+                ref_types_list.PossibilitiesOS.Remove(ref_type)
 
     @OperationsMethod
     def FindType(self, name, wsHandle=None):
@@ -455,7 +456,9 @@ class LexReferenceOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        ref_type.Name.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set reference type name '{name}'"):
+            ref_type.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetTypeReverseName(self, ref_type_or_hvo, wsHandle=None):
@@ -546,7 +549,9 @@ class LexReferenceOperations(BaseOperations):
         wsHandle = self.__WSHandleAnalysis(wsHandle)
 
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        ref_type.ReverseName.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set reference type reverse name '{name}'"):
+            ref_type.ReverseName.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetMappingType(self, ref_type_or_hvo):
@@ -822,7 +827,9 @@ class LexReferenceOperations(BaseOperations):
         owner = self._GetTypedOwner(lex_ref)
         if owner is None:
             raise FP_ParameterError("Lex reference has no owning type")
-        owner.MembersOC.Remove(lex_ref)
+
+        with self._TransactionCM("Delete lexical reference"):
+            owner.MembersOC.Remove(lex_ref)
 
     @OperationsMethod
     def GetTargets(self, lex_ref_or_hvo):
@@ -930,7 +937,8 @@ class LexReferenceOperations(BaseOperations):
                 )
 
         # Add the target
-        lex_ref.TargetsRS.Add(target)
+        with self._TransactionCM("Add reference target"):
+            lex_ref.TargetsRS.Add(target)
 
     @OperationsMethod
     def RemoveTarget(self, lex_ref_or_hvo, sense_or_entry):
@@ -986,7 +994,8 @@ class LexReferenceOperations(BaseOperations):
 
         # Remove the target if it exists
         if target in lex_ref.TargetsRS:
-            lex_ref.TargetsRS.Remove(target)
+            with self._TransactionCM("Remove reference target"):
+                lex_ref.TargetsRS.Remove(target)
 
     @OperationsMethod
     def GetType(self, lex_ref_or_hvo):

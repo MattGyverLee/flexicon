@@ -98,7 +98,13 @@ def _delete_text_hard(project, text_obj):
     so Texts.Exists() still sees it after Remove().
     """
     try:
-        project.project.DomainDataByFlid.DeleteObj(text_obj.Hvo)
+        # Raw LCM write -> own unit of work (tasks.md D14). Without it this
+        # raises under undoable=True and the bare except swallows the failure,
+        # so the stale text survives and the next Texts.Create for the same
+        # title fails with "a text with the name ... already exists" -- which
+        # is what produced the whole cascade of failures in this module.
+        with project.UndoableOperation("test cleanup: hard-delete text"):
+            project.project.DomainDataByFlid.DeleteObj(text_obj.Hvo)
     except Exception:
         pass
 
@@ -740,7 +746,6 @@ class TestSegmentAnalysesRSWriteMethods:
         mock_project = MagicMock()
         mock_project.writeEnabled = True
         mock_project._undoable = False
-        mock_project._transaction_depth = 0
         mock_project.project = Mock()
         mock_project.project.DefaultVernWs = 1
         mock_project.project.DefaultAnalWs = 2

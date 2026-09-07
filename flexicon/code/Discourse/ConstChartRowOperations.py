@@ -178,8 +178,9 @@ class ConstChartRowOperations(BaseOperations):
         # Resolve to row object
         row = self.__ResolveObject(row_or_hvo)
 
-        # Delete the row (LCM handles removal from repository)
-        row.Delete()
+        with self._TransactionCM("Delete chart row"):
+            # Delete the row (LCM handles removal from repository)
+            row.Delete()
 
     @OperationsMethod
     def Find(self, chart_or_hvo, index):
@@ -333,8 +334,9 @@ class ConstChartRowOperations(BaseOperations):
         row = self.__ResolveObject(row_or_hvo)
         wsHandle = self.__WSHandle(ws)
 
-        mkstr = TsStringUtils.MakeString(text, wsHandle)
-        row.Label.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set chart row label '{text}'"):
+            mkstr = TsStringUtils.MakeString(text, wsHandle)
+            row.Label.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetNotes(self, row_or_hvo, ws=None):
@@ -407,8 +409,9 @@ class ConstChartRowOperations(BaseOperations):
         row = self.__ResolveObject(row_or_hvo)
         wsHandle = self.__WSHandle(ws)
 
-        mkstr = TsStringUtils.MakeString(text, wsHandle)
-        row.Notes.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set chart row notes"):
+            mkstr = TsStringUtils.MakeString(text, wsHandle)
+            row.Notes.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetWordGroups(self, row_or_hvo):

@@ -152,8 +152,9 @@ class TranslationTypeOperations(PossibilityItemOperations):
         trans_type = self._PossibilityItemOperations__ResolveObject(type_or_hvo)
         wsHandle = self._PossibilityItemOperations__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(abbreviation, wsHandle)
-        trans_type.Abbreviation.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set translation type abbreviation '{abbreviation}'"):
+            mkstr = TsStringUtils.MakeString(abbreviation, wsHandle)
+            trans_type.Abbreviation.set_String(wsHandle, mkstr)
 
     # --- Writing System Methods ---
 

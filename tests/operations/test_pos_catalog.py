@@ -136,12 +136,18 @@ def _delete_pos_by_guid(project, guid_str):
         # PartsOfSpeechOA list.
         from SIL.LCModel import IPartOfSpeech
 
+        # Raw LCM writes -> own unit of work (tasks.md D14). Note the inner
+        # `except` is a genuine owner-shape fallback, so each branch takes its
+        # own bracket rather than wrapping the whole try (a failed first
+        # branch must not leave a half-open unit of work for the second).
         try:
             parent_pos = IPartOfSpeech(target.Owner)
-            parent_pos.SubPossibilitiesOS.Remove(target)
+            with project.UndoableOperation("test cleanup: delete sub-POS"):
+                parent_pos.SubPossibilitiesOS.Remove(target)
         except Exception:
             pos_list = project.lp.PartsOfSpeechOA
-            pos_list.PossibilitiesOS.Remove(target)
+            with project.UndoableOperation("test cleanup: delete POS"):
+                pos_list.PossibilitiesOS.Remove(target)
     except Exception:
         # Cleanup must never raise — leave traces for the next test to
         # observe if anything goes wrong.

@@ -411,30 +411,40 @@ class CatalogBackedMixin:
             old_name = ITsString(old_obj.Name.get_String(wsHandle)).Text or "(unnamed)"
             old_guid = str(old_obj.Guid).lower()
 
-            warnings = []
-            missing_ws = set()
-            new_obj = self._create_from_entry(
-                entry, parent_obj, missing_ws, warnings
-            )
-
-            # For flat-with-children: also recreate value children with
-            # canonical GUIDs under the replacement feature.
-            if not self._supports_recursive_entries:
-                self._handle_entry_children(
-                    entry, new_obj, missing_ws, warnings, None
+            # One transaction PER CANDIDATE, not one around the whole loop.
+            # This preserves the existing contract that a later merge failure
+            # leaves earlier fixes applied, and it gives the FLEx undo menu one
+            # named entry per object fixed rather than a single opaque bulk
+            # entry. Under Phase 2 it also means a failed merge rolls back that
+            # candidate's own _create_from_entry work instead of orphaning the
+            # replacement object.
+            with self._TransactionCM(
+                f"Fix catalog GUID for {self.DOMAIN_LABEL} '{old_name}'"
+            ):
+                warnings = []
+                missing_ws = set()
+                new_obj = self._create_from_entry(
+                    entry, parent_obj, missing_ws, warnings
                 )
 
-            try:
-                old_obj.MergeObject(new_obj, True)
-            except Exception as e:
-                # MergeObject failure indicates a genuine LCM error
-                # (transaction conflict, reference inconsistency, etc.).
-                # Silently removing old_obj would orphan incoming
-                # references; re-raise so the caller sees the real problem.
-                raise FP_ParameterError(
-                    f"Failed to merge {self.DOMAIN_LABEL} '{old_name}' into "
-                    f"canonical-GUID replacement (entry '{entry.id}'): {e}"
-                ) from e
+                # For flat-with-children: also recreate value children with
+                # canonical GUIDs under the replacement feature.
+                if not self._supports_recursive_entries:
+                    self._handle_entry_children(
+                        entry, new_obj, missing_ws, warnings, None
+                    )
+
+                try:
+                    old_obj.MergeObject(new_obj, True)
+                except Exception as e:
+                    # MergeObject failure indicates a genuine LCM error
+                    # (transaction conflict, reference inconsistency, etc.).
+                    # Silently removing old_obj would orphan incoming
+                    # references; re-raise so the caller sees the real problem.
+                    raise FP_ParameterError(
+                        f"Failed to merge {self.DOMAIN_LABEL} '{old_name}' into "
+                        f"canonical-GUID replacement (entry '{entry.id}'): {e}"
+                    ) from e
 
             fixed.append((old_name, old_guid, entry.guid.lower()))
 
@@ -464,56 +474,61 @@ class CatalogBackedMixin:
         the 2-arg factory overload, or fall back to Create+Add), then
         mutate properties.
         """
+        # Parsed outside the transaction: a malformed catalog GUID must raise
+        # before any undo task is opened.
         guid = System.Guid(entry.guid)
 
-        # Path A: explicit 2-arg interface overload. The subclass owns
-        # the factory + the choice of "parent" argument shape (root list
-        # vs subcategory parent). Returns None on failure.
-        new_obj = self._factory_create_attached(guid, parent_obj)
+        with self._TransactionCM(
+            f"Create {self.DOMAIN_LABEL} '{entry.id}' from catalog"
+        ):
+            # Path A: explicit 2-arg interface overload. The subclass owns
+            # the factory + the choice of "parent" argument shape (root list
+            # vs subcategory parent). Returns None on failure.
+            new_obj = self._factory_create_attached(guid, parent_obj)
 
-        if new_obj is None:
-            # Path B: implementation-side Create(Guid) + explicit Add().
-            # cast_to_concrete defends against interface-only views that
-            # hide Create(Guid).
-            factory = self._get_factory()
-            concrete_factory = (
-                cast_to_concrete(factory) if hasattr(factory, "ClassName") else factory
+            if new_obj is None:
+                # Path B: implementation-side Create(Guid) + explicit Add().
+                # cast_to_concrete defends against interface-only views that
+                # hide Create(Guid).
+                factory = self._get_factory()
+                concrete_factory = (
+                    cast_to_concrete(factory) if hasattr(factory, "ClassName") else factory
+                )
+                try:
+                    new_obj = concrete_factory.Create(guid)
+                except Exception as e:
+                    # No safe fallback: parameterless Create() would generate
+                    # a random GUID, defeating the entire point of
+                    # CreateFromCatalog. Fail loudly rather than silently
+                    # degrade (Phase 5a discipline).
+                    raise FP_ParameterError(
+                        f"Could not create {self.DOMAIN_LABEL} '{entry.id}' with "
+                        f"canonical GUID {entry.guid} via either Create(Guid, owner) "
+                        f"or Create(Guid) factory overloads. The catalog's canonical "
+                        f"GUID cannot be applied in this LCM version; a manual "
+                        f"factory.Create() workaround would produce a random GUID "
+                        f"and is not acceptable here."
+                    ) from e
+
+                self._path_b_attach(new_obj, parent_obj)
+
+            # Cast to the domain interface so the subclass's _set_localized
+            # sees the right view.
+            new_obj = self._cast_to_domain(new_obj)
+
+            # Per-WS multistring properties.
+            self._set_localized(
+                new_obj, entry.term, entry.abbrev, entry.def_,
+                missing_ws_seen, warnings,
             )
-            try:
-                new_obj = concrete_factory.Create(guid)
-            except Exception as e:
-                # No safe fallback: parameterless Create() would generate
-                # a random GUID, defeating the entire point of
-                # CreateFromCatalog. Fail loudly rather than silently
-                # degrade (Phase 5a discipline).
-                raise FP_ParameterError(
-                    f"Could not create {self.DOMAIN_LABEL} '{entry.id}' with "
-                    f"canonical GUID {entry.guid} via either Create(Guid, owner) "
-                    f"or Create(Guid) factory overloads. The catalog's canonical "
-                    f"GUID cannot be applied in this LCM version; a manual "
-                    f"factory.Create() workaround would produce a random GUID "
-                    f"and is not acceptable here."
-                ) from e
 
-            self._path_b_attach(new_obj, parent_obj)
+            # CatalogSourceId tagging policy: prefixed or bare per subclass.
+            if self.CATALOG_PREFIX_WRITE is None:
+                new_obj.CatalogSourceId = entry.id
+            else:
+                new_obj.CatalogSourceId = f"{self.CATALOG_PREFIX_WRITE}:{entry.id}"
 
-        # Cast to the domain interface so the subclass's _set_localized
-        # sees the right view.
-        new_obj = self._cast_to_domain(new_obj)
-
-        # Per-WS multistring properties.
-        self._set_localized(
-            new_obj, entry.term, entry.abbrev, entry.def_,
-            missing_ws_seen, warnings,
-        )
-
-        # CatalogSourceId tagging policy: prefixed or bare per subclass.
-        if self.CATALOG_PREFIX_WRITE is None:
-            new_obj.CatalogSourceId = entry.id
-        else:
-            new_obj.CatalogSourceId = f"{self.CATALOG_PREFIX_WRITE}:{entry.id}"
-
-        return new_obj
+            return new_obj
 
     def _get_factory(self):
         """
@@ -538,18 +553,21 @@ class CatalogBackedMixin:
         _SetPosMultiString / _SetFsMultiString. Subclasses use it from
         their _set_localized implementations.
         """
-        for ws_tag, text in ws_to_text.items():
-            handle = self.project.WSHandle(ws_tag)
-            if handle is None:
-                if ws_tag not in missing_ws_seen:
-                    missing_ws_seen.add(ws_tag)
-                    warnings.append(
-                        f"Skipping catalog WS '{ws_tag}': "
-                        "no matching writing system in project."
-                    )
-                continue
-            tss = TsStringUtils.MakeString(text, handle)
-            multistring.set_String(handle, tss)
+        # One transaction for the whole per-WS loop rather than one per writing
+        # system: the alternatives of a single multistring are one logical edit.
+        with self._TransactionCM("Set catalog multistring alternatives"):
+            for ws_tag, text in ws_to_text.items():
+                handle = self.project.WSHandle(ws_tag)
+                if handle is None:
+                    if ws_tag not in missing_ws_seen:
+                        missing_ws_seen.add(ws_tag)
+                        warnings.append(
+                            f"Skipping catalog WS '{ws_tag}': "
+                            "no matching writing system in project."
+                        )
+                    continue
+                tss = TsStringUtils.MakeString(text, handle)
+                multistring.set_String(handle, tss)
 
     def _get_all_guids(self):
         """

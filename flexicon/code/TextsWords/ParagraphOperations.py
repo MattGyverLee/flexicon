@@ -120,7 +120,16 @@ class ParagraphOperations(BaseOperations):
                 return IStTxtPara(obj)
             except (AttributeError, System.InvalidCastException) as e:
                 raise FP_ParameterError(f"Invalid paragraph HVO: {para_or_hvo}") from e
-        return para_or_hvo
+        # Objects yielded from ParagraphsOS (an ILcmOwningSequence<IStPara>)
+        # come back typed as the base IStPara interface, which has neither
+        # Contents nor SegmentsOS -- only the concrete IStTxtPara does. The
+        # int branch above already cast; this branch silently returned the
+        # untyped object, so every caller that received a paragraph object
+        # directly (instead of an HVO) crashed with
+        # "'IStPara' object has no attribute 'Contents'". Cast here too so
+        # both branches return the same concrete type (matches the cast
+        # GetAll() already applies at `yield IStTxtPara(para)`).
+        return IStTxtPara(para_or_hvo)
 
     # --- Core CRUD Operations ---
 
@@ -239,7 +248,8 @@ class ParagraphOperations(BaseOperations):
         owner = self._GetTypedOwner(para_obj)
         if owner is None:
             raise FP_ParameterError("Paragraph has no valid owner or cannot be removed")
-        owner.ParagraphsOS.Remove(para_obj)
+        with self._TransactionCM("Delete paragraph"):
+            owner.ParagraphsOS.Remove(para_obj)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
@@ -581,7 +591,8 @@ class ParagraphOperations(BaseOperations):
 
         # Set the content
         mkstr = TsStringUtils.MakeString(content_str, wsHandle)
-        para_obj.Contents = mkstr
+        with self._TransactionCM("Set paragraph text"):
+            para_obj.Contents = mkstr
 
     @OperationsMethod
     def GetSegments(self, paragraph_or_hvo):

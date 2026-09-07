@@ -40,6 +40,18 @@ pytestmark = pytest.mark.requires_live_project
 
 _CANDIDATE_PROJECTS = ("Sena 3", "Test", "SampleLexicon", "SampleLexicon3")
 
+# Canonical GUID for the "+" value of PHON:fPAConsonantal, straight from
+# the MGA PhonFeatsEticGlossList.xml catalog (see
+# tests/operations/test_phon_features.py's CONSONANTAL_POSITIVE_VALUE_GUID
+# for the sibling constant). The catalog only ever writes Abbreviation
+# text into the "en" writing system, so looking the "+" value up via
+# GetAbbreviation(v) with no explicit wsHandle silently returns "" (and
+# next() raises StopIteration) on any project whose default analysis WS
+# isn't English -- e.g. Sena 3, whose default analysis WS is "pt". The
+# GUID is stable and WS-independent, so match on that instead of relying
+# on a WS-dependent abbreviation lookup.
+_CONSONANTAL_POSITIVE_VALUE_GUID = "ec5800b4-52a8-4859-a976-f3005c53bd5f"
+
 
 def _try_open_project(write_enabled):
     """
@@ -651,7 +663,7 @@ class TestPhonemeSync:
         feat_guid = str(feat.Guid)
         plus = next(
             v for v in feat_ops.GetValues(feat)
-            if feat_ops.GetAbbreviation(v) == "+"
+            if str(v.Guid).lower() == _CONSONANTAL_POSITIVE_VALUE_GUID
         )
         value_guid = str(plus.Guid)
 
@@ -690,7 +702,7 @@ class TestPhonemeSync:
         feat_guid = str(feat.Guid)
         plus = next(
             v for v in feat_ops.GetValues(feat)
-            if feat_ops.GetAbbreviation(v) == "+"
+            if str(v.Guid).lower() == _CONSONANTAL_POSITIVE_VALUE_GUID
         )
         value_guid = str(plus.Guid)
 

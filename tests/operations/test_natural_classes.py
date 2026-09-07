@@ -122,7 +122,9 @@ def _delete_feature_by_guid(project, guid_str):
             return
         fs = project.lp.PhFeatureSystemOA
         if fs is not None:
-            fs.FeaturesOC.Remove(feat)
+            # Raw LCM write -> own unit of work (tasks.md D14).
+            with project.UndoableOperation("test cleanup: delete phon feature"):
+                fs.FeaturesOC.Remove(feat)
     except Exception:
         pass
 
@@ -735,6 +737,245 @@ class TestNaturalClassFindExists:
         assert writable_project.NaturalClasses.Exists(name) is False, (
             "Exists still True after Delete - round-trip not net-zero"
         )
+
+
+class TestNaturalClassSync:
+    """
+    Live-LCM coverage for NaturalClassOperations.GetSyncableProperties /
+    ApplySyncableProperties on feature-based (IPhNCFeatures) natural
+    classes -- the data-loss bug fixed alongside this test class.
+
+    Prior to the 4.5.0 fix, a feature-based natural class's owned
+    FeaturesOA was never captured by GetSyncableProperties nor rewired by
+    ApplySyncableProperties, so a synced class always arrived with a
+    correct Name/GUID but a null FeaturesOA -- rules referencing it then
+    silently matched nothing. Same bug class as PhonemeOperations issue
+    #222 (see TestPhonemeSync in test_phonemes.py), applied here to
+    IPhNCFeatures.
+
+    4.5.0's first attempt at this fix was itself dead code against live
+    data (confirmed against Ngoreme FLEx, read-only): GetAll()/Find()/
+    Object() all hand back objects wrapped by pythonnet under the BASE
+    IPhNaturalClass interface, on which hasattr(nc, "FeaturesOA") /
+    hasattr(nc, "SegmentsRC") are always False even for a genuine,
+    populated PhNCFeatures/PhNCSegments object -- pythonnet's attribute
+    visibility follows the static wrapper interface, not the runtime CLR
+    type. `CreateFeatureBased`/`Create` return a properly *concrete*-typed
+    object straight from the factory, so calling GetSyncableProperties
+    directly on THAT reference would not exercise the bug at all. The
+    tests below therefore explicitly re-fetch via `Find()` (which
+    round-trips through `GetAll()`) before calling
+    GetSyncableProperties/ApplySyncableProperties, mirroring how
+    real-world callers (GramTrans) actually obtain the item -- so a
+    regression of the 4.5.0 dead-code shape would be caught here too.
+    """
+
+    def test_getsyncable_does_not_include_features_for_segments(
+        self, writable_project
+    ):
+        """
+        A segment-based (IPhNCSegments) class must never surface
+        FeaturesGuid/Features -- that shape is IPhNCFeatures-only. This
+        pins the "leave the PhNCSegments path exactly as-is" constraint.
+        """
+        nc = writable_project.NaturalClasses.Create("qZ_sync_segments", "qZss")
+        try:
+            # Re-fetch via Find() -- see class docstring: this is the
+            # base-IPhNaturalClass-typed shape GetAll() actually returns,
+            # NOT the concrete-typed object Create() just handed back.
+            found = writable_project.NaturalClasses.Find("qZ_sync_segments")
+            assert found is not None
+            props = writable_project.NaturalClasses.GetSyncableProperties(found)
+            assert "FeaturesGuid" not in props
+            assert "Features" not in props
+        finally:
+            _delete_nc(writable_project, nc)
+
+    def test_getsyncable_surfaces_feature_specs(self, writable_project):
+        """
+        A feature-based class with a populated FeaturesOA must surface
+        its (feature, value) specs as GUID pairs under 'Features', plus
+        the struct's own GUID under 'FeaturesGuid'.
+        """
+        pre_existing = (
+            _find_feature_by_guid(writable_project, CONSONANTAL_FEATURE_GUID)
+            is not None
+        )
+
+        feat = writable_project.PhonFeatures.CreateFromCatalog(
+            "fPAConsonantal"
+        )
+        feat_guid = str(feat.Guid)
+        plus = _get_consonantal_positive(writable_project, feat)
+        assert plus is not None
+        value_guid = str(plus.Guid)
+
+        nc = writable_project.NaturalClasses.CreateFeatureBased(
+            "qZ_sync_getfeat", "qZsg", specs=[(feat, plus)]
+        )
+        try:
+            # Re-fetch via Find() -- see class docstring for why calling
+            # GetSyncableProperties directly on the factory-fresh `nc`
+            # would not have caught the 4.5.0 dead-code regression.
+            found = writable_project.NaturalClasses.Find("qZ_sync_getfeat")
+            assert found is not None
+            props = writable_project.NaturalClasses.GetSyncableProperties(found)
+            assert "FeaturesGuid" in props
+            assert "Features" in props, "Feature specs missing"
+            pairs = {
+                (s["FeatureGuid"].lower(), s["ValueGuid"].lower())
+                for s in props["Features"]
+            }
+            assert (feat_guid.lower(), value_guid.lower()) in pairs
+        finally:
+            _delete_nc(writable_project, nc)
+            if not pre_existing:
+                _delete_feature_by_guid(writable_project, CONSONANTAL_FEATURE_GUID)
+
+    def test_apply_rewires_feature_specs_onto_empty_shell(
+        self, writable_project
+    ):
+        """
+        ApplySyncableProperties must rewire Features specs against the
+        target project's feature system by GUID, populating an
+        originally-empty (FeaturesOA is None) feature-based class.
+        """
+        from SIL.LCModel import IFsFeatStruc
+
+        pre_existing = (
+            _find_feature_by_guid(writable_project, CONSONANTAL_FEATURE_GUID)
+            is not None
+        )
+
+        feat = writable_project.PhonFeatures.CreateFromCatalog(
+            "fPAConsonantal"
+        )
+        feat_guid = str(feat.Guid)
+        plus = _get_consonantal_positive(writable_project, feat)
+        assert plus is not None
+        value_guid = str(plus.Guid)
+
+        src_props = {
+            "Name": {
+                next(iter(
+                    ws.Id for ws in writable_project.WritingSystems.GetAll()
+                )): "qZ_sync_apply",
+            },
+            "Features": [
+                {"FeatureGuid": feat_guid, "ValueGuid": value_guid},
+            ],
+        }
+
+        # Empty shell: CreateFeatureBased with no specs leaves FeaturesOA
+        # unset, exactly the "class synced across with correct
+        # Name/GUID but null FeaturesOA" pre-fix shape this closes.
+        nc = writable_project.NaturalClasses.CreateFeatureBased(
+            "qZ_sync_apply_shell", "qZsa"
+        )
+        try:
+            assert nc.FeaturesOA is None
+
+            # Apply through a base-IPhNaturalClass-typed reference
+            # (resolved by GUID, mirroring how a real cross-project sync
+            # caller would hold the target) -- see class docstring for
+            # why applying directly through the factory-fresh `nc`
+            # reference would not exercise the 4.5.0 dead-code shape.
+            target = writable_project.Object(str(nc.Guid))
+            writable_project.NaturalClasses.ApplySyncableProperties(
+                target, src_props
+            )
+
+            assert nc.FeaturesOA is not None, (
+                "ApplySyncableProperties left FeaturesOA null -- the "
+                "exact data-loss defect this fix closes"
+            )
+            fs = IFsFeatStruc(nc.FeaturesOA)
+            assert fs.FeatureSpecsOC.Count == 1
+
+            props_back = writable_project.NaturalClasses.GetSyncableProperties(nc)
+            pairs = {
+                (s["FeatureGuid"].lower(), s["ValueGuid"].lower())
+                for s in props_back.get("Features", [])
+            }
+            assert (feat_guid.lower(), value_guid.lower()) in pairs, (
+                "Feature spec was not rewired onto the target natural class"
+            )
+        finally:
+            _delete_nc(writable_project, nc)
+            if not pre_existing:
+                _delete_feature_by_guid(writable_project, CONSONANTAL_FEATURE_GUID)
+
+    def test_apply_raises_on_missing_target_feature_guid(
+        self, writable_project
+    ):
+        """
+        A Features spec whose FeatureGuid does not exist in the target
+        project's feature system must RAISE, not silently leave
+        FeaturesOA incomplete/null. This is the core regression lock for
+        the bug: silence is the defect, not a lenient skip.
+        """
+        from flexlibs2.code.FLExProject import FP_ParameterError
+
+        bogus_feature_guid = "00000000-0000-0000-0000-000000000001"
+        bogus_value_guid = "00000000-0000-0000-0000-000000000002"
+
+        src_props = {
+            "Features": [
+                {
+                    "FeatureGuid": bogus_feature_guid,
+                    "ValueGuid": bogus_value_guid,
+                },
+            ],
+        }
+
+        nc = writable_project.NaturalClasses.CreateFeatureBased(
+            "qZ_sync_apply_raise", "qZsr"
+        )
+        try:
+            # Base-IPhNaturalClass-typed reference -- see
+            # test_apply_rewires_feature_specs_onto_empty_shell / class
+            # docstring for why.
+            target = writable_project.Object(str(nc.Guid))
+            with pytest.raises(FP_ParameterError, match=bogus_feature_guid):
+                writable_project.NaturalClasses.ApplySyncableProperties(
+                    target, src_props
+                )
+        finally:
+            _delete_nc(writable_project, nc)
+
+    def test_apply_raises_on_type_mismatch_segments_target(
+        self, writable_project
+    ):
+        """
+        A Features spec applied onto a segment-based (IPhNCSegments)
+        target -- a type mismatch that should never happen in a correct
+        sync pairing -- must RAISE rather than silently no-op.
+        """
+        from flexlibs2.code.FLExProject import FP_ParameterError
+
+        src_props = {
+            "Features": [
+                {
+                    "FeatureGuid": "00000000-0000-0000-0000-000000000001",
+                    "ValueGuid": "00000000-0000-0000-0000-000000000002",
+                },
+            ],
+        }
+
+        nc = writable_project.NaturalClasses.Create(
+            "qZ_sync_apply_mismatch", "qZsm"
+        )
+        try:
+            # Base-IPhNaturalClass-typed reference -- see
+            # test_apply_rewires_feature_specs_onto_empty_shell / class
+            # docstring for why.
+            target = writable_project.Object(str(nc.Guid))
+            with pytest.raises(FP_ParameterError):
+                writable_project.NaturalClasses.ApplySyncableProperties(
+                    target, src_props
+                )
+        finally:
+            _delete_nc(writable_project, nc)
 
 
 if __name__ == "__main__":

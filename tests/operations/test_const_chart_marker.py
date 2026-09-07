@@ -175,12 +175,16 @@ class TestConstChartMarkerHierarchy:
             # surface we don't wrap yet).
             sl = writable_project.project.ServiceLocator
             sub_factory = sl.GetService(ICmPossibilityFactory)
-            child = sub_factory.Create()
-            parent.SubPossibilitiesOS.Add(child)
-            ws = writable_project.project.DefaultAnalWs
-            child.Name.set_String(
-                ws, TsStringUtils.MakeString(child_name, ws)
-            )
+            # Raw LCM writes -> own unit of work (tasks.md D14). Create,
+            # attach and name are one unit: a half-built child marker would
+            # be found by the very GetAll/Find this test then asserts on.
+            with writable_project.UndoableOperation("test: build sub-marker"):
+                child = sub_factory.Create()
+                parent.SubPossibilitiesOS.Add(child)
+                ws = writable_project.project.DefaultAnalWs
+                child.Name.set_String(
+                    ws, TsStringUtils.MakeString(child_name, ws)
+                )
 
             found = writable_project.ConstChartMarkers.Find(child_name)
             assert found is not None, (
@@ -204,12 +208,16 @@ class TestConstChartMarkerHierarchy:
         try:
             sl = writable_project.project.ServiceLocator
             sub_factory = sl.GetService(ICmPossibilityFactory)
-            child = sub_factory.Create()
-            parent.SubPossibilitiesOS.Add(child)
-            ws = writable_project.project.DefaultAnalWs
-            child.Name.set_String(
-                ws, TsStringUtils.MakeString(child_name, ws)
-            )
+            # Raw LCM writes -> own unit of work (tasks.md D14). Create,
+            # attach and name are one unit: a half-built child marker would
+            # be found by the very GetAll/Find this test then asserts on.
+            with writable_project.UndoableOperation("test: build sub-marker"):
+                child = sub_factory.Create()
+                parent.SubPossibilitiesOS.Add(child)
+                ws = writable_project.project.DefaultAnalWs
+                child.Name.set_String(
+                    ws, TsStringUtils.MakeString(child_name, ws)
+                )
 
             all_markers = list(writable_project.ConstChartMarkers.GetAll())
             hvos = [m.Hvo for m in all_markers]

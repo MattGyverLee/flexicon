@@ -201,12 +201,14 @@ def _ensure_interfaces() -> None:
             IStText,
             IStTxtPara,
             IWfiAnalysis,
+            ILangProject,
         )
     except ImportError:
         ILexEntry = ILexSense = ILexRefType = IRnGenericRec = None
         ICmPossibility = ICmAnthroItem = None
         IDsConstChart = IText = IStText = IStTxtPara = None
         IWfiAnalysis = None
+        ILangProject = None
 
     _interface_cache = {
         # MSA types - used for grammatical category assignment
@@ -281,6 +283,16 @@ def _ensure_interfaces() -> None:
         _interface_cache["StTxtPara"] = IStTxtPara
     if IWfiAnalysis is not None:
         _interface_cache["WfiAnalysis"] = IWfiAnalysis
+    if ILangProject is not None:
+        # LangProject is the sole owner of AnnotationsOC in this LCM
+        # version -- no domain object (ILexEntry, ILexSense, IText, ...)
+        # exposes AnnotationsOC itself. Notes/annotations reference their
+        # subject via BeginObjectRA rather than being owned by it, so
+        # note.Owner resolves to the project root; without this mapping
+        # _GetTypedOwner() returned it unchanged (a bare ICmObject),
+        # silently no-opping NoteOperations.Delete/Duplicate's
+        # `hasattr(parent, "AnnotationsOC")` checks.
+        _interface_cache["LangProject"] = ILangProject
 
     _interfaces_loaded = True
 

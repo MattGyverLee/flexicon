@@ -161,7 +161,7 @@ class FLExProject(object):
 
     """
 
-    def OpenProject(self, projectName, writeEnabled=False, undoable=False, ui=None):
+    def OpenProject(self, projectName, writeEnabled=False, undoable=True, ui=None):
         """
         Open a project. The project must be closed with `CloseProject()` to
         save any changes, and release the lock.
@@ -177,15 +177,35 @@ class FLExProject(object):
             opening the project in this mode.
 
         undoable:
-            Enable full undo stack integration with FLEx Ctrl+Z.
-            When True, operations wrapped in UndoableOperation() will appear
-            in FLEx's Undo menu. When False (default), uses rollback-only
-            transactions via Transaction().
+            **Default since 4.4.0: True.** Each write runs inside its own
+            named, nesting-aware LCM unit of work, so an exception escaping
+            an operation rolls that operation's mutations back, and the
+            operation appears in FLEx's Ctrl+Z menu under its own label.
+            This is the mode the write path is designed for (decision D3 in
+            `specs/write-path-transactions/tasks.md`).
 
-            Only valid when writeEnabled=True. Ignored if False.
+            Only meaningful when writeEnabled=True; ignored otherwise.
 
-            Phase 2 feature: requires LCM BeginUndoTask/EndUndoTask support.
-            See docs/internal/RESEARCH_NEEDED.md for details.
+            Passing ``undoable=False`` opts back into the legacy Phase 1
+            behaviour: one session-long ``BeginNonUndoableTask()`` envelope,
+            in which ``Transaction()`` is a labelling/nesting construct only
+            and **nothing rolls back** -- the atomicity unit becomes the
+            whole session (issue #236). It is retained for callers that
+            depend on the old semantics, and it warns once per
+            ``OpenProject()`` call. Do not use it when the project may be
+            open in FLEx or another process (D3).
+
+            Two consequences of the default worth knowing before you rely on
+            per-operation rollback:
+
+            * Nested blocks **join** the outer unit of work rather than
+              opening an independent one, so catching an exception from an
+              inner block while still inside the outer block commits that
+              inner block's partial writes. See `docs/EXCEPTION_HANDLING.md`.
+            * ``AbortSession()`` is an ``undoable=False`` primitive. Under
+              this default it returns False between operations and raises
+              ``FP_TransactionError`` inside one (D8) -- per-operation
+              rollback covers that ground instead.
 
         ui:
             Optional `ILcmUI` implementation, passed through to
@@ -249,10 +269,15 @@ class FLExProject(object):
 
         self.writeEnabled = writeEnabled
         self._undoable = undoable and writeEnabled  # Only meaningful if write-enabled
-        # Nesting depth of active _TransactionCM blocks. Used to guard against
-        # nested Phase 2 UndoableOperation tasks (BeginUndoTask/EndUndoTask
-        # cannot nest); only the outermost block opens an undo task.
-        self._transaction_depth = 0
+        # Note: nesting depth of active _TransactionCM / UndoableOperation
+        # blocks is intentionally NOT tracked here. A hand-maintained Python
+        # counter (formerly `self._transaction_depth`) was issue #234: it
+        # leaked permanently whenever an inner block's __enter__ raised,
+        # because nothing on that path decremented it. `_NestingAwareTransaction`
+        # and `_FLExUndoableOperation` now ask LCM's own
+        # `ActionHandlerAccessor.CurrentDepth` at every __enter__ instead --
+        # there is no local state left to leak. See
+        # specs/write-path-transactions/spec.md B1.
 
         if self.writeEnabled and not self._undoable:
             # One-shot warning (issue #236 honesty pass): emitted once per
@@ -260,16 +285,23 @@ class FLExProject(object):
             # cannot train callers to tune it out. See A2 in
             # specs/write-path-transactions/spec.md and
             # docs/EXCEPTION_HANDLING.md.
+            #
+            # Since 4.4.0 (task DEF) this is the OPT-OUT path, not the
+            # default -- reaching it means the caller passed undoable=False
+            # explicitly, so the warning names that choice rather than
+            # describing an unavoidable limitation.
             logging.getLogger(__name__).warning(
-                "OpenProject: writeEnabled=True, undoable=False. In this "
+                "OpenProject: writeEnabled=True with an explicit "
+                "undoable=False. This opts OUT of per-operation units of "
+                "work, which is the default since 4.4.0. In this legacy "
                 "mode Transaction() is a labelling/nesting construct only -- "
                 "liblcm exposes no reachable rollback-to-mark API in this "
                 "mode (issue #236). The atomicity unit for this whole "
                 "session is the SESSION, not the operation: if code raises "
                 "mid-operation, every mutation applied before the failure "
                 "remains in the in-memory cache and will be written to disk "
-                "by CloseProject()/SaveChanges(). See "
-                "docs/EXCEPTION_HANDLING.md."
+                "by CloseProject()/SaveChanges(). Drop the argument to get "
+                "rollback back. See docs/EXCEPTION_HANDLING.md."
             )
             # Phase 1 behavior: whole session is non-undoable (rollback transactions only)
             try:
@@ -456,7 +488,8 @@ class FLExProject(object):
 
         Mode-dependent semantics (read this before relying on it for safety):
 
-        * ``undoable=False`` (the default mode): **there is no rollback.**
+        * ``undoable=False`` (the legacy opt-out mode; the default is
+          ``undoable=True`` since 4.4.0): **there is no rollback.**
           liblcm exposes no reachable "roll back to a mark" primitive in
           this mode (issue #236; confirmed by reflection over
           `SIL.LCModel.dll` -- see `specs/write-path-transactions/spec.md`
@@ -475,12 +508,19 @@ class FLExProject(object):
           same session re-logs it), rather than on every ``Transaction()``
           call. See
           `docs/EXCEPTION_HANDLING.md`.
-        * ``undoable=True``: once the Track B rewrite of
-          ``flexicon/code/transaction.py`` lands (delegating to liblcm's
-          ``UndoableUnitOfWorkHelper``), ``Transaction()`` in this mode is
-          genuinely transactional -- an exception rolls back everything
-          written inside the block. Until that lands, this mode has the
-          same no-rollback limitation described above.
+        * ``undoable=True``: this method itself is unchanged by the B1
+          rewrite -- calling ``project.Transaction(label)`` directly still
+          always returns the Phase 1, no-rollback ``_FLExTransaction``
+          above (see ``test_transaction_body_always_passes_none_none``,
+          which locks this). What changed under B1 is the internal
+          ``BaseOperations._TransactionCM()`` wrapper that most Operations
+          methods use: it no longer calls this method at all in
+          ``undoable=True`` mode, and instead delegates to
+          ``_NestingAwareTransaction``, which is genuinely transactional --
+          backed directly by liblcm's ``UndoableUnitOfWorkHelper``, an
+          exception rolls back everything written inside the block. See
+          ``UndoableOperation()`` for the equivalent public, directly
+          callable entry point in this mode.
 
         The name is kept (see D4 in `specs/write-path-transactions/tasks.md`):
         an earlier draft of this spec preferred renaming this method to
@@ -594,6 +634,170 @@ class FLExProject(object):
         usm = self.ObjectRepository(IUndoStackManager)
         usm.Refresh()
 
+    def AbortSession(self):
+        """
+        Discard every uncommitted change in the currently open unit of work.
+
+        Wraps liblcm's one real revert primitive, ``IActionHandler.Rollback(0)``
+        (task A3, `specs/write-path-transactions/spec.md` section A3). It is
+        coarse -- it reverts the *whole* open unit of work, not a selected
+        subset -- but under ``undoable=False`` that unit is the entire session,
+        which is exactly the granularity that mode's atomicity story needs and
+        which was previously unreachable from flexicon.
+
+        What it does NOT do: it cannot revert anything already written to
+        disk -- data that was on disk when the session opened, or anything a
+        prior ``CloseProject()`` committed. "Uncommitted" here means "still
+        only in this process's cache".
+
+        Under ``undoable=False`` that window is unusually wide, and for two
+        reasons worth knowing. The session envelope holds the FSM in
+        ``ProcessingDataChanges``, which blocks the auto-save timer outright
+        (`UnitOfWorkService.cs:240`), so nothing is quietly committed behind
+        your back between operations. For the same reason ``SaveChanges()``
+        cannot be used to commit mid-session either: it reaches
+        ``CheckReadyForCommit("Commit at wrong place.")``
+        (`UnitOfWorkService.cs:304`), which requires ``ReadyForBeginTask``.
+        The practical consequence is that in this mode essentially the whole
+        session is abortable, right up to ``CloseProject()``.
+
+        Mode-dependent behavior (read this before relying on it):
+
+        * ``undoable=False`` (the legacy opt-out; you must ask for it
+          explicitly since 4.4.0): this is the intended mode. The
+          session-long ``BeginNonUndoableTask()`` opened at ``OpenProject()``
+          is the open unit of work, so this rolls the session back to its
+          state at open (or at the last commit) and then **reopens the
+          envelope**, so the session stays usable and ``CloseProject()``'s
+          matching ``EndNonUndoableTask()`` still has a task to end. See the
+          O2 catch below for why reopening is not optional.
+        * ``undoable=True``: rollback is already automatic and per-operation
+          (``UndoableOperation()`` / ``_TransactionCM`` roll back their own
+          block on exception), so there is no session-wide uncommitted state
+          for this method to abort. Between operations nothing is open and
+          this returns ``False``. Inside an open block it raises
+          ``FP_TransactionError`` rather than rolling back -- see below.
+
+        The O2 catch (`UndoStack.cs:705-724`, recorded in `spec.md` O2 and
+        `reviews/cycle2-explore-liblcm-facts.md` F5c):
+
+        1. ``Rollback(int nDepth)`` ignores ``nDepth`` entirely -- the
+           parameter is documented "[Not used.]" -- so it always reverts the
+           whole open unit. There is no partial rollback.
+        2. It requires ``CurrentProcessingState == ProcessingDataChanges`` and
+           otherwise throws ``InvalidOperationException("Rollback not
+           supported in the current state.")``. ``CurrentDepth`` is exactly
+           that state expressed as 1-or-0 (`UndoStack.cs:731-734`), so the
+           ``CurrentDepth == 0`` check below is the precondition test, not a
+           heuristic.
+        3. On success it leaves the FSM in ``ReadyForBeginTask`` -- i.e. it
+           **terminates** the open task rather than merely emptying it. In
+           ``undoable=False`` that would silently end the session envelope,
+           and ``CloseProject()`` would then call ``EndNonUndoableTask()``
+           against a state that has no task to end. This method therefore
+           reopens ``BeginNonUndoableTask()`` immediately, making the abort
+           non-terminal in that mode.
+
+        Why ``undoable=True`` refuses instead of rolling back: in that mode
+        an open unit of work is always owned by an ``UndoableUnitOfWorkHelper``
+        (there is no session envelope). Rolling back underneath it would leave
+        that helper's ``Dispose()`` to call ``Rollback``/``EndUndoTask``
+        against a FSM already back in ``ReadyForBeginTask``, raising a second
+        exception from the ``with`` block's exit and masking whatever the
+        caller was actually handling. Refusing loudly is the honest option;
+        the correct tool inside a block is to let the exception propagate,
+        which rolls that block back by design.
+
+        Returns:
+            bool: True if a unit of work was open and was rolled back.
+                False if nothing was open (nothing to abort) -- calling
+                ``Rollback`` in that state would raise, so it is not called.
+
+        Raises:
+            FP_ReadOnlyError: If the project is not write-enabled.
+            FP_TransactionError: If ``undoable=True`` and a unit of work is
+                open (see above), or if the underlying LCM ``Rollback(0)``
+                call fails unexpectedly.
+            FP_ProjectError: If the ``undoable=False`` envelope could not be
+                reopened after a successful rollback. The rollback itself has
+                already taken effect at that point; the session is left
+                without an open task and should be closed.
+
+        Example::
+
+            # NOTE the explicit undoable=False. Under the 4.4.0 default this
+            # method has nothing session-wide to abort -- see the mode table
+            # above -- and each Create() rolls itself back instead.
+            project.OpenProject("MyProject", writeEnabled=True, undoable=False)
+            try:
+                for word, gloss in messy_input:
+                    entry = project.LexEntry.Create(word, "stem")
+                    project.Senses.Create(entry, gloss, "en")
+            except Exception:
+                project.AbortSession()   # discard the whole partial import
+                raise
+            else:
+                project.SaveChanges()
+
+        See Also:
+            Undo() - reverse one committed ``UndoableOperation``
+                (``undoable=True`` only, in-process only).
+            UndoableOperation() - per-operation rollback, the finer-grained
+                and preferred mechanism once ``undoable=True`` is in use.
+        """
+        if not self.writeEnabled:
+            raise FP_ReadOnlyError()
+
+        log = logging.getLogger(__name__)
+        action_handler = self.project.ActionHandlerAccessor
+
+        # CurrentDepth is 1 iff CurrentProcessingState == ProcessingDataChanges
+        # and 0 otherwise (UndoStack.cs:731-734) -- never 2+. It is therefore
+        # the exact precondition Rollback checks at UndoStack.cs:712-713, so
+        # this guard turns "would throw" into an honest False rather than
+        # letting a raw InvalidOperationException escape.
+        if action_handler.CurrentDepth == 0:
+            log.debug("AbortSession(): no unit of work is open, nothing to abort")
+            return False
+
+        if self._undoable:
+            # Depth > 0 in this mode means an UndoableUnitOfWorkHelper owns the
+            # open unit (there is no session envelope here). See docstring.
+            raise FP_TransactionError(
+                "AbortSession() cannot roll back a unit of work opened by "
+                "UndoableOperation()/_TransactionCM: rolling back underneath "
+                "the owning UndoableUnitOfWorkHelper would make its Dispose() "
+                "raise on exit and mask the original error. In undoable=True "
+                "mode let the exception propagate out of the block instead -- "
+                "that block rolls itself back."
+            )
+
+        try:
+            # nDepth is "[Not used.]" in liblcm (UndoStack.cs:700); 0 is what
+            # UnitOfWorkHelper.RollBackChanges() itself passes
+            # (UnitOfWorkHelper.cs:135-138).
+            action_handler.Rollback(0)
+        except Exception as e:
+            log.error(f"AbortSession() failed: {e}")
+            raise FP_TransactionError(f"AbortSession() rollback failed: {e}")
+
+        # The rollback left the FSM in ReadyForBeginTask (UndoStack.cs:724),
+        # i.e. the session envelope opened at OpenProject() is gone. Reopen it
+        # so this method is not terminal and CloseProject()'s matching
+        # EndNonUndoableTask() still has a task to end. See the O2 catch.
+        try:
+            self.project.MainCacheAccessor.BeginNonUndoableTask()
+        except System.InvalidOperationException as e:
+            raise FP_ProjectError(
+                "AbortSession(): the rollback succeeded but the non-undoable "
+                f"session envelope could not be reopened ({e}). Uncommitted "
+                "changes have been discarded and this session can no longer "
+                "write; close it without saving."
+            )
+
+        log.debug("AbortSession(): rolled back and reopened the session envelope")
+        return True
+
     def UndoableOperation(self, label):
         """
         Return a context manager for an undoable operation.
@@ -626,69 +830,56 @@ class FLExProject(object):
             project.Redo()   # Ctrl+Y equivalent
 
         Note:
-            Phase 2 feature. Requires research-verified LCM APIs.
-            See docs/internal/RESEARCH_NEEDED.md and docs/TRANSACTION_GUIDE.md.
-
-            Atomicity caveat (Phase 2): ``BeginUndoTask``/``EndUndoTask`` is NOT
-            transactional. If an exception is raised inside the block, partial
-            mutations already committed to the LCM cache are NOT automatically
-            rolled back. The FLEx Ctrl+Z undo entry may be absent or incomplete.
-            ``Transaction()`` does NOT provide an escape hatch here either --
-            it has the identical limitation in the current build (no
-            reachable LCM rollback API; see its docstring and issue #236).
-            Neither path is atomic today. The Track B rewrite of
-            ``flexicon/code/transaction.py`` on liblcm's
-            ``UndoableUnitOfWorkHelper`` will make ``undoable=True`` genuinely
-            rollback-capable; see `specs/write-path-transactions/spec.md` B1.
+            Rollback-capable (issue #233, #236-for-undoable): this now
+            delegates to ``_FLExUndoableOperation``, which constructs
+            liblcm's own ``UndoableUnitOfWorkHelper`` directly (or joins an
+            already-open one, via ``ActionHandlerAccessor.CurrentDepth``)
+            instead of hand-rolling ``BeginUndoTask``/``EndUndoTask`` calls.
+            If an exception is raised inside the block and this call was the
+            one that opened the UnitOfWork, the mutations made inside it ARE
+            rolled back -- ``UndoableUnitOfWorkHelper``'s ``RollBack`` flag
+            defaults to True and is only cleared on a clean exit. If this
+            call instead joined an already-open UnitOfWork (nested inside
+            another ``UndoableOperation()`` or a ``_TransactionCM`` block),
+            rollback authority belongs to whichever call opened it. See
+            `specs/write-path-transactions/spec.md` B1.
         """
         from .undoable_operation import _FLExUndoableOperation
 
-        begin_fn, end_fn = self._GetUndoRedoAPI()
-        return _FLExUndoableOperation(self, label, begin_fn, end_fn)
+        return _FLExUndoableOperation(self, label)
 
-    def _GetUndoRedoAPI(self):
+    def _TransactionCM(self, label):
         """
-        Internal: Discover the available LCM undo/redo APIs.
+        Internal: the mode-selecting transaction context manager, for the write
+        methods that live on ``FLExProject`` itself.
 
-        Returns a (begin_fn, end_fn) tuple. If the LCM APIs are not found,
-        raises FP_TransactionError.
+        Identical in behavior to ``BaseOperations._TransactionCM`` -- see that
+        docstring for the full Phase 1 / Phase 2 semantics, the nesting rules,
+        and what each mode does and does not guarantee. It exists here too
+        because a handful of write methods (``LexiconSetFieldText``,
+        ``LexiconClearField``, ``LexiconSetListFieldMultiple``,
+        ``LexiconDeleteObject``, ``LexiconSetComplexFormType``,
+        ``LexiconAddComplexForm``, ``SetAudioPath``) are defined on this facade
+        rather than on an Operations class, so they have no ``BaseOperations``
+        to inherit it from. Without this they would be the only LCM mutators in
+        the tree unable to use the standard bracket (decision D5,
+        `specs/write-path-transactions/tasks.md` B2).
 
-        The discovery order (preferred first):
-            1. project.BeginUndoTask + EndUndoTask
-            2. project.MainCacheAccessor.BeginUndoTask + EndUndoTask
-            3. Not found - raises error
+        ``_NestingAwareTransaction`` needs only ``_undoable``,
+        ``Transaction(label)`` and ``project.ActionHandlerAccessor`` from the
+        object it is handed, all of which this class provides directly -- so
+        the same class serves both call sites with no special-casing.
+
+        Args:
+            label (str): Human-readable description, used for logging and, in
+                Phase 2, as the FLEx undo-menu entry.
 
         Returns:
-            tuple: (begin_fn: callable, end_fn: callable)
-
-        Raises:
-            FP_TransactionError: If no undo/redo API found
+            A ``_NestingAwareTransaction`` context manager.
         """
-        # Candidate 1: project-level BeginUndoTask
-        begin_fn = getattr(self.project, "BeginUndoTask", None)
-        end_fn = getattr(self.project, "EndUndoTask", None)
-        if begin_fn is not None and end_fn is not None:
-            logging.getLogger(__name__).debug("Undo/Redo API: Using project.BeginUndoTask/EndUndoTask")
-            return (begin_fn, end_fn)
+        from .transaction import _NestingAwareTransaction
 
-        # Candidate 2: MainCacheAccessor
-        try:
-            mca = self.project.MainCacheAccessor
-            begin_fn = getattr(mca, "BeginUndoTask", None)
-            end_fn = getattr(mca, "EndUndoTask", None)
-            if begin_fn is not None and end_fn is not None:
-                logging.getLogger(__name__).debug("Undo/Redo API: Using MainCacheAccessor.BeginUndoTask/EndUndoTask")
-                return (begin_fn, end_fn)
-        except Exception:
-            pass
-
-        # No undo/redo API found
-        raise FP_TransactionError(
-            "FLExProject: no LCM undo/redo API found. "
-            "UndoableOperation() requires BeginUndoTask/EndUndoTask methods. "
-            "Verify your FieldWorks version supports these APIs. "
-            "See docs/internal/RESEARCH_NEEDED.md for Phase 2 research details."
-        )
+        return _NestingAwareTransaction(self, label)
 
     def Undo(self):
         """
@@ -697,11 +888,25 @@ class FLExProject(object):
         Reverses the changes of the last operation added with UndoableOperation().
         Only valid when the project was opened with undoable=True.
 
+        Scope -- IN-PROCESS ONLY (issue #235): liblcm's undo stack
+        (``IActionHandler``, obtained here from
+        ``LcmCache.ActionHandlerAccessor``) lives entirely in this process's
+        RAM and holds live ``ICmObject`` references. Nothing serializes undo
+        records into ``.fwdata``; a freshly opened ``LcmCache`` always starts
+        at ``UndoableActionCount == 0``. There is no cross-process and no
+        cross-session undo: closing and reopening the project -- even within
+        the same script -- loses the entire stack. Cross-*session* reversal
+        is a separate, still-open concern tracked at the wrapper layer
+        (``flexicon/sync/engine.py``'s ``create_snapshot``/``Snapshot``
+        stubs), not here.
+
         Returns:
-            bool: True if undo succeeded, False if nothing to undo.
+            bool: True if undo succeeded, False if there was nothing to undo
+                (``CanUndo()`` was False).
 
         Raises:
-            FP_TransactionError: If project not opened with undoable=True
+            FP_TransactionError: If project not opened with undoable=True,
+                or if the underlying LCM ``Undo()`` call fails unexpectedly.
 
         Example::
 
@@ -716,24 +921,20 @@ class FLExProject(object):
                 f"Current project was opened with undoable=False."
             )
 
-        try:
-            undo_stack = self.project.UndoStack
-            if undo_stack is None:
-                logging.getLogger(__name__).warning("UndoStack not available")
-                return False
+        action_handler = self.project.ActionHandlerAccessor
 
-            # Try to call Undo if it exists
-            undo_fn = getattr(undo_stack, "Undo", None)
-            if undo_fn is not None:
-                undo_fn()
-                logging.getLogger(__name__).debug("Undo() called successfully")
-                return True
-            else:
-                logging.getLogger(__name__).warning("UndoStack.Undo method not found")
-                return False
+        if not action_handler.CanUndo():
+            logging.getLogger(__name__).debug("Undo(): CanUndo() is False, nothing to undo")
+            return False
+
+        try:
+            action_handler.Undo()
         except Exception as e:
             logging.getLogger(__name__).error(f"Undo() failed: {e}")
             raise FP_TransactionError(f"Undo() operation failed: {e}")
+
+        logging.getLogger(__name__).debug("Undo() succeeded")
+        return True
 
     def Redo(self):
         """
@@ -742,11 +943,19 @@ class FLExProject(object):
         Re-applies a change reversed by Undo().
         Only valid when the project was opened with undoable=True.
 
+        Scope -- IN-PROCESS ONLY (issue #235): the same RAM-only limitation
+        documented on ``Undo()`` applies here. liblcm's redo stack lives
+        entirely in this process's ``LcmCache.ActionHandlerAccessor``; there
+        is no cross-process or cross-session redo, and a freshly opened
+        project never has anything to redo.
+
         Returns:
-            bool: True if redo succeeded, False if nothing to redo.
+            bool: True if redo succeeded, False if there was nothing to redo
+                (``CanRedo()`` was False).
 
         Raises:
-            FP_TransactionError: If project not opened with undoable=True
+            FP_TransactionError: If project not opened with undoable=True,
+                or if the underlying LCM ``Redo()`` call fails unexpectedly.
 
         Example::
 
@@ -762,24 +971,20 @@ class FLExProject(object):
                 f"Current project was opened with undoable=False."
             )
 
-        try:
-            undo_stack = self.project.UndoStack
-            if undo_stack is None:
-                logging.getLogger(__name__).warning("UndoStack not available")
-                return False
+        action_handler = self.project.ActionHandlerAccessor
 
-            # Try to call Redo if it exists
-            redo_fn = getattr(undo_stack, "Redo", None)
-            if redo_fn is not None:
-                redo_fn()
-                logging.getLogger(__name__).debug("Redo() called successfully")
-                return True
-            else:
-                logging.getLogger(__name__).warning("UndoStack.Redo method not found")
-                return False
+        if not action_handler.CanRedo():
+            logging.getLogger(__name__).debug("Redo(): CanRedo() is False, nothing to redo")
+            return False
+
+        try:
+            action_handler.Redo()
         except Exception as e:
             logging.getLogger(__name__).error(f"Redo() failed: {e}")
             raise FP_TransactionError(f"Redo() operation failed: {e}")
+
+        logging.getLogger(__name__).debug("Redo() succeeded")
+        return True
 
     # --- Advanced Operations ---
 
@@ -2848,28 +3053,33 @@ class FLExProject(object):
             raise FP_ReadOnlyError()
 
         try:
-            # Create ITsString with embedded file path
-            bldr = self.project.ServiceLocator.GetInstance("TsStrBldr")
-            bldr.Clear()
+            # Create ITsString with embedded file path. The TsStrBldr work is
+            # pure string building against a builder, not an LCM mutation, so
+            # only the final set_String needs the transaction -- but the whole
+            # sequence is bracketed together to keep the built string and the
+            # write that consumes it in one unit.
+            with self._TransactionCM(f"Set audio path '{file_path}'"):
+                bldr = self.project.ServiceLocator.GetInstance("TsStrBldr")
+                bldr.Clear()
 
-            # Add ORC character
-            bldr.Replace(0, 0, "\ufffc", None)
+                # Add ORC character
+                bldr.Replace(0, 0, "\ufffc", None)
 
-            # Create properties with embedded path
-            # Format: kodtExternalPathName character + file path
-            from SIL.LCModel.Core.KernelInterfaces import FwObjDataTypes
+                # Create properties with embedded path
+                # Format: kodtExternalPathName character + file path
+                from SIL.LCModel.Core.KernelInterfaces import FwObjDataTypes
 
-            obj_data = chr(FwObjDataTypes.kodtExternalPathName) + file_path
+                obj_data = chr(FwObjDataTypes.kodtExternalPathName) + file_path
 
-            # Set the ObjData property on the character
-            props_bldr = self.project.ServiceLocator.GetInstance("ITsPropsBldr")
-            props_bldr.SetStrPropValue(ord("k"), obj_data)  # Property tag for ObjData
+                # Set the ObjData property on the character
+                props_bldr = self.project.ServiceLocator.GetInstance("ITsPropsBldr")
+                props_bldr.SetStrPropValue(ord("k"), obj_data)  # Property tag for ObjData
 
-            # Apply properties to the ORC character
-            bldr.SetProperties(0, 1, props_bldr.GetTextProps())
+                # Apply properties to the ORC character
+                bldr.SetProperties(0, 1, props_bldr.GetTextProps())
 
-            # Set the string in the multistring field
-            multistring_field.set_String(wsHandle, bldr.GetString())
+                # Set the string in the multistring field
+                multistring_field.set_String(wsHandle, bldr.GetString())
 
         except Exception as e:
             import logging
@@ -3493,21 +3703,25 @@ class FLExProject(object):
 
         tss = TsStringUtils.MakeString(text, WSHandle)
 
-        if fieldType in FLExLCM.CellarStringTypes:
-            try:
-                self.project.DomainDataByFlid.SetString(hvo, fieldID, tss)
-            except LcmInvalidFieldException as msg:
-                # This exception indicates that the project is not in write mode
-                raise FP_ReadOnlyError()
-        elif fieldType in FLExLCM.CellarMultiStringTypes:
-            # MultiUnicodeAccessor
-            mua = self.project.DomainDataByFlid.get_MultiStringProp(hvo, fieldID)
-            try:
-                mua.set_String(WSHandle, tss)
-            except LcmInvalidFieldException as msg:
-                raise FP_ReadOnlyError()
-        else:
+        # The unsupported-type rejection is checked first, outside the
+        # transaction, so a bad field type never opens an undo task.
+        if fieldType not in FLExLCM.CellarStringTypes and fieldType not in FLExLCM.CellarMultiStringTypes:
             raise FP_ParameterError("LexiconSetFieldText: field is not a supported type")
+
+        with self._TransactionCM("Set field text"):
+            if fieldType in FLExLCM.CellarStringTypes:
+                try:
+                    self.project.DomainDataByFlid.SetString(hvo, fieldID, tss)
+                except LcmInvalidFieldException as msg:
+                    # This exception indicates that the project is not in write mode
+                    raise FP_ReadOnlyError()
+            else:
+                # MultiUnicodeAccessor
+                mua = self.project.DomainDataByFlid.get_MultiStringProp(hvo, fieldID)
+                try:
+                    mua.set_String(WSHandle, tss)
+                except LcmInvalidFieldException as msg:
+                    raise FP_ReadOnlyError()
 
     def LexiconClearField(self, senseOrEntryOrHvo, fieldID):
         """
@@ -3524,22 +3738,29 @@ class FLExProject(object):
         mdc = IFwMetaDataCacheManaged(self.project.MetaDataCacheAccessor)
         fieldType = CellarPropertyType(mdc.GetFieldType(fieldID))
 
-        if fieldType in FLExLCM.CellarStringTypes:
-            try:
-                self.project.DomainDataByFlid.SetString(hvo, fieldID, None)
-            except LcmInvalidFieldException as msg:
-                # This exception indicates that the project is not in write mode
-                raise FP_ReadOnlyError()
-        elif fieldType in FLExLCM.CellarMultiStringTypes:
-            # MultiUnicodeAccessor
-            mua = self.project.DomainDataByFlid.get_MultiStringProp(hvo, fieldID)
-            try:
-                for ws in self.GetAllAnalysisWSs() | self.GetAllVernacularWSs():
-                    mua.set_String(self.WSHandle(ws), None)
-            except LcmInvalidFieldException as msg:
-                raise FP_ReadOnlyError()
-        else:
+        # The unsupported-type rejection is checked first, outside the
+        # transaction, so a bad field type never opens an undo task.
+        if fieldType not in FLExLCM.CellarStringTypes and fieldType not in FLExLCM.CellarMultiStringTypes:
             raise FP_ParameterError("LexiconClearField: field is not a supported type")
+
+        # One transaction for the whole field: clearing a multistring writes
+        # every analysis and vernacular WS, and a partial clear is not a state
+        # any caller asked for.
+        with self._TransactionCM("Clear field"):
+            if fieldType in FLExLCM.CellarStringTypes:
+                try:
+                    self.project.DomainDataByFlid.SetString(hvo, fieldID, None)
+                except LcmInvalidFieldException as msg:
+                    # This exception indicates that the project is not in write mode
+                    raise FP_ReadOnlyError()
+            else:
+                # MultiUnicodeAccessor
+                mua = self.project.DomainDataByFlid.get_MultiStringProp(hvo, fieldID)
+                try:
+                    for ws in self.GetAllAnalysisWSs() | self.GetAllVernacularWSs():
+                        mua.set_String(self.WSHandle(ws), None)
+                except LcmInvalidFieldException as msg:
+                    raise FP_ReadOnlyError()
 
     def LexiconSetFieldInteger(self, senseOrEntryOrHvo, fieldID, integer):
         """
@@ -3556,9 +3777,12 @@ class FLExProject(object):
         if CellarPropertyType(mdc.GetFieldType(fieldID)) != CellarPropertyType.Integer:
             raise FP_ParameterError("LexiconSetFieldInteger: field is not Integer type")
 
+        # The equality guard stays OUTSIDE the bracket so an unchanged value
+        # stays a true no-op that opens no unit of work.
         if self.project.DomainDataByFlid.get_IntProp(hvo, fieldID) != integer:
             try:
-                self.project.DomainDataByFlid.SetInt(hvo, fieldID, integer)
+                with self._TransactionCM("Set field integer"):
+                    self.project.DomainDataByFlid.SetInt(hvo, fieldID, integer)
             except LcmInvalidFieldException as msg:
                 # This exception indicates that the project is not in write mode
                 raise FP_ReadOnlyError()
@@ -3668,7 +3892,9 @@ class FLExProject(object):
             except AttributeError:
                 raise FP_ParameterError("possibilityOrString must be a string or CmPossibility")
 
-        self.project.DomainDataByFlid.SetObjProp(hvo, fieldID, possibility.Hvo)
+        # Resolution/validation above stays outside the bracket (D5/P3).
+        with self._TransactionCM("Set list field"):
+            self.project.DomainDataByFlid.SetObjProp(hvo, fieldID, possibility.Hvo)
 
     def LexiconClearListFieldSingle(self, senseOrEntry, fieldID):
         """
@@ -3680,7 +3906,8 @@ class FLExProject(object):
 
         hvo = self.__ValidatedHvo(senseOrEntry, fieldID)
 
-        self.project.DomainDataByFlid.SetObjProp(hvo, fieldID, 0)
+        with self._TransactionCM("Clear list field"):
+            self.project.DomainDataByFlid.SetObjProp(hvo, fieldID, 0)
 
     def LexiconSetListFieldMultiple(self, senseOrEntry, fieldID, listOfValues):
         """
@@ -3726,7 +3953,8 @@ class FLExProject(object):
         numItems = ddbf.get_VecSize(senseOrEntry.Hvo, fieldID)
 
         # Replace the current items with the new list
-        ddbf.Replace(senseOrEntry.Hvo, fieldID, 0, numItems, hvoList, len(hvoList))
+        with self._TransactionCM(f"Set list field ({len(hvoList)} value(s))"):
+            ddbf.Replace(senseOrEntry.Hvo, fieldID, 0, numItems, hvoList, len(hvoList))
 
     # --- Lexicon: Custom fields ---
 
@@ -4059,26 +4287,30 @@ class FLExProject(object):
         elif class_name in ("LexEntryRef", "VariantEntryRef"):
             return self.Variants.Delete(obj)
         else:
-            # Generic delete using LCM
-            if hasattr(obj, "Owner") and obj.Owner:
-                owner = obj.Owner
-                # Try to find and remove from owning collection
-                for prop_name in dir(owner):
-                    if prop_name.endswith("OS") or prop_name.endswith("OC"):
-                        try:
-                            collection = getattr(owner, prop_name)
-                            if hasattr(collection, "Remove") and obj in collection:
-                                collection.Remove(obj)
-                                return
-                        except Exception:
-                            pass
+            # Generic delete using LCM. Only this fallback branch is bracketed
+            # here: every branch above delegates to an Operations class whose
+            # own Delete() carries its own transaction (and would simply join
+            # this one under Phase 2 if it were nested inside).
+            with self._TransactionCM(f"Delete {class_name}"):
+                if hasattr(obj, "Owner") and obj.Owner:
+                    owner = obj.Owner
+                    # Try to find and remove from owning collection
+                    for prop_name in dir(owner):
+                        if prop_name.endswith("OS") or prop_name.endswith("OC"):
+                            try:
+                                collection = getattr(owner, prop_name)
+                                if hasattr(collection, "Remove") and obj in collection:
+                                    collection.Remove(obj)
+                                    return
+                            except Exception:
+                                pass
 
-            # Fallback: delete via the object's own ICmObject.Delete().
-            # The earlier code reached for IDataReader.DeleteUnderlyingObject,
-            # but that interface is `internal` in liblcm and pythonnet only
-            # exposes `public` types, so the import always failed.
-            # ICmObject.Delete() is the documented public deletion entry point.
-            obj.Delete()
+                # Fallback: delete via the object's own ICmObject.Delete().
+                # The earlier code reached for IDataReader.DeleteUnderlyingObject,
+                # but that interface is `internal` in liblcm and pythonnet only
+                # exposes `public` types, so the import always failed.
+                # ICmObject.Delete() is the documented public deletion entry point.
+                obj.Delete()
 
     def LexiconGetHeadWord(self, entry):
         """
@@ -4308,8 +4540,12 @@ class FLExProject(object):
             Replaces any existing complex form types with the specified one.
         """
         if hasattr(entry_ref, "ComplexEntryTypesRS"):
-            entry_ref.ComplexEntryTypesRS.Clear()
-            entry_ref.ComplexEntryTypesRS.Append(complex_form_type)
+            # Clear-then-Append is two mutations: a failure between them would
+            # leave the entry ref with no complex form type at all, which is
+            # neither the old value nor the requested one.
+            with self._TransactionCM("Set complex form type"):
+                entry_ref.ComplexEntryTypesRS.Clear()
+                entry_ref.ComplexEntryTypesRS.Append(complex_form_type)
 
     def LexiconAddComplexForm(self, entry, components, complex_form_type):
         """
@@ -4336,19 +4572,20 @@ class FLExProject(object):
         """
         from SIL.LCModel import ILexEntryRefFactory
 
-        factory = self.project.ServiceLocator.GetInstance(ILexEntryRefFactory)
-        entry_ref = factory.Create()
-        entry.EntryRefsOS.Add(entry_ref)
+        with self._TransactionCM(f"Add complex form ({len(components)} component(s))"):
+            factory = self.project.ServiceLocator.GetInstance(ILexEntryRefFactory)
+            entry_ref = factory.Create()
+            entry.EntryRefsOS.Add(entry_ref)
 
-        # Add components
-        for component in components:
-            entry_ref.ComponentLexemesRS.Append(component)
+            # Add components
+            for component in components:
+                entry_ref.ComponentLexemesRS.Append(component)
 
-        # Set complex form type
-        if complex_form_type:
-            entry_ref.ComplexEntryTypesRS.Append(complex_form_type)
+            # Set complex form type
+            if complex_form_type:
+                entry_ref.ComplexEntryTypesRS.Append(complex_form_type)
 
-        return entry_ref
+            return entry_ref
 
     # --- Lexical Relations ---
 

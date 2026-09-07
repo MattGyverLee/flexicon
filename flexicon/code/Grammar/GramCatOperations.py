@@ -245,7 +245,9 @@ class GramCatOperations(BaseOperations):
 
         # Remove from the feature system TypesOC
         feature_system = self.project.lp.MsFeatureSystemOA
-        feature_system.TypesOC.Remove(cat)
+
+        with self._TransactionCM("Delete grammatical category"):
+            feature_system.TypesOC.Remove(cat)
 
     @OperationsMethod
     def GetName(self, cat_or_hvo, wsHandle=None):
@@ -325,7 +327,9 @@ class GramCatOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        cat.Name.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set category name '{name}'"):
+            cat.Name.set_String(wsHandle, mkstr)
 
     @wrap_enumerable
     @OperationsMethod
@@ -552,24 +556,28 @@ class GramCatOperations(BaseOperations):
         Returns:
             ICmPossibility: The duplicated subcategory.
         """
-        # Create new subcategory
-        factory = self.project.project.ServiceLocator.GetService(ICmPossibilityFactory)
-        sub_duplicate = factory.Create()
+        # Every caller reaches this helper from inside Duplicate's existing
+        # bracket, so this transaction joins that one (nesting-aware per B1).
+        # Stated anyway so the site is grep-auditable per D5.
+        with self._TransactionCM("Duplicate subcategory"):
+            # Create new subcategory
+            factory = self.project.project.ServiceLocator.GetService(ICmPossibilityFactory)
+            sub_duplicate = factory.Create()
 
-        # Add to parent's SubPossibilitiesOS
-        parent_duplicate.SubPossibilitiesOS.Add(sub_duplicate)
+            # Add to parent's SubPossibilitiesOS
+            parent_duplicate.SubPossibilitiesOS.Add(sub_duplicate)
 
-        # Copy properties
-        sub_duplicate.Name.CopyAlternatives(source_sub.Name)
-        sub_duplicate.Abbreviation.CopyAlternatives(source_sub.Abbreviation)
-        sub_duplicate.Description.CopyAlternatives(source_sub.Description)
+            # Copy properties
+            sub_duplicate.Name.CopyAlternatives(source_sub.Name)
+            sub_duplicate.Abbreviation.CopyAlternatives(source_sub.Abbreviation)
+            sub_duplicate.Description.CopyAlternatives(source_sub.Description)
 
-        # Recursively duplicate nested subcategories
-        if source_sub.SubPossibilitiesOS.Count > 0:
-            for nested_sub in source_sub.SubPossibilitiesOS:
-                self.__DuplicateSubcategory(nested_sub, sub_duplicate)
+            # Recursively duplicate nested subcategories
+            if source_sub.SubPossibilitiesOS.Count > 0:
+                for nested_sub in source_sub.SubPossibilitiesOS:
+                    self.__DuplicateSubcategory(nested_sub, sub_duplicate)
 
-        return sub_duplicate
+            return sub_duplicate
 
     # --- Private Helper Methods ---
 

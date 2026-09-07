@@ -384,7 +384,9 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         obj = self.__ResolveObject(feature_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
         mkstr = TsStringUtils.MakeString(name, wsHandle)
-        obj.Name.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set feature name '{name}'"):
+            obj.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def SetAbbreviation(self, feature_or_hvo, abbrev, wsHandle=None):
@@ -403,7 +405,9 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         obj = self.__ResolveObject(feature_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
         mkstr = TsStringUtils.MakeString(abbrev, wsHandle)
-        obj.Abbreviation.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM(f"Set feature abbreviation '{abbrev}'"):
+            obj.Abbreviation.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def SetDescription(self, feature_or_hvo, description, wsHandle=None):
@@ -424,7 +428,9 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
             )
         wsHandle = self.__WSHandle(wsHandle)
         mkstr = TsStringUtils.MakeString(description, wsHandle)
-        obj.Description.set_String(wsHandle, mkstr)
+
+        with self._TransactionCM("Set feature description"):
+            obj.Description.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def Delete(self, feature_or_hvo):
@@ -447,7 +453,8 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         feat = self.__Unwrap(self.__ResolveObject(feature_or_hvo))
         feature_system = self.project.lp.PhFeatureSystemOA
         if feature_system is not None:
-            feature_system.FeaturesOC.Remove(feat)
+            with self._TransactionCM("Delete phonological feature"):
+                feature_system.FeaturesOC.Remove(feat)
 
     # ========================================================================
     # WRITE METHODS - VALUE (IFsSymFeatVal under a feature)
@@ -529,8 +536,12 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
             # guards against the unlikely case that owner is some other type
             # (should not happen in practice, but preserves robustness).
             try:
+                # The cast stays inside the try but outside the bracket, so a
+                # non-IFsClosedFeature owner is swallowed without opening an
+                # empty named undo entry.
                 feat = IFsClosedFeature(owner)
-                feat.ValuesOC.Remove(val)
+                with self._TransactionCM("Delete feature value"):
+                    feat.ValuesOC.Remove(val)
             except Exception:
                 pass
 
@@ -795,34 +806,38 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
             IFsSymFeatValFactory
         )
 
-        new_val = None
-        if guid_str:
-            guid = System.Guid(guid_str)
-            # Path A: 2-arg factory overload if pythonnet exposes it.
-            try:
-                new_val = factory.Create(guid, feature)
-            except Exception:
-                new_val = None
-            if new_val is None:
-                # Path B: implementation-side Create(Guid) then Add().
-                concrete_factory = (
-                    cast_to_concrete(factory)
-                    if hasattr(factory, "ClassName")
-                    else factory
-                )
+        # Every exit path creates a value, so the whole Path A / Path B /
+        # last-resort chain is one unit: a Path-B create whose Add then fails
+        # must not leave a free-floating value behind.
+        with self._TransactionCM("Create feature value"):
+            new_val = None
+            if guid_str:
+                guid = System.Guid(guid_str)
+                # Path A: 2-arg factory overload if pythonnet exposes it.
                 try:
-                    new_val = concrete_factory.Create(guid)
-                    feature.ValuesOC.Add(new_val)
+                    new_val = factory.Create(guid, feature)
                 except Exception:
                     new_val = None
+                if new_val is None:
+                    # Path B: implementation-side Create(Guid) then Add().
+                    concrete_factory = (
+                        cast_to_concrete(factory)
+                        if hasattr(factory, "ClassName")
+                        else factory
+                    )
+                    try:
+                        new_val = concrete_factory.Create(guid)
+                        feature.ValuesOC.Add(new_val)
+                    except Exception:
+                        new_val = None
 
-        if new_val is None:
-            # Last resort: random GUID (no canonical GUID available or both
-            # aligned-create paths failed). Ownership-first as elsewhere.
-            new_val = factory.Create()
-            feature.ValuesOC.Add(new_val)
+            if new_val is None:
+                # Last resort: random GUID (no canonical GUID available or both
+                # aligned-create paths failed). Ownership-first as elsewhere.
+                new_val = factory.Create()
+                feature.ValuesOC.Add(new_val)
 
-        return IFsSymFeatVal(new_val)
+            return IFsSymFeatVal(new_val)
 
     def __ReadMultiString(self, obj, prop_name, all_ws):
         """
@@ -890,7 +905,12 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         factory = self._get_factory()
         feature_system = self._get_root_list()
         try:
-            return factory.Create(guid, feature_system)
+            # Reached from inside the mixin's "Create ... from catalog"
+            # bracket (catalog_backed.py), so this joins that transaction
+            # rather than opening its own (nesting-aware per B1). Stated
+            # anyway so the site is grep-auditable per D5.
+            with self._TransactionCM("Create phonological feature from catalog"):
+                return factory.Create(guid, feature_system)
         except Exception:
             return None
 
@@ -900,7 +920,9 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         PhFeatureSystemOA.FeaturesOC. parent_obj is ignored (always None
         for top-level features).
         """
-        self._get_root_list().FeaturesOC.Add(new_obj)
+        # Joins the mixin's catalog bracket per B1.
+        with self._TransactionCM("Attach phonological feature from catalog"):
+            self._get_root_list().FeaturesOC.Add(new_obj)
 
     def _cast_to_domain(self, raw):
         """Return the IFsClosedFeature view of a raw LCM feature object."""
@@ -980,57 +1002,63 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
         factory = self.project.project.ServiceLocator.GetService(
             IFsSymFeatValFactory
         )
+        # Parsed outside the transaction: a malformed catalog GUID must raise
+        # before any undo task is opened (mirrors the mixin's own ordering).
         guid = System.Guid(value_entry.guid)
 
-        new_val = None
-        # Path A: 2-arg factory overload if pythonnet exposes it.
-        try:
-            new_val = factory.Create(guid, parent_feature)
-        except Exception:
+        # Create-and-populate is one unit: a Path-B create whose Add or
+        # subsequent per-WS writes fail must not leave a half-built value.
+        # Joins the mixin's catalog bracket when called through it (B1).
+        with self._TransactionCM(f"Create feature value '{value_entry.id}' from catalog"):
             new_val = None
-
-        if new_val is None:
-            # Path B: implementation-side Create(Guid) followed by Add().
-            concrete_factory = (
-                cast_to_concrete(factory)
-                if hasattr(factory, "ClassName")
-                else factory
-            )
+            # Path A: 2-arg factory overload if pythonnet exposes it.
             try:
-                new_val = concrete_factory.Create(guid)
-            except Exception as e:
-                # No safe fallback: parameterless Create() would generate
-                # a random GUID. Match the mixin's Path-A+B-failure
-                # discipline (Phase 5a).
-                raise FP_ParameterError(
-                    f"Could not create feature value '{value_entry.id}' "
-                    f"with canonical GUID {value_entry.guid} via either "
-                    f"Create(Guid, parent) or Create(Guid) factory "
-                    f"overloads."
-                ) from e
-            parent_feature.ValuesOC.Add(new_val)
+                new_val = factory.Create(guid, parent_feature)
+            except Exception:
+                new_val = None
 
-        new_val = IFsSymFeatVal(new_val)
+            if new_val is None:
+                # Path B: implementation-side Create(Guid) followed by Add().
+                concrete_factory = (
+                    cast_to_concrete(factory)
+                    if hasattr(factory, "ClassName")
+                    else factory
+                )
+                try:
+                    new_val = concrete_factory.Create(guid)
+                except Exception as e:
+                    # No safe fallback: parameterless Create() would generate
+                    # a random GUID. Match the mixin's Path-A+B-failure
+                    # discipline (Phase 5a).
+                    raise FP_ParameterError(
+                        f"Could not create feature value '{value_entry.id}' "
+                        f"with canonical GUID {value_entry.guid} via either "
+                        f"Create(Guid, parent) or Create(Guid) factory "
+                        f"overloads."
+                    ) from e
+                parent_feature.ValuesOC.Add(new_val)
 
-        # Per-WS strings (abbreviation is the +/- marker; term is the
-        # positive/negative name).
-        self._set_multistring(
-            new_val.Name, value_entry.term, missing_ws_seen, warnings
-        )
-        self._set_multistring(
-            new_val.Abbreviation, value_entry.abbrev, missing_ws_seen, warnings
-        )
-        if hasattr(new_val, "Description"):
+            new_val = IFsSymFeatVal(new_val)
+
+            # Per-WS strings (abbreviation is the +/- marker; term is the
+            # positive/negative name).
             self._set_multistring(
-                new_val.Description, value_entry.def_, missing_ws_seen, warnings
+                new_val.Name, value_entry.term, missing_ws_seen, warnings
             )
+            self._set_multistring(
+                new_val.Abbreviation, value_entry.abbrev, missing_ws_seen, warnings
+            )
+            if hasattr(new_val, "Description"):
+                self._set_multistring(
+                    new_val.Description, value_entry.def_, missing_ws_seen, warnings
+                )
 
-        # IFsSymFeatVal does not have a CatalogSourceId field in stock
-        # LCM, so we don't try to set one. Value-level catalog provenance
-        # is recoverable indirectly via the parent feature's
-        # CatalogSourceId and the value's canonical GUID.
+            # IFsSymFeatVal does not have a CatalogSourceId field in stock
+            # LCM, so we don't try to set one. Value-level catalog provenance
+            # is recoverable indirectly via the parent feature's
+            # CatalogSourceId and the value's canonical GUID.
 
-        return new_val
+            return new_val
 
     # ========================================================================
     # PRIVATE HELPER METHODS
@@ -1071,10 +1099,15 @@ class PhonFeatureOperations(BaseOperations, CatalogBackedMixin):
                 f"overlay anyway."
             )
 
+        # The idempotent-return and refuse-to-clobber guards above stay
+        # outside: neither may open an empty named undo entry. Callers reach
+        # this from inside their own bracket, so this joins (B1).
         mkstr_name = TsStringUtils.MakeString(name, wsHandle)
-        feat.Name.set_String(wsHandle, mkstr_name)
         mkstr_abbr = TsStringUtils.MakeString(abbreviation, wsHandle)
-        feat.Abbreviation.set_String(wsHandle, mkstr_abbr)
+
+        with self._TransactionCM(f"Overlay canonical labels '{name}'"):
+            feat.Name.set_String(wsHandle, mkstr_name)
+            feat.Abbreviation.set_String(wsHandle, mkstr_abbr)
 
     def __ResolveObject(self, obj_or_hvo):
         """

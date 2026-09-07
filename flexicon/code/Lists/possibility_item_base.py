@@ -221,16 +221,18 @@ class PossibilityItemOperations(BaseOperations):
         # Remove from list
         list_obj = self._get_list_object()
         if list_obj and item in list_obj.PossibilitiesOS:
-            list_obj.PossibilitiesOS.Remove(item)
+            with self._TransactionCM(f"Delete {self._get_item_class_name()}"):
+                list_obj.PossibilitiesOS.Remove(item)
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=True):
+    def Duplicate(self, item_or_hvo, insert_after=True, deep=False):
         """Duplicate an item, creating a new copy with a new GUID.
 
         Args:
             item_or_hvo: Either an ICmPossibility object or its HVO to duplicate.
             insert_after (bool): If True (default), insert after the source item.
                                 If False, insert at end of list.
+            deep (bool): Accepted for API uniformity across Operations classes. CmPossibility has no owned objects, so this parameter is ignored.
 
         Returns:
             ICmPossibility: The newly created duplicate item with a new GUID.
@@ -352,8 +354,9 @@ class PossibilityItemOperations(BaseOperations):
         item = self.__ResolveObject(item_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(name or "", wsHandle)
-        item.Name.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set {self._get_item_class_name()} name {name!r}"):
+            mkstr = TsStringUtils.MakeString(name or "", wsHandle)
+            item.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetDescription(self, item_or_hvo, wsHandle=None):
@@ -395,8 +398,9 @@ class PossibilityItemOperations(BaseOperations):
         item = self.__ResolveObject(item_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(description or "", wsHandle)
-        item.Description.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set {self._get_item_class_name()} description"):
+            mkstr = TsStringUtils.MakeString(description or "", wsHandle)
+            item.Description.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetGuid(self, item_or_hvo):

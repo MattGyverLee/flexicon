@@ -170,8 +170,9 @@ class ConstChartClauseMarkerOperations(BaseOperations):
         # Resolve to marker object
         marker = self.__ResolveObject(marker_or_hvo)
 
-        # Delete the marker (LCM handles removal from repository)
-        marker.Delete()
+        with self._TransactionCM("Delete clause marker"):
+            # Delete the marker (LCM handles removal from repository)
+            marker.Delete()
 
     @OperationsMethod
     def Find(self, row_or_hvo, index):
@@ -376,10 +377,13 @@ class ConstChartClauseMarkerOperations(BaseOperations):
 
         marker = self.__ResolveObject(marker_or_hvo)
 
-        # Add to dependent clauses collection
+        # Add to dependent clauses collection. The capability check and the
+        # membership test stay OUTSIDE the transaction so an already-dependent
+        # clause is a true no-op and does not open an empty undo task.
         if hasattr(marker, "DependentClausesRS"):
             if clause_marker not in marker.DependentClausesRS:
-                marker.DependentClausesRS.Add(clause_marker)
+                with self._TransactionCM("Add dependent clause"):
+                    marker.DependentClausesRS.Add(clause_marker)
 
     # --- Private Helper Methods ---
 

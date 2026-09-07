@@ -452,12 +452,25 @@ ImportError: cannot import name 'IMoMorphRule' from 'SIL.LCModel'
 | Object type | `Source` field type | Correct access pattern |
 |---|---|---|
 | `ILexSense` | `ITsString` (single string with embedded ws handle) | Read `.Text` directly; write via `TsStringUtils.MakeString(text, ws_handle)` |
-| `ILexEtymology` | `IMultiString` (per-WS) | Iterate ws handles; use `.get_String(ws)` / `.set_String(ws, ts_string)` |
-| `IStText` | `IMultiAccessorBase` (per-WS; virtualised; "Used to get Text.Source") | Same multi-WS access pattern as `ILexEtymology`; field lives on the `IStText` body of a `IText`, not on `ICmBaseAnnotation` |
+| `ILexEtymology` | **Does not exist.** See "The vanished `ILexEtymology.Source` field" below. | N/A -- use `LanguageNotes` (`IMultiString`) instead |
+| `IStText` | `IMultiAccessorBase` (per-WS; virtualised; "Used to get Text.Source") | Same multi-WS access pattern as the old `ILexEtymology.Source` did; field lives on the `IStText` body of a `IText`, not on `ICmBaseAnnotation` |
 
 Note: `ICmBaseAnnotation` does NOT expose a `Source` field. The source-of-confusion was that the `OverridesCellar.cs` helper `TextSourceForWs(int ws)` (line ~683) navigates from an annotation to its owning `IStText` to call `text.Source.get_String(ws)` -- it is a helper that *reads* `IStText.Source`, not a field on the annotation itself. The LCM declaration is in `InterfaceAdditions.cs` line 3018 inside `public partial interface IStText`.
 
-Reference: see `LexSenseOperations._ReadTsString` / `_MakeTsString` (ITsString helpers, single source of truth on `BaseOperations`) versus `EtymologyOperations` and `NoteOperations` which iterate ws handles for the IMultiString form.
+Reference: see `LexSenseOperations._ReadTsString` / `_MakeTsString` (ITsString helpers, single source of truth on `BaseOperations`) versus `NoteOperations` which iterates ws handles for the `IMultiString` form. `EtymologyOperations` used to be listed here too, but see the correction immediately below -- it no longer touches a field named `Source` at all.
+
+### CORRECTED 2026-08-18: the vanished `ILexEtymology.Source` field
+
+This table previously listed `ILexEtymology.Source` as `IMultiString`. That entry was **wrong** and has caused real breakage (flexicon issue tracker; live-LCM regression closed alongside the 4.4.1 release). Live reflection against the installed LCM (`dir()` on a freshly-`factory.Create()`'d, owned `ILexEtymology`) shows **no `Source` member at all** -- not renamed, not retyped, simply absent. `getattr(etymology, "Source")` raises `AttributeError` unconditionally.
+
+The free-text "source language" concept this field used to carry now lives on a **different field name**, `LanguageNotes` (`IMultiString`, UI label "Source Language Notes" -- see `Language Explorer/Configuration/Parts/LexEntryParts.xml`, part `LexEtymology-Detail-LanguageNotes`). A separate, new, *controlled-vocabulary* field, `LanguageRS` (an `ILcmReferenceSequence<ICmPossibility>` onto the project's Languages list, UI label "Source Language"), also exists but is a distinct concept from the old free-text `Source` and is not a drop-in replacement.
+
+| Object | Old (never existed) | Correct field | LCM type |
+|---|---|---|---|
+| `ILexEtymology` | ~~`Source`~~ | `LanguageNotes` | `IMultiString` (per-WS; same access pattern the stale entry described: `.get_String(ws)` / `.set_String(ws, ts_string)`) |
+| `ILexEtymology` | *(n/a -- new field, not a rename)* | `LanguageRS` | `ILcmReferenceSequence<ICmPossibility>` (reference sequence onto the Languages list; not yet wired up by `EtymologyOperations.GetLanguage`/`SetLanguage`, which still assume a nonexistent atomic `LanguageRA` -- tracked separately, deliberately left unfixed alongside this correction) |
+
+`EtymologyOperations.Create(source=...)`, `GetSource()`, `SetSource()`, `GetSyncableProperties()`, and `ApplySyncableProperties()` have all been repaired to read/write `LanguageNotes` under the hood; the public `source=` parameter and `GetSource`/`SetSource` method names, and the `"Source"` key in the syncable-properties dict, are kept as-is for API stability -- only the LCM-facing field they resolve to has changed.
 
 ### The `BaselineText` field
 
@@ -496,7 +509,55 @@ LCM source references:
 
 - Same field name + different LCM type = silent bug. The `hasattr` / duck-typing patterns common in this codebase mask the mismatch.
 - `Source` has caused issues #36, #39, #40 -- the same shape recurs whenever an author looks at one Operations class to learn how to handle "Source" and applies the pattern to the wrong type.
-- `BaselineText` is the poster-child of the single-vs-multi confusion: it looks like any other text field on a text-bearing object, but it is single-WS `ITsString` while other fields on neighbouring types (like `ILexEtymology.Source`) are per-WS `IMultiString`.
+- `MorphRA` caused issue #254 -- a variant of the same shape: not a same-name field changing type, but a wrong field entirely (`MorphRA`, the allomorph) mistaken for a differently-named one (`MorphTypeRA`, the type) because `MorphTypeRA` behaves correctly as a direct `IMoMorphType` on neighbouring `IMoForm`/`ILexSense` interfaces.
+- `BaselineText` is the poster-child of the single-vs-multi confusion: it looks like any other text field on a text-bearing object, but it is single-WS `ITsString` while other fields on neighbouring types (like `ILexEtymology.LanguageNotes`) are per-WS `IMultiString`.
+
+### The `MorphRA` field (issue #254, RESOLVED)
+
+`IWfiMorphBundle.MorphRA` holds the bundle's linked **allomorph**
+(`IMoForm`, concretely `MoStemAllomorph` or `MoAffixAllomorph`) -- **not**
+its morph type. The morph type lives one hop further, at
+`MorphRA.MorphTypeRA` (`IMoMorphType`).
+
+| Object type | `MorphRA`-adjacent field | Type | Correct access pattern |
+|---|---|---|---|
+| `IWfiMorphBundle` | `MorphRA` | `IMoForm` (allomorph) | `bundle.MorphRA`; guard `is None` (~5% of bundles have no linked allomorph) |
+| `IWfiMorphBundle` | (via `MorphRA`) `MorphTypeRA` | `IMoMorphType` (the type) | `bundle.MorphRA.MorphTypeRA`; guard both hops for `None` |
+| `IMoForm` | `MorphTypeRA` | `IMoMorphType` | `MorphTypeRA` is directly the type here -- no extra hop |
+| `ILexSense` | `MorphTypeRA` | `IMoMorphType` | Same direct pattern as `IMoForm` |
+
+`WfiMorphBundleOperations.GetMorphType` returned `bundle.MorphRA` raw for
+its whole life -- every caller received an allomorph from a method
+promising a type. `SetMorphType` crashed at the .NET boundary
+(`TypeError: SIL.LCModel.DomainImpl.MoMorphType value cannot be converted
+to SIL.LCModel.IMoForm`) on every non-`None` call, since it wrote its
+morph-type argument straight into the allomorph-typed `MorphRA` slot. The
+bug looked plausible on a copy-paste review because `MorphTypeRA` genuinely
+**is** a direct `IMoMorphType` on the neighbouring `IMoForm` and `ILexSense`
+interfaces -- the trap is one field name (`MorphRA`) being mistaken for
+another (`MorphTypeRA`) that behaves correctly elsewhere, not a same-name
+field changing type across interfaces.
+
+**Fix**: `GetMorphType` now returns `bundle.MorphRA.MorphTypeRA`
+(`IMoMorphType`), guarding `MorphRA is None`. `SetMorphType` is retired --
+always raises `FP_ParameterError`. A correctly-named `GetMorph`/`SetMorph`
+pair now exposes `MorphRA` (the allomorph) under an accurate name.
+
+### Test-authoring trap: `MoStemAllomorph.MorphTypeRA` is not `None` after `Add`
+
+A freshly-created `MoStemAllomorph` (via `IMoStemAllomorphFactory`) added
+to `entry.AlternateFormsOS` does **not** stay typeless: LCM auto-infers a
+default `MorphTypeRA` of `"root"` as a side effect of the `Add` committing.
+Anyone who assumes a newly-created `IMoForm` starts with
+`MorphTypeRA is None` will be silently wrong -- there is no LCM warning,
+just a populated field where a test expected an empty one.
+
+To obtain a genuinely typeless `IMoForm` for testing, clear
+`MorphTypeRA = None` explicitly in a **follow-up transaction** after the
+`Add` has committed, then re-read to confirm.
+
+Evidence: `specs/254-getmorphtype-allomorph/evidence/live-cycle2-fix.md`
+(item 4, Sena 3, 2026-09-06).
 
 ### Recommended pattern
 
@@ -558,7 +619,7 @@ parent.FooOC.Add(duplicate)
 
 Category 8 and Category 9 are the same trap at different levels:
 
-- **Category 8**: Same *field name*, different *LCM type* (e.g., `Source` is `ITsString` on `ILexSense` but `IMultiString` on `ILexEtymology`).
+- **Category 8**: Same *field name*, different *LCM type* (e.g., `Source` is `ITsString` on `ILexSense` but does not exist at all on `ILexEtymology` -- see the correction above).
 - **Category 9**: Same *variable name convention*, different *collection contract* (e.g., `FooOC` is unordered while `FooOS` is ordered).
 
 ---

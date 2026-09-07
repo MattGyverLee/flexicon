@@ -273,17 +273,21 @@ class CheckOperations(BaseOperations):
         # Remove from check list
         check_list = self._GetCheckList()
         if check_list:
-            # Try to remove from top level
-            if check_obj in check_list.PossibilitiesOS:
-                check_list.PossibilitiesOS.Remove(check_obj)
-            else:
-                # Try to remove from parent's subitems
-                for parent in check_list.PossibilitiesOS:
-                    if check_obj in parent.SubPossibilitiesOS:
-                        parent.SubPossibilitiesOS.Remove(check_obj)
-                        break
+            with self._TransactionCM("Delete check type"):
+                # Try to remove from top level
+                if check_obj in check_list.PossibilitiesOS:
+                    check_list.PossibilitiesOS.Remove(check_obj)
+                else:
+                    # Try to remove from parent's subitems
+                    for parent in check_list.PossibilitiesOS:
+                        if check_obj in parent.SubPossibilitiesOS:
+                            parent.SubPossibilitiesOS.Remove(check_obj)
+                            break
 
-        # Clear cached data
+        # Clear cached data. Deliberately OUTSIDE the transaction: these are
+        # plain Python dicts on this Operations instance, not LCM state, so a
+        # rollback would not restore them anyway. They are cleared only after
+        # the LCM removal has committed.
         guid = check_obj.Guid
         if guid in self._check_results:
             del self._check_results[guid]
@@ -431,8 +435,9 @@ class CheckOperations(BaseOperations):
         check_obj = self.__GetCheckObject(check_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(name, wsHandle)
-        check_obj.Name.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set check name '{name}'"):
+            mkstr = TsStringUtils.MakeString(name, wsHandle)
+            check_obj.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetDescription(self, check_or_hvo, wsHandle=None):
@@ -506,8 +511,9 @@ class CheckOperations(BaseOperations):
         check_obj = self.__GetCheckObject(check_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(description, wsHandle)
-        check_obj.Description.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set check description"):
+            mkstr = TsStringUtils.MakeString(description, wsHandle)
+            check_obj.Description.set_String(wsHandle, mkstr)
 
     # --- Execution Methods ---
 
@@ -1188,14 +1194,15 @@ class CheckOperations(BaseOperations):
         # Actual implementation would depend on FLEx data model
         from SIL.LCModel import ICmPossibilityListFactory
 
-        factory = self.project.project.ServiceLocator.GetInstance(ICmPossibilityListFactory)
-        new_list = factory.Create()
+        with self._TransactionCM("Create consistency check list"):
+            factory = self.project.project.ServiceLocator.GetInstance(ICmPossibilityListFactory)
+            new_list = factory.Create()
 
-        wsHandle = self.project.project.DefaultAnalWs
-        name_str = TsStringUtils.MakeString("Consistency Checks", wsHandle)
-        new_list.Name.set_String(wsHandle, name_str)
+            wsHandle = self.project.project.DefaultAnalWs
+            name_str = TsStringUtils.MakeString("Consistency Checks", wsHandle)
+            new_list.Name.set_String(wsHandle, name_str)
 
-        return new_list
+            return new_list
 
     def _GetDefaultCheckTargets(self, check_obj):
         """
@@ -1419,19 +1426,21 @@ class CheckOperations(BaseOperations):
 
     def _DuplicateSubCheckInto(self, source_check, parent_dup, deep=True):
         """Duplicate a sub-check into the specified parent's SubPossibilitiesOS."""
-        factory = self.project.project.ServiceLocator.GetService(ICmPossibilityFactory)
-        dup_check = factory.Create()
-        parent_dup.SubPossibilitiesOS.Add(dup_check)
+        with self._TransactionCM("Duplicate check"):
+            factory = self.project.project.ServiceLocator.GetService(ICmPossibilityFactory)
+            dup_check = factory.Create()
+            parent_dup.SubPossibilitiesOS.Add(dup_check)
 
-        # Copy properties
-        dup_check.Name.CopyAlternatives(source_check.Name)
-        if hasattr(source_check, "Description") and source_check.Description:
-            dup_check.Description.CopyAlternatives(source_check.Description)
+            # Copy properties
+            dup_check.Name.CopyAlternatives(source_check.Name)
+            if hasattr(source_check, "Description") and source_check.Description:
+                dup_check.Description.CopyAlternatives(source_check.Description)
 
-        # Recurse into nested sub-checks
-        if deep and hasattr(source_check, "SubPossibilitiesOS") and source_check.SubPossibilitiesOS.Count > 0:
-            for nested_check in source_check.SubPossibilitiesOS:
-                self._DuplicateSubCheckInto(nested_check, dup_check, deep=True)
+            # Recurse into nested sub-checks. The recursive call joins this
+            # block under Phase 2, so the whole subtree is one undo entry.
+            if deep and hasattr(source_check, "SubPossibilitiesOS") and source_check.SubPossibilitiesOS.Count > 0:
+                for nested_check in source_check.SubPossibilitiesOS:
+                    self._DuplicateSubCheckInto(nested_check, dup_check, deep=True)
 
     # ========== SYNC INTEGRATION METHODS ==========
 

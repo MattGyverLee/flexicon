@@ -77,3 +77,14 @@ include = ["flexicon*", "flexlibs2*"]
 [tool.setuptools.package-data]
 # Ship type stubs and any bundled data alongside the package.
 "*" = ["py.typed", "*.pyi"]
+
+[tool.pytest.ini_options]
+# Registered globally rather than only in tests/conftest.py, because a
+# conftest.py registers markers only for its own directory subtree. Modules
+# such as flexicon/tests/test_CustomFields.py and flexicon/sync/tests/ live
+# OUTSIDE the root tests/ tree, so running one of them on its own loaded no
+# registration and emitted PytestUnknownMarkWarning for a marker that the
+# `-m requires_live_project` selector was nonetheless honouring.
+markers = [
+    "requires_live_project: test opens a real .fwdata project via FLExProject.OpenProject()",
+]

@@ -226,8 +226,9 @@ class ScrBookOperations(BaseOperations):
         # Resolve to book object
         book = self.__ResolveObject(book_or_hvo)
 
-        # Delete the book (LCM handles removal from repository)
-        book.Delete()
+        with self._TransactionCM("Delete scripture book"):
+            # Delete the book (LCM handles removal from repository)
+            book.Delete()
 
     @OperationsMethod
     def Find(self, canonical_num):
@@ -442,8 +443,9 @@ class ScrBookOperations(BaseOperations):
         book = self.__ResolveObject(book_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(title, wsHandle)
-        book.Title.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set book title '{title}'"):
+            mkstr = TsStringUtils.MakeString(title, wsHandle)
+            book.Title.set_String(wsHandle, mkstr)
 
     # --- Section Management ---
 

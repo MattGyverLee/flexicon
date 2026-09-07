@@ -408,8 +408,9 @@ class PossibilityListOperations(BaseOperations):
         poss_list = self.__ResolveList(list_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(name, wsHandle)
-        poss_list.Name.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set list name '{name}'"):
+            mkstr = TsStringUtils.MakeString(name, wsHandle)
+            poss_list.Name.set_String(wsHandle, mkstr)
 
     # --- Item Management ---
 
@@ -577,13 +578,14 @@ class PossibilityListOperations(BaseOperations):
         # Get the parent or owning list
         parent = self.GetParentItem(item)
 
-        if parent:
-            # Remove from parent's subitems
-            parent.SubPossibilitiesOS.Remove(item)
-        else:
-            # Remove from top-level list
-            owner = self.__GetListOwner(item)
-            owner.PossibilitiesOS.Remove(item)
+        with self._TransactionCM("Delete list item"):
+            if parent:
+                # Remove from parent's subitems
+                parent.SubPossibilitiesOS.Remove(item)
+            else:
+                # Remove from top-level list
+                owner = self.__GetListOwner(item)
+                owner.PossibilitiesOS.Remove(item)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=True, deep=True):
@@ -783,20 +785,23 @@ class PossibilityListOperations(BaseOperations):
             source_parent: Source ICmPossibility with subitems to copy.
             dup_parent: Duplicate ICmPossibility to receive copied subitems.
         """
-        for sub_item in source_parent.SubPossibilitiesOS:
-            factory = self.project.project.ServiceLocator.GetService(ICmPossibilityFactory)
-            sub_dup = factory.Create()
-            dup_parent.SubPossibilitiesOS.Add(sub_dup)
+        # One bracket around the whole subtree walk. The recursive call joins
+        # this block under Phase 2, so a deep duplicate is one named undo entry.
+        with self._TransactionCM("Duplicate list subitems"):
+            for sub_item in source_parent.SubPossibilitiesOS:
+                factory = self.project.project.ServiceLocator.GetService(ICmPossibilityFactory)
+                sub_dup = factory.Create()
+                dup_parent.SubPossibilitiesOS.Add(sub_dup)
 
-            # Copy properties
-            sub_dup.Name.CopyAlternatives(sub_item.Name)
-            sub_dup.Abbreviation.CopyAlternatives(sub_item.Abbreviation)
-            if hasattr(sub_item, "Description"):
-                sub_dup.Description.CopyAlternatives(sub_item.Description)
+                # Copy properties
+                sub_dup.Name.CopyAlternatives(sub_item.Name)
+                sub_dup.Abbreviation.CopyAlternatives(sub_item.Abbreviation)
+                if hasattr(sub_item, "Description"):
+                    sub_dup.Description.CopyAlternatives(sub_item.Description)
 
-            # Continue recursion if there are deeper levels
-            if sub_item.SubPossibilitiesOS.Count > 0:
-                self.__DuplicateSubitemsRecursive(sub_item, sub_dup)
+                # Continue recursion if there are deeper levels
+                if sub_item.SubPossibilitiesOS.Count > 0:
+                    self.__DuplicateSubitemsRecursive(sub_item, sub_dup)
 
     @OperationsMethod
     def FindItem(self, list_or_hvo, name):
@@ -928,8 +933,9 @@ class PossibilityListOperations(BaseOperations):
         item = self.__ResolveItem(item_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(name, wsHandle)
-        item.Name.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set list item name '{name}'"):
+            mkstr = TsStringUtils.MakeString(name, wsHandle)
+            item.Name.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetItemAbbreviation(self, item_or_hvo, wsHandle=None):
@@ -999,8 +1005,9 @@ class PossibilityListOperations(BaseOperations):
         item = self.__ResolveItem(item_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        mkstr = TsStringUtils.MakeString(abbr, wsHandle)
-        item.Abbreviation.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set list item abbreviation '{abbr}'"):
+            mkstr = TsStringUtils.MakeString(abbr, wsHandle)
+            item.Abbreviation.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetItemDescription(self, item_or_hvo, wsHandle=None):
@@ -1067,8 +1074,9 @@ class PossibilityListOperations(BaseOperations):
         item = self.__ResolveItem(item_or_hvo)
         wsHandle = self.__WSHandle(wsHandle)
 
-        # Description is a MultiString
-        item.Description.set_String(wsHandle, description)
+        with self._TransactionCM("Set list item description"):
+            # Description is a MultiString
+            item.Description.set_String(wsHandle, description)
 
     # --- Hierarchy Operations ---
 

@@ -382,10 +382,11 @@ class WfiGlossOperations(BaseOperations):
         analysis = IWfiAnalysis(gloss.Owner)
 
         # Remove from analysis's Meanings collection
-        analysis.MeaningsOC.Remove(gloss)
+        with self._TransactionCM("Delete gloss"):
+            analysis.MeaningsOC.Remove(gloss)
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, insert_after=False):
+    def Duplicate(self, item_or_hvo, insert_after=False, deep=False):
         """
         Duplicate a wordform gloss, creating a new copy with a new GUID.
 
@@ -394,6 +395,7 @@ class WfiGlossOperations(BaseOperations):
             insert_after (bool): Ignored. MeaningsOC is an unordered
                 ILcmOwningCollection with no Insert() method and no concept of
                 positional ordering. The duplicate is always appended via Add().
+            deep (bool): Accepted for API uniformity across Operations classes. WfiGloss has no owned objects, so this parameter is ignored.
 
         Returns:
             IWfiGloss: The newly created duplicate gloss with a new GUID.
@@ -435,7 +437,11 @@ class WfiGlossOperations(BaseOperations):
         # Resolve to a concrete IWfiGloss (issue #212)
         source = self.__ResolveGloss(item_or_hvo)
 
-        parent = self._GetObject(source.Owner.Hvo)
+        # MeaningsOC is declared on IWfiAnalysis; the untyped _GetObject()
+        # round-trip previously returned a bare ICmObject here, silently
+        # failing on `.MeaningsOC`. Cast directly like Delete() already
+        # does above (same fix pattern, sibling site).
+        parent = IWfiAnalysis(source.Owner)
 
         with self._TransactionCM("Duplicate gloss"):
             # Create new gloss using factory (auto-generates new GUID)
@@ -546,8 +552,9 @@ class WfiGlossOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         # Set the form string
-        mkstr = TsStringUtils.MakeString(text, wsHandle)
-        gloss.Form.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set gloss form '{text}'"):
+            mkstr = TsStringUtils.MakeString(text, wsHandle)
+            gloss.Form.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetAllForms(self, gloss_or_hvo):

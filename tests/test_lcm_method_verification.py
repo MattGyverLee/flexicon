@@ -163,6 +163,14 @@ class TestLCMMethodVerification:
             code_only = re.sub(r"'''[\s\S]*?'''", "", code_only)
 
             if ".Create()" in code_only or "factory.Create()" in code_only:
+                # A shared helper may be handed an already-resolved factory
+                # instead of resolving one itself -- BaseOperations
+                # ._CreateWithGuid/_CreateWithOptionalGuid take `factory` as a
+                # parameter and the GetService( call lives in the caller. Only
+                # require GetService( from files that resolve their own factory.
+                if re.search(r"def \w+\([^)]*\bfactory\b", code_only, re.DOTALL):
+                    continue
+
                 # Should have GetService somewhere in actual code
                 assert "GetService(" in code_only, f"{py_file}: Create() should be on factory from GetService"
 
@@ -194,11 +202,18 @@ class TestLCMMethodVerification:
             code_only = re.sub(r'"""[\s\S]*?"""', "", content)
             code_only = re.sub(r"'''[\s\S]*?'''", "", code_only)
 
-            # Find patterns like something.OS.XXX in actual code
-            pattern = r"\.([A-Za-z]+OS|OC)\.(\w+)"
+            # Find patterns like something.SensesOS.XXX in actual code.
+            # LCM owning-sequence/collection properties are PascalCase and
+            # multi-word (SensesOS, ExamplesOS, AnalysesOC), so an all-caps
+            # token is never one: `self.project.POS.GetAbbreviation(...)`
+            # matches the naive `[A-Za-z]+OS` only because the POSOperations
+            # facade attribute happens to end in the letters "OS".
+            pattern = r"\.([A-Za-z]+(?:OS|OC))\.(\w+)"
 
             for match in re.finditer(pattern, code_only):
-                method = match.group(2)
+                prop, method = match.group(1), match.group(2)
+                if prop.isupper():
+                    continue  # acronym facade attribute, not an LCM collection
                 # Collection methods are usually parenthesized
                 if "(" in code_only[match.end() : match.end() + 10]:
                     assert method in valid_collection_methods, f"{py_file}: Invalid collection method {method}"

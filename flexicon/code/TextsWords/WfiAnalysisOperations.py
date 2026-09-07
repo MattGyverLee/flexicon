@@ -454,7 +454,8 @@ class WfiAnalysisOperations(BaseOperations):
         # returns analysis.Owner as the base ICmObject, which has no
         # AnalysesOC; cast to IWfiWordform first (issue #32).
         wordform = IWfiWordform(analysis.Owner)
-        wordform.AnalysesOC.Remove(analysis)
+        with self._TransactionCM("Delete analysis"):
+            wordform.AnalysesOC.Remove(analysis)
 
     @OperationsMethod
     def Duplicate(self, item_or_hvo, insert_after=False, deep=False):
@@ -544,9 +545,13 @@ class WfiAnalysisOperations(BaseOperations):
                     bundle_factory = self.project.project.ServiceLocator.GetService(IWfiMorphBundleFactory)
                     new_bundle = bundle_factory.Create()
                     duplicate.MorphBundlesOS.Add(new_bundle)
-                    # Copy bundle properties
+                    # Copy bundle properties. IWfiMorphBundle has Form but
+                    # NOT Gloss -- the displayed gloss comes from
+                    # SenseRA.Gloss, preserved by the SenseRA copy below.
+                    # (same root bug as #16/#107/#108, missed in this
+                    # sibling site; WfiMorphBundleOperations.Duplicate
+                    # already carries the fix.)
                     new_bundle.Form.CopyAlternatives(bundle.Form)
-                    new_bundle.Gloss.CopyAlternatives(bundle.Gloss)
                     if hasattr(bundle, "SenseRA") and bundle.SenseRA:
                         new_bundle.SenseRA = bundle.SenseRA
                     if hasattr(bundle, "MsaRA") and bundle.MsaRA:
@@ -794,7 +799,13 @@ class WfiAnalysisOperations(BaseOperations):
             ApprovalStatusTypes.DISAPPROVED: Opinions.disapproves,
             ApprovalStatusTypes.UNAPPROVED: Opinions.noopinion,
         }
-        agent.SetEvaluation(analysis, opinion_map[normalized])
+        # SetEvaluation is an LCM mutator method (it creates/removes the
+        # evaluation object and rewires the agent's opinion collections), so
+        # it needs a unit of work like any other write. The status coercion
+        # and map lookup stay outside: an invalid status must raise before an
+        # undo task opens (D5/P3).
+        with self._TransactionCM("Set analysis approval status"):
+            agent.SetEvaluation(analysis, opinion_map[normalized])
 
     @OperationsMethod
     def IsHumanApproved(self, analysis_or_hvo):
@@ -1376,9 +1387,12 @@ class WfiAnalysisOperations(BaseOperations):
         if not isinstance(category, IPartOfSpeech):
             raise FP_ParameterError("Category must be an IPartOfSpeech object")
 
-        # Set the category
+        # Set the category. The capability check stays OUTSIDE the transaction
+        # so an analysis without CategoryRA raises without opening an empty
+        # undo task.
         if hasattr(analysis, "CategoryRA"):
-            analysis.CategoryRA = category
+            with self._TransactionCM("Set analysis category"):
+                analysis.CategoryRA = category
         else:
             raise FP_ParameterError("Analysis does not support CategoryRA property")
 

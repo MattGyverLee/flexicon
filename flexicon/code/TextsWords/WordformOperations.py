@@ -214,7 +214,8 @@ class WordformOperations(BaseOperations):
             wordform = wordform_or_hvo
 
         # LCM Delete() removes the object from the repository
-        wordform.Delete()
+        with self._TransactionCM("Delete wordform"):
+            wordform.Delete()
 
     @OperationsMethod
     def Exists(self, form, wsHandle=None):
@@ -374,8 +375,9 @@ class WordformOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         # Set the form string
-        mkstr = TsStringUtils.MakeString(form, wsHandle)
-        wordform.Form.set_String(wsHandle, mkstr)
+        with self._TransactionCM(f"Set wordform form '{form}'"):
+            mkstr = TsStringUtils.MakeString(form, wsHandle)
+            wordform.Form.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetSpellingStatus(self, wordform_or_hvo):
@@ -458,7 +460,8 @@ class WordformOperations(BaseOperations):
         else:
             wordform = wordform_or_hvo
 
-        wordform.SpellingStatus = status
+        with self._TransactionCM("Set wordform spelling status"):
+            wordform.SpellingStatus = status
 
     @OperationsMethod
     def GetAnalyses(self, wordform_or_hvo):
@@ -731,10 +734,11 @@ class WordformOperations(BaseOperations):
         else:
             wordform = wordform_or_hvo
 
-        wordform.SpellingStatus = SpellingStatusStates.CORRECT
+        with self._TransactionCM("Approve wordform spelling"):
+            wordform.SpellingStatus = SpellingStatusStates.CORRECT
 
     @OperationsMethod
-    def Duplicate(self, item_or_hvo, deep=False):
+    def Duplicate(self, item_or_hvo, deep=False, *, insert_after=True):
         """
         Duplicate a wordform, creating a new copy with a new GUID.
 
@@ -742,6 +746,9 @@ class WordformOperations(BaseOperations):
             item_or_hvo: The IWfiWordform object or HVO to duplicate.
             deep (bool): If True, also duplicate analyses.
                         If False (default), only copy wordform properties.
+            insert_after (bool): Accepted for API uniformity across Operations classes.
+                Wordforms live in the wordform repository, not a positionally
+                ordered owning sequence, so this parameter is ignored.
 
         Returns:
             IWfiWordform: The newly created duplicate with a new GUID.
@@ -854,9 +861,12 @@ class WordformOperations(BaseOperations):
                             new_bundle = bundle_factory.Create()
                             new_analysis.MorphBundlesOS.Add(new_bundle)
 
-                            # Copy MultiString properties
+                            # Copy MultiString properties. IWfiMorphBundle
+                            # has Form but NOT Gloss -- the displayed gloss
+                            # comes from SenseRA.Gloss, preserved by the
+                            # SenseRA copy below. (same root bug as
+                            # #16/#107/#108, sibling site)
                             new_bundle.Form.CopyAlternatives(bundle.Form)
-                            new_bundle.Gloss.CopyAlternatives(bundle.Gloss)
 
                             # Copy Reference Atomic (RA) properties
                             if hasattr(bundle, "SenseRA") and bundle.SenseRA:

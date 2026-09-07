@@ -157,7 +157,11 @@ def _delete_test_pronunciations(project, entry):
             # Direct fallback so stale data can't poison the next run.
             try:
                 if pron in entry.PronunciationsOS:
-                    entry.PronunciationsOS.Remove(pron)
+                    # Raw LCM write -> own unit of work (tasks.md D14).
+                    with project.UndoableOperation(
+                        "test cleanup: remove pronunciation"
+                    ):
+                        entry.PronunciationsOS.Remove(pron)
             except Exception:
                 pass
 

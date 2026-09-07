@@ -236,7 +236,10 @@ class MSAOperations(BaseOperations):
         # Explicitly set ToPartOfSpeechRA after creation: SandboxGenericMSA's
         # SecondaryPOS mapping may not reliably clear the field when None is
         # passed, so we set it directly to ensure the unset state is stored.
-        deriv.ToPartOfSpeechRA = to_pos_obj
+        # __CreateAndAttach has its own bracket which has already committed by
+        # here, so this follow-up write needs a transaction of its own (D6).
+        with self._TransactionCM("Set derivational affix output category"):
+            deriv.ToPartOfSpeechRA = to_pos_obj
         return deriv
 
     @OperationsMethod
@@ -362,8 +365,12 @@ class MSAOperations(BaseOperations):
                 "type, create a new MSA with the appropriate Create* method."
             )
 
+        # Resolution stays outside the bracket so an unresolvable POS raises
+        # before a named undo entry is opened (D5).
         pos_obj = self.__Resolve(pos)
-        stem.PartOfSpeechRA = pos_obj
+
+        with self._TransactionCM("Set stem MSA POS"):
+            stem.PartOfSpeechRA = pos_obj
 
     @OperationsMethod
     def SetDerivAffMsaPos(self, sense, from_pos=None, to_pos=None):
@@ -587,12 +594,17 @@ class MSAOperations(BaseOperations):
             new_msa = IMoDerivAffMsa(raw_new)
             # Patch the POS fields directly after creation since the
             # sandbox MainPOS/SecondaryPOS mapping may not be symmetric.
-            if source_kind == "infl":
-                new_msa.FromPartOfSpeechRA = src_pos
-                new_msa.ToPartOfSpeechRA = None
-            else:
-                new_msa.ToPartOfSpeechRA = src_pos
-                new_msa.FromPartOfSpeechRA = None
+            # __CreateAndAttach's own bracket has already committed, so this
+            # follow-up patch needs a transaction of its own (D6). The
+            # source_kind dispatch stays INSIDE it: both branches mutate, so
+            # there is no no-op path to protect (D5).
+            with self._TransactionCM("Set derivational affix POS fields"):
+                if source_kind == "infl":
+                    new_msa.FromPartOfSpeechRA = src_pos
+                    new_msa.ToPartOfSpeechRA = None
+                else:
+                    new_msa.ToPartOfSpeechRA = src_pos
+                    new_msa.FromPartOfSpeechRA = None
         else:  # unclassified
             sandbox.MsaType = MsaType.kUnclassified
             sandbox.MainPOS = src_pos
@@ -601,10 +613,14 @@ class MSAOperations(BaseOperations):
 
         # --- Repoint all senses in the entry that reference the old MSA ---
         repointed = 0
+        # The per-sense skip guards stay outside the bracket so a sense that
+        # does not reference the old MSA is a true no-op rather than an empty
+        # named undo entry (D5).
         for sense in entry.SensesOS:
             if sense.MorphoSyntaxAnalysisRA is not None:
                 if sense.MorphoSyntaxAnalysisRA.Hvo == msa.Hvo:
-                    sense.MorphoSyntaxAnalysisRA = new_msa
+                    with self._TransactionCM("Repoint sense to new MSA"):
+                        sense.MorphoSyntaxAnalysisRA = new_msa
                     repointed += 1
 
         logger.debug(
@@ -629,7 +645,8 @@ class MSAOperations(BaseOperations):
             # MSA alive (cf. LT-14740 in OverridesLing_Lex.cs:1500).
             # Mirror LCM's own guard: only Remove() when still valid.
             if msa.IsValidObject:
-                entry.MorphoSyntaxAnalysesOC.Remove(msa)
+                with self._TransactionCM("Remove superseded MSA"):
+                    entry.MorphoSyntaxAnalysesOC.Remove(msa)
                 logger.debug(
                     "ChangeAffixVariant: old MSA Hvo=%s removed from "
                     "MorphoSyntaxAnalysesOC (no senses remaining).",

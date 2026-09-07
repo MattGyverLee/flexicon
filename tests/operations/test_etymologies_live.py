@@ -23,16 +23,20 @@
 #          therefore expected to PASS rather than silently no-op
 #          like PronunciationOperations.
 #
-#          Per CLAUDE.md Category 8 and EtymologyOperations.py L221
-#          (`etymology.Source.set_String(...)`), Source on
-#          ILexEtymology is an IMultiString -- distinct from
-#          ILexSense.Source which is an ITsString. Form, Gloss,
-#          Comment, and Bibliography on ILexEtymology are likewise
-#          IMultiString. Phase D modifies Form via SetForm/GetForm,
-#          which uses the standard get_String/set_String pair.
+#          CORRECTED 2026-08-18 (live-reflection): ILexEtymology has NO
+#          "Source" field at all -- the claim below and in the old
+#          CLAUDE.md Category 8 table that it was an IMultiString was
+#          wrong. GetSource/SetSource/Create(source=...) now read/write
+#          the real backing field, LanguageNotes (IMultiString), while
+#          keeping the same public Get/SetSource surface; see
+#          EtymologyOperations.py and docs/API_ISSUES_CATEGORIZED.md
+#          Category 8 (corrected) for the detail. Form, Gloss, Comment,
+#          and Bibliography on ILexEtymology remain IMultiString as
+#          described. Phase D modifies Form via SetForm/GetForm, which
+#          uses the standard get_String/set_String pair.
 #
 #          Create() follows the SAFE ordering: factory.Create() ->
-#          EtymologyOS.Add(etym) -> set Source/Form/Gloss via
+#          EtymologyOS.Add(etym) -> set LanguageNotes/Form/Gloss via
 #          TsStringUtils -- the opposite of the broken ordering in
 #          VariantOperations, so Phase B construction is expected to
 #          succeed cleanly.

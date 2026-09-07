@@ -235,7 +235,9 @@ class StratumOperations(BaseOperations):
         self._ValidateParam(stratum_or_hvo, "stratum_or_hvo")
 
         stratum = self.__ResolveObject(stratum_or_hvo)
-        self.__Container().Remove(stratum)
+
+        with self._TransactionCM("Delete stratum"):
+            self.__Container().Remove(stratum)
 
     # ----- accessors -----
 

@@ -1136,25 +1136,26 @@ class LocationOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         # Create the new location using the factory
-        factory = self.project.project.ServiceLocator.GetService(ICmLocationFactory)
-        new_location = factory.Create()
+        with self._TransactionCM(f"Create sublocation '{name}'"):
+            factory = self.project.project.ServiceLocator.GetService(ICmLocationFactory)
+            new_location = factory.Create()
 
-        # Add to parent's sublocations (must be done before setting properties)
-        parent.SubPossibilitiesOS.Add(new_location)
+            # Add to parent's sublocations (must be done before setting properties)
+            parent.SubPossibilitiesOS.Add(new_location)
 
-        # Set name
-        mkstr_name = TsStringUtils.MakeString(name, wsHandle)
-        new_location.Name.set_String(wsHandle, mkstr_name)
+            # Set name
+            mkstr_name = TsStringUtils.MakeString(name, wsHandle)
+            new_location.Name.set_String(wsHandle, mkstr_name)
 
-        # Set alias if provided
-        if alias:
-            mkstr_alias = TsStringUtils.MakeString(alias, wsHandle)
-            new_location.Abbreviation.set_String(wsHandle, mkstr_alias)
+            # Set alias if provided
+            if alias:
+                mkstr_alias = TsStringUtils.MakeString(alias, wsHandle)
+                new_location.Abbreviation.set_String(wsHandle, mkstr_alias)
 
-        # Set creation date
-        new_location.DateCreated = DateTime.Now
+            # Set creation date
+            new_location.DateCreated = DateTime.Now
 
-        return new_location
+            return new_location
 
     @OperationsMethod
     def Duplicate(self, location_or_hvo, insert_after=True, deep=True):
@@ -1212,92 +1213,99 @@ class LocationOperations(BaseOperations):
         parent = self.GetRegion(source)
 
         # Create new location using factory (auto-generates new GUID)
-        factory = self.project.project.ServiceLocator.GetService(ICmLocationFactory)
-        duplicate = factory.Create()
+        with self._TransactionCM("Duplicate location"):
+            factory = self.project.project.ServiceLocator.GetService(ICmLocationFactory)
+            duplicate = factory.Create()
 
-        # Determine insertion position and add to parent FIRST
-        if parent:
-            # Parent is another location (sublocation)
-            if insert_after:
-                source_index = parent.SubPossibilitiesOS.IndexOf(source)
-                parent.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
-            else:
-                parent.SubPossibilitiesOS.Add(duplicate)
-        else:
-            # Parent is the top-level list
-            location_list = self.project.lp.LocationsOA
-            if location_list:
+            # Determine insertion position and add to parent FIRST
+            if parent:
+                # Parent is another location (sublocation)
                 if insert_after:
-                    source_index = location_list.PossibilitiesOS.IndexOf(source)
-                    location_list.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                    source_index = parent.SubPossibilitiesOS.IndexOf(source)
+                    parent.SubPossibilitiesOS.Insert(source_index + 1, duplicate)
                 else:
-                    location_list.PossibilitiesOS.Add(duplicate)
+                    parent.SubPossibilitiesOS.Add(duplicate)
+            else:
+                # Parent is the top-level list
+                location_list = self.project.lp.LocationsOA
+                if location_list:
+                    if insert_after:
+                        source_index = location_list.PossibilitiesOS.IndexOf(source)
+                        location_list.PossibilitiesOS.Insert(source_index + 1, duplicate)
+                    else:
+                        location_list.PossibilitiesOS.Add(duplicate)
 
-        # Copy simple MultiString properties
-        duplicate.Name.CopyAlternatives(source.Name)
-        duplicate.Abbreviation.CopyAlternatives(source.Abbreviation)
-        if hasattr(source, "Description"):
-            duplicate.Description.CopyAlternatives(source.Description)
+            # Copy simple MultiString properties
+            duplicate.Name.CopyAlternatives(source.Name)
+            duplicate.Abbreviation.CopyAlternatives(source.Abbreviation)
+            if hasattr(source, "Description"):
+                duplicate.Description.CopyAlternatives(source.Description)
 
-        # Copy coordinates and elevation
-        coords = self.GetCoordinates(source)
-        if coords:
-            lat, lon = coords
-            self.SetCoordinates(duplicate, lat, lon)
+            # Copy coordinates and elevation
+            coords = self.GetCoordinates(source)
+            if coords:
+                lat, lon = coords
+                self.SetCoordinates(duplicate, lat, lon)
 
-        if hasattr(source, "DateOfEvent") and source.DateOfEvent:
-            if hasattr(duplicate, "DateOfEvent"):
-                duplicate.DateOfEvent = source.DateOfEvent
+            if hasattr(source, "DateOfEvent") and source.DateOfEvent:
+                if hasattr(duplicate, "DateOfEvent"):
+                    duplicate.DateOfEvent = source.DateOfEvent
 
-        elevation = self.GetElevation(source)
-        if elevation is not None:
-            if hasattr(duplicate, "Elevation"):
-                duplicate.Elevation = elevation
+            elevation = self.GetElevation(source)
+            if elevation is not None:
+                if hasattr(duplicate, "Elevation"):
+                    duplicate.Elevation = elevation
 
-        # Set creation date
-        duplicate.DateCreated = DateTime.Now
+            # Set creation date
+            duplicate.DateCreated = DateTime.Now
 
-        # Handle owned objects if deep=True
-        if deep:
-            # Duplicate sublocations into the NEW duplicate (not the original's parent)
-            if hasattr(source, "SubPossibilitiesOS"):
-                for sublocation in source.SubPossibilitiesOS:
-                    self._DuplicateSublocationInto(sublocation, duplicate, deep=True)
+            # Handle owned objects if deep=True
+            if deep:
+                # Duplicate sublocations into the NEW duplicate (not the original's parent)
+                if hasattr(source, "SubPossibilitiesOS"):
+                    for sublocation in source.SubPossibilitiesOS:
+                        self._DuplicateSublocationInto(sublocation, duplicate, deep=True)
 
-        return duplicate
+            return duplicate
 
     def _DuplicateSublocationInto(self, source_loc, parent_dup, deep=True):
         """Duplicate a sublocation into the specified parent's SubPossibilitiesOS."""
-        factory = self.project.project.ServiceLocator.GetService(ICmLocationFactory)
-        dup_loc = factory.Create()
-        parent_dup.SubPossibilitiesOS.Add(dup_loc)
+        # Every caller reaches this helper from inside Duplicate's own
+        # "Duplicate location" bracket, so these mutations are already covered at
+        # runtime and this bracket merely joins that transaction (nesting-aware
+        # per B1). It is stated anyway so the site is grep-auditable per D5 and
+        # no future caller can reach it unbracketed.
+        with self._TransactionCM("Duplicate sublocation"):
+            factory = self.project.project.ServiceLocator.GetService(ICmLocationFactory)
+            dup_loc = factory.Create()
+            parent_dup.SubPossibilitiesOS.Add(dup_loc)
 
-        # Copy properties
-        dup_loc.Name.CopyAlternatives(source_loc.Name)
-        dup_loc.Abbreviation.CopyAlternatives(source_loc.Abbreviation)
-        if hasattr(source_loc, "Description"):
-            dup_loc.Description.CopyAlternatives(source_loc.Description)
+            # Copy properties
+            dup_loc.Name.CopyAlternatives(source_loc.Name)
+            dup_loc.Abbreviation.CopyAlternatives(source_loc.Abbreviation)
+            if hasattr(source_loc, "Description"):
+                dup_loc.Description.CopyAlternatives(source_loc.Description)
 
-        coords = self.GetCoordinates(source_loc)
-        if coords:
-            lat, lon = coords
-            self.SetCoordinates(dup_loc, lat, lon)
+            coords = self.GetCoordinates(source_loc)
+            if coords:
+                lat, lon = coords
+                self.SetCoordinates(dup_loc, lat, lon)
 
-        if hasattr(source_loc, "DateOfEvent") and source_loc.DateOfEvent:
-            if hasattr(dup_loc, "DateOfEvent"):
-                dup_loc.DateOfEvent = source_loc.DateOfEvent
+            if hasattr(source_loc, "DateOfEvent") and source_loc.DateOfEvent:
+                if hasattr(dup_loc, "DateOfEvent"):
+                    dup_loc.DateOfEvent = source_loc.DateOfEvent
 
-        elevation = self.GetElevation(source_loc)
-        if elevation is not None:
-            if hasattr(dup_loc, "Elevation"):
-                dup_loc.Elevation = elevation
+            elevation = self.GetElevation(source_loc)
+            if elevation is not None:
+                if hasattr(dup_loc, "Elevation"):
+                    dup_loc.Elevation = elevation
 
-        dup_loc.DateCreated = DateTime.Now
+            dup_loc.DateCreated = DateTime.Now
 
-        # Recurse into nested sublocations
-        if deep and hasattr(source_loc, "SubPossibilitiesOS"):
-            for nested_loc in source_loc.SubPossibilitiesOS:
-                self._DuplicateSublocationInto(nested_loc, dup_loc, deep=True)
+            # Recurse into nested sublocations
+            if deep and hasattr(source_loc, "SubPossibilitiesOS"):
+                for nested_loc in source_loc.SubPossibilitiesOS:
+                    self._DuplicateSublocationInto(nested_loc, dup_loc, deep=True)
 
     # ========== SYNC INTEGRATION METHODS ==========
 

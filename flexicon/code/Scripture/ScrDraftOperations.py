@@ -217,8 +217,9 @@ class ScrDraftOperations(BaseOperations):
         # Resolve to draft object
         draft = self.__ResolveObject(draft_or_hvo)
 
-        # Delete the draft (LCM handles removal from repository)
-        draft.Delete()
+        with self._TransactionCM("Delete scripture draft"):
+            # Delete the draft (LCM handles removal from repository)
+            draft.Delete()
 
     @OperationsMethod
     def Find(self, description):
@@ -345,8 +346,9 @@ class ScrDraftOperations(BaseOperations):
         draft = self.__ResolveObject(draft_or_hvo)
         wsHandle = self.project.project.DefaultAnalWs
 
-        mkstr = TsStringUtils.MakeString(text, wsHandle)
-        draft.Description.set_String(wsHandle, mkstr)
+        with self._TransactionCM("Set draft description"):
+            mkstr = TsStringUtils.MakeString(text, wsHandle)
+            draft.Description.set_String(wsHandle, mkstr)
 
     @OperationsMethod
     def GetBooks(self, draft_or_hvo):

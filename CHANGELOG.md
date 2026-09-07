@@ -11,7 +11,441 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING (behavioural): `WfiMorphBundleOperations.GetMorphType` now
+  returns `IMoMorphType` instead of `IMoForm`** (#254). The bundle's
+  `MorphRA` field holds its linked allomorph (`IMoForm` -- concretely
+  `MoStemAllomorph`/`MoAffixAllomorph`), not its morph type; the real type
+  lives one hop further, at `MorphRA.MorphTypeRA`. `GetMorphType` returned
+  `bundle.MorphRA` raw, so every caller was actually receiving an
+  allomorph under a method name promising a type. It now returns
+  `bundle.MorphRA.MorphTypeRA`: `None` (silently) if the linked allomorph
+  has no morph type set, `None` with a logged warning naming the bundle's
+  `Hvo` if the bundle has no linked allomorph at all (`MorphRA is None`).
+  Live-verified against Sena 3 (`sena3_sandbox`): of 1932 sampled bundles,
+  93 (~4.8%) had `MorphRA is None`; the naive
+  `morph_type.Name.get_String(ws)` read used in the old docstring example
+  returns empty for every sample, so the corrected getter's docstring now
+  uses `Name.BestAnalysisAlternative.Text` instead. Callers who chained
+  `.MorphTypeRA` off the old (mistyped) return value themselves must drop
+  that extra hop; callers who want the allomorph itself should call the
+  new `GetMorph` instead.
+
+  **`SetMorphType` is retired** and now raises `FP_ParameterError`
+  unconditionally, including for the `None` form, before checking
+  write-enabled state (identical message on read-only and write-enabled
+  projects). Live-verified: every non-`None` call already raised
+  `TypeError: SIL.LCModel.DomainImpl.MoMorphType value cannot be converted
+  to SIL.LCModel.IMoForm` at the .NET boundary before any write reached
+  the LCM -- no caller has ever successfully changed a bundle's morph type
+  through this method, so there is no corrupt data in the wild to
+  migrate. The `None` form (which nulled `MorphRA`, i.e. cleared the
+  *allomorph*, not the type) is retired too: keeping it would preserve a
+  method that clears an allomorph under a name saying "type", the exact
+  bug class this fix eliminates. The shipped docstring `Example` block
+  itself instructed callers to pull a possibility-list `IMoMorphType` and
+  assign it via this method -- following it corrupted or crashed on the
+  bundle reference; that example is deleted, not merely corrected. To
+  retype the lexicon allomorph, use
+  `project.Allomorphs.SetMorphType(allomorph, morph_type)`. To change or
+  clear which allomorph a bundle links, use the new
+  `SetMorph(bundle, allomorph_or_None)`.
+
+  **New: `GetMorph`/`SetMorph`** on `WfiMorphBundleOperations` expose
+  `bundle.MorphRA` (`IMoForm | None`) honestly named -- `GetMorph` is
+  today's old (buggy) `GetMorphType` behaviour, with `None` returned
+  silently (no warning), and `SetMorph` accepts `None` to clear. `SetMorph`
+  raises `FP_ParameterError` naming the received `ClassName` if a
+  non-`None` argument resolves to something that is not an `IMoForm`
+  (e.g. an `IMoMorphType`), so a caller who passes a morph type gets an
+  actionable error instead of a raw pythonnet `TypeError`.
+
+## [4.5.2] - 2026-08-19
+
+> Follow-up to 4.5.1: a residual falsy-gate gap for empty-but-present
+> feature structures. No breaking changes.
+
 ### Fixed
+- **`NaturalClassOperations.ApplySyncableProperties` silently dropped a
+  present-but-empty `FeaturesOA` on 3 of 41 `PhNCFeatures`.** Found by
+  code review (not a live run) after 4.5.1 shipped. `GetSyncableProperties`
+  correctly omits the `"Features"` key when a feature-based class's
+  `FeatureSpecsOC` is genuinely empty (auto-generated placeholder classes
+  for phonological rules with no constraints), but always emits
+  `"FeaturesGuid"` whenever `FeaturesOA` is non-null. `ApplySyncableProperties`
+  gated the whole feature-rewiring branch on `if features:` alone -- and
+  both `[]` and `None` are falsy in Python, so a present-but-empty source
+  `FeaturesOA` was treated identically to "no `FeaturesOA` at all":
+  `__ApplyFeatures` was never called, and the target's `FeaturesOA`
+  stayed null even though `GetSyncableProperties` only ever emits
+  `FeaturesGuid` when the source's `FeaturesOA` is definitively non-null.
+  A rule referencing one of these 3 classes would silently match nothing,
+  same as the original 4.5.0 bug, on a narrower slice of data (3/41
+  instead of 41/41).
+
+  The gate is now `if features or features_guid:`, so presence of
+  *either* key -- not truthiness of `features` -- decides whether the
+  branch runs; `__ApplyFeatures` receives `features or []` so `specs`
+  is never `None`. `__ApplyFeatures` itself needed no change: it already
+  creates/attaches the `IFsFeatStruc` (GUID-preserving via
+  `_CreateWithGuid`) before touching `FeatureSpecsOC`, so an empty specs
+  list correctly produces a non-null, zero-spec target struct. The
+  type-mismatch guard (source carries feature data, target isn't
+  feature-based) now sits inside the widened gate and fires correctly for
+  the `FeaturesGuid`-only shape too; a legitimate `PhNCSegments` sync
+  (neither key present) still never enters the branch at all.
+
+  New behavioural tests (`TestNaturalClassSyncEmptyFeatureStructPreservation`
+  in `tests/operations/test_natural_class_feature_sync.py`) exercise the
+  real `ApplySyncableProperties`/`__ApplyFeatures` code -- not just the
+  gate expression -- against fakes with `BaseOperations._TransactionCM`/
+  `_CreateWithGuid` reduced to trivial stand-ins (no live LCM transaction
+  machinery needed). Confirmed 3 of the 4 new tests fail red against the
+  reverted 4.5.1 source and pass green against this fix; the 4th is a
+  non-regression check that correctly passes under both.
+
+## [4.5.1] - 2026-08-19
+
+> Follow-up to 4.5.0: the fix in that release was dead code against live
+> data. No breaking changes.
+
+### Fixed
+- **4.5.0's `NaturalClassOperations.GetSyncableProperties`/
+  `ApplySyncableProperties` fix never actually fired against a real
+  project.** Both gated on `hasattr(nc, "FeaturesOA")` /
+  `hasattr(nc, "SegmentsRC")`, mirroring `PhonemeOperations`. That works
+  for phonemes because `IPhPhoneme` declares `FeaturesOA` directly, but
+  `NaturalClassOperations.GetAll()` (and `Find()`/`Object()`) yield
+  objects wrapped by pythonnet under the BASE `IPhNaturalClass`
+  interface -- `FeaturesOA` and `SegmentsRC` are declared on the
+  concrete subtypes `IPhNCFeatures`/`IPhNCSegments`, and pythonnet's
+  attribute visibility follows the static wrapper interface, not the
+  runtime CLR type. Both `hasattr` checks were therefore always `False`,
+  even for a genuine, populated `PhNCFeatures`/`PhNCSegments` object --
+  the entire 4.5.0 capture block was dead code. Verified live against
+  `Ngoreme FLEx` (read-only): 0/41 `PhNCFeatures` and 0/7 `PhNCSegments`
+  passed either gate, so **neither** `Features`/`FeaturesGuid` **nor**
+  `PhonemeGuids` was ever emitted for any class reached via `GetAll()` --
+  a strictly worse regression than the original bug, since the
+  previously-working `PhonemeGuids` path silently broke too.
+
+  `GetSyncableProperties` and `ApplySyncableProperties` now discriminate
+  on the reliable `.ClassName` string (declared on the base interface, so
+  always visible) and explicitly cast to `IPhNCFeatures`/`IPhNCSegments`
+  before touching a subtype-only member. Re-verified live against
+  `Ngoreme FLEx`: 41/41 `PhNCFeatures` now emit `FeaturesGuid` (38/41
+  emit `Features`; the other 3 legitimately have an empty
+  `FeatureSpecsOC` -- auto-generated placeholder classes for rules with
+  no constraints), and 7/7 `PhNCSegments` emit `PhonemeGuids`.
+
+  New behavioural tests (`tests/operations/test_natural_class_feature_sync.py`,
+  `TestNaturalClassSyncPythonnetBaseInterfaceView`) exercise the real code
+  against a fake object that reproduces pythonnet's base-interface view
+  (no `FeaturesOA`/`SegmentsRC` attribute, `.ClassName` set) so the same
+  class of bug cannot regress silently again; confirmed these fail
+  against the 4.5.0 code and pass against this fix.
+
+## [4.5.0] - 2026-08-19
+
+> Additive fix: closes a silent cross-project data-loss bug for
+> feature-based natural classes. No breaking changes.
+
+### Fixed
+- **`NaturalClassOperations.GetSyncableProperties` dropped every
+  feature-based natural class's `FeaturesOA` constraint bundle.** For an
+  `IPhNCFeatures` item -- whose entire reason for existing is its owned
+  `FeaturesOA` (an `IFsFeatStruc` of `IFsClosedValue` specs) -- only
+  `Name`/`Abbreviation`/`Description`/`PhonemeGuids` were ever captured.
+  `ApplySyncableProperties` had no `Features` handling at all (it purely
+  delegated to `BaseOperations`). The result: every feature-based natural
+  class synced across to a target project with the correct Name and GUID
+  but a `null` `FeaturesOA`, so any phonological rule referencing the
+  class silently matched nothing -- no error, no warning. Measured on two
+  real project pairs: 0/34 and 0/11 `PhNCFeatures` retained their feature
+  structure after sync (source had 41/41 and 15/15 respectively).
+
+  Same bug class as `PhonemeOperations` issue #222 (which already closed
+  the identical hole for phoneme `FeaturesOA`), never swept to
+  `NaturalClassOperations` when #222 landed. `GetSyncableProperties` now
+  additionally emits `FeaturesGuid` and `Features` (a list of
+  `{"FeatureGuid", "ValueGuid"}` specs) for `IPhNCFeatures` items, and
+  `ApplySyncableProperties` rewires those specs against the target
+  project's feature system by GUID, creating the owned `IFsFeatStruc`
+  (GUID-preserving via `_CreateWithGuid`) when needed. The segment-based
+  `IPhNCSegments` / `PhonemeGuids` path is unchanged.
+
+  Unlike the phoneme path (which skips an unresolved feature/value GUID),
+  `ApplySyncableProperties` here **raises** `FP_ParameterError` naming the
+  missing GUID and the natural class when the target's feature system has
+  no matching feature or value. Silence is the exact defect being fixed;
+  the fix must not reintroduce it by a different route.
+
+## [4.4.1] - 2026-08-18
+
+> Two production fixes to public methods that were broken outright, plus a
+> type-stub correction. No breaking changes.
+
+### Fixed
+- **Seven `Duplicate()` methods rejected keyword arguments their own
+  docstrings documented.** `AllomorphOperations`, `EtymologyOperations`,
+  `NaturalClassOperations`, `WfiGlossOperations` and
+  `WfiMorphBundleOperations` raised `TypeError: got an unexpected keyword
+  argument 'deep'`; `LexEntryOperations` and `TextOperations` did the same for
+  `insert_after`. Five of them already described a `deep` parameter in their
+  `Args:` block that the signature never had -- the docstring was the
+  published spec and the signature was the defect. Found on the first live run
+  of `test_duplicate_operations.py`.
+
+  Harmonised **additively** rather than by imposing one uniform signature.
+  `CLAUDE.md`'s canonical shape is `Duplicate(item_or_hvo, deep=True)` with no
+  `insert_after`, but most classes have `insert_after`, some genuinely need it
+  (ordered owning sequences) and others cannot use it (unordered owning
+  collections) -- so no single shape fits. Every `Duplicate()` now accepts
+  **both** keywords, and a parameter that is meaningless for its type is
+  accepted and documented as ignored. **No existing default and no existing
+  behaviour changed**, so this is not a breaking change.
+
+  Where a class already had `insert_after`, `deep=False` is appended -- `False`
+  because it honestly describes the existing shallow behaviour. Where a class
+  already had `deep`, `insert_after` is added **keyword-only**
+  (`deep=True, *, insert_after=True`); the bare `*` is load-bearing, preserving
+  positional compatibility for existing `Duplicate(obj, False)` callers.
+
+  Closes #246.
+
+- **The `.pyi` stubs lied about nearly every `Duplicate()`.** The stubs emitted
+  one of two fabricated templates -- `(self, obj: Any, deep: bool = True)` or
+  the fully untyped `(self, *args: Any, **kwargs: Any)` -- almost universally,
+  while the real implementations vary along three independent axes. A caller
+  who trusted a stub got a `TypeError`, which is worse than having no stub at
+  all. 40 stub lines were rewritten from the real signatures and 4 fabricated
+  ones deleted, for classes that define no `Duplicate()` and inherit none
+  (`BaseOperations`, `InflectionFeatureOperations`, `LexReferenceOperations`,
+  `SegmentOperations`).
+
+  Note for whoever next regenerates stubs: `Duplicate` is wrapped by
+  `OperationsMethod.__get__` in `BaseOperations`, so `inspect.signature()`
+  reports `(project, *args, **kwargs)` for every one of them. That wrapper is
+  where the bogus template came from. **Generate from the AST, not from
+  `inspect`.**
+
+- **`ILexEtymology.Source` does not exist in the installed LCM, so every
+  etymology source method was broken.** Live reflection confirms the field is
+  absent entirely -- `CLAUDE.md` and `docs/API_ISSUES_CATEGORIZED.md`
+  "Category 8" were both **wrong** to list it as an `IMultiString`, and are
+  corrected here. The real field is `LanguageNotes` (an `IMultiString`); the
+  separate `LanguageRS` (a reference sequence onto the Languages list) is a
+  distinct concept, not a rename.
+
+  `EtymologyOperations.Create(source=...)`, `GetSource()`, `SetSource()`,
+  `GetSyncableProperties()` and `ApplySyncableProperties()` now read and write
+  `LanguageNotes`. The public surface is unchanged: `source=`, `GetSource()`,
+  `SetSource()` and the `"Source"` dictionary key all keep their names, so no
+  caller has to change. `Duplicate()`'s `hasattr(duplicate, "Source")` guard
+  could never fire and was therefore **silently dropping the field on every
+  duplicate**; it is now an unconditional `LanguageNotes` copy.
+
+  `GetLanguage()` / `SetLanguage()` reference the equally absent `LanguageRA`
+  and are deliberately **not** fixed here -- a separate bug, already recorded
+  as `xfail`.
+
+- **Two live tests were asserting against the wrong writing system.**
+  `test_phonemes.py::TestPhonemeSync` matched a feature value by calling
+  `GetAbbreviation(v)` with no explicit writing system, which resolves to the
+  *project's* default analysis WS. The `PHON:fPAConsonantal` catalog only ever
+  writes `Abbreviation` into `en`, and Sena 3's default analysis WS is `pt`,
+  so the lookup was always empty and `next()` raised a bare `StopIteration`.
+  The tests now match on the catalog's stable value GUID, following the
+  existing pattern in `test_phon_features.py`. This is why the failure looked
+  environment-dependent: the same tests pass against Target, whose default
+  analysis WS is `en`.
+
+- **`test_pronunciation_form_roundtrip` indexed a set.**
+  `GetAllVernacularWSs()` / `GetAllAnalysisWSs()` are documented to return a
+  `set`, and the test subscripted the result with `[0]`. It now uses
+  `GetDefaultVernacularWS()` / `GetDefaultAnalysisWS()`, which additionally
+  match the writing system the preceding `Create()` actually wrote to.
+
+---
+
+## [4.4.0] - 2026-08-18
+
+> **The write path is now transactional.** This release contains a public-API
+> default change; read the first entry under **Changed** before upgrading.
+> Completes `specs/write-path-transactions`.
+
+### Added
+- **`FLExProject.AbortSession()`.** Task A3. Wraps `IActionHandler.Rollback(0)`
+  to discard every uncommitted change made since the session's write envelope
+  was opened, then reopens that envelope so the abort is non-terminal,
+  repeatable, and safe to call from inside an `except:` block. Reopening is
+  required (decision D8): `Rollback` leaves the handler's state machine in
+  `ReadyForBeginTask`, which ends the `undoable=False` session envelope, and
+  `CloseProject()` unconditionally calls `EndNonUndoableTask()` -- so a
+  terminal abort would leave every abort followed by a broken close.
+
+  Guards: a read-only project raises `FP_ReadOnlyError`; nothing open
+  (`CurrentDepth == 0`) returns `False` rather than surfacing a raw
+  `InvalidOperationException`; and `undoable=True` with a block open raises
+  `FP_TransactionError` rather than rolling back underneath the owning
+  `UndoableUnitOfWorkHelper`.
+
+  Note that under the new 4.4.0 default this method is a near-no-op by design
+  -- see the `OpenProject` entry under **Changed**. It is useful chiefly to
+  callers who opt into `undoable=False`.
+
+- **`flexicon.CAPABILITIES`.** Task B4. A module-level `frozenset` of
+  capability tokens declaring what this build implements, so consumers such as
+  FlexToolsMCP can feature-detect rather than version-sniff. This release ships
+  all four tokens of section 3 of the write contract: `ui-injection`,
+  `refresh-from-disk`, `per-operation-uow`, and `transaction-rollback`.
+
+  Per decision D7 a token means "this build implements the capability", not
+  "it is active in your session" -- two of the four are mode-dependent and
+  deliver nothing to a caller who opts out with `undoable=False`. See
+  `docs/FLEXTOOLSMCP_WRITE_CONTRACT.md` section 3.
+
+- **`guid=` on three more `Create()` methods.** `Agents.Create()`,
+  `ReversalIndexes.Create()`, and `ReversalEntries.Create()` now accept an
+  optional trailing `guid=` argument and route through the existing
+  `BaseOperations._CreateWithGuid()` helper already used by eight other
+  `Create()` methods. This lets a sync/migration tool preserve a source
+  project's identity for agents, reversal indexes, and reversal entries
+  instead of minting new GUIDs on every run.
+
+  The parameter is trailing and defaults to `None`, so existing positional
+  call sites are unaffected, and `guid=None` behaves exactly as before.
+  Semantics match the established helper: a malformed GUID string raises
+  `FP_ParameterError` before anything is written, and a GUID already in use
+  logs a warning and falls back to a newly minted identity rather than
+  raising -- the requested GUID is **not** preserved in that case, so callers
+  that care must read `.Guid` back. Supplying a `guid` does not weaken any
+  existing business rule: `ReversalIndexes.Create()` still raises
+  `FP_ParameterError` when the writing system already has an index, and
+  `ReversalEntries.Create()` performs no GUID-based deduplication.
+  `Agents.Duplicate()` is unchanged and still always mints a new GUID.
+
+### Changed
+- **BREAKING (behavioural): `OpenProject(..., undoable=...)` now defaults to
+  `True`.** Task DEF of `specs/write-path-transactions`, gated on decision D3.
+  Previously every write-enabled session ran inside a single session-long
+  `BeginNonUndoableTask()` envelope in which nothing rolled back: an exception
+  raised mid-operation left every mutation applied before the failure sitting
+  in the cache, to be written to disk by the next
+  `SaveChanges()`/`CloseProject()` (#236). Under the new default each write
+  runs inside its own named, nesting-aware LCM unit of work, so an exception
+  escaping an operation reverts that operation, and the operation appears in
+  FLEx's Ctrl+Z menu under its own label.
+
+  No signature or call-site change is required. What changes underneath a
+  caller who passes only `writeEnabled=True`:
+
+  - Failed operations no longer leave partial writes behind.
+  - Writes appear individually on the FLEx undo stack rather than not at all.
+  - `AbortSession()` becomes a near-no-op: it returns `False` between
+    operations and raises `FP_TransactionError` inside one (decision D8),
+    because per-operation rollback covers the same ground. Callers relying on
+    it to discard a whole partial batch must now pass `undoable=False`
+    explicitly, or restructure around per-operation rollback.
+  - `CustomFieldOperations.CreateField()` still always raises
+    `FP_TransactionError`, but now for the other of its two reasons. Its
+    `CurrentDepth > 0` guard no longer fires (the old session envelope held
+    that depth at 1 all session; between operations it is now 0), so calls
+    fall through to the unimplemented-no-UoW-path raise instead. Callers
+    matching on the message text will see a different one; the behaviour
+    (no custom field is created) is unchanged.
+  - Nested blocks **join** the enclosing unit of work rather than opening an
+    independent one. Catching an exception from an inner block while still
+    inside the outer block therefore commits the inner block's partial
+    writes -- see `docs/EXCEPTION_HANDLING.md`.
+
+  To keep the previous behaviour, pass `undoable=False` explicitly. That path
+  is retained, still warns once per `OpenProject()` call, and must not be used
+  when the project may be open in FLEx or another process (D3).
+
+  If your own code writes through the LCM **directly** rather than through a
+  wrapper method (`agent.SetEvaluation(...)`, `sense.Source = ...`), it now
+  needs its own `with project.UndoableOperation("..."):` block. Those writes
+  used to be covered for free by the session envelope; under the new default
+  nothing is open between operations and an unbracketed raw write raises
+  `InvalidOperationException: Not in the right state to register a change.`
+
+### Fixed
+- **CRITICAL: every write under `undoable=True` was silently discarded.**
+  Decision D9. `UndoableUnitOfWorkHelper.RollBack` is declared
+  `{private get; set;}`, so pythonnet synthesizes no property for it and
+  surfaces only `set_RollBack`. The assignment form `helper.RollBack = False`
+  therefore does **not** raise -- pythonnet accepts it as a plain Python
+  attribute on the wrapper object while the real .NET field keeps its
+  constructor default of `True`. `Dispose()` consequently rolled back *every*
+  unit of work, successful ones included, so under `undoable=True` no write
+  ever reached the project. Both call sites now use `set_RollBack(...)`.
+
+  This was invisible offline, because the test doubles had encoded the same
+  bug: 30 tests passed against code that destroyed all data live. Both doubles
+  now raise on the assignment form, and a source-level guard keeps the
+  assignment form from reappearing.
+
+- **`_NestingAwareTransaction` rewritten on `UndoableUnitOfWorkHelper`**
+  (#233, #234). The hand-rolled `_transaction_depth` counter is deleted
+  outright; every `__enter__` now asks liblcm's own
+  `ActionHandlerAccessor.CurrentDepth`, following
+  `UndoableUnitOfWorkHelper.DoUsingNewOrCurrentUOW`'s join-or-open idiom
+  verbatim. The `undoable=True` phase constructs `UndoableUnitOfWorkHelper`
+  directly and is genuinely rollback-capable; the `undoable=False` phase is
+  unchanged. All 174 `with self._TransactionCM(...)` call sites keep working
+  unedited.
+
+  `_FLExUndoableOperation` is rewritten on the same idiom, since it shared the
+  one-argument `BeginUndoTask` call that was #233 -- that method needs both
+  undo *and* redo text, not a single label. `FLExProject._GetUndoRedoAPI`, the
+  discovery layer that produced the bad call, is deleted.
+
+- **`FLExProject.Undo()` / `Redo()` no longer reference a non-existent
+  attribute** (#235). Both now read `LcmCache.ActionHandlerAccessor` -- the old
+  `self.project.UndoStack` did not exist at all -- and both gate on
+  `CanUndo()` / `CanRedo()`, since calling into an empty stack throws rather
+  than returning a status. The dead `if undo_stack is None` / `else` branches
+  are removed.
+
+  **Scope caveat, now stated in both docstrings:** liblcm's undo stack lives in
+  RAM and is never serialized into `.fwdata`, so undo/redo is in-process only.
+  A reopened project always starts with `CanUndo()` returning `False`.
+
+- **Writes now persist across `CloseProject()` under `undoable=True`** (#237),
+  covered by a live-project test on the Target (task B2t).
+
+- **47 mutation sites that were running outside any unit of work are now
+  bracketed.** Found by the DEF default flip, which turned a latent gap into a
+  visible failure. They were missed by the original 295-site sweep because its
+  scanner recognised a mutation only as a call from a hardcoded name list or an
+  assignment to a property ending `RA`/`OA`/`OS`/`RS`. Three classes fell
+  outside both:
+
+  - **43 unsuffixed scalar property writes** across 22 files — `Senses.SetSource`,
+    `SetScientificName`, `SetImportResidue`, `LexEntry.SetHomographNumber`,
+    `SetDoNotUseForParsing`, `SetExcludeAsHeadword`, `WritingSystems.SetFontName`
+    / `SetFontSize` / `SetRightToLeft`, `Wordforms.SetSpellingStatus`,
+    `Segments.SetBaselineText` / `ReparseParagraph` / `SetIsLabel`,
+    `Texts.SetIsTranslated`, and others. ITsString, Unicode, bool, int and
+    GenDate properties carry no ownership suffix, so none of them ever counted.
+  - **3 `ISilDataAccess` scalar setters** — `FLExProject.LexiconSetFieldInteger`,
+    `LexiconSetListFieldSingle`, `LexiconClearListFieldSingle`
+    (`SetInt` / `SetObjProp`).
+  - **1 LCM domain mutator** — `WfiAnalyses.SetApprovalStatus`, which reaches
+    `ICmAgent.SetEvaluation`.
+
+  Under `undoable=False` these were invisible (the session envelope covered
+  them); under the new default each raised
+  `InvalidOperationException: Not in the right state to register a change.`
+  The mutation scanner now recognises all three shapes, so the guard measures
+  the codebase rather than its own name list.
+
+- **`BaseOperations.ApplySyncableProperties` now runs inside a unit of work.**
+  Its writes live in a module-level helper, so no per-method sweep reached
+  them. The whole property loop is bracketed as one unit, so a sync that fails
+  partway cannot leave the target item half-updated.
+
 - **`project.Senses.GetPartOfSpeechObject()` no longer returns `None` for every
   sense.** The method read `getattr(msa, "PartOfSpeechRA", None)` off the base
   `IMoMorphSynAnalysis` interface, where that property is not declared, so it
@@ -29,6 +463,132 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `GetPartOfSpeech()` (the string getter, which uses `InterlinearAbbr`) was
   not affected and is unchanged -- `InterlinearAbbr` is declared on the base
   interface.
+
+- **The offline test suite is green again: 117 failures and 17 errors down to
+  zero.** All of it was fallout from the `flexlibs2` -> `flexicon` rename plus
+  two mismarked test modules; no production behaviour was at fault except where
+  noted below.
+
+  - **Source-inspection tests were silently vacuous.** Roughly thirty tests
+    across nine files `read_text()` a source file and assert on its contents,
+    but still named `flexlibs2/code/...`. Where the path was a single file they
+    died with `FileNotFoundError`; where it was an `rglob` root they passed by
+    iterating zero files, which is worse. All are repointed at `flexicon/code`.
+    Two of them then reported genuine false positives on first real execution
+    and were repaired, not deleted: the factory/`GetService` guard now exempts
+    a shared helper handed an already-resolved `factory`, and the LCM
+    collection-method regex no longer matches the all-caps `POS` facade
+    attribute merely because it ends in the letters "OS".
+  - **Two modules opened live FLEx projects without the
+    `requires_live_project` marker**, so they ran under the offline selector
+    and crashed `FLExInitialize` with a Windows access violation --
+    `flexicon/sync/tests/test_duplicate_operations.py` (86 of the failures, on
+    Sena 3) and `flexicon/tests/test_CustomFields.py`. Both are now marked.
+    `test_duplicate_operations.py`'s `tearDownModule()` also called
+    `FLExCleanup()` without importing it, which would have raised `NameError`
+    on its first successful live run.
+  - **Mock-fidelity bugs in the sync test doubles.** A bare `Mock()`
+    auto-vivifies any attribute, which defeats the `hasattr()` checks in
+    `sync/validation.py` and `sync/diff.py` that exist precisely to detect
+    "this LCM object does not have this attribute" -- so the code went on to
+    `len()` and iterate Mocks it had never been given values for. The doubles
+    now stub the attributes each code path touches and use `spec=` where the
+    real operations class has a narrower surface.
+
+- **Ten `Duplicate()` and related crashes fixed, all of the same shape.** Marking
+  `flexicon/sync/tests/test_duplicate_operations.py` as a live test made it
+  execute for the first time in a long while, and it went from 69 failed / 27
+  passed / 16 errors to **112 passed, 0 failed, 0 errors** against a restored
+  Sena 3. Almost every failure was `CLAUDE.md`'s "Category 8" trap -- a property
+  declared on a *concrete* LCM type being read off a *base* interface -- or a
+  field that has since moved or vanished:
+
+  - `AllomorphOperations.Duplicate()` read `PhoneEnvRC` off base `IMoForm`; now
+    casts to the concrete `IMoStemAllomorph` / `IMoAffixAllomorph` first.
+  - `ParagraphOperations.__GetParagraphObject()` cast to `IStTxtPara` on its HVO
+    branch but returned the raw `IStPara` unchanged on its already-an-object
+    branch. The two branches now agree, which alone fixed most of the
+    paragraph and text failures.
+  - `NaturalClassOperations.Duplicate()` read `SegmentsRC` off base
+    `IPhNaturalClass`; now casts to `IPhNCSegments`.
+  - `WfiGlossOperations.Duplicate()` did not cast its owner to `IWfiAnalysis`,
+    though `Delete()` in the same class already did.
+  - `PhonemeOperations.Duplicate()` (`BasicIPASymbol`) and
+    `LexSenseOperations.__copy_sense_content()` (`ILexExampleSentence.Reference`)
+    called `.CopyAlternatives()` on fields that are single-writing-system
+    `ITsString`, not `IMultiString`. Both now reference-share the immutable
+    `ITsString`, matching the pattern this codebase already uses for
+    `Source` / `ScientificName` / `ImportResidue` (#31, #93). **`Senses.Duplicate(deep=True)`
+    was raising `AttributeError` for any sense carrying an example sentence.**
+  - `WfiAnalysisOperations.Duplicate()` and `WordformOperations`' deep-copy loops
+    referenced `IWfiMorphBundle.Gloss`, which does not exist.
+    `WfiMorphBundleOperations.Duplicate()` already carried this fix; these were
+    the missed sibling sites.
+  - `NoteOperations`: `Source` is now `SourceRA` (a reference, not text);
+    `Create()` raised `NullReferenceException` for any owner without
+    `AnnotationsOC` and now falls back to the language project's collection;
+    and `Delete()` double-deleted, because removing an object from an owning
+    collection already deletes it.
+  - `LexEntryOperations.Duplicate()` passed `create_blank_sense=(not deep)`,
+    so a *shallow* duplicate acquired a spurious blank sense -- contradicting
+    the method's own documented example.
+  - `lcm_casting.py` gains `LangProject` in its ClassName-to-interface registry.
+
+- **`ILexEtymology.Source` does not exist in the installed LCM.** Confirmed by
+  live reflection. `EtymologyOperations.Duplicate()` now guards the copy with
+  `hasattr` rather than guessing at a replacement field. Note that `GetSource()`,
+  `SetSource()` and `Create()` on the same class are broken by the same missing
+  field and are **not** fixed here -- and that `CLAUDE.md` and
+  `docs/API_ISSUES_CATEGORIZED.md` Category 8 are stale on this point, both
+  still listing `Source` as an `IMultiString` on `ILexEtymology`.
+
+- **`SelectiveImport._exists_in_target()` no longer propagates unexpected
+  lookup failures.** It caught only `(AttributeError, KeyError)` while every
+  other `except` in the same file catches broad `Exception` and logs. A
+  `project.Object(guid)` lookup goes through pythonnet into the live LCM and
+  can raise other types (malformed GUID, backend errors); this is a boolean
+  existence check, so any failure now means "not found" and is logged, rather
+  than aborting the caller's candidate scan.
+
+### Known limitations
+
+Stated rather than papered over:
+
+- **A single whole-suite live run has never completed, in either mode.** It
+  hangs at the same point on the unmodified pre-4.4.0 tree, so it is
+  pre-existing and not caused by this work -- but "the entire live suite is
+  green in one process" is not a claim this release makes. Running the suite
+  one file at a time completes cleanly and is the supported way to execute it.
+- **The broad live suite still runs `undoable=False` by design** (decision
+  D12), so continuous coverage of the new default rests on the DEF-COV suite
+  plus the module-scoped fixtures that pin no mode.
+- **`SaveChanges()` cannot succeed under `undoable=False`,** and the failed
+  save also rolls back the session's uncommitted work. Pinned by
+  `TestSaveChangesIsUnusableInThisMode`, which asserts the current broken
+  behaviour and must be inverted when it is fixed.
+- **`ReversalIndexOperations.Create()` stores an int writing-system handle as a
+  stringified int,** breaking the entry path's own writing-system resolution.
+  Pre-existing, surfaced incidentally by the `guid=` work, and sidestepped in
+  the tests with an explicit `wsHandle=`.
+- **`Duplicate()` signatures are inconsistent across the codebase,** and the
+  `.pyi` stubs are wrong about nearly all of them. The stub generator emits
+  `(obj, deep: bool = True)` or a fully untyped `(*args, **kwargs)`, while the
+  real implementations vary in whether they take `insert_after`, whether they
+  take `deep`, and what those default to. A caller trusting a stub can get a
+  `TypeError`. Catalogued in `reports/audit/duplicate-signature-audit.md`; no
+  signature was changed, because harmonising them is a breaking API change that
+  deserves its own deliberate release.
+- **Only `LexSenseOperations` was live-verified against every branch of its
+  duplicate path.** The other operations classes in the sweep above were
+  verified by the `test_duplicate_operations.py` suite, which does not exercise
+  every field of every type.
+- **`TextOperations` calls `IText.Source.CopyAlternatives()`,** but the field
+  table says the real `Source` lives on `IStText`, not `IText`. Possibly a
+  silent no-op rather than a crash. Flagged, not touched.
+- **`flexicon/tests/test_CustomFields.py` needs a `__flexlibs_testing`
+  project** that is not part of either checked-in fixture project. It is now
+  correctly gated behind `requires_live_project`, and skips rather than
+  crashing where that project is absent.
 
 ---
 

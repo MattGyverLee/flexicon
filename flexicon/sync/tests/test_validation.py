@@ -260,9 +260,17 @@ class TestLinguisticValidator(unittest.TestCase):
 
         allomorph.MorphTypeRA = morph_type
 
-        # Mock other attributes
+        # Mock other attributes. A real IMoForm has no MorphoSyntaxAnalysisRA
+        # or SemanticDomainsRC, but Mock() auto-vivifies any attribute access,
+        # so hasattr() would otherwise report these as present and the
+        # validator would try to iterate/len() a bare Mock. Stub them to the
+        # falsy shape a real LCM object without these features would have.
         allomorph.Owner = None
         allomorph.PhonologicalEnvironments = []
+        allomorph.MorphoSyntaxAnalysisRA = None
+        allomorph.SemanticDomainsRC = []
+        allomorph.ExamplesOS = []
+        allomorph.SensesOS = []
 
         # Make target.Object return None
         self.target_project.Object = Mock(return_value=None)
@@ -289,9 +297,15 @@ class TestLinguisticValidator(unittest.TestCase):
         env2 = Mock()
         allomorph.PhonologicalEnvironments = [env1, env2]
 
-        # Mock other attributes that might be checked
+        # Mock other attributes that might be checked. Mock() auto-vivifies
+        # unset attributes, so these must be stubbed to a falsy real-LCM
+        # shape or the validator's iterate/len() calls raise on a bare Mock.
         allomorph.Owner = None
         allomorph.MorphTypeRA = None
+        allomorph.MorphoSyntaxAnalysisRA = None
+        allomorph.SemanticDomainsRC = []
+        allomorph.ExamplesOS = []
+        allomorph.SensesOS = []
 
         result = self.validator.validate_before_create(
             source_obj=allomorph, source_project=self.source_project, object_type="Allomorph"
@@ -317,11 +331,16 @@ class TestLinguisticValidator(unittest.TestCase):
         ex3 = Mock()
         sense.ExamplesOS = [ex1, ex2, ex3]
 
-        # Mock other attributes
+        # Mock other attributes. Mock() auto-vivifies unset attributes, so
+        # these must be stubbed to a falsy real-LCM shape or the validator's
+        # iterate/len()/hierarchy checks raise on a bare Mock.
         sense.MorphoSyntaxAnalysisRA = None
         sense.SemanticDomainsRC = []
         sense.Gloss = Mock()  # Has gloss
         sense.Definition = Mock()  # Has definition
+        sense.PhonologicalEnvironments = []
+        sense.SensesOS = []
+        sense.Owner = None
 
         result = self.validator.validate_before_create(
             source_obj=sense, source_project=self.source_project, object_type="LexSense"
@@ -346,9 +365,15 @@ class TestLinguisticValidator(unittest.TestCase):
         owner.Guid.__str__ = Mock(return_value="owner-guid")
         allomorph.Owner = owner
 
-        # Mock other attributes
+        # Mock other attributes. Mock() auto-vivifies unset attributes, so
+        # these must be stubbed to a falsy real-LCM shape or the validator's
+        # iterate/len() calls raise on a bare Mock.
         allomorph.MorphTypeRA = None
         allomorph.PhonologicalEnvironments = []
+        allomorph.MorphoSyntaxAnalysisRA = None
+        allomorph.SemanticDomainsRC = []
+        allomorph.ExamplesOS = []
+        allomorph.SensesOS = []
 
         # Owner doesn't exist in target
         self.target_project.Object = Mock(return_value=None)
@@ -374,10 +399,15 @@ class TestLinguisticValidator(unittest.TestCase):
         sense.Gloss = None
         sense.Definition = None
 
-        # Mock other attributes
+        # Mock other attributes. Mock() auto-vivifies unset attributes, so
+        # these must be stubbed to a falsy real-LCM shape or the validator's
+        # iterate/len()/hierarchy checks raise on a bare Mock.
         sense.MorphoSyntaxAnalysisRA = None
         sense.SemanticDomainsRC = []
         sense.ExamplesOS = []
+        sense.PhonologicalEnvironments = []
+        sense.SensesOS = []
+        sense.Owner = None
 
         result = self.validator.validate_before_create(
             source_obj=sense, source_project=self.source_project, object_type="LexSense"
@@ -397,6 +427,15 @@ class TestLinguisticValidator(unittest.TestCase):
 
         # No senses - use actual empty list
         entry.SensesOS = []
+
+        # Mock other attributes. Mock() auto-vivifies unset attributes, so
+        # these must be stubbed to a falsy real-LCM shape or the validator's
+        # iterate/len() calls raise on a bare Mock.
+        entry.MorphoSyntaxAnalysisRA = None
+        entry.SemanticDomainsRC = []
+        entry.MorphTypeRA = None
+        entry.PhonologicalEnvironments = []
+        entry.ExamplesOS = []
 
         result = self.validator.validate_before_create(
             source_obj=entry, source_project=self.source_project, object_type="LexEntry"
@@ -451,6 +490,14 @@ class TestValidationIntegration(unittest.TestCase):
         # No gloss (info)
         sense.Gloss = None
         sense.Definition = None
+
+        # Mock other attributes. Mock() auto-vivifies unset attributes, so
+        # these must be stubbed to a falsy real-LCM shape or the validator's
+        # iterate/len()/hierarchy checks raise on a bare Mock.
+        sense.MorphTypeRA = None
+        sense.PhonologicalEnvironments = []
+        sense.SensesOS = []
+        sense.Owner = None
 
         # Make all lookups fail (objects don't exist in target)
         target_project.Object = Mock(return_value=None)

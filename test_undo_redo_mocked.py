@@ -91,7 +91,7 @@ def test_undoable_operation_requires_undoable_mode():
     project.writeEnabled = True
     project._undoable = False
 
-    undo_op = _FLExUndoableOperation(project, "test", Mock(), Mock())
+    undo_op = _FLExUndoableOperation(project, "test")
 
     try:
         undo_op.__enter__()
@@ -108,7 +108,7 @@ def test_undoable_operation_requires_write_enabled():
     project.writeEnabled = False
     project._undoable = True
 
-    undo_op = _FLExUndoableOperation(project, "test", Mock(), Mock())
+    undo_op = _FLExUndoableOperation(project, "test")
 
     try:
         undo_op.__enter__()

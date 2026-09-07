@@ -5,8 +5,9 @@ Author: FlexTools Development Team
 """
 
 import unittest
+import pytest
 
-from flexicon import FLExProject, AllProjectNames, FP_FileLockedError
+from flexicon import FLExProject, AllProjectNames, FP_FileLockedError, FLExInitialize
 
 
 # Test constants
@@ -15,19 +16,45 @@ CUSTOM_FIELD = "EntryFlags"
 CUSTOM_VALUE = "Test.Value"
 
 
+# This module opens a REAL FLEx project via FLExProject.OpenProject(). It
+# lives under flexicon/tests/, not the root tests/ tree, so the session-wide
+# initialize_flex_for_tests fixture in tests/conftest.py never reaches it --
+# pytest conftest.py fixtures only apply within their own directory subtree.
+# Without this marker the test runs during the offline
+# `pytest -m "not requires_live_project"` selector and fails opening the
+# project (FLEx services were never initialized in this process).
+pytestmark = pytest.mark.requires_live_project
+
+
 class TestSuite(unittest.TestCase):
     """Test custom field operations.
 
-    FLEx services (SLDR, ICU, registry, FLExInitialize) are owned by the
-    session-wide fixture in tests/conftest.py::initialize_flex_for_tests.
-    A per-class FLExCleanup() here would tear down SLDR for the remainder
-    of the suite, causing later OpenProject calls to mark .ldml files as
-    bad ("SLDR has not been initialized") and triggering the "Unable to
-    create writing system" popup on the next run.
+    Unlike the tests under tests/, this class cannot rely on a shared
+    session fixture to have initialized FLEx first (see the pytestmark
+    comment above) -- it previously depended on flexicon/tests/test_FLExInit.py
+    happening to run first alphabetically within the same session, which
+    fails when this file is collected/run on its own. Initialize explicitly
+    here instead. FLExInitialize() is safe to call more than once (it
+    tolerates SLDR already being initialized -- see FLExInit.py).
     """
 
     def _openProject(self):
-        """Open the test project with write access."""
+        """Open the test project with write access.
+
+        ``__flexlibs_testing`` is an upstream fixture project that is not
+        shipped with this repository and is not one of the two projects
+        CLAUDE.md designates (Target, Sena 3). Where it is absent this is a
+        missing environmental precondition, not a failure, so skip rather
+        than fail -- a red test nobody can make green destroys the signal of
+        the live suite.
+        """
+        FLExInitialize()
+        if TEST_PROJECT not in AllProjectNames():
+            self.skipTest(
+                f"Project '{TEST_PROJECT}' is not present on this machine. "
+                "This is an upstream fixture project, not one of the two "
+                "projects this repository provisions (Target, Sena 3)."
+            )
         fp = FLExProject()
         try:
             fp.OpenProject(TEST_PROJECT, writeEnabled=True)
