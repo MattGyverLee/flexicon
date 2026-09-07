@@ -1,8 +1,8 @@
 {
   "feature": "254-getmorphtype-allomorph",
-  "status": "in_progress",
-  "last_cycle": 1,
-  "spurts_completed": 1,
+  "status": "feature_complete",
+  "last_cycle": 3,
+  "spurts_completed": 3,
   "tasks_done": [
     "cycle1-verification-live-probe-morphra-is-imoform-none-4.8pct",
     "cycle1-verification-setmorphtype-is-hard-crash-not-silent-corruption",
@@ -11,9 +11,21 @@
     "cycle1-domain-ruling-repair-getmorphtype-in-place-232-pattern",
     "cycle1-lead-ruling-retire-setmorphtype-including-none-form",
     "cycle1-lead-ruling-semver-breaking-behavioural-next-minor-no-deprecation-window",
-    "cycle1-contract-frozen-spec-md-C1-C6"
+    "cycle1-contract-frozen-spec-md-C1-C6",
+    "cycle2-programmer-C1-C5-landed-getmorphtype-repaired-setmorphtype-retired-getmorph-setmorph-added",
+    "cycle2-verification-live-PASS-run_mode-live-evidence-live-cycle2-fix.md",
+    "cycle3-simplify-deleted-zero-caller-__GetMorphTypeObject-dehedged-L850-858-comment-10-import-aliases",
+    "cycle3-main-session-removed-orphaned-IMoMorphType-import-and-dangling-test-comment",
+    "cycle3-doc-two-category-8-entries-in-API_ISSUES_CATEGORIZED.md",
+    "cycle3-verification-re-stamp-PASS-offline-1480-live-8of8-run_mode-live-diff-scope-non-behavioural"
   ],
-  "next_checkpoint": "fix landed + live-verified",
-  "next_entry": "Dispatch lex-programmer to implement spec.md C1-C5 in flexicon/code/TextsWords/WfiMorphBundleOperations.py (repair GetMorphType to read MorphRA.MorphTypeRA with a warning when MorphRA is None; retire SetMorphType to raise FP_ParameterError unconditionally including the None form; add GetMorph/SetMorph with an __GetMorphObject resolver and an IMoForm type guard; rewrite both docstrings per C5). Then lex-verification live-verifies on the Target via target_sandbox and settles the InflClassRA reflection question in the same session.",
-  "updated": "2026-09-06"
+  "next_checkpoint": "none -- feature complete",
+  "next_entry": "Commit the spurt and close flexicon issue #254. Two items leave the loop as separate work, NOT part of this feature: (1) specs/254-getmorphtype-allomorph/reviews/cycle3-archivist-inflclass-issue-draft.md is an UNFILED draft awaiting the user's explicit filing approval -- it covers 8 InflClassRA duplicate-shape sites incl. WfiAnalysisOperations.py and WordformOperations.py; (2) the repo-wide flexlibs2->flexicon import alias sweep and the missing Category 8 manifest are both deferred mechanical follow-ups.",
+  "deferred": [
+    "P3: GetMorphType return statement left as `morph.MorphTypeRA if morph.MorphTypeRA else None` -- truthiness gate rather than `is not None`; deliberately unchanged to keep cycle-2 live verification valid",
+    "Pre-existing unused import IMoInflClass (WfiMorphBundleOperations.py:24) left in place -- predates this work (commit 9b82ffaf), belongs to the InflClassRA issue, out of diff scope",
+    "Pre-existing flexlibs2 imports at tests/operations/test_wfi_morph_bundle.py:43,73,104,188 left in place -- repo-wide alias sweep is a separate PR",
+    "No Category 8 manifest exists to bootstrap (lex-doc follow-up)"
+  ],
+  "updated": "2026-09-07"
 }

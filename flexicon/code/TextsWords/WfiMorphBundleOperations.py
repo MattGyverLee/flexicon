@@ -11,14 +11,16 @@
 #   Copyright 2025
 #
 
+import logging
+
 # Import FLEx LCM types
 from SIL.LCModel import (
     IWfiMorphBundle,
     IWfiMorphBundleFactory,
     IWfiAnalysis,
     ILexSense,
+    IMoForm,
     IMoMorphSynAnalysis,
-    IMoMorphType,
     IMoInflClass,
 )
 from SIL.LCModel.Core.KernelInterfaces import ITsString
@@ -29,6 +31,8 @@ from ..FLExProject import (
     FP_ParameterError,
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
+
+logger = logging.getLogger(__name__)
 
 
 class WfiMorphBundleOperations(BaseOperations):
@@ -784,14 +788,21 @@ class WfiMorphBundleOperations(BaseOperations):
     @OperationsMethod
     def GetMorphType(self, bundle_or_hvo):
         """
-        Get the morpheme type of a bundle.
+        Get the morpheme type of a bundle's linked allomorph.
+
+        Note this is NOT the same object as :meth:`GetMorph`: the bundle's
+        ``MorphRA`` field holds the specific allomorph (``IMoForm``) it
+        links to, and the morph *type* (stem, prefix, suffix, etc.) lives
+        one hop further, at ``MorphRA.MorphTypeRA``. This method resolves
+        that hop for you.
 
         Args:
             bundle_or_hvo: The IWfiMorphBundle object or HVO.
 
         Returns:
-            IMoMorphType or None: The morpheme type (stem, prefix, suffix, etc.),
-                                  or None if not set.
+            IMoMorphType or None: The morpheme type (stem, prefix, suffix,
+                                  etc.) of the bundle's linked allomorph, or
+                                  None if the allomorph has no type set.
 
         Raises:
             FP_NullParameterError: If bundle_or_hvo is None.
@@ -802,22 +813,145 @@ class WfiMorphBundleOperations(BaseOperations):
             >>> if bundles:
             ...     morphType = morphBundleOps.GetMorphType(bundles[0])
             ...     if morphType:
-            ...         # Get type name
-            ...         wsHandle = project.project.DefaultAnalWs
-            ...         type_name = ITsString(morphType.Name.get_String(wsHandle)).Text
+            ...         type_name = morphType.Name.BestAnalysisAlternative.Text
             ...         print(type_name)
             stem
 
         Notes:
-            - Returns None if morph type not set
+            - Returns None (silently) if the bundle has a linked allomorph
+              but that allomorph has no morph type set -- an ordinary,
+              common state.
+            - Returns None and logs a warning naming the bundle's Hvo if
+              the bundle has no linked allomorph at all (MorphRA is None):
+              a bundle with no linked morph is a structurally incomplete
+              analysis, so the gap is made discoverable.
             - Morpheme types include: stem, root, prefix, suffix, infix,
               circumfix, clitic, proclitic, enclitic, simulfix, etc.
             - Type indicates the morphological category
-            - May be inherited from linked sense/MSA
             - Important for morphological analysis and parsing
 
         See Also:
-            SetMorphType, GetSense, GetMSA
+            GetMorph, GetSense, GetMSA
+        """
+        self._ValidateParam(bundle_or_hvo, "bundle_or_hvo")
+
+        bundle = self.__GetBundleObject(bundle_or_hvo)
+
+        morph = bundle.MorphRA
+        if morph is None:
+            logger.warning(
+                "GetMorphType: bundle Hvo=%s has no linked allomorph "
+                "(MorphRA is None); cannot resolve a morph type",
+                getattr(bundle, "Hvo", None),
+            )
+            return None
+
+        # MorphRA is statically typed IMoForm and MorphTypeRA is declared
+        # there, so it is visible via bare attribute access without a
+        # cast. Verified live against Sena 3 on 2026-09-06 (the 4.5.1
+        # precedent -- attribute visibility follows the static wrapper
+        # interface returned by the property, not the runtime CLR type,
+        # see CHANGELOG [4.5.1] -- made this worth checking): the bare
+        # and `IMoForm(morph)`-cast paths returned an identical Hvo, so
+        # no cast is required here. See
+        # specs/254-getmorphtype-allomorph/evidence/live-cycle2-fix.md.
+        return morph.MorphTypeRA if morph.MorphTypeRA else None
+
+    @OperationsMethod
+    def SetMorphType(self, bundle_or_hvo, morph_type_or_hvo):
+        """
+        RETIRED. Always raises FP_ParameterError.
+
+        This method used to write its ``morph_type_or_hvo`` argument
+        directly into ``bundle.MorphRA``, which holds the bundle's linked
+        allomorph (``IMoForm``), not its morph type. Every non-None call
+        raised ``TypeError`` at the .NET boundary (pythonnet rejects an
+        ``IMoMorphType`` where an ``IMoForm`` is declared) before any
+        write reached the LCM; no caller has ever successfully changed a
+        bundle's morph type through this method. The ``None`` form
+        (which nulled ``MorphRA``, i.e. cleared the *allomorph*, not the
+        type) is retired too, since keeping it would preserve a method
+        that clears an allomorph under a name saying "type".
+
+        Args:
+            bundle_or_hvo: The IWfiMorphBundle object or HVO. Ignored --
+                this method always raises before validating or resolving
+                any argument.
+            morph_type_or_hvo: Ignored. Kept in the signature only so
+                existing call sites reach this explanatory error instead
+                of a TypeError about arity.
+
+        Raises:
+            FP_ParameterError: Always, on every call, regardless of
+                argument values or the project's write-enabled state.
+
+        Example:
+            >>> # To retype the lexicon allomorph itself:
+            >>> project.Allomorphs.SetMorphType(allomorph, morph_type)
+            >>> # To change or clear which allomorph this bundle links to:
+            >>> morphBundleOps.SetMorph(bundles[1], allomorph_or_None)
+
+        Notes:
+            - This method never mutates a bundle; it raises unconditionally.
+            - The retirement is unconditional: it raises before checking
+              write-enabled state, so read-only and write-enabled projects
+              see the identical message.
+
+        See Also:
+            SetMorph, GetMorphType, AllomorphOperations.SetMorphType
+        """
+        raise FP_ParameterError(
+            "SetMorphType() has been retired: it wrote its morph-type "
+            "argument into bundle.MorphRA, which holds the bundle's "
+            "allomorph (IMoForm), not its morph type -- every non-None "
+            "call raised TypeError at the .NET boundary and never wrote "
+            "anything. To retype the lexicon allomorph, use "
+            "project.Allomorphs.SetMorphType(allomorph, morph_type). To "
+            "change or clear which allomorph this bundle links, use "
+            "SetMorph(bundle, allomorph_or_None)."
+        )
+
+    @OperationsMethod
+    def GetMorph(self, bundle_or_hvo):
+        """
+        Get the specific allomorph linked to a bundle.
+
+        Note this is NOT the same object as :meth:`GetMorphType`: this
+        returns the bundle's linked allomorph itself (``IMoForm`` --
+        concretely a ``MoStemAllomorph`` or ``MoAffixAllomorph``), not its
+        morph type. Use ``GetMorphType(bundle)`` (or
+        ``GetMorph(bundle).MorphTypeRA``) for the type.
+
+        Args:
+            bundle_or_hvo: The IWfiMorphBundle object or HVO.
+
+        Returns:
+            IMoForm or None: The bundle's linked allomorph, or None if no
+                allomorph is linked (a real, non-rare state -- roughly 5%
+                of bundles in a populated project).
+
+        Raises:
+            FP_NullParameterError: If bundle_or_hvo is None.
+
+        Example:
+            >>> morphBundleOps = WfiMorphBundleOperations(project)
+            >>> bundles = list(morphBundleOps.GetAll(analysis))
+            >>> if bundles:
+            ...     morph = morphBundleOps.GetMorph(bundles[0])
+            ...     if morph:
+            ...         print(morph.ClassName)
+            MoStemAllomorph
+
+        Notes:
+            - Returns None silently if no allomorph is linked -- reporting
+              "no morph linked" is this getter's job, unlike GetMorphType,
+              which warns because a missing morph blocks the resolution
+              it was asked to perform.
+            - The returned object's concrete type is MoStemAllomorph or
+              MoAffixAllomorph (both IMoForm subtypes).
+
+        See Also:
+            SetMorph, GetMorphType, GetSense
         """
         self._ValidateParam(bundle_or_hvo, "bundle_or_hvo")
 
@@ -825,40 +959,40 @@ class WfiMorphBundleOperations(BaseOperations):
         return bundle.MorphRA if bundle.MorphRA else None
 
     @OperationsMethod
-    def SetMorphType(self, bundle_or_hvo, morph_type_or_hvo):
+    def SetMorph(self, bundle_or_hvo, morph_or_hvo):
         """
-        Set the morpheme type of a bundle.
+        Set the specific allomorph linked to a bundle.
 
         Args:
             bundle_or_hvo: The IWfiMorphBundle object or HVO.
-            morph_type_or_hvo: The IMoMorphType object or HVO, or None to unset.
+            morph_or_hvo: The IMoForm object or HVO to link, or None to
+                clear the link.
 
         Raises:
             FP_ReadOnlyError: If the project is not opened with write enabled.
             FP_NullParameterError: If bundle_or_hvo is None.
+            FP_ParameterError: If morph_or_hvo resolves to an object that
+                is not an IMoForm (names the received ClassName), rather
+                than letting the raw pythonnet TypeError escape.
 
         Example:
             >>> morphBundleOps = WfiMorphBundleOperations(project)
             >>> bundles = list(morphBundleOps.GetAll(analysis))
-            >>> if bundles:
-            ...     # Get a morph type
-            ...     morphTypes = project.lp.MorphTypesOA.PossibilitiesOS
-            ...     suffix_type = [mt for mt in morphTypes
-            ...                    if "suffix" in str(mt).lower()][0]
-            ...     morphBundleOps.SetMorphType(bundles[1], suffix_type)
+            >>> allomorphs = list(project.Allomorphs.GetAll(entry))
+            >>> if bundles and allomorphs:
+            ...     morphBundleOps.SetMorph(bundles[0], allomorphs[0])
 
-            >>> # Clear morph type
-            >>> morphBundleOps.SetMorphType(bundles[1], None)
+            >>> # Clear the linked allomorph
+            >>> morphBundleOps.SetMorph(bundles[0], None)
 
         Notes:
-            - Morph type categorizes the morpheme structurally
-            - Setting to None clears the type reference
-            - Type should match the morpheme's linguistic function
-            - May be automatically set when linking to sense
-            - Affects morphological analysis and display
+            - Setting to None clears the linked allomorph.
+            - This does not change the bundle's morph type directly --
+              the type follows whatever the newly-linked allomorph's own
+              MorphTypeRA is set to.
 
         See Also:
-            GetMorphType, SetSense, SetMSA
+            GetMorph, GetMorphType, SetSense
         """
         self._EnsureWriteEnabled()
 
@@ -868,13 +1002,20 @@ class WfiMorphBundleOperations(BaseOperations):
 
         # Resolution stays OUTSIDE the transaction so an unresolvable
         # reference raises without opening an empty undo task.
-        if morph_type_or_hvo is None:
-            morph_type = None
+        if morph_or_hvo is None:
+            morph = None
         else:
-            morph_type = self.__GetMorphTypeObject(morph_type_or_hvo)
+            morph = self.__GetMorphObject(morph_or_hvo)
+            class_name = getattr(morph, "ClassName", None)
+            if not isinstance(morph, IMoForm):
+                raise FP_ParameterError(
+                    "SetMorph: morph_or_hvo must resolve to an IMoForm "
+                    f"(e.g. MoStemAllomorph, MoAffixAllomorph); received "
+                    f"an object with ClassName={class_name!r}"
+                )
 
-        with self._TransactionCM("Set morph bundle morph type"):
-            bundle.MorphRA = morph_type
+        with self._TransactionCM("Set morph bundle morph"):
+            bundle.MorphRA = morph
 
     # ==================== MSA OPERATIONS ====================
 
@@ -1287,19 +1428,25 @@ class WfiMorphBundleOperations(BaseOperations):
             return self.project.Object(sense_or_hvo)
         return sense_or_hvo
 
-    def __GetMorphTypeObject(self, morph_type_or_hvo):
+    def __GetMorphObject(self, morph_or_hvo):
         """
-        Resolve HVO or object to IMoMorphType.
+        Resolve HVO or object to IMoForm.
+
+        This resolves the bundle's linked allomorph (IMoForm) for
+        SetMorph. Resolving a morph type here instead -- conflating the
+        bundle's allomorph field with its morph-type field -- is exactly
+        the field-confusion bug issue #254 exists to eliminate.
 
         Args:
-            morph_type_or_hvo: Either an IMoMorphType object or an HVO (int).
+            morph_or_hvo: Either an IMoForm object or an HVO (int).
 
         Returns:
-            IMoMorphType: The resolved morph type object.
+            IMoForm: The resolved allomorph object (not type-checked here;
+                SetMorph performs the IMoForm guard after calling this).
         """
-        if isinstance(morph_type_or_hvo, int):
-            return self.project.Object(morph_type_or_hvo)
-        return morph_type_or_hvo
+        if isinstance(morph_or_hvo, int):
+            return self.project.Object(morph_or_hvo)
+        return morph_or_hvo
 
     def __GetMSAObject(self, msa_or_hvo):
         """

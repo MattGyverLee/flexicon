@@ -509,7 +509,55 @@ LCM source references:
 
 - Same field name + different LCM type = silent bug. The `hasattr` / duck-typing patterns common in this codebase mask the mismatch.
 - `Source` has caused issues #36, #39, #40 -- the same shape recurs whenever an author looks at one Operations class to learn how to handle "Source" and applies the pattern to the wrong type.
+- `MorphRA` caused issue #254 -- a variant of the same shape: not a same-name field changing type, but a wrong field entirely (`MorphRA`, the allomorph) mistaken for a differently-named one (`MorphTypeRA`, the type) because `MorphTypeRA` behaves correctly as a direct `IMoMorphType` on neighbouring `IMoForm`/`ILexSense` interfaces.
 - `BaselineText` is the poster-child of the single-vs-multi confusion: it looks like any other text field on a text-bearing object, but it is single-WS `ITsString` while other fields on neighbouring types (like `ILexEtymology.LanguageNotes`) are per-WS `IMultiString`.
+
+### The `MorphRA` field (issue #254, RESOLVED)
+
+`IWfiMorphBundle.MorphRA` holds the bundle's linked **allomorph**
+(`IMoForm`, concretely `MoStemAllomorph` or `MoAffixAllomorph`) -- **not**
+its morph type. The morph type lives one hop further, at
+`MorphRA.MorphTypeRA` (`IMoMorphType`).
+
+| Object type | `MorphRA`-adjacent field | Type | Correct access pattern |
+|---|---|---|---|
+| `IWfiMorphBundle` | `MorphRA` | `IMoForm` (allomorph) | `bundle.MorphRA`; guard `is None` (~5% of bundles have no linked allomorph) |
+| `IWfiMorphBundle` | (via `MorphRA`) `MorphTypeRA` | `IMoMorphType` (the type) | `bundle.MorphRA.MorphTypeRA`; guard both hops for `None` |
+| `IMoForm` | `MorphTypeRA` | `IMoMorphType` | `MorphTypeRA` is directly the type here -- no extra hop |
+| `ILexSense` | `MorphTypeRA` | `IMoMorphType` | Same direct pattern as `IMoForm` |
+
+`WfiMorphBundleOperations.GetMorphType` returned `bundle.MorphRA` raw for
+its whole life -- every caller received an allomorph from a method
+promising a type. `SetMorphType` crashed at the .NET boundary
+(`TypeError: SIL.LCModel.DomainImpl.MoMorphType value cannot be converted
+to SIL.LCModel.IMoForm`) on every non-`None` call, since it wrote its
+morph-type argument straight into the allomorph-typed `MorphRA` slot. The
+bug looked plausible on a copy-paste review because `MorphTypeRA` genuinely
+**is** a direct `IMoMorphType` on the neighbouring `IMoForm` and `ILexSense`
+interfaces -- the trap is one field name (`MorphRA`) being mistaken for
+another (`MorphTypeRA`) that behaves correctly elsewhere, not a same-name
+field changing type across interfaces.
+
+**Fix**: `GetMorphType` now returns `bundle.MorphRA.MorphTypeRA`
+(`IMoMorphType`), guarding `MorphRA is None`. `SetMorphType` is retired --
+always raises `FP_ParameterError`. A correctly-named `GetMorph`/`SetMorph`
+pair now exposes `MorphRA` (the allomorph) under an accurate name.
+
+### Test-authoring trap: `MoStemAllomorph.MorphTypeRA` is not `None` after `Add`
+
+A freshly-created `MoStemAllomorph` (via `IMoStemAllomorphFactory`) added
+to `entry.AlternateFormsOS` does **not** stay typeless: LCM auto-infers a
+default `MorphTypeRA` of `"root"` as a side effect of the `Add` committing.
+Anyone who assumes a newly-created `IMoForm` starts with
+`MorphTypeRA is None` will be silently wrong -- there is no LCM warning,
+just a populated field where a test expected an empty one.
+
+To obtain a genuinely typeless `IMoForm` for testing, clear
+`MorphTypeRA = None` explicitly in a **follow-up transaction** after the
+`Add` has committed, then re-read to confirm.
+
+Evidence: `specs/254-getmorphtype-allomorph/evidence/live-cycle2-fix.md`
+(item 4, Sena 3, 2026-09-06).
 
 ### Recommended pattern
 

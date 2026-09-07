@@ -11,6 +11,55 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING (behavioural): `WfiMorphBundleOperations.GetMorphType` now
+  returns `IMoMorphType` instead of `IMoForm`** (#254). The bundle's
+  `MorphRA` field holds its linked allomorph (`IMoForm` -- concretely
+  `MoStemAllomorph`/`MoAffixAllomorph`), not its morph type; the real type
+  lives one hop further, at `MorphRA.MorphTypeRA`. `GetMorphType` returned
+  `bundle.MorphRA` raw, so every caller was actually receiving an
+  allomorph under a method name promising a type. It now returns
+  `bundle.MorphRA.MorphTypeRA`: `None` (silently) if the linked allomorph
+  has no morph type set, `None` with a logged warning naming the bundle's
+  `Hvo` if the bundle has no linked allomorph at all (`MorphRA is None`).
+  Live-verified against Sena 3 (`sena3_sandbox`): of 1932 sampled bundles,
+  93 (~4.8%) had `MorphRA is None`; the naive
+  `morph_type.Name.get_String(ws)` read used in the old docstring example
+  returns empty for every sample, so the corrected getter's docstring now
+  uses `Name.BestAnalysisAlternative.Text` instead. Callers who chained
+  `.MorphTypeRA` off the old (mistyped) return value themselves must drop
+  that extra hop; callers who want the allomorph itself should call the
+  new `GetMorph` instead.
+
+  **`SetMorphType` is retired** and now raises `FP_ParameterError`
+  unconditionally, including for the `None` form, before checking
+  write-enabled state (identical message on read-only and write-enabled
+  projects). Live-verified: every non-`None` call already raised
+  `TypeError: SIL.LCModel.DomainImpl.MoMorphType value cannot be converted
+  to SIL.LCModel.IMoForm` at the .NET boundary before any write reached
+  the LCM -- no caller has ever successfully changed a bundle's morph type
+  through this method, so there is no corrupt data in the wild to
+  migrate. The `None` form (which nulled `MorphRA`, i.e. cleared the
+  *allomorph*, not the type) is retired too: keeping it would preserve a
+  method that clears an allomorph under a name saying "type", the exact
+  bug class this fix eliminates. The shipped docstring `Example` block
+  itself instructed callers to pull a possibility-list `IMoMorphType` and
+  assign it via this method -- following it corrupted or crashed on the
+  bundle reference; that example is deleted, not merely corrected. To
+  retype the lexicon allomorph, use
+  `project.Allomorphs.SetMorphType(allomorph, morph_type)`. To change or
+  clear which allomorph a bundle links, use the new
+  `SetMorph(bundle, allomorph_or_None)`.
+
+  **New: `GetMorph`/`SetMorph`** on `WfiMorphBundleOperations` expose
+  `bundle.MorphRA` (`IMoForm | None`) honestly named -- `GetMorph` is
+  today's old (buggy) `GetMorphType` behaviour, with `None` returned
+  silently (no warning), and `SetMorph` accepts `None` to clear. `SetMorph`
+  raises `FP_ParameterError` naming the received `ClassName` if a
+  non-`None` argument resolves to something that is not an `IMoForm`
+  (e.g. an `IMoMorphType`), so a caller who passes a morph type gets an
+  actionable error instead of a raw pythonnet `TypeError`.
+
 ## [4.5.2] - 2026-08-19
 
 > Follow-up to 4.5.1: a residual falsy-gate gap for empty-but-present
