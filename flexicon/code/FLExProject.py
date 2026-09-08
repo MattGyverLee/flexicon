@@ -687,6 +687,15 @@ class FLExProject(object):
                 None,
             )
             if method_def is None:
+                # Path 3: the interface-level IServiceProvider member.
+                # ILcmServiceLocator's only base interface is
+                # System.IServiceProvider, so GetService(Type) is always
+                # present even when no GetInstance overload is reachable
+                # -- this is the call the ~240 working lookups elsewhere
+                # in flexicon use. Try it before giving up. (issue #272)
+                result = sl.GetService(interface_type)
+                if result is not None:
+                    return result
                 raise FP_ParameterError(
                     "ILcmServiceLocator exposes no resolvable "
                     f"GetInstance overload for {interface_type}"
@@ -3329,14 +3338,32 @@ class FLExProject(object):
 
             # Get the ObjData property which contains the file path
             # Format: first char is FwObjDataTypes.kodtExternalPathName, rest is path
+            #
+            # The ObjData string property is read straight off the run
+            # properties using the FwTextPropType.ktptObjData tag. The
+            # previous implementation tried to derive that tag by calling
+            # GetIntPropValues on an ITsPropsBldr resolved via
+            # ServiceLocator.GetInstance("FwKernelLib.ITsPropsBldr"), which
+            # was dead twice over: ILcmServiceLocator exposes no GetInstance
+            # member at all (its only base is System.IServiceProvider, i.e.
+            # GetService(Type)), and the tag it passed -- ord("k") == 107 --
+            # is not ktptObjData (== 6) anyway. (issue #272)
+            from SIL.LCModel.Core.KernelInterfaces import (
+                FwObjDataTypes,
+                FwTextPropType,
+            )
+
+            obj_data_tag = int(FwTextPropType.ktptObjData)
+            external_path_marker = chr(int(FwObjDataTypes.kodtExternalPathName))
+
             for i in range(ts_string.Length):
                 run_props = ts_string.get_Properties(i)
-                obj_data = run_props.GetStrPropValue(
-                    self.project.ServiceLocator.GetInstance("FwKernelLib.ITsPropsBldr").GetIntPropValues(
-                        ord("k"), None
-                    )[0]
-                )
-                if obj_data and len(obj_data) > 1:
+                obj_data = run_props.GetStrPropValue(obj_data_tag)
+                if (
+                    obj_data
+                    and len(obj_data) > 1
+                    and obj_data[0] == external_path_marker
+                ):
                     # Skip first character (type code), return path
                     return obj_data[1:]
 
@@ -3385,7 +3412,14 @@ class FLExProject(object):
             # sequence is bracketed together to keep the built string and the
             # write that consumes it in one unit.
             with self._TransactionCM(f"Set audio path '{file_path}'"):
-                bldr = self.project.ServiceLocator.GetInstance("TsStrBldr")
+                # Builders come from TsStringUtils, not from the
+                # ServiceLocator: ILcmServiceLocator has no GetInstance
+                # member (only System.IServiceProvider.GetService(Type)),
+                # so the previous
+                # ServiceLocator.GetInstance("TsStrBldr") /
+                # GetInstance("ITsPropsBldr") string lookups could never
+                # resolve. (issue #272)
+                bldr = TsStringUtils.MakeStrBldr()
                 bldr.Clear()
 
                 # Add ORC character
@@ -3393,13 +3427,18 @@ class FLExProject(object):
 
                 # Create properties with embedded path
                 # Format: kodtExternalPathName character + file path
-                from SIL.LCModel.Core.KernelInterfaces import FwObjDataTypes
+                from SIL.LCModel.Core.KernelInterfaces import (
+                    FwObjDataTypes,
+                    FwTextPropType,
+                )
 
-                obj_data = chr(FwObjDataTypes.kodtExternalPathName) + file_path
+                obj_data = chr(int(FwObjDataTypes.kodtExternalPathName)) + file_path
 
-                # Set the ObjData property on the character
-                props_bldr = self.project.ServiceLocator.GetInstance("ITsPropsBldr")
-                props_bldr.SetStrPropValue(ord("k"), obj_data)  # Property tag for ObjData
+                # Set the ObjData property on the character. The correct
+                # property tag is FwTextPropType.ktptObjData (== 6); the
+                # previous ord("k") (== 107) was a different property.
+                props_bldr = TsStringUtils.MakePropsBldr()
+                props_bldr.SetStrPropValue(int(FwTextPropType.ktptObjData), obj_data)
 
                 # Apply properties to the ORC character
                 bldr.SetProperties(0, 1, props_bldr.GetTextProps())
@@ -4899,7 +4938,7 @@ class FLExProject(object):
         from SIL.LCModel import ILexEntryRefFactory
 
         with self._TransactionCM(f"Add complex form ({len(components)} component(s))"):
-            factory = self.project.ServiceLocator.GetInstance(ILexEntryRefFactory)
+            factory = self.GetFactory(ILexEntryRefFactory)
             entry_ref = factory.Create()
             entry.EntryRefsOS.Add(entry_ref)
 

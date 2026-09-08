@@ -162,7 +162,7 @@ class ConfidenceOperations(PossibilityItemOperations):
         level_hvo = level.Hvo
 
         analyses = []
-        analysis_repo = self.project.project.ServiceLocator.GetInstance(IWfiAnalysisRepository)
+        analysis_repo = self.project.GetService(IWfiAnalysisRepository)
 
         # Search through all analyses
         for analysis in analysis_repo.AllInstances():
@@ -224,7 +224,7 @@ class ConfidenceOperations(PossibilityItemOperations):
         level_hvo = level.Hvo
 
         glosses = []
-        gloss_repo = self.project.project.ServiceLocator.GetInstance(IWfiGlossRepository)
+        gloss_repo = self.project.GetService(IWfiGlossRepository)
 
         # Search through all glosses
         for gloss in gloss_repo.AllInstances():

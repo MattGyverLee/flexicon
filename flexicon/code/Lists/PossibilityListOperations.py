@@ -225,7 +225,7 @@ class PossibilityListOperations(BaseOperations):
         wsHandle = self.__WSHandle(wsHandle)
 
         # Create the new list using the factory
-        factory = self.project.project.ServiceLocator.GetInstance(ICmPossibilityListFactory)
+        factory = self.project.GetFactory(ICmPossibilityListFactory)
 
         with self._TransactionCM(f"Create list {name!r}"):
             new_list = factory.Create()

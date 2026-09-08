@@ -124,7 +124,7 @@ class AnnotationDefOperations(BaseOperations):
         See Also:
             Find, FindByType, GetUserCreatableTypes
         """
-        repo = self.project.project.ServiceLocator.GetInstance(ICmAnnotationDefnRepository)
+        repo = self.project.GetService(ICmAnnotationDefnRepository)
 
         for anno_def in repo.AllInstances():
             yield anno_def

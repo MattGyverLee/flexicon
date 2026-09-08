@@ -2792,7 +2792,7 @@ class LexEntryOperations(BaseOperations):
         with self._TransactionCM("Add complex form component"):
             if entry_ref is None:
                 # Create new LexEntryRef for complex form
-                factory = self.project.project.ServiceLocator.GetInstance(ILexEntryRefFactory)
+                factory = self.project.GetFactory(ILexEntryRefFactory)
                 entry_ref = factory.Create()
                 complex_entry.EntryRefsOS.Add(entry_ref)
                 entry_ref.RefType = LexEntryRefTags.krtComplexForm
