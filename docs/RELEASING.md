@@ -23,37 +23,85 @@ complete release, and neither triggers the other.
 site stale.** A release is only complete once a GitHub Release object
 also exists. The two steps are separate on purpose -- see section 5.
 
-> ### KNOWN BROKEN as of v4.6.0: the docs half does not work
+> ### PARTIALLY REPAIRED after v4.6.0: the docs half needs a runner
 >
-> `publish-docs.yml` has never successfully published. It fails twice
-> over, and both failures are silent from the release's point of view --
+> `publish-docs.yml` has never successfully published. It failed twice
+> over, and both failures were silent from the release's point of view --
 > PyPI still gets the package, so the release *looks* complete.
 >
-> 1. **No runner.** The job declares
->    `runs-on: [self-hosted, windows, fieldworks]`, and the repository
->    has **zero self-hosted runners registered**. The job therefore
->    queues until GitHub's 24-hour limit and is auto-cancelled. This is
->    visible in the run history for v4.3.0 and v4.4.0, both
->    `cancelled` after `24h0m`. The v4.6.0 run was cancelled manually
->    once the cause was identified.
-> 2. **The Sphinx build itself crashes.** Reproduced locally at the
->    v4.6.0 cut: `sphinx-build docs/sphinx flexicon/docs/flexiconAPI`
->    dies with an unhandled .NET exception while autodoc introspects
->    `api/flexicon.code` --
->    `Python.Runtime.PythonException: name must be a str, not a NoneType`,
->    thrown from `Python.Runtime.MethodBinding.get_Signature()`. autodoc
->    is walking pythonnet-wrapped LCM members and hitting a binding whose
->    name is null. *Caveat:* this was measured on Python 3.12.7, whereas
->    the workflow pins 3.11 x64, so it is not proven identical on the
->    intended runner -- but it is not runner-specific either, since it is
->    a pythonnet introspection failure, not a FieldWorks-availability one.
+> 1. **No runner. STILL OPEN -- needs an infrastructure decision.** The
+>    build job declares `runs-on: [self-hosted, windows, fieldworks]`, and
+>    the repository has **zero self-hosted runners registered**
+>    (`gh api repos/MattGyverLee/flexicon/actions/runners` ->
+>    `"total_count": 0`). The job therefore queued until GitHub's 24-hour
+>    limit and was auto-cancelled: v4.3.0 and v4.4.0 both show `cancelled`
+>    after `24h0m`, and the v4.6.0 run was cancelled by hand once the
+>    cause was found.
 >
-> Until both are addressed, treat the documentation site as **manually
-> maintained and currently stale**. Do not assume a green release means
-> the API docs were refreshed. Fixing this needs an autodoc guard around
-> pythonnet members (or `autodoc_mock_imports` for the LCM surface), plus
-> either registering a runner or moving the job to `ubuntu-latest` with
-> the LCM imports mocked.
+>    FieldWorks is genuinely required, so this cannot simply move to
+>    `ubuntu-latest`: `import flexicon` runs `FLExInit` at import time,
+>    which calls `FLExGlobals.InitialiseFWGlobals()` (a Windows-registry
+>    probe) and then `clr.AddReference("FwUtils")` at module scope.
+>    `autodoc_mock_imports` cannot satisfy either, because both are
+>    executed statements rather than imports. Two real options:
+>    **(a)** register a Windows runner with FieldWorks 9+ and the labels
+>    `self-hosted`, `windows`, `fieldworks` (Settings > Actions >
+>    Runners) -- this also un-blocks `upstream-compatibility-check.yml`,
+>    which targets the same empty pool; or **(b)** give `FLExInit` an
+>    import-time bypass so the docs can build without FLEx, accepting
+>    that autodoc then renders mocked rather than real LCM signatures.
+>
+>    Meanwhile the workflow no longer hangs. A `preflight` job on
+>    `ubuntu-latest` now runs first and fails in **seconds** with an
+>    actionable message when no matching runner is online, instead of
+>    burning 24 hours and reporting nothing. It is deliberately
+>    fail-open: if the runner registry cannot be read (the job needs
+>    `administration: read`), it warns and lets the build queue.
+>
+> 2. **The Sphinx build itself crashed. FIXED.** `sphinx-build
+>    docs/sphinx flexicon/docs/flexiconAPI` died with an unhandled .NET
+>    exception partway through `api/flexicon.code` --
+>    `Python.Runtime.PythonException: name must be a str, not a NoneType`,
+>    thrown from `Python.Runtime.MethodBinding.get_Signature()`.
+>
+>    Root cause, isolated to a single member:
+>    `flexicon.code.headless_ui.HeadlessLcmUI` subclasses an LCM interface
+>    *and* sets `__namespace__ = "Flexicon.Headless"`, which makes
+>    pythonnet emit a real derived .NET type
+>    (`Flexicon.Headless.HeadlessLcmUI`, in the `Python.Runtime.Dynamic`
+>    assembly). pythonnet's IL emitter never calls
+>    `MethodBuilder.DefineParameter`, so the emitted
+>    `Equals(System.Object)` override has `ParameterInfo.Name == null`.
+>    autodoc formats every member's signature, which reads
+>    `__signature__`; pythonnet answers from `MethodBinding.get_Signature()`,
+>    which passes the null name to `inspect.Parameter()`. Because the
+>    raise happens inside the native `tp_getattro` slot it escapes as an
+>    unhandled CLR exception and **aborts the process** -- exit 127, no
+>    Python traceback, no Sphinx warning. A bare `ILcmUI` subclass with no
+>    `__namespace__` does *not* reproduce it; only the emitted type does.
+>
+>    The fix is an `autodoc-skip-member` guard in `docs/sphinx/conf.py`
+>    that skips members whose type lives in pythonnet's `CLR`
+>    pseudo-module. Those are exactly the inherited/emitted CLR plumbing
+>    (`Equals`, `GetHashCode`, `GetType`, `ToString`, `MemberwiseClone`,
+>    `Finalize`) -- no docstrings, no API value. `HeadlessLcmUI` and all
+>    15 of its real `ILcmUI` members still render. Pinned by
+>    `tests/test_sphinx_conf_clr_skip.py`.
+>
+>    **The 3.12-vs-3.11 caveat from the original report is closed.** The
+>    crash was re-confirmed on Python **3.11.15 x64** with **pythonnet
+>    3.1.0** and **Sphinx 9.0.4** -- the exact stack the workflow pins,
+>    and a *newer* pythonnet than the 3.0.5 it was first seen on. It is
+>    neither a 3.12 artifact nor fixed upstream. On that same environment
+>    the patched build now completes: `build succeeded, 7 warnings`, 126
+>    HTML pages. The 7 warnings are pre-existing docstring-indentation
+>    nits in `FLExProject.OpenProject`, `MSAOperations`, and
+>    `string_utils`; they do not fail the build.
+>
+> Until the runner exists, treat the documentation site as **manually
+> maintained and currently stale**. A green release still does not mean
+> the API docs were refreshed -- but a *failed* docs run will now say why
+> within a minute.
 
 PyPI upload uses **Trusted Publishing** (OIDC): `publish.yml` requests an
 `id-token` and authenticates as the repo. There is no stored PyPI token
@@ -227,10 +275,11 @@ Step 5 is not optional. Skipping it leaves `gh-pages` serving the
 previous version's API documentation against a shipped package.
 
 **Today step 5 creates the Release but does not actually refresh the
-docs** -- see the KNOWN BROKEN box in section 1. Create the Release
-anyway: it is the durable record of the version, carries the release
-notes, and is what will drive the docs build once that pipeline is
-repaired.
+docs** -- the Sphinx build is fixed, but no self-hosted runner exists to
+run it on, so the `preflight` job fails the run immediately. See the
+PARTIALLY REPAIRED box in section 1. Create the Release anyway: it is the
+durable record of the version, carries the release notes, and will drive
+the docs build the moment a runner is registered.
 
 `gh release create` with a *new* tag would fire both events at once. Push
 the tag separately anyway: it keeps the PyPI publish and the docs publish

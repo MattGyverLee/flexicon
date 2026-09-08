@@ -73,6 +73,46 @@ autodoc_default_options = {
 # which reads more naturally for the CRUD-grouped Operations classes.
 autodoc_member_order = "bysource"
 
+# -- Skip pythonnet CLR bindings ---------------------------------------------
+#
+# A class that subclasses an LCM interface AND sets ``__namespace__`` (only
+# HeadlessLcmUI today, flexicon/code/headless_ui.py) makes pythonnet emit a
+# real derived .NET type into its dynamic assembly. Its IL emitter never calls
+# MethodBuilder.DefineParameter, so the emitted override's ParameterInfo.Name
+# is null:
+#
+#     Flexicon.Headless.HeadlessLcmUI.Equals(System.Object)  ->  param Name=None
+#
+# autodoc formats every member's signature, which reads ``__signature__``.
+# pythonnet 3.0.5 answers that from MethodBinding.get_Signature(), which feeds
+# the null name to inspect.Parameter() and raises
+#
+#     TypeError: name must be a str, not a NoneType
+#
+# That raise happens inside the native tp_getattro slot, so it escapes as an
+# *unhandled CLR exception* and aborts the whole process -- no Python
+# traceback, no Sphinx warning, exit 127 partway through reading
+# api/flexicon.code. This is what kept the docs site from ever publishing.
+#
+# The members at risk are exactly the inherited/emitted CLR plumbing --
+# Equals, GetHashCode, GetType, ToString, MemberwiseClone, Finalize -- which
+# carry no docstrings and no API value. A flexicon class's own overrides stay
+# plain Python functions and are unaffected, so skipping every member whose
+# type lives in pythonnet's "CLR" pseudo-module loses nothing and cannot
+# regress if another .NET-derived class is added later.
+#
+# Do NOT widen this to the metatype: HeadlessLcmUI itself has type
+# clr._internal.CLRMetatype, and it is a class we want documented.
+def _skip_clr_bindings(app, what, name, obj, skip, options):
+    if type(obj).__module__ == "CLR":
+        return True
+    return None
+
+
+def setup(app):
+    app.connect("autodoc-skip-member", _skip_clr_bindings)
+
+
 # The suffix of source filenames.
 source_suffix = {".rst": "restructuredtext"}
 

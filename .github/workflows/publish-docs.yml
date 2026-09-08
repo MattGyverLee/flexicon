@@ -13,6 +13,12 @@ name: Publish Docs to GitHub Pages
 #   - release published: refresh the site when a release is cut
 # To also rebuild on every docs/code change, add a `push` trigger with paths
 # filters for docs/sphinx/** and flexicon/** (excluding flexicon/docs/**).
+#
+# A `preflight` gate runs first on a hosted runner and fails in seconds when no
+# self-hosted runner matching the required labels is online. Without it a
+# missing runner is invisible: the job simply queues until GitHub's 24-hour
+# limit and is auto-cancelled, which is how the v4.3.0 and v4.4.0 doc builds
+# each burned 24h0m without ever reporting a cause.
 
 on:
   workflow_dispatch:
@@ -29,11 +35,60 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Fail fast when the FieldWorks runner pool is empty, rather than queueing
+  # for 24 hours against labels nothing answers to. Advisory only: if the
+  # runner registry cannot be read this job passes and lets the build queue.
+  preflight:
+    name: Check the FieldWorks runner pool is online
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Listing self-hosted runners needs administration:read. This replaces the
+    # workflow-level contents:write for this job, which does not check out.
+    permissions:
+      administration: read
+
+    steps:
+      - name: Require an online [self-hosted, windows, fieldworks] runner
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          if ! runners=$(gh api "repos/$REPO/actions/runners?per_page=100" 2>/dev/null); then
+            echo "::warning::Could not read the runner registry (administration:read may be unavailable). Skipping the preflight; the build job will queue as normal."
+            exit 0
+          fi
+
+          # An online runner must carry every one of the three required labels.
+          matching=$(echo "$runners" | jq -c '
+            [ .runners[]?
+              | select(.status == "online")
+              | select([.labels[].name] as $have
+                       | all("self-hosted", "windows", "fieldworks"; . as $l | $have | index($l)))
+            ]')
+
+          if [ "$(echo "$matching" | jq 'length')" -gt 0 ]; then
+            echo "Matching runners online:"
+            echo "$matching" | jq -r '.[] | "  - \(.name) [\([.labels[].name] | join(", "))]"'
+            exit 0
+          fi
+
+          echo "No runner matched. Registered runners (all states):"
+          echo "$runners" | jq -r '
+            if (.runners | length) == 0 then "  (none registered)"
+            else .runners[] | "  - \(.name) status=\(.status) [\([.labels[].name] | join(", "))]"
+            end'
+          echo "::error::No online self-hosted runner carries all of [self-hosted, windows, fieldworks], so the docs build would queue until GitHub auto-cancels it at 24h. Register a Windows runner with FieldWorks 9+ installed and those three labels (Settings > Actions > Runners), then re-run. See docs/RELEASING.md section 1."
+          exit 1
+
   build-and-deploy:
     name: Build Sphinx docs and deploy to gh-pages
+    needs: preflight
     # Self-hosted runner with FLEx pre-installed (same pool as the
     # upstream-compatibility-check workflow).
     runs-on: [self-hosted, windows, fieldworks]
+    # The full autodoc build over ~126 pages takes minutes, not hours; a cap
+    # keeps a wedged build from holding the shared FieldWorks runner.
+    timeout-minutes: 60
 
     steps:
       - name: Checkout main
