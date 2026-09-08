@@ -50,6 +50,8 @@ When working with FLEx operations, you'll encounter these .NET exceptions from L
 | `LcmFileLockedException` | Project file is locked | Another FLEx instance has lock |
 | `LcmDataMigrationForbiddenException` | Data migration required | Project schema too old |
 
+Note that `System.InvalidOperationException` is also the exception the SLDR uses to report both "already initialized" and "not initialized" -- see "Library Initialization and the SLDR Lifecycle" below, where matching its message rather than probing state was the root cause of issue #249.
+
 ---
 
 ## Common Exception Patterns
@@ -506,6 +508,176 @@ def add_allomorph(entry, form_text):
 
 ---
 
+## Library Initialization and the SLDR Lifecycle
+
+Initialization and teardown are the one place where the "catch specific
+exceptions" rule above is not merely tidier -- it is the difference between a
+loud startup failure and silent, self-perpetuating data damage. This section
+states the rule and uses issue #249 as the worked example.
+
+### Rule: probe published state, don't match an initializer's exception
+
+If a library publishes a state probe, use it. Reach for `try`/`except` only
+for the check-then-act race the probe cannot close, and narrow that `except`
+to the one exception type *and* the one message that means "benign".
+
+`SIL.WritingSystems.Sldr` publishes exactly such a probe. Verified by live
+reflection against **SIL.WritingSystems 18.0.0.0 / FieldWorks 9.3.10**:
+
+| Member | Type | Verified behaviour |
+|---|---|---|
+| `Sldr.IsInitialized` | `public static bool`, get-only | Safe to read before any init; never throws |
+| `Sldr.Initialize(offlineTestMode)` | static; parameter optional, default `False` | A second call throws `System.InvalidOperationException` and never re-applies the offline-mode argument |
+| `Sldr.Cleanup()` | static | Throws `System.InvalidOperationException` when the SLDR is cold (from the private `CheckInitialized()`) |
+| `Sldr.OfflineMode` | **does not exist** | There is no such member; the parameter is named `offlineTestMode` |
+
+The two exception messages are exact, and they are **not** symmetric, so a
+substring match written for one will not fire for the other:
+
+| Call | Condition | `e.Message` |
+|---|---|---|
+| `Sldr.Initialize(True)` | already initialized | `The SLDR has already been initialized.` |
+| `Sldr.Cleanup()` | never initialized, or already cleaned up | `The SLDR has not been initialized.` |
+
+`Cleanup()` followed by `Initialize(True)` is a **supported cycle**: it works,
+and `Sldr.LanguageTags` repopulates afterwards (9596 entries). A long-running
+consumer that opens and closes several projects in one process may therefore
+cycle the SLDR legitimately.
+
+### Why a bare `except Exception` around an initializer is uniquely dangerous
+
+Elsewhere in this guide, swallowing an exception costs you one operation and
+one confusing log line (see "Be Specific" and "Re-raise When Appropriate"
+above). Around an **initializer** it costs the whole process, because the
+library stays down and every later call degrades instead of failing.
+
+Issue #249 is the worked example. `FLExInitialize()` contained:
+
+```python
+# WRONG -- the shape that shipped, and the reason #249 went unnoticed.
+try:
+    Sldr.Initialize(True)
+except Exception:
+    logger.warning("Sldr.Initialize failed (already initialized?)")
+```
+
+The chain that produces:
+
+1. Initialization fails for a **real** reason. The `except` downgrades it to
+   a WARNING on logger `flexicon.code.FLExInit`, and the message
+   **misattributes** the cause as the benign already-initialized case.
+2. The SLDR is now down for the lifetime of the process.
+3. Every LDML read inside liblcm's
+   `CoreLdmlInFolderWritingSystemRepository` throws *"The SLDR has not been
+   initialized"*.
+4. liblcm reads that as a malformed file: it renames the project's `.ldml`
+   to `.ldml.bad`, writes a `badldml.log` entry, and re-synthesizes the
+   writing systems from defaults.
+5. The next open repeats steps 1-4. Observed live: a `WritingSystemStore`
+   left with no valid `.ldml` at all, 16 quarantine events over 8
+   consecutive opens (with a quarantine landing 9 seconds after FLEx itself
+   wrote the file), ending in a liblcm modal *"Unable to create writing
+   system: en"*.
+
+Actual data loss was negligible -- only default content was ever
+overwritten -- but the cycle never terminates, and the *only* diagnostic it
+ever emitted pointed at the wrong cause. That is the real cost of the bare
+`except`: not the lost exception, but the plausible-looking log line that
+stopped anyone looking further.
+
+### Trap: pythonnet loses the exception type on CLR **property** getters
+
+Do not detect initialization state by reading a property and catching what
+comes out. Reading `Sldr.LanguageTags` before init surfaces as a bare:
+
+```
+TypeError: Exception has been thrown by the target of an invocation.
+```
+
+The inner `System.InvalidOperationException` -- and the message naming the
+cause -- is **lost**. Only **method** calls are reliably exception-typed
+across the pythonnet boundary; **CLR property getters** are not.
+
+```python
+# WRONG -- this except never matches; you get a bare TypeError instead.
+try:
+    tags = Sldr.LanguageTags
+except System.InvalidOperationException:
+    Sldr.Initialize(True)
+
+# GOOD -- probe the documented state instead.
+if not Sldr.IsInitialized:
+    Sldr.Initialize(True)
+```
+
+A corollary for the rest of this guide: a `TypeError` raised out of a CLR
+property access is not necessarily a Python-side type error. It may be any
+.NET exception at all, with its identity stripped.
+
+### The correct code shape
+
+```python
+import System
+from SIL.WritingSystems import Sldr
+
+logger = logging.getLogger(__name__)
+
+def FLExInitialize():
+    if Sldr.IsInitialized:
+        logger.debug("Sldr already initialized; skipping Sldr.Initialize()")
+    else:
+        try:
+            Sldr.Initialize(True)          # offlineTestMode=True
+        except System.InvalidOperationException as e:
+            # Backstop for the check-then-act race ONLY: Initialize() and
+            # Cleanup() serialize on a private lock, so another thread can
+            # win between the probe and the call. Anything that is not that
+            # exact benign message is a real failure and must propagate.
+            if "already been initialized" not in e.Message:
+                raise
+            logger.debug("Sldr was initialized concurrently; continuing")
+
+def FLExCleanup():
+    # Teardown must tolerate already being done: Sldr.Cleanup() throws when
+    # the SLDR is cold, so an unguarded call made FLExCleanup() raise
+    # whenever FLExInitialize() had never run or cleanup ran twice (several
+    # shipped scripts under examples/ call it twice by design).
+    if not Sldr.IsInitialized:
+        logger.debug("Sldr not initialized; skipping Sldr.Cleanup()")
+        return
+    Sldr.Cleanup()
+```
+
+Three properties are worth naming explicitly:
+
+- **Every genuine failure now propagates to the caller.** A broken SLDR is a
+  startup error, not a warning.
+- **The benign path no longer raises at all**, so repeated `FLExInitialize()`
+  calls stay a genuine no-op -- which the shipped examples and per-test
+  `setUp` rely on.
+- **Teardown is idempotent**, in both directions.
+
+As implemented in `flexicon/code/FLExInit.py`.
+
+### `.ldml.bad` does not identify which half of the lifecycle broke
+
+Issue #179 (*"WritingSystemOperations.Create leaves orphan tags; SLDR
+teardown in unit tests marks .ldml files as bad"*, RESOLVED, commit
+e42da05) produced the **same** `.ldml.bad` symptom from the **opposite**
+cause: the SLDR was torn down mid-session by test teardown, rather than
+never having come up. It changed zero lines of `FLExInit.py`, and it is not
+a duplicate of #249.
+
+When you see `.ldml.bad`, check both halves: whether `Sldr.IsInitialized` is
+`False` at the time of the LDML read, and whether anything called
+`Sldr.Cleanup()` earlier in the process.
+
+See `docs/API_ISSUES_CATEGORIZED.md` "Category 12: Library-initialization /
+SLDR lifecycle traps (issue #249)" for the full member table, the
+anti-pattern list, and the #179/#249 comparison.
+
+---
+
 ## Atomicity Under `undoable=False`: the Session Is the Unit
 
 **This section states the actual, verified atomicity guarantee for the
@@ -775,6 +947,7 @@ When implementing exception handling in flexlibs2:
 - [ ] Test both success and failure cases
 - [ ] Avoid silently swallowing important exceptions
 - [ ] Consider whether to re-raise or handle locally
+- [ ] For an initializer or a teardown, probe the library's published state (e.g. `Sldr.IsInitialized`) instead of matching an exception message, and never wrap it in a bare `except Exception`
 
 ---
 
