@@ -70,6 +70,30 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   follow-up -- comparing serialized spec content rather than struct
   identity -- is noted but not filed as an issue.
 
+- **`AllomorphOperations.GetSyncableProperties`/`ApplySyncableProperties`
+  now capture and apply `MsEnvFeaturesOA`.** Task T8 of
+  `specs/feature-structure-sync-gap` (`spec.md:655`) -- an UNFILED P0;
+  filing a GitHub issue is an outstanding user decision, so this entry
+  references the task, not an issue number. `MoAffixAllomorph` has the
+  single C1 table row (`MsEnvFeaturesOA`, no slot ambiguity); a
+  `MoStemAllomorph` has no such property at all and is never routed to
+  the resolver. Dispatch is a positive `ClassName == "MoAffixAllomorph"`
+  check with no `else` and no explicit `MoStemAllomorph` guard, mirroring
+  `MSAOperations`' out-of-table fallback.
+
+  **Bug fix, not merely a coverage gap (same shape as #251/#252):**
+  `GetSyncableProperties` previously used `item` raw instead of routing
+  through `__GetAllomorphObject`, so an HVO entry path returned every
+  `hasattr` gate False and silently produced `{"Form": {}, "MorphTypeRA":
+  None}` with no raise. Independently, `__GetAllomorphObject` (the shared
+  resolver behind 11 call sites) returned a bare, uncast `ICmObject` on
+  the HVO path. Both fixed together: `__GetAllomorphObject` now casts to
+  `IMoStemAllomorph`/`IMoAffixAllomorph` by `ClassName` and never raises
+  on a miss (unlike `Duplicate`, whose own raise on an unrecognized
+  `ClassName` is local to that method and untouched) -- live-measured
+  before and after the fix, plus a mutation-testing pass, in
+  `specs/feature-structure-sync-gap/evidence/live-T8.md`.
+
 ### Changed
 - **BREAKING (behavioural): name-field writers across four Operations
   classes now persist the caller's original, unstripped name, and their
