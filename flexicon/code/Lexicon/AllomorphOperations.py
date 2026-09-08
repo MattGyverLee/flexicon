@@ -20,7 +20,6 @@ from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 
 # Import FLEx LCM types
 from SIL.LCModel import (
-    IMoForm,
     IMoStemAllomorph,
     IMoAffixAllomorph,
     IMoStemAllomorphFactory,
