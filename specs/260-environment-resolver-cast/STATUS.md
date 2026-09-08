@@ -103,7 +103,66 @@ more defensible than the inventory allowed -- a helper promising only
 needs nothing; `ParagraphOperations:101` (casts on both branches, with a
 comment recording the bug it fixed) is the reference implementation.
 
+## Ruling: the gate test stays (cycle-16/17 rule does not bite)
+
+`tests/operations/test_260_env_resolver_hvo_gate.py` **stays.** The
+cycle-16/17 precedent -- never pin a defect green as expected behaviour --
+does not apply, because at these two call sites there is no defect to pin.
+What the test pins is a correct behaviour: int-HVO write-through on
+`AddPhoneEnv`/`RemovePhoneEnv`, verified by a fresh LCM re-fetch in both
+directions, for two methods that previously had **zero** live coverage.
+Deleting it would throw away the only artifact that makes the falsification
+reproducible.
+
+Its role is re-labelled: **regression fence, not cast gate.** The header
+has been corrected in place (T1b) because it asserted P2 as fact -- the
+same false-"already handled" marker hazard flagged above, sitting in the
+file most likely to be cited as evidence. It now carries an explicit
+PROVES / DOES NOT PROVE block: it proves the write-through, it does **not**
+prove any cast is required, and if a cast later lands these two tests must
+stay green and unchanged (that is P9).
+
+## Class-A re-triage: the anchor is in #260's own body
+
+The re-triage axis ruled above is not an invention of this spurt -- #260's
+body already draws the distinction and then asks us to ignore it. It
+reports `__GetAllomorphObject` as *directly observed failing* (with a log
+line and a stack), and asks for `__GetEnvironmentObject` in the same pass
+on the express basis that it is *"not directly observed failing this
+window, but structurally the same defect."* Cycle 1 tested that inference
+instead of trusting it, and it did not hold. Structural similarity is a
+hypothesis; it is not a defect count.
+
+So the re-triage requirement stands and hardens:
+
+- **Evidence must be caller facts, not resolver facts.** Every helper
+  promoted to "behavioural" must cite the caller `file:line` performing the
+  Python attribute access, and the member name, and that the member is not
+  on `ICmObject`. "Uncast + docstring promises an interface" promotes
+  nothing.
+- **The guarded/unguarded split is demoted to secondary**, inside the
+  behavioural bucket only, where it means "also needs input validation".
+- **No sweep issue may be filed on the ~55 figure.** It is an upper bound
+  on contract mismatches. The archivist's per-module shape (Scripture,
+  Discourse, Lexicon, Grammar remainder, combined Reversal/Lists/Notebook)
+  survives as the right *packaging* for whatever the behavioural bucket
+  turns out to be -- the PR-size argument is sound and unaffected by the
+  falsification -- but it does not survive as a *scope*: the module split
+  was drawn over contract mismatches, and re-triage will redraw the
+  boundaries and probably shrink the count a lot. Re-scope after triage,
+  do not pre-file. Contract-only leftovers batch into ONE housekeeping
+  issue with no live gate.
+- **flexicon#261 (Class D) is unaffected** by any of this and stays its own
+  issue -- wrong lookup API, not a missing cast.
+
+## Closure comment: drafted, NOT posted
+
+`reviews/DRAFT-260-closure-comment.md`. No GitHub action taken. It is marked
+do-not-post because its Part 2 speaks of the contract cast in the past tense
+and that cast is still T3. Post only after T3 lands and P9 verifies live.
+
 ## Next pickup
 
-Cycle 2 (T2-T5), then #260 closes. The Class-A caller-usage re-triage is a
-separate later spurt.
+Cycle 2 (T2-T5), then #260 closes. T2 is the priority -- it is the only
+genuine defect in this feature, and P6/P6b/P7 are its falsifiers.
+The Class-A caller-usage re-triage is a separate later spurt.

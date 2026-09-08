@@ -42,6 +42,19 @@ P6 (load-bearing, T2): against UNMODIFIED
     If this comes back GREEN, STOP and report -- do not hunt for a
     substitute falsifier, and do not apply the cast on a green baseline.
 
+P6b (load-bearing, T2 -- added by the lead at cycle-1 close, still
+    BEFORE any cycle-2 run, from a first-hand read of
+    EnvironmentOperations.py:688-700 that the cycle-1 report did not
+    cover): against UNMODIFIED source,
+    `GetSyncableProperties(env_hvo_int)` RAISES on its
+    `getattr(env, prop_name)` loop at :700 for the FIRST of
+    `Name` / `Description` / `StringRepresentation` it reaches -- a
+    third independent falsifier on the attribute-access axis, and the
+    one that matters most because it is on the sync path. If this comes
+    back GREEN while P6 comes back RED, stop and report: the two
+    disagree about the same mechanism and something in the model of
+    pythonnet's wrapper gate is wrong.
+
 P7 (T2, the silent variant): against UNMODIFIED source,
     `GetLeftContext(env_hvo_int)` returns `None` WITHOUT raising, on an
     environment whose `LeftContextOA` is genuinely populated -- because

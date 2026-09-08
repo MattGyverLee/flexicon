@@ -10,18 +10,27 @@
 #          this file does NOT touch that resolver.
 #
 #          __GetEnvironmentObject promises "Returns: IPhEnvironment" in
-#          its docstring but (pre-fix) never casts -- FLExProject.Object
-#          (hvo) returns a bare ICmObject, so subtype-only members are
-#          silently lost on the HVO entry path. Its two callers,
-#          AddPhoneEnv (:1255-1256) and RemovePhoneEnv (:1297-1298),
-#          both MUTATE via allomorph.PhoneEnvRC, an
+#          its docstring but does not cast -- FLExProject.Object(hvo)
+#          returns a bare ICmObject. Its two callers, AddPhoneEnv
+#          (:1255-1256) and RemovePhoneEnv (:1297-1298), both MUTATE via
+#          allomorph.PhoneEnvRC, an
 #          ILcmReferenceCollection[IPhEnvironment].
 #
-#          #260's actually-observed failure came from an OBJECT input
-#          (project.Object(guid) result), not an int, so the fix must
-#          merge the int and object branches (mirroring the sibling's
-#          :1359-1369 int/object merge) and apply the cast to BOTH --
-#          an int-only cast leaves the reported defect live.
+#          CYCLE-1 CORRECTION (lead ruling, 2026-09-08). An earlier
+#          version of this header asserted that the missing cast BREAKS
+#          these two callers. That was prediction P2, and P2 was
+#          FALSIFIED live: on unmodified HEAD both callers SUCCEED with
+#          a genuine int HVO (evidence/live-T2-p2-falsification.md).
+#          Reason: passing a bare wrapper as an ARGUMENT to a strongly-
+#          typed .NET method is not the failing path -- the CLR binds on
+#          the object's runtime type, which does implement
+#          IPhEnvironment. The failing path is PYTHON ATTRIBUTE ACCESS
+#          on the resolved object (pythonnet exposes only members
+#          declared on the static interface the wrapper was built
+#          against). #260's actually-reported AttributeError comes from
+#          Grammar/EnvironmentOperations.py __ResolveObject (:648),
+#          whose callers DO read env.Name / env.StringRepresentation
+#          directly -- a different file from this one.
 #
 #          As with the T8 gate, these tests pass a GENUINE Python int
 #          HVO (asserted isinstance(hvo, int) BEFORE the call) -- an
@@ -31,13 +40,24 @@
 #   Basis: specs/260-environment-resolver-cast/evidence/
 #          live-T1-reflection.md measured
 #          hasattr(bare_object, "StringRepresentation") -> False on a
-#          bare sandbox.Object(hvo) view of a real PhEnvironment, so
-#          "StringRepresentation" is itself concrete-only through the
-#          HVO entry path (the T8-style trap holds for PhEnvironment
-#          too). If __GetEnvironmentObject's cast is absent/deleted, a
-#          bare ICmObject reaches allomorph.PhoneEnvRC.Add/Remove and
-#          (per P2) that reference-collection call does not bind to a
-#          bare ICmObject.
+#          bare sandbox.Object(hvo) view of a real PhEnvironment (P3,
+#          HELD). That trap is what makes the ATTRIBUTE-ACCESS axis
+#          real; it is re-asserted below as a live precondition so this
+#          file records the measurement even though these two callers
+#          do not depend on it.
+#
+#   WHAT THIS FILE PROVES / DOES NOT PROVE (read before citing it):
+#          PROVES -- AddPhoneEnv and RemovePhoneEnv both write through
+#          correctly via a genuine int-HVO entry path, verified by a
+#          FRESH re-fetch in both directions. That is real live coverage
+#          for two methods that previously had none (flexicon#268).
+#          DOES NOT PROVE -- that any cast in __GetEnvironmentObject is
+#          behaviourally required. These tests were GREEN on the uncast
+#          baseline. They are a REGRESSION FENCE for the two callers,
+#          not a gate on the cast. If a contract-conformance cast later
+#          lands in __GetEnvironmentObject, these tests must stay GREEN
+#          and UNCHANGED; a flip in either direction means the cycle-1
+#          falsification was wrong and #260 must be re-opened.
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+
@@ -77,13 +97,13 @@ class TestHvoPathCastAddPhoneEnv:
             env_hvo = env.Hvo
 
             # THE TRAP: this must be a genuine int, not an already-typed
-            # object -- otherwise the cast under test at
+            # object -- otherwise the HVO entry path through
             # __GetEnvironmentObject is exercised vacuously (the object
             # is already concrete before the call).
             assert isinstance(env_hvo, int), (
                 "test setup error: env_hvo must be a genuine Python int, "
                 "not an already-typed environment object -- otherwise "
-                "the cast under test is exercised vacuously."
+                "the HVO entry path under test is exercised vacuously."
             )
 
             # P3: the bare-view trap holds for PhEnvironment too.
@@ -140,7 +160,7 @@ class TestHvoPathCastRemovePhoneEnv:
             assert isinstance(env_hvo, int), (
                 "test setup error: env_hvo must be a genuine Python int, "
                 "not an already-typed environment object -- otherwise "
-                "the cast under test is exercised vacuously."
+                "the HVO entry path under test is exercised vacuously."
             )
 
             # P3 trap, re-asserted at this site independently.
