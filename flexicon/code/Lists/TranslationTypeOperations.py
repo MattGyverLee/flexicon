@@ -306,7 +306,7 @@ class TranslationTypeOperations(PossibilityItemOperations):
         type_guid = trans_type.Guid
 
         # Search all texts
-        text_repo = self.project.project.ServiceLocator.GetInstance(ITextRepository)
+        text_repo = self.project.GetService(ITextRepository)
         for text in text_repo.AllInstances():
             # Check if text has translations using this type
             if hasattr(text, "TranslationsOC") and text.TranslationsOC:

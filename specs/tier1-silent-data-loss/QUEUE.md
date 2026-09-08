@@ -771,8 +771,29 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   `#242/spec.md` C10, preserving the unstripped payload here would leave
   an unanswered question ("is `\"Genesis \"` the same text as
   `\"Genesis\"`?") that #242's own four filed sites never had to answer,
-  because none of them has a name-uniqueness check. No work happens on
-  this until the user rules on the dedup-identity question.
+  because none of them has a name-uniqueness check.
+
+  **UPDATE 2026-09-08 -- BLOCKER DISCHARGED, NOW FILED AS
+  [flexicon#274](https://github.com/MattGyverLee/flexicon/issues/274).**
+  The dedup-identity question is RULED: whitespace is NOT identity-bearing
+  for name fields (`"Genesis "` IS `"Genesis"`); case stays as each site
+  has it. Store verbatim, compare on a normalized key. Full frozen ruling
+  at `specs/name-field-whitespace-identity/spec.md` NF1-NF11, with
+  `tasks.md` alongside it.
+
+  The scope also GREW on investigation, and the question as filed above
+  rested on a false premise. The identity defect is **not** created by
+  preserving whitespace -- it is live today through the public API alone.
+  `normalize_match_key` strips the needle but never the haystack (10 of 40
+  comparison pairs), so: five `Create` methods persist raw names with no
+  uniqueness guard and are paired with such a lookup, meaning **this
+  library can create an object it can then never find by name**; and four
+  more strip before asking a guard that consults the same blind lookup,
+  so duplicate guards silently fail to fire. See `spec.md` NF2.
+
+  Implementation is unstarted and, per NF8, must begin by writing the
+  harness and measuring PN1-PN8 against the UNFIXED code -- those
+  predictions are still unmeasured and their harness does not exist.
 - **NEW (item 2, cycle 2, 2026-09-07) -- Q-242B:
   `CheckOperations.py:196` and `:432`
   (`name.strip() if isinstance(name, str) else ""` against a None-only
@@ -784,7 +805,16 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   #242's sites lose padding around real content; this site can lose the
   entire name. It is deliberately **NOT bundled with Q-242A** so it is
   not triaged at whitespace severity (`specs/242-paragraph-whitespace/spec.md`
-  C10, C6 item 3). No work happens on this until the user approves it.
+  C10, C6 item 3).
+
+  **UPDATE 2026-09-08 -- APPROVED AND FILED AS
+  [flexicon#273](https://github.com/MattGyverLee/flexicon/issues/273)**,
+  separately from Q-242A and labelled `bug`, preserving the severity split.
+  Still UNMEASURED: this is predictions PN5/PN6 in
+  `specs/name-field-whitespace-identity/evidence/live-probe-cycle1.md`, and
+  the harness that would confirm them does not exist yet. The issue body
+  says so explicitly, so nobody treats a code-read finding as a measured
+  one.
 - **NEW (item 2, cycle 2, 2026-09-07) -- Q-242C: coerce-vs-reject for
   non-`str` payloads.** `BaseOperations._ValidateParam`
   (`BaseOperations.py:2377`) is a `None`-check plus a stale-LCM guard
@@ -793,5 +823,12 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   the codebase. Per `specs/242-paragraph-whitespace/spec.md` C11, this
   needs a `_ValidateParam` / shared-code decision -- CLAUDE.md requires
   consultation before changing shared validation methods, so this is
-  queued rather than implemented incidentally inside #242. No work
-  happens on this until the user rules on it.
+  queued rather than implemented incidentally inside #242.
+
+  **UPDATE 2026-09-08 -- DELIBERATELY NOT FILED as a GitHub issue, and
+  still awaiting a ruling.** Q-242A and Q-242B were filed (#274, #273);
+  this one was held back on purpose. It is a **design decision, not a
+  defect** -- nothing is broken until someone rules on coerce-vs-reject --
+  and filing it as `bug` would misclassify it and invite exactly the
+  unilateral 12-site sweep that `spec.md` C11 declined. It stays here
+  until a ruling makes it actionable.

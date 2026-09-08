@@ -43,9 +43,24 @@ The canonical template is `tests/operations/test_target_live_smoke.py`.
 ### The Target fixture backup
 
 `tests/fixtures/Target *.fwbackup` is gitignored (same convention as the
-Sena 3 fixture). The golden copy lives at
-`D:\Github\_Projects\_LEX\GramTrans\backups\Target 2026-07-06 0218.fwbackup`;
-copy it into `tests/fixtures/` on a fresh checkout.
+Sena 3 fixture). The golden copy is
+`Target 2026-07-06 0218.fwbackup`; copy it into `tests/fixtures/` on a
+fresh checkout. `conftest.py` globs `Target*.fwbackup`, so keep the `Target`
+prefix.
+
+Known locations (the drive differs per machine -- check both):
+
+- `C:\Github\GramTrans\backups\Target 2026-07-06 0218.fwbackup`
+- `D:\Github\_Projects\_LEX\GramTrans\backups\Target 2026-07-06 0218.fwbackup`
+
+**Do not substitute a different project's backup.** Other Target-ish
+backups may sit alongside it (e.g. `Ejagham W Target ...`,
+`Ngoreme Target ...`); none of them matches the `Target*.fwbackup` glob, and
+swapping project data into an evidential run is exactly what the live-run
+evidence rules exist to prevent. If the fixture is missing,
+`FLEXLIBS_REQUIRE_LIVE=1` fails loudly rather than skipping -- that is
+working as designed; copy the golden backup in rather than working around
+the failure.
 
 ## Running the live suite
 

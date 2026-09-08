@@ -25,9 +25,16 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 # The alias package itself, plus any test that is explicitly ABOUT the
 # alias/deprecation, is allowed to reference `flexlibs2`. Everything else is
 # not.
+#
+# Keep this set MINIMAL. Every entry is a hole in the ratchet, so a file
+# only belongs here if walking the alias is the thing it tests. A test that
+# merely happens to import a library symbol must import it from `flexicon`
+# and stay ratcheted.
 _ALLOWED_PATHS = {
     REPO_ROOT / "flexlibs2",
     REPO_ROOT / "tests" / "test_flexlibs2_alias_ratchet.py",
+    # Behavioral tests for the alias itself -- see that file's scope fence.
+    REPO_ROOT / "tests" / "test_flexlibs2_alias_surface.py",
 }
 
 # Directories that are not part of the source tree we ratchet on. `.git` and

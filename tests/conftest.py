@@ -1290,14 +1290,30 @@ def sena3_sandbox():
     """
     import pathlib
 
+    # FLEXLIBS_REQUIRE_LIVE=1 must convert every silent degradation into
+    # a hard failure, exactly as target_project / target_sandbox already
+    # do. Bare pytest.skip() here let a live-required session go green
+    # while verifying nothing -- the precise failure mode CLAUDE.md's
+    # fail-loud flag exists to prevent.
+    require_live = os.environ.get("FLEXLIBS_REQUIRE_LIVE") == "1"
+
+    def _unavailable(reason):
+        if require_live:
+            pytest.fail(
+                f"FLEXLIBS_REQUIRE_LIVE=1 but the Sena 3 sandbox is "
+                f"unavailable: {reason}. Refusing to skip a live "
+                f"verification."
+            )
+        pytest.skip(reason)
+
     if "SIL.LCModel" not in sys.modules:
-        pytest.skip("Requires SIL.LCModel (FieldWorks installed)")
+        _unavailable("Requires SIL.LCModel (FieldWorks installed)")
 
     repo_root = pathlib.Path(__file__).resolve().parent.parent
     fixtures_dir = repo_root / "tests" / "fixtures"
     backups = sorted(fixtures_dir.glob("Sena 3*.fwbackup"))
     if not backups:
-        pytest.skip(
+        _unavailable(
             f"No Sena 3 .fwbackup found in {fixtures_dir}; run "
             "scripts/restore_sena3.py prerequisites or place the backup."
         )
@@ -1305,7 +1321,7 @@ def sena3_sandbox():
     try:
         from flexicon.code.FLExProject import FLExProject
     except Exception as exc:
-        pytest.skip(f"Could not import FLExProject: {exc}")
+        _unavailable(f"Could not import FLExProject: {exc}")
 
     sandbox = _FwBackupSandbox(backups[-1], prefix="sena3_sandbox_")
     fwdata_path = sandbox.__enter__()
@@ -1389,7 +1405,7 @@ def target_project():
         _unavailable("Requires SIL.LCModel (FieldWorks installed)")
 
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception as exc:
         _unavailable(f"Could not import FLExProject: {exc}")
 
@@ -1448,7 +1464,7 @@ def target_sandbox():
         )
 
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception as exc:
         _unavailable(f"Could not import FLExProject: {exc}")
 

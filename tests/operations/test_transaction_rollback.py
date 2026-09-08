@@ -394,20 +394,17 @@ class TestPhase2JoinOrOpen:
         An exception inside the outermost block must leave RollBack True
         (the ctor default) at Dispose() time -- i.e. NOT cleared -- so
         liblcm's Dispose() rolls back rather than committing.
-        """
-        from flexicon.code.transaction import _NestingAwareTransaction
 
-        project = _make_phase2_project(current_depth=0)
-
-        with _NestingAwareTransaction(project, "outer"):
-            assert project._transaction_depth == 1
-
-        assert project._transaction_depth == 0
-
-    def test_depth_restored_on_exception(self):
-        """
-        _transaction_depth must return to 0 even when the body raises.
-        The depth counter must not leak across calls.
+        Note: this test was split in two by the flexlibs2 -> flexicon rename
+        (`ec54432`), which injected `_transaction_depth` assertions here and
+        moved this body into an undecorated `test_depth_restored_on_exception`.
+        Both halves were broken: `_transaction_depth` was DELETED by design
+        under issue #234 (see the comment at `FLExProject.py:274`, "formerly
+        `self._transaction_depth`"), so it can never be 1; and the moved half
+        lost its @patch, so the real UndoableUnitOfWorkHelper received a
+        `_FakeActionHandler`. Restored to the single coherent test that stood
+        at the 1292-passed baseline (`b0e3d14`). Depth is now observed via the
+        action handler's CurrentDepth, already covered above.
         """
         from flexicon.code.transaction import _NestingAwareTransaction
 

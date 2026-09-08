@@ -24,6 +24,18 @@ Usage::
     # From command line (on a machine with FieldWorks):
     python -m tests.contract.generate_lcm_snapshot -o snapshots/liblcm_9.1.22.json
 
+    # Regenerate the checked-in regression baseline. This is the ONLY
+    # sanctioned way to update it -- never hand-edit the JSON, because
+    # TestTransactionLayerContract and test_b1t_action_handler_double.py
+    # read it as a faithful reflection dump (method_signatures,
+    # constructors, reflected_properties), not just as a name list.
+    # Enumerate the drift first (compare_contracts diff against a snapshot
+    # written to a temp path) and record what you are accepting; the
+    # baseline is the regression tripwire.
+    python -m tests.contract.generate_lcm_snapshot \
+        -c tests/contract/snapshots/expected_contract.json \
+        -o tests/contract/snapshots/liblcm_baseline.json
+
     # Programmatically:
     from tests.contract.generate_lcm_snapshot import generate_snapshot
     snapshot = generate_snapshot(expected_contract)
@@ -31,27 +43,68 @@ Usage::
 
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
 def _get_lcm_version():
-    """Try to determine the liblcm/FieldWorks version."""
-    try:
-        import clr
-        from SIL.LCModel import LcmCache
+    """
+    Determine the loaded SIL.LCModel assembly version.
 
-        asm = LcmCache.__class__.__module__
-        # Try to get assembly version
-        for a in clr.ListAssemblies():
-            name = str(a)
-            if "SIL.LCModel," in name:
-                # Extract version from "SIL.LCModel, Version=X.Y.Z.W, ..."
-                for part in name.split(","):
-                    part = part.strip()
-                    if part.startswith("Version="):
-                        return part.split("=")[1]
+    Returns the assembly ``Version`` (e.g. ``"11.0.0.0"``), or ``"unknown"``.
+
+    Historical note: this used ``clr.ListAssemblies()``, which under
+    pythonnet 3.x returns *short* assembly names ("SIL.LCModel"), never the
+    full display name -- so the ``"SIL.LCModel,"`` substring test never
+    matched and every snapshot recorded ``liblcm_version: "unknown"``
+    (including the 2026-08-13 baseline). Walking
+    ``AppDomain.CurrentDomain.GetAssemblies()`` gives real ``FullName``
+    strings with the ``Version=`` field intact.
+
+    The value is used in a filename by
+    ``test_save_snapshot_for_regression``, so keep it filename-safe (digits
+    and dots) -- the richer NuGet-style string goes in
+    ``liblcm_informational_version`` instead.
+    """
+    try:
+        import System  # noqa: F401  # pythonnet CLR bridge
+
+        for asm in System.AppDomain.CurrentDomain.GetAssemblies():
+            name = str(asm.FullName)
+            if not name.startswith("SIL.LCModel,"):
+                continue
+            for part in name.split(","):
+                part = part.strip()
+                if part.startswith("Version="):
+                    return part.split("=", 1)[1]
         return "unknown"
+    except Exception:
+        return "unknown"
+
+
+def _get_lcm_informational_version():
+    """
+    Best-effort NuGet-style version of the SIL.LCModel assembly on disk
+    (e.g. ``"11.0.0-beta.161+Branch.master.Sha.b87d9f9..."``).
+
+    Not filename-safe; recorded in metadata only, for traceability of which
+    liblcm build a snapshot was taken against. ``"unknown"`` on any failure.
+    """
+    try:
+        import System
+
+        asm = None
+        for candidate in System.AppDomain.CurrentDomain.GetAssemblies():
+            if str(candidate.FullName).startswith("SIL.LCModel,"):
+                asm = candidate
+                break
+        if asm is None:
+            return "unknown"
+        location = str(asm.Location)
+        if not location:
+            return "unknown"
+        info = System.Diagnostics.FileVersionInfo.GetVersionInfo(location)
+        return str(info.ProductVersion or info.FileVersion or "unknown")
     except Exception:
         return "unknown"
 
@@ -288,6 +341,7 @@ def generate_snapshot(expected_contract):
         clr.AddReference("SIL.LCModel.Core")
 
     version = _get_lcm_version()
+    informational_version = _get_lcm_informational_version()
 
     # Build namespace hints from imports
     name_to_namespace = {}
@@ -340,7 +394,8 @@ def generate_snapshot(expected_contract):
     snapshot = {
         "metadata": {
             "liblcm_version": version,
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "liblcm_informational_version": informational_version,
+            "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "python_version": sys.version,
             "platform": sys.platform,
         },
@@ -398,6 +453,7 @@ def main():
 
     print(f"[DONE] Snapshot written to {args.output}")
     print(f"  LibLCM version: {snapshot['metadata']['liblcm_version']}")
+    print(f"  LibLCM build:   {snapshot['metadata']['liblcm_informational_version']}")
     s = snapshot["summary"]
     print(f"  Types checked: {s['total_types_checked']}")
     print(f"  Types found:   {s['types_found']}")

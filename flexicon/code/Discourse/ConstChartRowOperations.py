@@ -447,7 +447,16 @@ class ConstChartRowOperations(BaseOperations):
 
         row = self.__ResolveObject(row_or_hvo)
 
-        return list(row.CellsOS)
+        # CellsOS is declared over IConstituentChartCellPart and holds
+        # every cell-part subtype (word groups, tags, moved-text markers,
+        # clause markers). Returning it unfiltered contradicted this
+        # method's documented IConstChartWordGroup contract, and the raw
+        # elements exposed no IConstChartWordGroup surface at all. Filter
+        # on ClassName -- an uncast element fails
+        # isinstance(c, IConstChartWordGroup) -- then cast (issue #270).
+        return self._GetTypedElements(
+            c for c in row.CellsOS if c.ClassName == "ConstChartWordGroup"
+        )
 
     @OperationsMethod
     def MoveTo(self, row_or_hvo, chart_or_hvo, index):

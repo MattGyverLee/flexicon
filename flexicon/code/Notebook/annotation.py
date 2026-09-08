@@ -433,8 +433,13 @@ class Annotation(LCMObjectWrapper):
             - Use BeginObjectRA for the original annotated object
         """
         try:
-            if hasattr(self._obj, "Owner"):
-                return self._obj.Owner
+            if hasattr(self._obj, "Owner") and self._obj.Owner is not None:
+                # Cast to the concrete interface: a raw .Owner is a bare
+                # ICmObject, so none of the owner's typed properties are
+                # reachable and it fails isinstance against its own
+                # interface (Pattern A sweep gap, issue #270).
+                from ..lcm_casting import cast_to_concrete
+                return cast_to_concrete(self._obj.Owner)
             if hasattr(self._obj, "BeginObjectRA"):
                 return self._obj.BeginObjectRA
             return None

@@ -914,7 +914,7 @@ class TestNaturalClassSync:
         FeaturesOA incomplete/null. This is the core regression lock for
         the bug: silence is the defect, not a lenient skip.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         bogus_feature_guid = "00000000-0000-0000-0000-000000000001"
         bogus_value_guid = "00000000-0000-0000-0000-000000000002"
@@ -951,7 +951,7 @@ class TestNaturalClassSync:
         target -- a type mismatch that should never happen in a correct
         sync pairing -- must RAISE rather than silently no-op.
         """
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         src_props = {
             "Features": [

@@ -5,14 +5,25 @@
 leading/trailing whitespace)
 **Campaign:** `tier1-silent-data-loss`, queue item 2 of 4
 
-**Status:** CHECKPOINT 1 (spec + live probe) DONE, 2026-09-07. No behaviour
-change under `flexicon/code/` has been authorised yet -- `git diff --stat --
-flexicon/` is empty and independently re-confirmed (see
-`evidence/live-probe-cycle1.md`). Contract items C1-C7 below are FROZEN
-findings of fact. The fix shape, the CHANGELOG/breaking-change
-classification, and the scope ruling on the 8 newly-found sibling sites are
-explicitly NOT frozen here -- they are recorded as RECOMMENDATIONS awaiting
-a `/lex-lead` ruling (see section "Recommendations awaiting ruling").
+**Status: COMPLETE ON SUBSTANCE, 2026-09-08 (cycle 5). Two items OPEN --
+C16 and C18 -- neither of them substance.** Contract items **C1-C18** are
+FROZEN.
+
+The paragraph that stood here read `No behaviour change under flexicon/code/
+has been authorised yet -- git diff --stat -- flexicon/ is empty`. That was
+written at Checkpoint 1 and **was already false for a year of cycles**; it
+is corrected rather than deleted so the record shows the error. The fix
+HAS landed (C8, `066bab0`; C12, `608200c`; C14, `ed428f7`), and R1/R2/R3
+plus the coercion question are all RULED (C8-C11) -- they are no longer
+"RECOMMENDATIONS awaiting a ruling", and section 3 below is retained only
+as the historical record of what was recommended before section 3a ruled.
+
+The independent verification gate **has run twice, both green**:
+`reviews/cycle3-verification.md` (`GATE: GREEN`) and
+`reviews/cycle5-verification-swarm.md` (five adversarial verifiers, green
+on substance). **Read C16 and C18 before making any verification claim
+about this feature** -- the live-evidence anchor is not durable, and the
+offline baseline is not currently reproducible.
 
 **Cycle-1 inputs (read these before implementing):**
 - `specs/242-paragraph-whitespace/evidence/live-probe-cycle1.md` (live,
@@ -569,7 +580,9 @@ Two of the four cases (3's `trail == 0` branch and 4's `trail == 0`
 branch) are the two **preserve-today's-behaviour** cases named above,
 alongside case 1's degenerate preservation.
 
-**Inertness claim:** the change is provably inert whenever `trail == 0`
+**Inertness claim** (NARROWED by C15, 2026-09-08 -- read C15 before
+citing the byte-for-byte characterisation below)**:** the change is
+provably inert whenever `trail == 0`
 -- i.e. on every input reachable before #242 landed, since pre-fix,
 `Create`/`SetText`/`InsertAt` always stripped trailing whitespace, so
 `trail` could never be `> 0` on any paragraph built through the public
@@ -640,6 +653,260 @@ corpus-scale replication of the field report.
 
 ---
 
+## 3b. Cycle-4 and cycle-5 contract items (FROZEN, 2026-09-08)
+
+### C14 -- the `ParagraphOperations.Create` docstring note (cycle 4, 2026-09-07)
+
+**Recorded retroactively by the cycle-5 gate, 2026-09-08.** The cycle-3
+independent gate (`reviews/cycle3-verification.md`) raised one P1: of the
+four sites named in C1, only three carried the whitespace-preservation
+docstring note required by Checkpoint 3's T3 --
+`ParagraphOperations.Create` had none, so the change was documented at 3 of
+4 sites. Commit `ed428f7` added it, discharging that P1.
+
+**Binding text**, byte-identical at all four sites:
+
+```
+Note: leading/trailing whitespace in the value is preserved
+verbatim (#242); a value that is entirely whitespace still
+raises FP_ParameterError.
+```
+
+Present at `ParagraphOperations.py` `Create`, `SetText`, `InsertAt` and
+`SegmentOperations.py` `AppendSentence` (the `text` param). Verified 4/4 at
+HEAD by the cycle-5 code-conformance and docs verifiers independently.
+
+**Why this item is being written now rather than at cycle 4:** commit
+`ed428f7`'s message claims "records C12/C13/C14 in the spec", and the
+campaign record claims "Contract C1-C14 frozen", but **C14 was never
+written into this file** -- `grep -n C14 spec.md` returned zero hits until
+this edit. The work had landed and was correct; only the contract entry
+was missing. Recorded because an item that exists only in a commit message
+cannot be cited or overturned by number, which is the mechanism this
+feature's freeze discipline depends on. See
+`reviews/cycle5-verification-swarm.md` N4.
+
+### C15 -- C12's inertness claim, NARROWED (cycle 5, 2026-09-08)
+
+**This item narrows C12; it does not overturn it.** C12's "Inertness
+claim" paragraph and `evidence/live-t5-joinfix.md`'s "C12.4 inertness
+proof" both state that the four `trail == 0` prediction rows are required
+to match cycle 2's post-T1/T2 behaviour **byte-for-byte**. That
+characterisation is too strong on the evidence:
+
+- Cycle 2 measured only two seeds: `"foo "` (`test_p8`) and `"Seed."`
+  (`test_p2`, which seeded every payload with that one fixed string).
+- Of C12's four `trail == 0` rows, only the `'foo.'`-shaped
+  (already-terminated, `trail == 0`) row has a recorded cycle-2
+  counterpart. `''`, `'foo'` and `'foo!'` were **first measured at cycle
+  3**, against predictions derived by reading C12's algorithm.
+
+So **1 of the 4 rows is a byte-for-byte regression check against recorded
+cycle-2 output; 3 of the 4 are a-priori predictions that matched.** Both are
+legitimate under the C28 forward rule -- the predictions were committed
+before the measuring run (`a580f7b` before `608200c`) -- but they are not
+the same kind of evidence, and C12 conflated them.
+
+**The inertness CONCLUSION is unaffected, and is now carried by a stronger
+proof than the measurement.** The cycle-5 code-conformance verifier
+hand-diffed the `trail == 0` paths against the pre-C12 source
+(`608200c^`) case by case and established that every behavioural
+divergence from pre-C12 is gated behind `trail > 0` or
+`anchor == 0 and raw != ""`, so no `trail == 0` input can reach a changed
+line. That is an exhaustive argument over the code, where the 9-row table
+is a sample. C12's claim is therefore RIGHT in substance and imprecise in
+its citation; this item fixes the citation.
+
+### C16 -- the live-evidence durability gap (cycle 5) -- **DISCHARGED 2026-09-08 (cycle 6)**
+
+`tests/live_status.json`, which CLAUDE.md makes the machine-checkable
+anchor of every live-verification claim, **is gitignored
+(`.gitignore:99`), absent from disk, and has never been committed.** No
+evidence file in this feature quotes the JSON, and none records the
+`run_timestamp` that would bind a claim to a specific run. Every
+`run_mode: live` claim across cycles 1-3 is therefore prose that cannot be
+re-derived from the repository.
+
+**Explicit negative claim, recorded so no future reader over-reads this
+item: THIS IS NOT EVIDENCE THAT ANY RUN WAS MOCKED.** Three things argue
+the opposite, and are recorded here as the substitute evidence:
+
+1. The offline/live split is internally coherent -- 483 deselected offline
+   against 8 tests collected live, the 8 re-verified by `--collect-only`
+   at cycle 5.
+2. The LCM read-backs are genuine re-queries, not echoes of the input:
+   `test_p8` re-reads through `project.Paragraphs.GetText(para)` after the
+   write, and `test_p4` closes and reopens the project before re-reading.
+3. `reviews/cycle3-verification.md`'s independent pass reports having read
+   the file's `by_test` map while it still existed.
+
+**DISCHARGED, cycle 6, 2026-09-08.** C18's resolution (C19) restored the
+ability to run tests; a live run was then performed and its
+`run_mode`/`run_timestamp` pasted verbatim into
+`evidence/live-cycle6-c16-discharge.md`:
+
+```
+run_mode:        live
+run_timestamp:   2026-09-08T15:25:51Z
+```
+
+Command: `FLEXLIBS_REQUIRE_LIVE=1 python -m pytest
+tests/operations/test_issue242_whitespace_probe.py -m requires_live_project
+-q` -> **8 passed**. `target_sandbox` only; the real Target was never
+opened; no restore script run.
+
+**A stale path was found and is NOT fixed:** `tests/LIVE_TESTING.md:47`
+names the golden fixture on a `D:` drive that does not exist on this
+machine. The identical file (same name, same datestamp) was found at
+`C:\Github\GramTransackups\Target 2026-07-06 0218.fwbackup` and copied
+into the gitignored `tests/fixtures/`. The first live attempt failed loudly
+rather than skipping -- the fail-loud flag working as designed. Correcting
+that doc path is left for its owner.
+
+This is a gap in the project's evidence CONVENTION as applied here, not a
+defect in the #242 fix. See `reviews/cycle5-verification-swarm.md` N1.
+
+### C17 -- C1's line-number table is stale at HEAD (cycle 5, informational)
+
+C1's HEAD column has drifted at all four sites, by up to +21 lines, from
+the comments and the C12 four-case block the fix itself inserted. Actual
+values at `3d357d8`, independently derived:
+
+| Site | Method | `_ValidateParam` | Transform | `MakeString` | `Contents =` |
+|---|---|---|---|---|---|
+| `ParagraphOperations.py` | `Create` | 180 | 187 | 209 | 210 |
+| `ParagraphOperations.py` | `SetText` | 593 | 599 | 607 | 609 |
+| `ParagraphOperations.py` | `InsertAt` | 741 | 747 | 774 | 775 |
+| `SegmentOperations.py` | `AppendSentence` | 603 | 610 | 643/659/668/673 (now 4-way) | 686 |
+
+C1's own warning applies recursively: **use the code, not any table, for
+current work.** Recorded so the drift is a known quantity rather than a
+surprise. C9's cited `CHANGELOG.md:431` is likewise now `:500`, displaced
++69 lines by this feature's own entry; lines 15 and 63 are unmoved, and a
+fourth `BREAKING` hit at `:95` is #242's own -- expected, not a defect.
+
+### C18 -- the offline baseline is not reproducible in the current environment (cycle 5) -- **RESOLVED 2026-09-08, see C19**
+
+The machine's only Python is **3.14.5**. `pyproject.toml` declares
+`requires-python = ">=3.8,<3.14"` and pins `pythonnet >=3.0.3,<3.1`; only
+pythonnet **3.1.0** ships a 3.14-compatible wheel. `import clr` therefore
+fails at `flexicon/__init__.py:70`, 15 test modules fail collection, and
+`python -m pytest tests -m "not requires_live_project" -q` is interrupted
+before executing anything:
+
+```
+384 deselected, 7 warnings, 15 errors in 1.78s
+Interrupted: 15 errors during collection
+```
+
+**Consequences, stated precisely:**
+
+- The **1292 passed / 483 deselected** baseline that STATUS.md and
+  `.crew-handoff.json` make a hard constraint is **neither confirmed nor
+  refuted** as of 2026-09-08. It was last verified at cycle 3
+  (`reviews/cycle3-verification.md` check 6, an independent run).
+- **Zero tests ran against the changed code** at cycle 5. Per this
+  feature's own rule, that is a ZERO, never a pass.
+- The interpreter was replaced **after** the baseline was recorded; the
+  evidence files' bare `python` invocations resolved to a supported
+  interpreter at the time they ran.
+
+**This is NOT attributable to the #242 change.** The failure is an
+interpreter-level import at package `__init__`, hitting all 15 modules
+regardless of subject matter; the two changed files are not implicated by
+any of the 15 errors.
+
+**Remedy (a human decision, not a verifier's):** restore a 3.8-3.13
+interpreter with `pythonnet >=3.0.3,<3.1`, **or** rule on relaxing the pin
+to allow `pythonnet 3.1.0` on 3.14 -- an API-surface decision affecting the
+whole library, explicitly out of this feature's scope. Per CLAUDE.md this
+is a `needs_human` handoff. Do not read C18 as evidence against the fix,
+and do not discharge C16 until C18 is resolved.
+
+---
+
+### C19 -- C18 RESOLVED: newer Python allowed; the suite runs again (cycle 6, 2026-09-08)
+
+**Ruling (user decision):** allow newer Python. C18's alternative -- relaxing
+the pin rather than downgrading the interpreter -- is TAKEN.
+
+**Change applied** (`pyproject.toml`):
+
+| | before | after |
+|---|---|---|
+| `requires-python` | `>=3.8,<3.14` | `>=3.8,<3.15` |
+| `pythonnet` | `>= 3.0.3, <3.1` | `>= 3.0.3, <3.2` |
+| classifiers | ...3.13 | ...3.13, **3.14** |
+
+The `<3.1` pin carried **no documented rationale** -- `git log -S` shows it
+arrived with the `flexlibs2 -> flexicon` rename (`9b82ffa`) as an
+undocumented known-good upper bound, not as a recorded compatibility
+finding.
+
+**Verified working:** `pythonnet 3.1.0` installs a real
+`cp310.cp311.cp312.cp313.cp314` wheel on Python 3.14.5, `import clr`
+succeeds, and the offline suite executes for the first time since C18 was
+raised.
+
+**Result: 1291 passed, 2 failed, 1 skipped, 483 deselected.** Deselected
+matches the recorded baseline exactly.
+
+**The 1292 figure is no longer the right comparator**, and this item
+retires it as the binding baseline. Five commits landed after `b0e3d14`
+(where 1292 was recorded) -- `ec54432` (the rename, which also ADDED
+`tests/test_flexlibs2_alias_ratchet.py`), `4aca74a`, `a26d39c`, `bdbce02`
+and the `3d357d8` merge -- so the collected total legitimately differs.
+**New binding baseline: 1291 passed / 483 deselected at cycle 6**, with the
+two failures below named and diagnosed rather than absorbed.
+
+**NOT attributable to the upgrade:** all four failures seen on the first
+run were diagnosed to root cause, and **none was caused by Python 3.14 or
+pythonnet 3.1.** Two were repaired (C20); two remain, both pre-existing and
+both needing a human decision (see section 4, Q4 and Q5).
+
+### C20 -- Two tests were broken by the rename commit, not by the upgrade (cycle 6)
+
+`tests/operations/test_transaction_rollback.py::TestPhase2JoinOrOpen` had
+two failing tests. The pythonnet exception they surfaced
+(`'_FakeActionHandler' value cannot be converted to
+SIL.LCModel.Core.KernelInterfaces.IActionHandler`) was a **symptom, not the
+cause**.
+
+**Root cause: commit `ec54432` (the `flexlibs2 -> flexicon` rename, PR
+#241) split one coherent test into two broken ones.** It landed AFTER the
+1292 baseline, which is why the breakage went unnoticed -- the environment
+broke around the same time, so the suite was never run again until now.
+
+The original single test (present at `b0e3d14`, `@patch`-decorated) did
+`pytest.raises(RuntimeError)` and asserted on the fake helper's
+`disposed` / `rollback_value_at_dispose`. The rename produced:
+
+1. `test_rollback_flag_set_true_on_exception` -- kept the `@patch` and the
+   exception docstring, but its body was replaced with assertions on
+   `project._transaction_depth`. **That attribute does not exist**: it was
+   DELETED by design under issue #234, and `FLExProject.py:274` records it
+   as "formerly `self._transaction_depth`". On a `Mock` project the
+   attribute auto-creates, so `assert project._transaction_depth == 1`
+   compared a `Mock` to `1` and could never pass.
+2. `test_depth_restored_on_exception` -- NEW, received the original body but
+   **lost the `@patch` decorator**, so the REAL
+   `UndoableUnitOfWorkHelper` was handed a `_FakeActionHandler`. It was
+   doubly broken: an autouse fixture resets
+   `_FakeUndoableUnitOfWorkHelper.instances = []` before every test, so its
+   `instances[0]` would raise `IndexError` even if the .NET call had
+   succeeded.
+
+**Repair:** the two were merged back into the single coherent
+`@patch`-decorated test that stood at the baseline, with a comment
+recording the split so it is not "tidied" back. The bogus
+`_transaction_depth` assertions are deleted, not adapted -- they assert a
+reverted design. Depth is now observed through the action handler's
+`CurrentDepth`, already covered by a sibling test in the same class.
+
+**This is a test-only change** (no `flexicon/` code touched), so per
+CLAUDE.md it needs no live verification. Verified by execution: the two
+failures are gone and the merged test passes.
+
 ## 4. Open questions
 
 **Q1 -- Should the 8 NEW sibling sites be fixed in this feature, a
@@ -672,6 +939,18 @@ severity.
 
 ## 5. Contradictions checked for -- none found requiring side-by-side preservation
 
+**Scope note (added cycle 5, 2026-09-08):** the check recorded below covers
+**cycle 1 only**, as its own opening sentence says. `STATUS.md`'s bare
+"Contradictions found and preserved / **None.**" reads more globally than
+that. The cycle-5 gate swept all twelve review files across cycles 1-4 and
+**also found no two asserting incompatible facts** -- the near-misses
+(cycle-1 domain's Q4 vs C9, the three line-numbering conventions, the
+480 -> 482 -> 483 deselected progression) all resolve, each already
+recorded as an explicit overturn or a convention difference rather than a
+concealed conflict. The one real imprecision found was not between reports
+but inside a contract item: C12's inertness citation, now narrowed by
+C15.
+
 The three cycle-1 reports (programmer, explore, domain) and the evidence
 file were checked against each other and against re-verification of the
 live source at HEAD (this pass, 2026-09-07). No two reports assert
@@ -686,3 +965,103 @@ issue body) and the probe's "41/86" shorthand (`reviews/cycle1-programmer.md`,
 `evidence/live-probe-cycle1.md`) are the same figure (45 identical + 41
 differing = 86 total segment baselines) cited two different ways, not two
 different measurements.
+
+---
+
+## 6. Open questions raised at cycle 6 (2026-09-08)
+
+**Q4 -- RESOLVED 2026-09-08: baseline regenerated, all three accepted
+deltas recorded.** Decision, full drift inventory, usage cross-check and
+before/after test output:
+[`evidence/q4-contract-baseline.md`](./evidence/q4-contract-baseline.md).
+
+The complete drift -- verified across *every* snapshot field, not just the
+`properties`/`methods` lists that `compare_snapshots()` diffs -- is exactly
+three items:
+
+| # | Kind | Item | Origin | Impact |
+|---|------|------|--------|--------|
+| 1 | method removed | `ILexEntryRepository.CorrectHomographNumbers(ILexEntry)` | upstream liblcm | none: zero callers, and `expected_contract.json`'s `type_usage["ILexEntryRepository"]` is `{}` |
+| 2 | type added | `IFsComplexValue` | flexicon-side contract growth | coverage gain: used at `BaseOperations.py:1891,1997`, `lcm_casting.py:401` |
+| 3 | type added | `IFsComplexValueFactory` | flexicon-side, commit `4aca74a` | coverage gain: used at `BaseOperations.py:2278,2337` |
+
+Zero changes to `constructors`, `interfaces`, `implements_idisposable`,
+`reflected_properties` or `member_checks` across all 255 shared types, so
+the offline shape assertions in `TestTransactionLayerContract` and
+`tests/test_b1t_action_handler_double.py` are untouched. Regenerated with
+the documented command (`python -m tests.contract.generate_lcm_snapshot -c
+tests/contract/snapshots/expected_contract.json -o
+tests/contract/snapshots/liblcm_baseline.json`); the metadata now honestly
+records liblcm `11.0.0.0` / `11.0.0-beta.161`, Python 3.14.5, 2026-09-08
+(a `_get_lcm_version()` bug that made every prior snapshot say `"unknown"`
+was fixed in the same pass). `tests/contract` went from **1 failed, 21
+passed** to **22 passed**.
+
+Original statement of the question, retained for the record:
+
+`tests/contract/test_lcm_contract.py::TestLiveRegressionCheck::
+test_no_regressions_from_baseline` reported exactly one regression:
+
+```
+ILexEntryRepository.CorrectHomographNumbers() removed
+```
+
+**This is a REAL upstream API change, not a pythonnet artifact** --
+confirmed by direct reflection on the installed liblcm, via both
+`dir(ILexEntryRepository)` and raw `clr.GetClrType(...).GetMethods()`
+(10 methods; the homograph-ish ones are `CollectHomographs`,
+`GetHomographs`, `HomographMorphOrder`, `ResetHomographs` -- no
+`CorrectHomographNumbers`).
+
+**Severity: LOW. Zero callers.** `grep -rn CorrectHomographNumbers` over
+`flexicon/` and `tests/` returns nothing outside
+`tests/contract/snapshots/liblcm_baseline.json` itself. Nothing in this
+library calls the removed method, so there is no code to adapt.
+
+The baseline snapshot was generated **2026-08-13 under Python 3.12.7**; the
+installed FieldWorks has evidently been updated since. `total_types_checked`
+also moved 255 -> 257, which is explained by `4aca74a` touching
+`tests/contract/snapshots/expected_contract.json`.
+
+**Concern raised when the question was opened:** regenerating
+`liblcm_baseline.json` would accept ALL drift since August wholesale, and
+that snapshot is the regression tripwire -- absorbing it silently is exactly
+what it exists to prevent.
+
+**How that concern was discharged:** the drift was enumerated exhaustively
+first (three items, table above, including the deep-reflection fields the
+regression test does not diff), each item was cross-checked against actual
+usage in `flexicon/`, and the regeneration was then done with the project's
+documented command and recorded item-by-item. Nothing was absorbed
+silently. The alternative of xfail-ing the test was rejected as strictly
+worse: it would blind the tripwire to all *future* removals -- including
+ones with callers -- to tolerate one removal with none, and would leave the
+baseline permanently mis-describing the installed liblcm for the offline
+shape assertions that read it.
+
+**Q5 -- The rename left `flexlibs2` imports in the test tree, and one of
+them is deliberate.**
+`tests/test_flexlibs2_alias_ratchet.py::TestFlexlibs2AliasIsInboundOnly::
+test_no_executable_flexlibs2_imports_outside_alias_package` -- itself added
+by `ec54432` to prevent exactly this -- reports 9 offenders:
+`tests/conftest.py:1392` and `:1451`,
+`tests/operations/test_issue251_252_256_feature_struct_probe.py:36`,
+`tests/operations/test_natural_classes.py:917` and `:954`,
+`tests/operations/test_natural_class_feature_sync.py:721`,
+`tests/operations/test_owner_cast_pattern.py:71` and `:630`,
+`tests/write_path_transactions/test_capabilities.py:96`.
+
+**This is #241's unfinished rename, entirely unrelated to the interpreter**
+-- the check is a static AST scan with no runtime component, so it fails
+identically on any Python version.
+
+**Why it was NOT fixed here, and why it is a policy question rather than a
+cleanup:** eight are incidental leftovers that should simply become
+`flexicon`, but **`tests/write_path_transactions/test_capabilities.py:96`
+is DELIBERATE** -- it wraps `import flexlibs2` in
+`warnings.catch_warnings()` suppressing `DeprecationWarning`, i.e. it
+exists to exercise the alias. The ratchet's own docstring exempts "the
+alias package and its own tests", so that site either needs an explicit
+exemption or needs to move into the alias's own tests. Deciding that is
+#240/#241's call, and the eight mechanical edits span four other features'
+test files including `tests/conftest.py`. Left for its owner.
