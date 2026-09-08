@@ -611,7 +611,19 @@ file. The #250 Defect 4 window opens **after T5's gate**, not after T4's.
       on T6b so the closing comment states accurate coverage, and closure needs
       its own user authorisation (the #250 posting delegation was specific to
       that comment and does not generalise).
-- [ ] **T6b** **Coverage-honesty follow-up to T6. Runs BEFORE T7.** The cycle-10
+- [x] **T6b** DONE (commits `c9d2a9a9` tests, `3af3a47b` evidence, `84b66c86`
+      report; gate PASS `reviews/cycle12-verification-T6b-gate.md`, evidence
+      `evidence/live-cycle12-T6b-gate.md`, committed `a7d6c179`). TEST-ONLY --
+      zero diff to `flexicon/code/Lexicon/MSAOperations.py` (`e7e8f791`) and
+      `BaseOperations.py` (`a8e914bf`) across the whole spurt.
+      **Checkpoint 3b is CLOSED; T7 is OPEN.** Item 1's mutation differential
+      holds on BOTH halves -- the two new direct-cast tests DIE on cast removal
+      while the six pre-existing live tests stay green, which is what proves the
+      falsifiability is genuinely new. Item 2 was KILLED by the gate's own
+      mutation run, so the pre-loaded P1 on T7 is DISCHARGED (the programmer's
+      un-run "reasoned kill" was correct; the process note survives -- see
+      STATUS.md ruling 3).
+      **Coverage-honesty follow-up to T6. Ran BEFORE T7.** The cycle-10
       gate proved four T6 coverage claims are narrower than written. The code is
       correct; the tests are what need work. Sequenced before T7 for the same
       reason section 6.3 sequenced #250 Defect 4 before T6: T7/T8 will copy T6's

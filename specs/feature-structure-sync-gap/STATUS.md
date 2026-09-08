@@ -1336,3 +1336,182 @@ closing issues.
 `next_checkpoint` = Checkpoint 3b = T6b landed and gated. T7/T8 stay closed
 behind it. T6b is small, test-only, and needs the live token for item 1's
 mutation check.
+
+---
+
+# Cycles 11-12 (spurt 9) -- T6b lands, gate PASSES. **Checkpoint 3b is CLOSED. T7 is OPEN.**
+
+T6b is DONE and gated, and it was **test-only exactly as scoped**:
+`flexicon/code/Lexicon/MSAOperations.py` held hash
+`e7e8f791edb089c0b4ae86f10cca4bcd34900194` from the first minute of the spurt to
+the last, and `BaseOperations.py` held `a8e914bfd7c31d2d34f2a0e42e47794bd4ad32db`.
+Production was never touched. Commits: `c9d2a9a9` (tests), `3af3a47b` (evidence),
+`84b66c86` (programmer report), `a7d6c179` (gate), `b910abfb` (#251 closure draft).
+
+- Implementer report: `reviews/cycle11-programmer-T6b.md`
+- Gate report: `reviews/cycle12-verification-T6b-gate.md` -- **CHECKPOINT 3b: PASS**
+- Gate evidence: `evidence/live-cycle12-T6b-gate.md`
+- #251 closure draft: `reviews/cycle12-issue251-closure-draft.md` (NOT posted)
+
+## The closing condition was met on both halves
+
+Checkpoint 3b was written to close on "a gate that mutation-checks item 1
+specifically". The gate re-ran all seven legs from scratch in two disposable
+worktrees and produced the differential, not just the kill:
+
+- the **two new** direct-cast tests **DIE** under cast removal
+  (`AttributeError: 'ICmObject' object has no attribute 'MsFeaturesOA'` /
+  `'InflFeatsOA'`), and
+- the **six pre-existing** live tests **STAY GREEN** under the identical
+  mutation, reproducing cycle 10's NOT-KILLED result exactly.
+
+The second half is the load-bearing one. A kill alone would only have shown the
+new tests work; the survivors are what prove T6b added falsifiability that **did
+not previously exist**. Item 3 reproduced the same way (2 new fail, 2
+pre-existing stay green). Item 4's AST allowlist tests are non-vacuous in *both*
+modules and each names the offending attribute in its failure message. Item 5
+correctly took no test. `run_mode: live`, live file 8 passed / 0 failed,
+`uncategorized_live_tests` empty, no overclaim found. No P0, no P1.
+
+## RULING 1 -- the leg-2 prediction: **SPLIT verdict, and the relay of it is corrected**
+
+The main session relayed this as "your pre-committed prediction was FALSIFIED".
+The gate's own report says the opposite in as many words: *"The lead's
+pre-committed prediction HOLDS."* Neither summary stands unqualified, so here is
+the ruling.
+
+**At the production-code level the prediction was CONFIRMED.** `__GetMsaObject`
+funnels both the `int` and `str` entry types through one
+`self.project.Object(...)` call and one `ClassName`-plus-cast site, and
+`FLExProject.Object` (`:3538-3552`) only parses `str` -> `System.Guid` before
+both types reach the identical `ServiceLocator.GetObject`. A per-path-**only**
+cast mutation really is structurally impossible: there is one cast to mutate and
+neither path can reach it without the other passing through it too.
+
+**What was falsified is the inference hung on it** -- that item 1 therefore could
+not deliver genuine per-path falsifiability. The gate did not accept the
+structural argument as sufficient. It built an **isolation probe**: a second
+worktree with the cast removed *and* the HVO-path assertions deleted, so only
+the GUID assertion could run. The isolated GUID assertion failed on its own.
+Both assertions are **independently load-bearing at the assertion level**, even
+though they share one cast site in production. Item 1's "both paths" wording is
+honestly met and neither path is decorative.
+
+That distinction -- one cast mechanism, two independently falsifiable assertions
+-- is the correct statement, and it took an empirical probe rather than a
+structural argument to get it. Worth recording as the general lesson: a
+structural impossibility argument bounds what a *mutation* can show; it does not
+bound what a *test* covers.
+
+## RULING 2 -- the prediction was never committed to a file. **That is now a standing rule.**
+
+The reason two agents can report opposite verdicts on the same prediction is
+that its text lived **only in the dispatch prompt**. Nobody can check either
+report against the original wording, including the lead who wrote it. This is
+the same unfalsifiable-provenance shape as the `269b6a7` vanish, and it cost a
+ruling to reconstruct.
+
+**BINDING from cycle 13:** a pre-committed prediction is **committed to a file**
+under a `[PREDICTION]` heading in `specs/<feature>/evidence/` **before** the run
+that tests it -- the cycle-7 precedent (`evidence/live-D4-T3.md`, predictions
+committed at `302d266`). A prediction that exists only in a prompt is not
+pre-committed; it is unverifiable. Recorded as
+`prediction_commitment_rule` in `.crew-handoff.json`.
+
+## RULING 3 -- leg 4: the pre-loaded P1 is **DISCHARGED**; nothing binding attaches to T7
+
+The cycle-12 dispatch pre-loaded a contingency: if item 2's mutation came back
+NOT-KILLED, that becomes a binding constraint on T7. **It came back KILLED.** The
+gate ran the `on_unresolved="raise"` -> `"skip"` mutation itself and the
+assertion failed. The programmer's un-run "reasoned kill" was *correct*. So the
+**coverage** defect never existed and **the P1 does not apply**.
+
+The **process** defect did exist, and being right does not retire it: an un-run
+reasoned kill was shipped through a checkpoint gate as a kill. Cycle 12 proved
+the reasoning sound and the process wrong at the same time, which is the cleanest
+possible demonstration that the two are independent.
+
+So it converts, at reduced weight: from the gate's informational P2 to a
+**non-blocking T7 dispatch condition** -- every falsifiability claim in T7/T8 is
+backed by an **actual** mutation run whenever the mutation is a one-line edit in
+a disposable worktree, which so far is every case. The cost is minutes. The
+alternative is re-litigating claim honesty at every gate, which this campaign has
+now done three times (cycles 10, 11 and 12).
+
+## Concurrency protocol: rule 1 **RETIRED**, rule 2 survives
+
+**Rule 1 (lock-acquire-first) is RETIRED by user ruling at cycle 11.** This is a
+single-worker campaign: `flexicon-cd` stood down at cycle 8, released all locks,
+and no second session has touched campaign state since. The ceremony was guarding
+against a contender that no longer exists and cost a step at the head of every
+spurt. `next_entry` no longer opens with it.
+
+The historical reason is **retained, not deleted**: the cycle-7 duplicate-dispatch
+incident happened because `.crew-handoff.json` is a shared work queue with no
+claim mechanism. **If a second session ever re-enters this campaign, rule 1 comes
+back immediately and unchanged.** It is retired for want of a contender, not
+because it was wrong.
+
+**Rule 2 (one live-pytest-token holder at a time) survives on its own merits** and
+still binds. It was never about a second *session* -- it is about a single shared
+FLEx Target and `#264`'s global init order-dependence. Likewise still binding:
+the mandatory disposable worktree for all mutation testing, and the amended git
+procedure.
+
+## Comparator baseline MOVED: 396 / 2 / 512
+
+The pinned offline comparator is now **396 passed / 2 failed / 512 deselected**,
+up from 392/2/510, because T6b added four new offline tests. Expected red set is
+**still 2** and still the same foreign `TestPhase2JoinOrOpen` pair. **A gate that
+expects 392 passed will call a false regression.**
+
+## GitHub state
+
+- **#256 is CLOSED -- by the user**, at 21:25Z today, with the corrected cycle-6
+  closure draft posted verbatim as its single comment (lead-verified via `gh`).
+  The cycle-6 open item is **discharged**. Nothing in this feature depended on it,
+  and because the *user* performed it, it sets no precedent for #251.
+- **#251 is still OPEN and this crew did not touch GitHub.** The T6b precondition
+  is now **satisfied**, and the closing comment is drafted at
+  `reviews/cycle12-issue251-closure-draft.md` (`b910abfb`). It carries no
+  "live-proven" language and states the honest 2-of-4-C1-rows limit in its own
+  headed section. **Closure still needs the user's own authorisation** -- the #250
+  posting delegation was specific to that comment.
+  **One pre-posting correction, non-blocking:** the line "Every mutation run
+  against this pattern in the T6b gate was KILLED; nothing was left NOT-KILLED"
+  is true *of the direct-cast pattern* but a reader of #251 will take it
+  whole-module. Add the other half -- the six pre-existing live tests still do
+  **not** kill the cast, which is precisely why T6b existed, so the cast's
+  falsifiability rests entirely on T6b's two new tests. And soften "the direct
+  cast's advertised coverage was decorative": there was no direct-cast test
+  before T6b at all; the cycle-10 finding was that the cast was **unexercised**
+  and the **summary** overclaimed it.
+- #250, #252, #253, #264, #265, #266, #267 all still OPEN.
+
+## Next pickup -- **T7 IS OPEN**
+
+`next_checkpoint` = Checkpoint 4 = T7 landed and gated. T7 = `POSOperations`
+gains `GetSyncableProperties`/`ApplySyncableProperties` over `DefaultFeaturesOA`
+and `InherFeatValOA`; closes **#252**. Its ten entry conditions are in
+`.crew-handoff.json`. Two of them are T7-specific and neither is inherited from
+T6:
+
+1. **The #252 trap is the INVERSE of #251's.** Cycle 1 measured `hasattr` **true
+   26 of 26** on live POS objects, because `POSOperations.GetAll()` already casts.
+   So a `hasattr` gate here would *appear* to work -- and would still be wrong,
+   because it is true only for that entry path. A POS reached through a bare
+   `project.Object(hvo)` is a base-interface view and `hasattr` goes False again.
+   T7 must discriminate on `.ClassName` and cast, and its live test must re-enter
+   through `sandbox.Object(hvo)`. A green run on `GetAll()`-sourced handles proves
+   nothing about the failure mode.
+2. **PartOfSpeech is slot-ambiguous** -- two rows in
+   `FEATURE_STRUC_OWNER_TABLE` -- so `slot=` is load-bearing here the way it is
+   for `MoDerivAffMsa` From/To but was *not* for `MoStemMsa`. The
+   ambiguous-without-slot path must RAISE, pinned by a test, as T14a's test 3
+   does.
+
+And the reason T6b was sequenced first: **copy T6's test patterns as amended by
+T6b, never T6's pre-T6b shapes.** Direct mutation-resistant cast test in the same
+task; falsy-but-present presence-gate value from the start; a raise test that
+reads the real `on_unresolved`; AST allowlist pointed at the functions where
+discrimination actually lives.
