@@ -21,6 +21,8 @@ from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
 # Import FLEx LCM types
 from SIL.LCModel import (
     IMoForm,
+    IMoStemAllomorph,
+    IMoAffixAllomorph,
     IMoStemAllomorphFactory,
     IMoAffixAllomorphFactory,
     ILexEntry,
@@ -482,6 +484,38 @@ class AllomorphOperations(BaseOperations):
             return duplicate
 
     # ========== SYNC INTEGRATION METHODS ==========
+    #
+    # T8 (spec feature-structure-sync-gap, unfiled P0 -- spec.md:655; NO
+    # GitHub issue, filing one is an outstanding USER decision, never
+    # reference an issue number for this task): adds capture/apply of
+    # ``MsEnvFeaturesOA`` (the frozen C1 "MoAffixAllomorph" row in
+    # ``FEATURE_STRUC_OWNER_TABLE``, ``Shared/lcm_constants.py``) and
+    # fixes two independent, PRE-EXISTING defects verified live first-hand
+    # by the lead (same triple shape as T6/T7's #251/#252 fixes):
+    #
+    #   (i) ``GetSyncableProperties`` previously used ``item`` RAW instead
+    #       of routing through ``__GetAllomorphObject`` -- an HVO int made
+    #       every ``hasattr`` gate below False and silently returned
+    #       ``{"Form": {}, "MorphTypeRA": None}`` with no raise. Fixed by
+    #       resolving ``item`` through the shared resolver first.
+    #   (ii) ``__GetAllomorphObject`` (the SHARED resolver used by 11 other
+    #        call sites in this module) returned ``self.project.Object(hvo)``
+    #        UNCAST -- a bare ``ICmObject``. It now casts to
+    #        ``IMoStemAllomorph``/``IMoAffixAllomorph`` by ``ClassName``
+    #        and NEVER raises on an unrecognized ``ClassName`` (unlike
+    #        ``Duplicate``, which does raise -- that raise is local to
+    #        ``Duplicate``; this shared resolver must stay permissive).
+    #
+    # ``MoAffixAllomorph`` has exactly ONE row in the C1 table (slot=None
+    # -- there is no slot ambiguity for the allomorph family, unlike
+    # ``MoDerivAffMsa``/``PartOfSpeech``). ``MoStemAllomorph`` has NO row
+    # and is deliberately excluded from the C1 table's naming rule;
+    # dispatch below is a POSITIVE ``if class_name == "MoAffixAllomorph"``
+    # check with no ``else`` and no explicit ``MoStemAllomorph`` guard, so
+    # any other ``ClassName`` (including ``MoStemAllomorph``) falls
+    # through emitting no feature-struct key and never reaching the
+    # resolver -- mirrors ``MSAOperations.GetSyncableProperties``'s
+    # out-of-table fallback.
 
     @OperationsMethod
     def GetSyncableProperties(self, item):
@@ -489,7 +523,9 @@ class AllomorphOperations(BaseOperations):
         Get all syncable properties of an allomorph for comparison.
 
         Args:
-            item: The IMoForm object (allomorph).
+            item: The IMoForm object (allomorph), or its HVO (int) --
+                resolved and cast via ``__GetAllomorphObject`` (contract
+                C2).
 
         Returns:
             dict: Dictionary mapping property names to their values:
@@ -497,6 +533,15 @@ class AllomorphOperations(BaseOperations):
                 - Atomic properties as simple values
                 - Reference Atomic (RA) properties as GUID strings
                 - Does NOT include Owning Sequence (OS) properties
+                - For a ``MoAffixAllomorph`` ONLY (C1 table row, T8):
+                  ``MsEnvFeatures`` / ``MsEnvFeaturesGuid`` -- C4
+                  recursive-dict spec of ``MsEnvFeaturesOA`` / str GUID.
+                  Emitted only when the owning property is non-None (C6
+                  presence, not truthiness); a present-but-empty struct
+                  still emits both keys (C4 -- ``_GetFeatureStruc`` never
+                  returns ``None`` for a non-None struct). A
+                  ``MoStemAllomorph`` (or any other ``ClassName``) emits
+                  neither key and never reaches the resolver.
 
         Example:
             >>> allo = list(project.Allomorphs.GetAll(entry))[0]
@@ -505,32 +550,209 @@ class AllomorphOperations(BaseOperations):
             {'en': 'run', 'fr': 'courir'}
             >>> print(props['IsAbstract'])  # Boolean
             True
+
+        Notes:
+            - The three ``hasattr`` gates below (``Form``/``IsAbstract``/
+              ``MorphTypeRA``) are PRE-EXISTING and deliberately KEPT
+              (redundant-but-harmless once ``__GetAllomorphObject`` casts,
+              same allowlist ruling T7 applied to ``POSOperations``).
+              ``MsEnvFeaturesOA`` capture is entirely ``.ClassName``-driven
+              via ``BaseOperations._ResolveFeatureStrucOwner``/
+              ``_GetFeatureStruc`` -- zero ``hasattr`` probes on the
+              feature-struct property itself (D5).
         """
+        allomorph = self.__GetAllomorphObject(item)
         props = {}
 
         # MultiString properties
         # Form - the allomorph form in various writing systems
         form_dict = {}
-        if hasattr(item, "Form"):
+        if hasattr(allomorph, "Form"):
             for ws_def in self.project.WritingSystems.GetAll():
-                text = normalize_text(ITsString(item.Form.get_String(ws_def.Handle)).Text)
+                text = normalize_text(ITsString(allomorph.Form.get_String(ws_def.Handle)).Text)
                 if text:
                     form_dict[ws_def.Id] = text
         props["Form"] = form_dict
 
         # Atomic properties
         # IsAbstract - whether this is an abstract form
-        if hasattr(item, "IsAbstract"):
-            props["IsAbstract"] = item.IsAbstract
+        if hasattr(allomorph, "IsAbstract"):
+            props["IsAbstract"] = allomorph.IsAbstract
 
         # Reference Atomic (RA) properties
         # MorphTypeRA - morpheme type (prefix, suffix, stem, etc.)
-        if hasattr(item, "MorphTypeRA") and item.MorphTypeRA:
-            props["MorphTypeRA"] = str(item.MorphTypeRA.Guid)
+        if hasattr(allomorph, "MorphTypeRA") and allomorph.MorphTypeRA:
+            props["MorphTypeRA"] = str(allomorph.MorphTypeRA.Guid)
         else:
             props["MorphTypeRA"] = None
 
+        # Feature-struct property (C1 "MoAffixAllomorph" table row, T8).
+        # Positive ClassName dispatch only -- MoStemAllomorph has NO row
+        # in FEATURE_STRUC_OWNER_TABLE and carries no MsEnvFeaturesOA
+        # property at all (lead ruling R16-1); any other ClassName falls
+        # through emitting no feature key and never reaching the resolver.
+        if allomorph.ClassName == "MoAffixAllomorph":
+            self.__CaptureFeatureStrucProp(props, allomorph, None, "MsEnvFeatures")
+
         return props
+
+    @OperationsMethod
+    def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
+        """
+        Apply syncable properties (from GetSyncableProperties) onto an
+        allomorph.
+
+        Handles the single C1 "MoAffixAllomorph" feature-struct key-pair
+        (``MsEnvFeatures``/``MsEnvFeaturesGuid``) directly; everything
+        else in ``props`` (the pre-existing ``Form``/``IsAbstract``/
+        ``MorphTypeRA`` shape) is delegated to
+        ``BaseOperations.ApplySyncableProperties`` unchanged.
+
+        Args:
+            item: Target allomorph (already created + owned + GUID-
+                assigned by the caller), or its HVO (int) -- resolved and
+                cast via ``__GetAllomorphObject`` (C2).
+            props: dict produced by GetSyncableProperties (or built by a
+                caller following the same shape).
+            ws_map: Optional source->target writing-system Id mapping,
+                passed through to the base loop.
+            fill_gaps: Passed through to the base loop.
+
+        Raises:
+            FP_ParameterError: If ``item`` is None, ``props`` is not a
+                dict, or (C7) the ``MsEnvFeatures``/``MsEnvFeaturesGuid``
+                spec references a feature, value, or feature-structure-
+                type GUID that does not exist in the target project --
+                naming the unresolved GUID.
+
+        Notes:
+            - The two feature-struct keys are POPPED out of ``props``
+              (via a filtered copy) BEFORE calling ``super()`` (C6):
+              ``BaseOperations._apply_props_loop`` dispatches on
+              ``isinstance(value, dict)`` and would otherwise route a C4
+              dict into the multi-writing-system multistring path and
+              silently drop it.
+            - Gates on KEY PRESENCE, never truthiness (C6): a present-
+              but-empty feature structure (``MsEnvFeaturesGuid`` set,
+              ``MsEnvFeatures`` absent/``{}``) is a real, empty-but-
+              attached ``IFsFeatStruc`` on the source and must still
+              create/attach an empty struct on the target.
+            - Positive ``ClassName`` dispatch only (mirrors capture): the
+              feature-struct branch runs ONLY when
+              ``allomorph.ClassName == "MoAffixAllomorph"``; any other
+              ``ClassName`` (including ``MoStemAllomorph``) never reaches
+              the resolver.
+        """
+        if item is None:
+            raise FP_ParameterError("ApplySyncableProperties: item is None")
+        if not isinstance(props, dict):
+            raise FP_ParameterError(
+                f"ApplySyncableProperties: props must be a dict, got "
+                f"{type(props).__name__}"
+            )
+
+        allomorph = self.__GetAllomorphObject(item)
+
+        # Pop the feature-struct key-pair out of props BEFORE calling
+        # super() (C6) -- BaseOperations._apply_props_loop dispatches a
+        # dict value into the multistring path and would drop a C4 dict
+        # silently at that layer instead of raising.
+        base_props = {
+            k: v for k, v in props.items() if k not in self.__FEATURE_STRUC_KEYS
+        }
+        super().ApplySyncableProperties(allomorph, base_props, ws_map, fill_gaps=fill_gaps)
+
+        if allomorph.ClassName == "MoAffixAllomorph":
+            self.__ApplyFeatureStrucProp(allomorph, None, "MsEnvFeatures", props)
+
+    # ------------------------------------------------------------------
+    # Feature-struct sync internals (T8)
+    # ------------------------------------------------------------------
+
+    # The single props key-pair handled directly by ApplySyncableProperties's
+    # feature-struct branch -- must be excluded from the base-loop
+    # pass-through (C6). Kept as one tuple so the pop-filter and any
+    # future audit share a single source of truth.
+    __FEATURE_STRUC_KEYS = (
+        "MsEnvFeatures", "MsEnvFeaturesGuid",
+    )
+
+    def __CaptureFeatureStrucProp(self, props, allomorph, slot, key):
+        """
+        Capture the C1 "MoAffixAllomorph" feature-struct row into
+        ``props``, in place.
+
+        Args:
+            props: The dict being built by GetSyncableProperties;
+                mutated in place.
+            allomorph: The allomorph object (already resolved via
+                ``__GetAllomorphObject``, and already confirmed by the
+                caller to be a ``MoAffixAllomorph``).
+            slot: ``None`` -- the "MoAffixAllomorph" C1 row has exactly
+                one entry (unlike ``MoDerivAffMsa``/``PartOfSpeech``),
+                so ``slot`` is always ``None``; passed straight through
+                to ``_ResolveFeatureStrucOwner`` (C1) for symmetry with
+                the sibling capture helpers.
+            key: The props key stem (``"MsEnvFeatures"``) -- the C1
+                table's props-key column. ``f"{key}Guid"`` is the sibling
+                GUID key.
+
+        Notes:
+            - Delegates the owner/property resolution entirely to
+              ``BaseOperations._ResolveFeatureStrucOwner`` -- no
+              ``hasattr`` probe, no local cast.
+            - Only emits keys when the owning property is non-None (a
+              present-but-empty struct still emits both keys, since
+              ``_GetFeatureStruc`` never returns ``None`` for a non-None
+              struct -- C4). A null owning property emits neither key,
+              which is the PRESENCE gate C6 requires on the apply side.
+        """
+        concrete_owner, prop_name = self._ResolveFeatureStrucOwner(allomorph, slot=slot)
+        struct = getattr(concrete_owner, prop_name)
+        if struct is not None:
+            props[key] = self._GetFeatureStruc(struct)
+            props[f"{key}Guid"] = str(struct.Guid)
+
+    def __ApplyFeatureStrucProp(self, allomorph, slot, key, props):
+        """
+        Apply the C1 "MoAffixAllomorph" feature-struct row from ``props``
+        onto ``allomorph``, if present.
+
+        Args:
+            allomorph: The allomorph object (already resolved via
+                ``__GetAllomorphObject``, and already confirmed by the
+                caller to be a ``MoAffixAllomorph``).
+            slot: ``None`` (see ``__CaptureFeatureStrucProp``).
+            key: The props key stem (``"MsEnvFeatures"``).
+            props: The ORIGINAL (unfiltered) props dict passed to
+                ``ApplySyncableProperties`` -- read-only here.
+
+        Notes:
+            - Gates on KEY PRESENCE, never truthiness (C6):
+              ``if key in props or guid_key in props`` -- a present-but-
+              empty source struct carries ``MsEnvFeaturesGuid`` with
+              ``MsEnvFeatures`` absent (or ``{}``), and must still
+              create/attach an empty target struct, not be skipped as
+              "source has none".
+            - ``on_unresolved="raise"`` unconditionally (C7): an
+              unresolvable feature/value/type GUID must never be
+              silently dropped for an allomorph sync.
+        """
+        guid_key = f"{key}Guid"
+        if key in props or guid_key in props:
+            concrete_owner, prop_name = self._ResolveFeatureStrucOwner(
+                allomorph, slot=slot
+            )
+            spec = props.get(key) or {}
+            struct_guid = props.get(guid_key)
+            self._ApplyFeatureStruc(
+                concrete_owner,
+                prop_name,
+                spec,
+                struct_guid=struct_guid,
+                on_unresolved="raise",
+                label=f"Allomorph ({allomorph.ClassName}, {prop_name})",
+            )
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):
@@ -1101,15 +1323,50 @@ class AllomorphOperations(BaseOperations):
         """
         Resolve HVO or object to IMoForm.
 
+        Casts to the concrete allomorph interface -- ``IMoStemAllomorph``
+        / ``IMoAffixAllomorph`` -- by ``ClassName`` BEFORE returning
+        (contract C2, T8 defect ii). ``FLExProject.Object(hvo)`` returns
+        a bare ``ICmObject``; without this cast, a caller reaching this
+        SHARED resolver via an HVO (rather than an already-typed object
+        from, e.g., ``GetAll()``) would silently lose access to every
+        subtype-only member on that entry path -- including
+        ``MsEnvFeaturesOA`` (T8) and, independently, the three
+        PRE-EXISTING ``GetSyncableProperties`` ``hasattr`` gates on
+        ``Form``/``IsAbstract``/``MorphTypeRA`` (T8 defect i, fixed
+        alongside this one since ``GetSyncableProperties`` previously
+        used ``item`` raw instead of routing through this resolver at
+        all).
+
+        Any ``ClassName`` other than ``"MoStemAllomorph"``/
+        ``"MoAffixAllomorph"`` (or a non-LCM input with no ``ClassName``)
+        is returned UNCHANGED -- this shared resolver never raises on a
+        miss, mirroring ``MSAOperations.__GetMsaObject``'s /
+        ``POSOperations.__ResolveObject``'s ClassName-discriminated,
+        never-raising shape (lead ruling R16-4(ii)). This differs from
+        ``Duplicate`` (above), which DOES raise on an unrecognized
+        ``ClassName`` -- that raise is local to ``Duplicate``; this
+        SHARED resolver must stay permissive since 11 other call sites
+        depend on it never raising.
+
         Args:
             allomorph_or_hvo: Either an IMoForm object or an HVO (int).
 
         Returns:
-            IMoForm: The resolved allomorph object.
+            IMoForm: The resolved allomorph, cast to its concrete
+            interface when its ``ClassName`` is one of the two
+            recognised allomorph subtypes; returned unchanged otherwise.
         """
         if isinstance(allomorph_or_hvo, int):
-            return self.project.Object(allomorph_or_hvo)
-        return allomorph_or_hvo
+            obj = self.project.Object(allomorph_or_hvo)
+        else:
+            obj = allomorph_or_hvo
+
+        class_name = getattr(obj, "ClassName", None)
+        if class_name == "MoStemAllomorph":
+            return IMoStemAllomorph(obj)
+        elif class_name == "MoAffixAllomorph":
+            return IMoAffixAllomorph(obj)
+        return obj
 
     def __GetEnvironmentObject(self, env_or_hvo):
         """
