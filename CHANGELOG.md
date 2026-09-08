@@ -143,7 +143,14 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   discards the session's unsaved writes. #238 shipped `HeadlessLcmUI` as an
   opt-in remedy but kept `FwLcmUI` as the default for backward compatibility;
   every headless caller that had not read the `OpenProject` docstring still
-  got the unsafe default.
+  got the unsafe default. Live measurement
+  (`specs/285-headless-ui-default/evidence/live-prefix-conflict.md`) found
+  this was not merely one of two possible bad outcomes but BOTH,
+  unpredictably, depending on invocation context: a bare-script run produced
+  a clean silent discard (confirmed by a fresh third-session re-read showing
+  the caller's edit reverted, nothing raised), while the same conflict under
+  `FLEXLIBS_REQUIRE_LIVE=1 pytest -m requires_live_project` reproducibly
+  blocked the commit thread for over 105 seconds.
 
   **New default behaviour:** `ui=None` now raises `FP_ConflictingSaveError`
   on a conflicting save (`HeadlessLcmUI()`'s `raise_on_conflicting_save=True`
@@ -154,6 +161,20 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   gets logging plus a non-destructive default answer instead, and a
   conflicting save now raises where it previously blocked or reverted
   silently.**
+
+  **Second disclosed behaviour change -- `OfferToRestore`:** reachable from
+  flexicon's only call site, `XMLBackendProvider`'s private
+  `OfferToRestore()` (`XMLBackendProvider.cs:272/279/285`), which fires when
+  a `.fwdata` fails to parse (`ArgumentException`/`XmlException`/
+  `IOException`) and a sibling `.bak` exists, inside the normal
+  `LcmCache.CreateCacheFromExistingData` load path. Previously, `FwLcmUI`'s
+  Yes answer silently auto-swapped the `.bak` over the corrupt file; now
+  `HeadlessLcmUI` declines and LCM takes the `UnlockProject(); throw
+  LcmInitializationException` branch instead. This is the safer default for
+  the same reason as `ConflictingSave`: an unattended restore from a
+  backup of unknown age is a data-loss risk of the same polarity, and
+  `FwLcmUI`'s modal dialog would hang in a process with no message pump
+  anyway.
 
   **Opt-out:** callers that genuinely want the historical WinForms dialogs
   (interactive, FLEx-hosted processes) pass the old default explicitly:

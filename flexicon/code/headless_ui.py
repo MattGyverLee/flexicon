@@ -104,6 +104,19 @@ class HeadlessLcmUI(ILcmUI):
 
         Returning None is what keeps ``DisplayMessage`` off the deadlock path
         described in the module docstring.
+
+        CONTINGENCY (cycle-1 domain audit, issue #285): ``None`` here is
+        dereferenced unguarded at exactly two liblcm sites --
+        ``UnitOfWorkService.SendPropChangedNotifications``
+        (``UnitOfWorkService.cs:537``, reached via ``UnitOfWork.cs:307/422``
+        and ``UndoStack.cs:343``) and
+        ``UndoStack.DoTasksForEndOfPropChanged`` (``UndoStack.cs:383``). Both
+        are no-ops for flexicon TODAY only because (1) nothing in the current
+        Operations surface calls ``AddNotification`` to register an
+        ``IVwNotifyChange`` subscriber, and (2) nothing touches ``Scripture``,
+        liblcm's sole ``IPropertyChangeNotifier`` implementer. If a future
+        feature adds a change-watcher or touches Scripture, re-check both
+        call sites before assuming ``None`` is still safe here.
         """
         return None
 
