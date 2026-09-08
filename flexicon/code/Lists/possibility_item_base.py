@@ -301,12 +301,12 @@ class PossibilityItemOperations(BaseOperations):
         if not name or not name.strip():
             return None
 
-        target = normalize_match_key(name.strip(), casefold=True)
+        target = normalize_match_key(name, casefold=True).strip()
         wsHandle = self.project.project.DefaultAnalWs
 
         for item in self.GetAll():
             item_name = ITsString(item.Name.get_String(wsHandle)).Text
-            if normalize_match_key(item_name, casefold=True) == target:
+            if normalize_match_key(item_name, casefold=True).strip() == target:
                 return item
 
         return None

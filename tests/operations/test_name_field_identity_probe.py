@@ -1680,3 +1680,162 @@ def test_pn20_q6_whitespace_only_raises_at_all_three_sites(target_sandbox):
         f"PN20 MISS: SetName('   ') raised, but the check's name changed "
         f"anyway -- got {seed_reread!r}, expected unchanged {seed_name!r}"
     )
+
+
+# ===========================================================================
+# PN21 -- bucket-A INLINE fix (#274, owner decision 2026-09-08 "extend C4's
+# inline fix"): the UNREACHABLE-OBJECT half is now FIXED for
+# LocationOperations. Create() persists raw bytes (it always did -- no
+# persist strip here), so before the fix a trailing-space name was
+# unreachable by ANY needle because Find() stripped only the needle. After
+# the both-sides inline strip at LocationOperations.py:312/:318, the
+# unpadded needle finds the padded stored name.
+# ===========================================================================
+
+@pytest.mark.live_phase("LocationOperations", "add")
+def test_pn21_location_unreachable_object_now_findable(target_sandbox):
+    """
+    PN21 (#274 inline-fix pin, LocationOperations): create a location whose
+    name carries a trailing space ("TEST_Foo ") through the REAL public
+    Create() API (which persists the caller's bytes verbatim -- no persist
+    strip at this site), then look it up with the UNPADDED needle
+    ("TEST_Foo").
+
+      - PRE-FIX: Find("TEST_Foo") stripped the needle to "TEST_Foo" and
+        compared it against the raw, unstripped haystack "TEST_Foo ",
+        missing -- the object was unreachable by name through the public
+        API (NF2 half two).
+      - POST-FIX (both-sides inline strip): Find("TEST_Foo") and
+        Find("TEST_Foo ") both FIND the location, because the haystack key
+        is now stripped too.
+
+    Reads the stored Name back from the LCM by RE-QUERYING the found object
+    (not the value passed to Create), and confirms it is byte-identical to
+    the padded name the caller supplied -- proving persist fidelity was not
+    disturbed by the comparison fix.
+    """
+    from SIL.LCModel.Core.KernelInterfaces import ITsString
+
+    project = target_sandbox
+    padded_name = f"{TEST_PREFIX}Loc "   # trailing space, byte-for-byte
+    unpadded_needle = f"{TEST_PREFIX}Loc"
+
+    created, create_exc = _safe(
+        lambda: project.Location.Create(padded_name), "PN21 Location.Create(padded)"
+    )
+    assert create_exc is None, f"PN21: Location.Create raised unexpectedly: {create_exc}"
+    assert created is not None, "PN21: Location.Create returned no object despite no exception"
+
+    wsHandle = project.project.DefaultAnalWs
+
+    # Pre-state: the stored haystack really carries the trailing space,
+    # read directly from the object Create returned.
+    pre_state = ITsString(created.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN21] pre-state stored Name (direct read of created obj): {pre_state!r}")
+    assert pre_state == padded_name, (
+        f"PN21 precondition: expected Location.Create to persist {padded_name!r} "
+        f"verbatim (raw-byte persist) -- got {pre_state!r}"
+    )
+
+    found_unpadded, fexc1 = _safe(
+        lambda: project.Location.Find(unpadded_needle), "PN21 Location.Find(unpadded)"
+    )
+    found_padded, fexc2 = _safe(
+        lambda: project.Location.Find(padded_name), "PN21 Location.Find(padded)"
+    )
+    assert fexc1 is None and fexc2 is None, f"PN21 Find raised: {fexc1} / {fexc2}"
+
+    print(
+        f"[VERDICT][PN21] Find({unpadded_needle!r}) -> {found_unpadded!r}; "
+        f"Find({padded_name!r}) -> {found_padded!r} (BOTH PREDICTED the "
+        f"location, post-#274-inline-fix)"
+    )
+    assert found_unpadded is not None, (
+        f"PN21 MISS (BINDING): the UNREACHABLE-OBJECT half is NOT fixed -- "
+        f"Location.Find({unpadded_needle!r}) still misses the padded stored "
+        f"name {padded_name!r}. The both-sides inline strip did not take."
+    )
+    assert found_padded is not None, (
+        f"PN21 MISS: Location.Find({padded_name!r}) expected the location, got None"
+    )
+
+    # Post-state: re-query the FOUND object's stored Name from the LCM.
+    post_state = ITsString(found_unpadded.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN21] post-state stored Name (RE-QUERIED via Find result): {post_state!r}")
+    assert post_state == padded_name, (
+        f"PN21 MISS (persist fidelity): expected the found location's stored "
+        f"Name to re-read byte-identical to {padded_name!r} -- got {post_state!r}"
+    )
+
+
+# ===========================================================================
+# PN22 -- bucket-A INLINE fix (#274): the UNREACHABLE-OBJECT half is now
+# FIXED for AgentOperations. Same shape as PN21; the both-sides inline strip
+# lives at AgentOperations.py:280/:285.
+# ===========================================================================
+
+@pytest.mark.live_phase("AgentOperations", "add")
+def test_pn22_agent_unreachable_object_now_findable(target_sandbox):
+    """
+    PN22 (#274 inline-fix pin, AgentOperations): create an agent whose name
+    carries a trailing space ("TEST_Foo ") through the REAL public Create()
+    API (which persists the caller's bytes verbatim -- no persist strip at
+    this site), then look it up with the UNPADDED needle ("TEST_Foo").
+
+      - PRE-FIX: Find("TEST_Foo") stripped the needle only and missed the
+        raw, unstripped haystack "TEST_Foo " -- the agent was unreachable
+        by name through the public API (NF2 half two).
+      - POST-FIX (both-sides inline strip): Find("TEST_Foo") and
+        Find("TEST_Foo ") both FIND the agent.
+
+    Reads the stored Name back from the LCM by RE-QUERYING the found object.
+    """
+    from SIL.LCModel.Core.KernelInterfaces import ITsString
+
+    project = target_sandbox
+    padded_name = f"{TEST_PREFIX}Agt "   # trailing space, byte-for-byte
+    unpadded_needle = f"{TEST_PREFIX}Agt"
+
+    created, create_exc = _safe(
+        lambda: project.Agents.Create(padded_name), "PN22 Agents.Create(padded)"
+    )
+    assert create_exc is None, f"PN22: Agents.Create raised unexpectedly: {create_exc}"
+    assert created is not None, "PN22: Agents.Create returned no object despite no exception"
+
+    wsHandle = project.project.DefaultAnalWs
+
+    pre_state = ITsString(created.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN22] pre-state stored Name (direct read of created obj): {pre_state!r}")
+    assert pre_state == padded_name, (
+        f"PN22 precondition: expected Agents.Create to persist {padded_name!r} "
+        f"verbatim (raw-byte persist) -- got {pre_state!r}"
+    )
+
+    found_unpadded, fexc1 = _safe(
+        lambda: project.Agents.Find(unpadded_needle), "PN22 Agents.Find(unpadded)"
+    )
+    found_padded, fexc2 = _safe(
+        lambda: project.Agents.Find(padded_name), "PN22 Agents.Find(padded)"
+    )
+    assert fexc1 is None and fexc2 is None, f"PN22 Find raised: {fexc1} / {fexc2}"
+
+    print(
+        f"[VERDICT][PN22] Find({unpadded_needle!r}) -> {found_unpadded!r}; "
+        f"Find({padded_name!r}) -> {found_padded!r} (BOTH PREDICTED the "
+        f"agent, post-#274-inline-fix)"
+    )
+    assert found_unpadded is not None, (
+        f"PN22 MISS (BINDING): the UNREACHABLE-OBJECT half is NOT fixed -- "
+        f"Agents.Find({unpadded_needle!r}) still misses the padded stored "
+        f"name {padded_name!r}. The both-sides inline strip did not take."
+    )
+    assert found_padded is not None, (
+        f"PN22 MISS: Agents.Find({padded_name!r}) expected the agent, got None"
+    )
+
+    post_state = ITsString(found_unpadded.Name.get_String(wsHandle)).Text
+    print(f"[TABLE][PN22] post-state stored Name (RE-QUERIED via Find result): {post_state!r}")
+    assert post_state == padded_name, (
+        f"PN22 MISS (persist fidelity): expected the found agent's stored "
+        f"Name to re-read byte-identical to {padded_name!r} -- got {post_state!r}"
+    )

@@ -323,13 +323,13 @@ class PossibilityListOperations(BaseOperations):
         if not name or not name.strip():
             return None
 
-        target = normalize_match_key(name.strip(), casefold=True)
+        target = normalize_match_key(name, casefold=True).strip()
         wsHandle = self.project.project.DefaultAnalWs
 
         # Search through all lists
         for poss_list in self.GetAllLists():
             list_name = ITsString(poss_list.Name.get_String(wsHandle)).Text
-            if list_name and normalize_match_key(list_name, casefold=True) == target:
+            if list_name and normalize_match_key(list_name, casefold=True).strip() == target:
                 return poss_list
 
         return None
@@ -852,13 +852,13 @@ class PossibilityListOperations(BaseOperations):
         if not name or not name.strip():
             return None
 
-        target = normalize_match_key(name.strip(), casefold=True)
+        target = normalize_match_key(name, casefold=True).strip()
         wsHandle = self.project.project.DefaultAnalWs
 
         # Search through all items (recursive default)
         for item in self.GetItems(list_or_hvo):
             item_name = ITsString(item.Name.get_String(wsHandle)).Text
-            if item_name and normalize_match_key(item_name, casefold=True) == target:
+            if item_name and normalize_match_key(item_name, casefold=True).strip() == target:
                 return item
 
         return None

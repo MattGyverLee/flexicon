@@ -358,10 +358,10 @@ class FilterOperations:
         # source is typically NFC. A user looking up "Verbes Compose" with
         # NFC e-acute against NFD-stored data would silently miss without
         # this. (issue #125)
-        target = normalize_match_key(name.strip(), casefold=False)
+        target = normalize_match_key(name, casefold=False).strip()
         filters = self._LoadFiltersFromProject()
         for filter_data in filters.values():
-            if normalize_match_key(filter_data["name"], casefold=False) == target:
+            if normalize_match_key(filter_data["name"], casefold=False).strip() == target:
                 return filter_data
 
         return None
