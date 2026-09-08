@@ -1488,7 +1488,7 @@ expects 392 passed will call a false regression.**
   and the **summary** overclaimed it.
 - #250, #252, #253, #264, #265, #266, #267 all still OPEN.
 
-## Next pickup -- **T7 IS OPEN**
+## Next pickup -- **T7 IS OPEN** *(SUPERSEDED at cycle 13 -- T7 has LANDED; see the cycle-13 section at the end of this file)*
 
 `next_checkpoint` = Checkpoint 4 = T7 landed and gated. T7 = `POSOperations`
 gains `GetSyncableProperties`/`ApplySyncableProperties` over `DefaultFeaturesOA`
@@ -1515,3 +1515,208 @@ T6b, never T6's pre-T6b shapes.** Direct mutation-resistant cast test in the sam
 task; falsy-but-present presence-gate value from the start; a raise test that
 reads the real `on_unresolved`; AST allowlist pointed at the functions where
 discrimination actually lives.
+
+---
+
+# Spurt 10 / cycle 13 -- T7 LANDED, NOT YET GATED
+
+**Checkpoint 4 is NOT closed.** Checkpoint 4 = "T7 landed **and gated**".
+T7 has landed; nine of its ten closing conditions are MET, and the tenth is
+the independent verification gate itself, which has not run. That gate is
+cycle 14 and it is the whole of the next spurt.
+
+## What landed (five single-file commits, amended git rule respected)
+
+| Commit | File | Content |
+|---|---|---|
+| `4e9d152` | `flexicon/code/Grammar/POSOperations.py` | +226/-13. `DefaultFeaturesOA` (slot `"Default"`) and `InherFeatValOA` (slot `"InherFeatVal"`) captured and applied; `__ResolveObject` gains a `ClassName`-discriminated cast to `IPartOfSpeech`. |
+| `4b746a0` | `tests/operations/test_issue252_pos_feature_sync.py` | +1026. 20 offline + 6 live. |
+| `0fefa00` | `evidence/live-T7.md` | Probe, round-trips, 5-mutation table, comparator. |
+| `3eff177` | `CHANGELOG.md` | +25. |
+| `c26a017` | `reviews/cycle13-programmer.md` | +101. |
+
+Predictions were committed BEFORE the run at `1d88aa4`
+(`evidence/live-T7-predictions.md`), per `prediction_commitment_rule`. This
+is the first prediction set in the campaign that is fully adjudicable, and
+the lead adjudicated it rather than accepting "all five HELD".
+
+## Lead adjudication of P1-P5 -- four HELD outright, one HELD-NARROWER
+
+**P1 -- HELD.** The load-bearing evidence is **M1, not STEP 0.** STEP 0's
+probe file was *disposable and deleted*, so its raw numbers (`{}` vs 4/4
+keys) are not independently checkable -- the same untracked-scratch
+provenance shape as the cycle-7 residue. But P1 is re-derived in TRACKED,
+hash-verified form: under mutation M1 (cast removed, disposable worktree,
+restore verified `f94b4d97...`) `test_hvo_entry_path_captures_name` dies
+with the literal `assert 'Name' in {}` -- which *is* the P1 observation.
+Credit M1; do not cite the deleted probe as the proof.
+
+**P1's corollary -- HELD, and it CORRECTS A CYCLE-1 FINDING.**
+`evidence/live-cycle1-probe.md:85-91` concluded "#252 is a pure coverage
+gap, NOT a hasattr trap ... `hasattr` work[s] correctly on **every object
+GetSyncableProperties will ever receive**". That is **false as written**:
+it holds for the `GetAll()` entry path and fails for the HVO path. #252 was
+a coverage gap **plus** an independent pre-existing silent-drop bug that
+lost `Name`/`Abbreviation`/`Description`/`CatalogSourceId` on the HVO path.
+Cycle 1's 26/26-true measurement was itself taken on `GetAll()`-sourced
+objects, which is exactly why it looked clean. The `tasks_done` entry
+`cycle1-verification-252-is-pure-coverage-gap-...` is SUPERSEDED.
+
+**P2 -- HELD ON ITS OFFLINE HALF ONLY. This is the cycle's one named
+residual.** P2's committed falsifier was "any **offline or live** test
+outside the new T7 file changes result". The offline half is proven
+rigorously and the lead re-ran it independently at `c26a017`: 2 failed /
+416 passed / 518 deselected, red set exactly the pinned foreign
+`TestPhase2JoinOrOpen` pair. **The live half was never measured** -- the
+only live run was `test_issue252_pos_feature_sync.py` itself, and in the
+offline comparator every pre-existing live test is *deselected* on both
+sides (512 -> 518), i.e. never executed. Why this is not pedantry:
+`__ResolveObject` has 15 call sites, and the cast changes the **type** the
+other 14 `POSOperations` methods receive whenever they were entered by
+HVO -- a bare `ICmObject` becomes an `IPartOfSpeech`. Any of those methods
+that duck-types or `hasattr`-gates could shift behaviour, and that class of
+change is invisible to an offline suite. Non-blocking (direction of change
+is widening; nothing offline moved) but it is a **required cycle-14 gate
+leg**. The report's *evidence* was honest -- it says "the full offline
+comparator" -- only its **headline** "P2 -- HELD" omits the qualifier. Same
+summary-vs-evidence gap as cycle 10, caught at the summary again.
+
+**P3 -- HELD.** Same deleted-probe caveat, and again substantially
+re-derived from tracked tests: the two round-trips CREATE and read back a
+struct on each property (proving existence and `IFsFeatStruc` acceptance),
+and `test_hvo_path_casts_to_concrete_pos` reads both directly off the cast
+object. **The 26-vs-5 POS count discrepancy is CLOSED, not merely noted:**
+cycle 1's 26 was measured on **Ngoreme FLEx** (populated, read-only);
+cycle 13's 5 is `target_sandbox`. Different *projects*, not a snapshot
+drift in one -- the report's "snapshot difference" framing is directionally
+right but imprecise. Nothing to re-derive.
+
+**P4 -- HELD, no caveat.** Live raise test naming both `"PartOfSpeech"` and
+`"slot"`, a fresh `IPartOfSpeech(sandbox.Object(hvo))` re-fetch proving no
+partial attach, and mutation M4 (ambiguous-no-slot picks `rows[0]`) kills
+it. M4 edits shared `BaseOperations.py`; the report discloses that T14a's
+own MoDerivAffMsa raise test would co-die and was not re-run. Disclosure,
+not defect.
+
+**P5 -- HELD, and it is the cycle's most valuable result.** The predicted
+*asymmetric split* was committed in advance and came back exactly: M1 kills
+the direct cast test **and** the HVO-entry Name test, while both
+feature-struct round-trips, the C7-raise test and the slot-ambiguity test
+SURVIVE. Neither falsifier fired. Two consequences worth keeping:
+(a) it **retroactively validates the cycle-10 finding** it was built on --
+the survival half *is* `_ResolveFeatureStrucOwner` acting as the
+compensating cast layer cycle 10 concluded it was; (b) the cycle-10
+dead-cast problem **did recur here in partial form** (the two round-trips
+do *not* protect the cast), but T6b's `KEEP and TEST` ruling was
+*pre-applied*, so the cast ships protected by two tests that DO die -- the
+remedy landed in the same task, which is precisely what closing condition
+(4) demanded.
+
+## Checkpoint 4's ten closing conditions -- 9 MET, 1 OPEN
+
+1. **MET** -- routes through `_ResolveFeatureStrucOwner` / `_GetFeatureStruc`
+   / `_ApplyFeatureStruc`; no fifth resolver-table copy (lead-verified by
+   grep: `FEATURE_STRUC_OWNER_TABLE` appears only in comments/docstrings).
+2. **MET** -- slot disambiguation exercised. Both slots passed explicitly at
+   every call site (pinned by `test_both_slots_passed_explicitly...`, killed
+   by M5); ambiguous-without-slot RAISES, pinned live, killed by M4.
+3. **MET** -- AST allowlist points at the functions where discrimination
+   actually lives (T6b item 4's lesson): the allowlist test caps
+   `GetSyncableProperties` to the four pre-existing attrs, and a second test
+   asserts **zero** `hasattr` in `ApplySyncableProperties`,
+   `__CaptureFeatureStrucProp`, `__ApplyFeatureStrucProp` and
+   `__ResolveObject`.
+4. **MET** -- C2 ships its DIRECT mutation-resistant cast test in the SAME
+   task (`test_hvo_path_casts_to_concrete_pos`, killed by M1 with
+   `AttributeError: 'ICmObject' object has no attribute
+   'DefaultFeaturesOA'`). T6's pre-T6b shape was NOT repeated.
+5. **MET** -- keys POPPED before `super()` (verified in source and
+   behaviourally); presence-gate carries a falsy-but-present value FROM THE
+   START -- two such tests, both killed by M2. Known residual, disclosed and
+   unchanged from T6b: the guid-only-truthy and neither-present tests
+   survive M2 because truthy fixtures cannot separate presence from
+   truthiness. Non-blocking.
+6. **MET, and better than asked** -- the offline C7 test's own docstring
+   **pre-labels itself** propagation-only-not-enforcement, and the live
+   `test_apply_raises_on_unresolved_feature_guid` does the real enforcement
+   through the real `on_unresolved`. T6b item 2's lesson applied from the
+   start rather than retrofitted.
+7. **MET** -- the cycle-7 BINDING RIDER holds. The `4e9d152` diff adds
+   **zero** `ws.Id`/`ws.Handle` lines and zero `dict.get` resolution loops;
+   the single map at `POSOperations.py:1222` is the PRE-EXISTING
+   capture-side read map (one of the 13 protected map-build sites, not a
+   resolution site). The three-site ratchet is GREEN -- lead re-ran
+   `test_issue250_defect4_ws_resolution.py`: 21 passed.
+8. **MET, and exceeded** -- `evidence/live-T7.md`, `run_mode: live`,
+   `uncategorized_live_tests: []` (all six carry
+   `live_phase("POSOperations","modify")`, avoiding the D4-T7 defect). The
+   round-trips not only re-read through a fresh `sandbox.Object(hvo)`, they
+   **enter** `GetSyncableProperties` through a bare `sandbox.Object()` --
+   the exact base-interface-view failure mode, which is stronger than the
+   HVO-int entry the condition asked for.
+9. **NOT MET -- OPEN BY CONSTRUCTION.** The independent verification gate
+   has not run. The implementer's own five worktree-isolated,
+   hash-restore-verified mutations satisfy `cycle12-lead-ruling-3`'s
+   dispatch condition **on the implementer**, but a task's self-testing is
+   not the checkpoint's gate. The precedent is cycle 10: cycle 9's work also
+   looked complete and the independent gate found the dead-cast P0.
+10. **MET** -- comparator red set is 2 against the new 396/2/512 baseline,
+    +20 passed / +6 deselected fully accounted (exactly the new file's 20
+    offline and 6 live tests). Lead re-ran it independently at HEAD.
+
+**Cannot be verified from the report alone:** STEP 0's raw probe numbers
+(file deleted) -- but every claim they support is re-derived above from M1
+and the shipped tests; and P2's live half, which is a cycle-14 gate leg.
+
+## Issue state -- one change since cycle 12
+
+- **#251 is CLOSED.** The user (`MattGyverLee`) closed it
+  2026-09-08T01:41:46Z, posting the crew's `b910abf` draft. The cycle-12
+  open item is DISCHARGED. Lead-verified read-only via `gh`.
+- **#252 is OPEN with ZERO comments.** No crew GitHub action was taken --
+  rule 4 respected. `4e9d152`'s message says "closes #252" but the commit is
+  on `main` un-merged-via-PR, so nothing auto-closed. **Closure needs the
+  user's own authorisation**, exactly as #251's did; a draft is not yet
+  written and should be written by the gate cycle, not posted.
+- #250, #253, #264, #265, #266, #267 still OPEN.
+
+## Working-tree state at spurt end
+
+`git status --porcelain` shows only the five known pre-existing foreign
+noise items (` D .claude/ralph-loop.local.md`, `?? .vscode/`,
+`?? specs/243-closeproject-save-guard/.spec-context.json`,
+`?? specs/duplicate-signature-harmonisation/`,
+`?? specs/getall-contract-flexicon/.spec-context.json`). **None are ours;
+never stage them.** `git worktree list` shows only the main worktree;
+`git worktree prune -v` is silent. Index empty.
+
+## Next pickup -- CYCLE 14 = THE CHECKPOINT 4 VERIFICATION GATE
+
+Independent gate on `4e9d152` + `4b746a0`, in a disposable worktree, holding
+the live token. Legs, in order:
+
+1. **Re-run all five mutations M1-M5 from scratch** in a *fresh* worktree.
+   Do not trust the reported table. Each must KILL the tests named, with a
+   `git hash-object` restore check. Special attention to M1's *survival*
+   half -- if a feature-struct round-trip turns out to die too, the
+   cycle-10 compensating-layer finding is wrong and that outranks T7.
+2. **CLOSE P2's LIVE HALF** -- the one real gap. Run the pre-existing
+   POS-touching live tests at `c26a017` and compare against the same set at
+   `1d88aa4` (pre-T7). Enumerate the set by grep first and report it; a
+   green run on an empty set is not evidence.
+3. **Independently re-derive P1** without the deleted probe (re-probe
+   `GetSyncableProperties(hvo)` at `1d88aa4` in the worktree, tracked).
+4. Re-run the live file as committed; confirm `run_mode: live` and
+   `uncategorized_live_tests: []`.
+5. Comparator delta against the 396/2/512 baseline; expected red set 2,
+   NOT 3, NOT the old 392.
+6. Verify closing conditions 1-8 and 10 independently rather than reading
+   this file's verdicts back.
+7. **Draft** (do not post) the #252 closure comment, and state in it that
+   the fix has two halves -- the feature-struct coverage gap *and* the
+   independent HVO-entry-path silent drop, which is wider than the filed
+   issue.
+
+Standing rules: no locks (rule 1 RETIRED); rule 2 one-live-pytest-token
+still binds; AMENDED git procedure; disposable worktrees for ALL mutation
+testing; predictions committed to a FILE before the run that tests them.
