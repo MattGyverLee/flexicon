@@ -1870,3 +1870,209 @@ comment held for the user's own authorisation.
 Standing rules unchanged: rule 1 RETIRED; rule 2 live-token BINDS; AMENDED
 git procedure; disposable worktrees mandatory; predictions committed to a
 FILE before the run (done -- `evidence/live-cycle15-leg2b-predictions.md`).
+
+---
+
+# CYCLE 15 -- LEG 2b ADJUDICATED. **CHECKPOINT 4 IS CLOSED. T8 IS OPEN.**
+
+Predictions H1-H4 were committed to `evidence/live-cycle15-leg2b-predictions.md`
+at `2be0651` BEFORE the run, so this set is adjudicable.
+Reports: `reviews/cycle15-verification.md`, `evidence/live-cycle15-leg2b.md`
+(commit `bd6c4c0`); CHANGELOG amendment `9d00826`.
+
+## H1-H4 adjudication (lead, against the pre-committed text at `2be0651`)
+
+| # | Verdict | Lead's basis |
+|---|---|---|
+| H1 (BLOCKING) | **HELD** | 4 passed / 4 passed, `run_mode: live` both sides, zero flips. Neither falsifier fired. Lead-confirmed first-hand: the file exists at `1d88aa4` (so the BEFORE side was genuinely runnable), `TestPOSBrackets` is exactly 4 test methods (lines 56/68/79/101) all on `target_sandbox` (sandbox-safe, no in-place write), and `tests/live_status.json` on disk carries `run_mode: live` at `2026-09-08T03:23:05Z` -- the exact timestamp the evidence cites for the HEAD run. |
+| H2 | **HELD -- conclusion sound, method under-powered** | See below. |
+| H3 | **HELD on its committed falsifier, with one derived figure CORRECTED** | See below. |
+| H4 | **HELD** | Lead-verified first-hand: `9d00826` is 10 insertions / 0 deletions, no `+#` heading line, pure ASCII, no deletions at all, and the cited `TestPOSSyncCompareToStructGuidPinning` genuinely exists at `test_issue252_pos_feature_sync.py:770`. |
+
+Zero P0. Zero P1. The two notes below are P2-grade bookkeeping, fixed here.
+
+## H2 -- right answer, thinner reasoning than the answer deserved
+
+H2's falsifier was "a third file". The report re-ran the alias regex
+`\w+\s*=\s*\w+(\.\w+)*\.POS\b`, got 12 files, and concluded "no third
+file". The lead reproduced that exactly (12 files; 10 inside the gate's
+15-file set; the 2 outside are precisely `test_grammar_brackets_live.py`
+and `test_issue252_pos_feature_sync.py`).
+
+But that regex is the SAME class of instrument whose blind spot caused the
+cycle-14 miss in the first place, so reproducing it does not test H2 --
+it re-runs the tool that failed. The lead therefore ran a deliberately
+wider net: every file under `tests/` mentioning `POSOperations`, `.POS`,
+`IPartOfSpeech` or `PartOfSpeech` in ANY form, filtered to
+`requires_live_project`-marked files, diffed against the 15-file set. That
+surfaces two names the alias regex never sees: `tests/conftest.py` and
+`tests/operations/test_natural_classes.py`.
+
+Both are non-candidates, verified by reading them:
+- `test_natural_classes.py` -- both hits are class-docstring PROSE
+  ("Sister classes (POSOperations, ...) already expose Find/Exists"). No
+  import of POSOperations, no call. (Cycle 14 had already ruled this
+  defensible; now confirmed by grep for import/call, not by eye.)
+- `tests/conftest.py` -- the hits are the module registry
+  (`"flexicon.code.Grammar.POSOperations"` and a domain map), not a call
+  site.
+
+**So H2 HOLDS, and it holds under a stronger instrument than H2 itself
+used.** Recorded because the distinction matters: the conclusion was
+right, the evidence offered for it would not have detected a
+counterexample of the kind that actually bit at cycle 14.
+
+## H3 -- CORRECTION: the unrun residual is 55 items, not 51
+
+H3's committed falsifier was "the collect-only count differs materially
+from 145". It does not: `--collect-only` returned `145/251 tests collected
+(106 deselected)`, an exact match. **H3 HELD.**
+
+But the report's derived residual figure is wrong. It states
+"145-90=55 total minus this leg's 4 = 51 items". LEG 2b's 4 tests live in
+`test_grammar_brackets_live.py`, which is **outside** the 15-file set that
+produced the 145 denominator (that is the entire reason LEG 2b exists).
+Subtracting them from 145 double-counts. Lead-verified: that filename is
+not in the 15-file set.
+
+The honest arithmetic -- and it is exactly what the committed prediction
+H3 itself said, using the word "plus":
+- **145** live items in the 15 files the gate enumerated
+- **90** run by the cycle-14 gate
+- **55** unrun within those 15 files
+- **+4** additional items run by LEG 2b, from a 16th file, on top of the 145
+- so **94 of 149** live items across both legs
+
+This UNDERSTATED the unrun residual by 4. Same failure mode as cycle 14's
+16-vs-15 file miscount and cycle 13's dropped qualifier: the measurement
+is honest, the derived sentence drifts. The corrected figures are what
+propagate to the #252 draft and to `residual_named`.
+
+H3's "named, not run" list is also only PARTIALLY by-name: it names the six
+in-place-project files explicitly, then waves at "the unrun remainder of
+the other 9 files". Accepted as adequate -- the six named files are the
+ones carrying actual risk, and the decision not to run the rest is
+correctly justified (doubling in-place exposure on a real named FieldWorks
+project for marginal residual value). The dispatch explicitly did not
+require running them.
+
+## CHECKPOINT 4 -- the ten conditions, and the verdict
+
+| # | Condition | Verdict | First-hand or cited |
+|---|---|---|---|
+| 1 | Routes through existing C5 helpers, no fifth resolver table | **MET** | Cited x2 -- cycle-14 gate + archivist, independently re-derived |
+| 2 | Slot disambiguation exercised; ambiguous-without-slot RAISES, pinned by a test | **MET** | Cited x2 |
+| 3 | Zero hasattr gates, AST-allowlist test pointed at the discriminating functions | **MET** | Cited x2 |
+| 4 | C2 holds AND ships its direct mutation-resistant cast test in the same task | **MET** | Cited x2 |
+| 5 | C6 -- key-presence not truthiness, keys POPPED before super(), falsy-but-present from the start | **MET** | Cited x2 |
+| 6 | C7 -- unresolvable GUIDs RAISE, raise test reads the real `on_unresolved` | **MET** | Cited x2 |
+| 7 | Cycle-7 BINDING RIDER -- alts via `_apply_props_loop`, no local WS map, 3-site ratchet green | **MET** | Cited x2 |
+| 8 | Live evidence, `run_mode: live`, values re-read via fresh re-fetch, one entry via `sandbox.Object(hvo)` | **MET, single-sourced -- ruling STANDS** | Cited; artifact `evidence/live-T7.md` committed `0fefa00`, gate re-run recorded 6 passed / 20 deselected, `uncategorized_live_tests=[]` |
+| 9 | Verification gate, >=1 ACTUAL mutation kill per claim, disposable worktree | **MET -- closed this cycle** | H1 first-hand-corroborated; M1-M5 re-killed from scratch at cycle 14 |
+| 10 | Comparator red set of 2 against the 396/2/512 -> 416/2/518 baseline, PASSED delta explained | **MET** | Cited x2 |
+
+**VERDICT: CHECKPOINT 4 CLOSES.** Condition 9 was the sole open one. Its
+gap was never the mutation kills (those were re-run from scratch in a
+disposable worktree at cycle 14) but LEG 2's incomplete enumeration on the
+POS **write** path -- the only part of `residual_named` that lacked
+evidence. LEG 2b supplied it: the five write-path call sites
+`Delete:273, GetName:401, SetName:439, GetAbbreviation:474,
+SetAbbreviation:511` now have live evidence at BOTH commits, with zero
+flips. H1 was the blocking prediction and it held.
+
+### Condition 8's single-sourcing -- the cycle-14 ruling still stands
+
+Re-confirmed. The archivist ran no live test BY DESIGN: rule 2 forbids a
+second live-pytest token holder in the same cycle, so demanding
+independent live corroboration would have required breaking a standing
+safety rule. Corroboration is instead the machine-checkable artifact.
+
+One new observation that does NOT change the ruling but is worth
+recording: `tests/live_status.json` is a single MUTABLE file, and LEG 2b
+has now overwritten it -- it currently shows the 4 `TestPOSBrackets`
+entries at `2026-09-08T03:23:05Z`, not the six T7 `POSOperations` modify
+tests from `2026-09-07`. Condition 8's corroboration survives only because
+the committed evidence files quote the readings verbatim
+(`evidence/live-T7.md` at `0fefa00`, `evidence/live-cycle14-gate.md` at
+`d31d196`). **Lesson, now standing: `live_status.json` is a scratch
+artifact with a one-run lifetime. Any condition resting on it must quote it
+verbatim into a committed evidence file in the same cycle, or the
+corroboration evaporates on the next live run.**
+
+### The new, honestly-named residual -- NOT a Checkpoint 4 condition
+
+LEG 2b's coverage audit surfaced a genuine gap that is not this
+checkpoint's business and must not be smuggled into its closure: of the 16
+`__ResolveObject` call sites in `POSOperations`, **9 are exercised by no
+live test at either commit** -- 2 with mock-only unit coverage
+(`GetSubcategories`, `GetEntryCount`) and **7 with no automated coverage of
+any kind** (`AddSubcategory`, `RemoveSubcategory` x2 sites,
+`GetCatalogSourceId`, `GetInflectionClasses`, `GetAffixSlots`,
+`Duplicate`). The verification report named this itself and correctly
+declined to fix it in scope. It is a pre-existing POS test-coverage gap,
+not a T7 regression. It is recorded in the #252 draft's
+"Explicitly NOT covered" section so the closure comment does not overstate
+its own regression evidence, and queued as a candidate follow-up
+(`pos-resolveobject-coverage-gap`) needing the user's approval to file.
+
+## #252 closure draft -- CORRECTED, still UNPOSTED
+
+`reviews/cycle14-issue252-closure-draft.md` rewritten this cycle. Two
+fixes, both flagged at cycle 14 or falling out of this one:
+
+1. **The over-claim is gone.** "a live enumeration of the ~16 other call
+   sites this cast also touches (89 passed/1 skipped...)" implied all 16
+   were exercised. Replaced with the measured per-site truth: 5 live at
+   BOTH commits, 2 live at HEAD only (they ARE the fix and cannot exist
+   pre-fix), 9 not live at either, 7 of those with no coverage at all.
+   Plus the corrected item counts (90 of 145 in 15 files, 55 deliberately
+   unrun and why).
+2. **The stale CHANGELOG sentence is gone.** It said the CompareTo change
+   "was NOT mentioned in the CHANGELOG"; `9d00826` fixed that, so it now
+   reads as disclosed.
+
+Preserved intact, as ruled: both halves of the fix, the paragraph naming
+the crew's OWN earlier wrong finding ("#252 is a pure coverage gap"), the
+CompareTo disclosure, and the "Explicitly NOT covered" section citing #266
+and #267.
+
+**NO GitHub action was taken this cycle -- not even a read-only `gh`
+call.** #252 remains OPEN with zero comments. Closure needs the user's own
+authorisation, exactly as #251's did.
+
+## Working-tree state at spurt end
+
+Only the five known pre-existing foreign noise items (`.claude/ralph-loop.local.md`
+deletion, `.vscode/`, and three `specs/*` untracked items). Never staged.
+`git worktree list` shows only the main worktree -- LEG 2b's disposable
+worktree was removed and pruned, and the `.fwbackup` copied into it died
+with it. No in-place project was written: `TestPOSBrackets` runs entirely
+on `target_sandbox`, a tempdir copy, so no `restore_target.py` was needed.
+
+## Next pickup -- **T8** (`AllomorphOperations`, unfiled P0)
+
+Checkpoint 5 = T8 landed and gated. T8 = `AllomorphOperations`: capture +
+apply `MsEnvFeaturesOA`. This is an **unfiled P0** -- there is no GitHub
+issue for it, and filing one needs the user's approval.
+
+T8 inherits every lesson T7 was measured against, and the conditions
+should be carried over nearly verbatim: route through the existing C5
+helpers with no new resolver table; discriminate on `.ClassName` and CAST
+(never `hasattr`); ship the direct mutation-resistant cast test in the SAME
+task; falsy-but-present presence-gate value from the start; the raise test
+must read the real `on_unresolved`; multistring alts via
+`_apply_props_loop`; live evidence on `target_sandbox` with at least one
+entry through `sandbox.Object(hvo)`; predictions committed to a file BEFORE
+the run; and -- new, from this cycle -- **any live_status.json reading must
+be quoted verbatim into the committed evidence file**, and **the enumeration
+of affected call sites must be derived with the wide instrument, not the
+`.POS`-style narrow regex that missed a file twice**.
+
+Open question for T8 that should be settled first: is `MsEnvFeaturesOA`
+slot-ambiguous in `FEATURE_STRUC_OWNER_TABLE` (like `PartOfSpeech`) or
+single-row (like `MoStemMsa`)? That determines whether `slot=` is
+load-bearing and whether an ambiguous-without-slot raise test is required.
+
+Standing rules unchanged: rule 1 RETIRED; rule 2 live-token BINDS; AMENDED
+git procedure; disposable worktrees mandatory; predictions committed to a
+FILE before the run; the five foreign noise items are never staged.

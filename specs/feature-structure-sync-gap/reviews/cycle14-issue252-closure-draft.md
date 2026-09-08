@@ -1,4 +1,7 @@
-# Cycle 14 -- Draft closure comment for flexicon#252 (DRAFT ONLY, not posted)
+# Draft closure comment for flexicon#252 (DRAFT ONLY, not posted)
+
+**Drafted** cycle 14; **corrected** cycle 15 (call-site coverage over-claim
+fixed; CompareTo/CHANGELOG line updated now that `9d00826` has landed).
 
 **Status of issue at time of drafting:** OPEN, ZERO comments (confirmed via
 `gh issue view 252 --json state,comments`, read-only, 2026-09-07). No
@@ -11,10 +14,32 @@ closing keyword in a merge context.
 This file is a draft for the user/lead to review and edit. Nothing in this
 task takes any GitHub action.
 
-**Readiness:** READY. No P0 was found by the cycle-14 verification gate or
-by this audit's independent re-derivation (`reviews/cycle14-archivist.md`).
-One P2 exists (CompareTo/CHANGELOG omission) and is named explicitly below,
-per the gate's recommendation.
+**Readiness:** READY. No P0 was found by the cycle-14 verification gate, by
+the cycle-14 archivist re-derivation, or by the cycle-15 LEG 2b close-out.
+The one P2 the cycle-14 draft carried (the CompareTo change being absent
+from the CHANGELOG) was FIXED at `9d00826`, and the text below is updated
+accordingly.
+
+## Cycle-15 correction log
+
+Two things in the cycle-14 version of this draft were wrong and are fixed
+here:
+
+1. **Over-claim on call-site coverage.** The old text read "a live
+   enumeration of the ~16 other call sites this cast also touches (89
+   passed/1 skipped ...)", which reads as though all 16 sites were
+   exercised live. They were not. The cycle-14 verification report's own
+   wording was "many, though not exhaustively every one", and the draft
+   dropped that qualifier. The Verification section below now states the
+   actual per-site coverage: 5 live at both commits, 2 live at HEAD only,
+   9 not live at either.
+2. **Stale CHANGELOG claim.** The old text said the CompareTo side effect
+   "was NOT mentioned in the CHANGELOG". It is now disclosed there
+   (`9d00826`).
+
+Everything else the cycle-14 draft got right is preserved: both halves of
+the fix, the correction of our own earlier cycle-1 finding, and the
+explicit NOT-covered section citing #266/#267.
 
 ---
 
@@ -22,7 +47,9 @@ per the gate's recommendation.
 
 ```
 Fixed in commit 4e9d152 (tests: 4b746a0). Independently gated PASS at
-cycle 14 (specs/feature-structure-sync-gap/reviews/cycle14-verification.md).
+cycle 14 (specs/feature-structure-sync-gap/reviews/cycle14-verification.md),
+with the write-path residual closed at cycle 15
+(specs/feature-structure-sync-gap/evidence/live-cycle15-leg2b.md).
 
 **This fix has two halves, and the second is wider than what this issue
 asked for.**
@@ -61,35 +88,63 @@ only for the `GetAll()` entry path and false for the HVO entry path -- the
 show up in it. #252 was a coverage gap plus an independent silent-drop bug,
 not a pure coverage gap.
 
-**One disclosed side effect, not covered by this fix and not something we
-consider a defect:** `CompareTo`'s behaviour changes as a side effect of the
-two new key-pairs now existing at all. Two POS with identical feature
-specs but independently-created structs (different struct GUIDs) now report
-a difference on the `<key>Guid` key, where before neither key existed to
+**One disclosed side effect, not something we consider a defect:**
+`CompareTo`'s behaviour changes as a side effect of the two new key-pairs
+now existing at all. Two POS with identical feature specs but
+independently-created structs (different struct GUIDs) now report a
+difference on the `<key>Guid` key, where before neither key existed to
 compare. This is pinned by a dedicated test
-(`TestPOSSyncCompareToStructGuidPinning`) but was NOT mentioned in the
-CHANGELOG entry for this fix -- flagging it here so a reader relying on
-"closes #252" is not surprised by it later. A candidate follow-up (compare
-serialized spec content rather than struct identity) is noted but not
+(`TestPOSSyncCompareToStructGuidPinning`) and is disclosed in the CHANGELOG
+entry for this fix (commit 9d00826). A candidate follow-up -- comparing
+serialized spec content rather than struct identity -- is noted but not
 filed as its own issue.
 
 **Explicitly NOT covered by this fix:**
 - The CompareTo struct-GUID behaviour change above -- disclosed, not fixed.
 - Two writing-system resolution sites this campaign does not reach, already
   filed separately as #266 and #267.
+- Nine of the sixteen `__ResolveObject` call sites in `POSOperations` are
+  not exercised by any live test, at either commit -- see the precise
+  breakdown under Verification. Seven of those nine have no automated
+  coverage of any kind. That is a pre-existing test-coverage gap, not
+  something this fix introduces, but it bounds how much this fix's
+  regression evidence can claim.
 
 **Verification:** live, `run_mode: live`, against a real FLEx project, with
 five characterizing mutations run from scratch in a disposable worktree
-(each restored and hash-verified), a live enumeration of the ~16 other
-call sites this cast also touches (89 passed/1 skipped, identical on both
-sides of the fix, zero regressions), and the tracked HVO-path probe above.
-Full detail: specs/feature-structure-sync-gap/reviews/cycle14-verification.md
-and specs/feature-structure-sync-gap/evidence/live-cycle14-gate.md.
+(each restored and hash-verified), plus the tracked HVO-path probe above.
+
+Coverage of the call sites this cast touches is PARTIAL, and worth stating
+precisely rather than in aggregate. `__ResolveObject` has 16 call sites in
+`POSOperations`:
+
+- **5 sites live-verified at BOTH the pre-fix and post-fix commits**
+  (`Delete`, `GetName`, `SetName`, `GetAbbreviation`, `SetAbbreviation`) --
+  the POS write path, via `TestPOSBrackets` against a sandboxed copy of the
+  project: 4 passed / 4 passed, `run_mode: live` on both sides, zero flips
+  in either direction.
+- **2 sites live at the post-fix commit only** (`GetSyncableProperties`,
+  `ApplySyncableProperties`) -- these are the fix itself, and cannot exist
+  at the pre-fix commit.
+- **9 sites not exercised live at either commit.** Two
+  (`GetSubcategories`, `GetEntryCount`) have mock-only unit coverage; seven
+  (`AddSubcategory`, `RemoveSubcategory` -- two sites --
+  `GetCatalogSourceId`, `GetInflectionClasses`, `GetAffixSlots`,
+  `Duplicate`) have no test coverage of any kind.
+
+Separately, a broad live regression run over 90 collected items in 15
+POS-touching test files was identical on both sides of the fix (89 passed /
+1 skipped, zero regressions). A further 55 live items in those same files
+were deliberately NOT run: six of the fifteen files write in-place to a
+real named FieldWorks project, and doubling that exposure was judged a
+worse trade than naming the gap here.
+
+Full detail: specs/feature-structure-sync-gap/reviews/cycle14-verification.md,
+specs/feature-structure-sync-gap/evidence/live-cycle14-gate.md, and
+specs/feature-structure-sync-gap/evidence/live-cycle15-leg2b.md.
 
 Closing as resolved.
 ```
-
-(Word count of the comment body above: ~490 words.)
 
 ---
 
@@ -111,9 +166,8 @@ review and edit before any gh mutation happens.
 ## Confirmation
 
 - Only read-only command executed against GitHub: `gh issue view 252
-  --json state,comments,title` (confirms OPEN, zero comments).
+  --json state,comments,title` (confirms OPEN, zero comments), at cycle 14.
+  Cycle 15 ran NO gh command at all, read-only or otherwise.
 - No `gh issue close`, `gh issue comment`, `gh issue edit`, or any other
   mutating command was run.
-- `git status --porcelain` before and after writing this file showed only
-  the five known pre-existing foreign noise items, plus this new file (and
-  the audit report) as untracked additions from this task.
+- The five known pre-existing foreign noise items were never staged.
