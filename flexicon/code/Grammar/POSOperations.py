@@ -1112,13 +1112,53 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             pos_or_hvo: Either an IPartOfSpeech object or an HVO (int).
 
         Returns:
-            IPartOfSpeech: The resolved POS object.
+            IPartOfSpeech: The resolved POS object, cast to the concrete
+            ``IPartOfSpeech`` interface when its ``ClassName`` is
+            ``"PartOfSpeech"`` (contract C2). ``self.project.Object(hvo)``
+            returns a bare ``ICmObject``; without this cast, a caller
+            reaching this method via an HVO (rather than an already-typed
+            object from, e.g., ``GetAll()``, which already casts via
+            ``IPartOfSpeech(raw)``) would silently lose access to every
+            subtype-only member -- including the four PRE-EXISTING
+            ``GetSyncableProperties`` fields (``Name``/``Abbreviation``/
+            ``Description``/``CatalogSourceId``), not just the two new
+            feature-struct properties T7 adds (see evidence/live-T7.md,
+            prediction P1).
+
+            Any ``ClassName`` other than ``"PartOfSpeech"`` (or a non-LCM
+            input with no ``ClassName`` at all, e.g. a GUID ``str`` --
+            OUT of scope for this method, folded into T12) is returned
+            UNCHANGED -- this method never raises on a miss, mirroring
+            ``MSAOperations.__GetMsaObject``'s ClassName-discriminated,
+            never-raising shape.
         """
         if isinstance(pos_or_hvo, int):
-            return self.project.Object(pos_or_hvo)
-        return pos_or_hvo
+            obj = self.project.Object(pos_or_hvo)
+        else:
+            obj = pos_or_hvo
+
+        if getattr(obj, "ClassName", None) == "PartOfSpeech":
+            return IPartOfSpeech(obj)
+        return obj
 
     # ========== SYNC INTEGRATION METHODS ==========
+    #
+    # Closes issue #252 (spec feature-structure-sync-gap, task T7):
+    # PartOfSpeech has TWO feature-struct-owning properties --
+    # DefaultFeaturesOA (slot="Default") and InherFeatValOA
+    # (slot="InherFeatVal"), the frozen C1 "PartOfSpeech" row in
+    # FEATURE_STRUC_OWNER_TABLE (Shared/lcm_constants.py) -- neither of
+    # which was ever captured or applied, so a synced POS carried correct
+    # Name/Abbreviation/Description/CatalogSourceId but a permanently null
+    # feature structure. Shape mirrors MSAOperations' #251 fix
+    # (:841-1158), but T7 additionally fixes an independent C2 hole in
+    # __ResolveObject itself: unlike GetAll() (which already casts every
+    # POS via `IPartOfSpeech(raw)`), a POS reached through this method via
+    # a bare HVO was returned as an uncast `ICmObject`, silently dropping
+    # even the four PRE-EXISTING scalar/multistring properties on that
+    # entry path (evidence/live-T7.md, prediction P1). Both are fixed
+    # together since __ResolveObject is the single choke point both
+    # methods route through.
 
     @OperationsMethod
     def GetSyncableProperties(self, item):
@@ -1126,11 +1166,28 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         Get dictionary of syncable properties for cross-project synchronization.
 
         Args:
-            item: The IPartOfSpeech object.
+            item: The IPartOfSpeech object, or its HVO (int) -- resolved
+                and cast via ``__ResolveObject`` (contract C2).
 
         Returns:
             dict: Dictionary mapping property names to their values.
                 Keys are property names, values are the property values.
+                In addition to the pre-existing scalar/multistring keys,
+                emits (per the frozen C1 "PartOfSpeech" table row, when
+                the owning property is non-None -- C6 presence, not
+                truthiness):
+
+                - ``DefaultFeatures`` / ``DefaultFeaturesGuid`` --
+                  ``DefaultFeaturesOA`` (C4 recursive-dict spec / str
+                  GUID).
+                - ``InherFeatVal`` / ``InherFeatValGuid`` --
+                  ``InherFeatValOA``.
+
+                An owning property that is present but genuinely empty
+                (an ``IFsFeatStruc`` with zero ``FeatureSpecsOC`` entries)
+                still emits BOTH its keys -- ``_GetFeatureStruc`` never
+                returns ``None`` for a non-None struct (C4). A NULL owning
+                property omits both keys entirely.
 
         Example:
             >>> posOps = POSOperations(project)
@@ -1145,6 +1202,16 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
             - Does not include SubPossibilitiesOS (subcategories)
             - Does not include InflectionClassesOC or AffixSlotsOC
             - Does not include GUID or HVO of the POS itself
+            - Feature-struct capture (``DefaultFeatures``/``InherFeatVal``)
+              is entirely ``.ClassName``-driven, delegating to
+              ``BaseOperations._ResolveFeatureStrucOwner``/
+              ``_GetFeatureStruc`` (C1/C4) -- zero ``hasattr`` probes on
+              either feature-struct property. The two ``hasattr`` calls
+              below (on ``Name``/``Abbreviation``/``Description`` and
+              ``CatalogSourceId``) are PRE-EXISTING and deliberately kept
+              (lead ruling 3): once ``__ResolveObject`` casts, they are
+              redundant but harmless, and removing them is out of this
+              task's scope.
         """
         pos = self.__ResolveObject(item)
 
@@ -1172,20 +1239,166 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         if hasattr(pos, "CatalogSourceId") and pos.CatalogSourceId:
             props["CatalogSourceId"] = pos.CatalogSourceId
 
+        # Feature-struct properties (C1 "PartOfSpeech" table row, T7/#252).
+        # slot= is REQUIRED here (unlike MoStemMsa's single-row None) --
+        # PartOfSpeech has two rows in FEATURE_STRUC_OWNER_TABLE.
+        self.__CaptureFeatureStrucProp(props, pos, "Default", "DefaultFeatures")
+        self.__CaptureFeatureStrucProp(props, pos, "InherFeatVal", "InherFeatVal")
+
         return props
 
     @OperationsMethod
     def ApplySyncableProperties(self, item, props, ws_map=None, fill_gaps=False):
-        """Apply syncable properties (from GetSyncableProperties) onto a POS.
-
-        Inherited from BaseOperations; declared here so static API indexers
-        (e.g. the FLExToolsMCP validator) see it on the concrete class. The
-        BaseOperations implementation handles every property shape that
-        POSOperations.GetSyncableProperties emits (multi-WS Name/Abbreviation/
-        Description + plain-string CatalogSourceId), so no per-class
-        customisation is needed.
         """
-        return super().ApplySyncableProperties(item, props, ws_map, fill_gaps=fill_gaps)
+        Apply syncable properties (from GetSyncableProperties) onto a POS.
+
+        Handles the two C1 "PartOfSpeech" feature-struct key-pairs
+        (``DefaultFeatures``/``DefaultFeaturesGuid``,
+        ``InherFeatVal``/``InherFeatValGuid``) directly; everything else in
+        ``props`` (the pre-existing multi-WS Name/Abbreviation/Description
+        + plain-string CatalogSourceId shape) is delegated to
+        ``BaseOperations.ApplySyncableProperties`` unchanged.
+
+        Args:
+            item: Target POS (already created + owned + GUID-assigned by
+                the caller), or its HVO (int) -- resolved and cast via
+                ``__ResolveObject`` (C2).
+            props: dict produced by GetSyncableProperties (or built by a
+                caller following the same shape).
+            ws_map: Optional source->target writing-system Id mapping.
+                Unused by the feature-struct branches (which resolve by
+                GUID, not writing system); passed through to the base
+                loop.
+            fill_gaps: Passed through to the base loop. Has no additional
+                effect on the feature-struct branches, which are always
+                purely additive/idempotent by GUID.
+
+        Raises:
+            FP_ParameterError: If ``item`` is None, ``props`` is not a
+                dict, or (C7) a ``<Name>``/``<Name>Guid`` spec references a
+                feature, value, or feature-structure-type GUID that does
+                not exist in the target project -- naming the unresolved
+                GUID and instructing the caller to sync the feature system
+                first.
+
+        Notes:
+            - The two feature-struct keys are POPPED out of ``props``
+              (via a filtered copy) BEFORE calling ``super()`` (C6):
+              ``BaseOperations._apply_props_loop`` dispatches on
+              ``isinstance(value, dict)`` and would otherwise route a C4
+              dict into the multi-writing-system multistring path and
+              silently drop it.
+            - Gates on KEY PRESENCE, never truthiness (C6): a present-but-
+              empty feature structure (``<Name>Guid`` set, ``<Name>``
+              absent/``{}``) is a real, empty-but-attached
+              ``IFsFeatStruc`` on the source and must still create/attach
+              an empty struct on the target.
+        """
+        if item is None:
+            raise FP_ParameterError("ApplySyncableProperties: item is None")
+        if not isinstance(props, dict):
+            raise FP_ParameterError(
+                f"ApplySyncableProperties: props must be a dict, got "
+                f"{type(props).__name__}"
+            )
+
+        pos = self.__ResolveObject(item)
+
+        # Pop the two feature-struct key-pairs out of props BEFORE calling
+        # super() (C6) -- BaseOperations._apply_props_loop dispatches a
+        # dict value into the multistring path and would drop a C4 dict
+        # silently at that layer instead of raising.
+        base_props = {
+            k: v for k, v in props.items() if k not in self.__FEATURE_STRUC_KEYS
+        }
+        super().ApplySyncableProperties(pos, base_props, ws_map, fill_gaps=fill_gaps)
+
+        self.__ApplyFeatureStrucProp(pos, "Default", "DefaultFeatures", props)
+        self.__ApplyFeatureStrucProp(pos, "InherFeatVal", "InherFeatVal", props)
+
+    # ------------------------------------------------------------------
+    # Feature-struct sync internals (T7/#252)
+    # ------------------------------------------------------------------
+
+    # The four props keys handled directly by ApplySyncableProperties's
+    # feature-struct branches -- must be excluded from the base-loop
+    # pass-through (C6). Kept as one tuple so the pop-filter and any
+    # future audit share a single source of truth.
+    __FEATURE_STRUC_KEYS = (
+        "DefaultFeatures", "DefaultFeaturesGuid",
+        "InherFeatVal", "InherFeatValGuid",
+    )
+
+    def __CaptureFeatureStrucProp(self, props, pos, slot, key):
+        """
+        Capture one C1 "PartOfSpeech" feature-struct row into ``props``,
+        in place.
+
+        Args:
+            props: The dict being built by GetSyncableProperties;
+                mutated in place.
+            pos: The POS object (already resolved via ``__ResolveObject``).
+            slot: ``"Default"`` | ``"InherFeatVal"`` -- REQUIRED (unlike
+                MoStemMsa's single-row ``None``, PartOfSpeech has TWO rows
+                in ``FEATURE_STRUC_OWNER_TABLE``) -- passed straight
+                through to ``_ResolveFeatureStrucOwner`` (C1).
+            key: The props key stem (e.g. ``"DefaultFeatures"``) -- the C1
+                table's props-key column. ``f"{key}Guid"`` is the sibling
+                GUID key.
+
+        Notes:
+            - Delegates the owner/property resolution entirely to
+              ``BaseOperations._ResolveFeatureStrucOwner`` -- no
+              ``hasattr`` probe, no local cast.
+            - Only emits keys when the owning property is non-None (a
+              present-but-empty struct still emits both keys, since
+              ``_GetFeatureStruc`` never returns ``None`` for a non-None
+              struct -- C4). A null owning property emits neither key,
+              which is the PRESENCE gate C6 requires on the apply side.
+        """
+        concrete_owner, prop_name = self._ResolveFeatureStrucOwner(pos, slot=slot)
+        struct = getattr(concrete_owner, prop_name)
+        if struct is not None:
+            props[key] = self._GetFeatureStruc(struct)
+            props[f"{key}Guid"] = str(struct.Guid)
+
+    def __ApplyFeatureStrucProp(self, pos, slot, key, props):
+        """
+        Apply one C1 "PartOfSpeech" feature-struct row from ``props`` onto
+        ``pos``, if present.
+
+        Args:
+            pos: The POS object (already resolved via ``__ResolveObject``).
+            slot: ``"Default"`` | ``"InherFeatVal"``.
+            key: The props key stem (e.g. ``"DefaultFeatures"``).
+            props: The ORIGINAL (unfiltered) props dict passed to
+                ``ApplySyncableProperties`` -- read-only here.
+
+        Notes:
+            - Gates on KEY PRESENCE, never truthiness (C6):
+              ``if key in props or guid_key in props`` -- a present-but-
+              empty source struct carries ``<Name>Guid`` with ``<Name>``
+              absent (or ``{}``), and must still create/attach an empty
+              target struct, not be skipped as "source has none".
+            - ``on_unresolved="raise"`` unconditionally (C7): an
+              unresolvable feature/value/type GUID must never be
+              silently dropped for a POS sync.
+        """
+        guid_key = f"{key}Guid"
+        if key in props or guid_key in props:
+            concrete_owner, prop_name = self._ResolveFeatureStrucOwner(
+                pos, slot=slot
+            )
+            spec = props.get(key) or {}
+            struct_guid = props.get(guid_key)
+            self._ApplyFeatureStruc(
+                concrete_owner,
+                prop_name,
+                spec,
+                struct_guid=struct_guid,
+                on_unresolved="raise",
+                label=f"PartOfSpeech ({prop_name})",
+            )
 
     @OperationsMethod
     def CompareTo(self, item1, item2, ops1=None, ops2=None):
