@@ -35,6 +35,31 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   rather than silently dropping the spec (same policy as
   `NaturalClassOperations`/#222).
 
+- **`POSOperations.GetSyncableProperties`/`ApplySyncableProperties` now
+  capture and apply `DefaultFeaturesOA`/`InherFeatValOA`.** Task T7 of
+  `specs/feature-structure-sync-gap`, closes #252. `PartOfSpeech` has two
+  independent feature-struct slots in the frozen C1 table
+  (`DefaultFeaturesOA`, `InherFeatValOA`), neither of which was ever
+  captured or applied, so a synced POS carried a correct
+  `Name`/`Abbreviation`/`Description`/`CatalogSourceId` but a permanently
+  null feature structure. Dispatch always passes an explicit `slot=`
+  ("Default" / "InherFeatVal") through the shared
+  `BaseOperations._ResolveFeatureStrucOwner`/`_GetFeatureStruc`/
+  `_ApplyFeatureStruc` helpers (T1-T5), since `PartOfSpeech` -- unlike
+  `MoStemMsa` -- is ambiguous and requires it.
+
+  **Bug fix, not merely a coverage gap:** `POSOperations.__ResolveObject`
+  also had an independent hole on the HVO entry path -- it returned a
+  bare, uncast `ICmObject`, which silently dropped even the four
+  PRE-EXISTING properties (`Name`/`Abbreviation`/`Description`/
+  `CatalogSourceId`) whenever `GetSyncableProperties`/
+  `ApplySyncableProperties` was called with an HVO instead of an
+  already-typed object (as `GetAll()` yields). `__ResolveObject` now
+  casts to `IPartOfSpeech` when `ClassName == "PartOfSpeech"` and returns
+  any other input unchanged (never raises) -- live-measured before and
+  after the fix in `specs/feature-structure-sync-gap/evidence/live-T7.md`.
+  GUID-string support remains out of scope (folded into T12).
+
 ### Changed
 - **BREAKING (behavioural): name-field writers across four Operations
   classes now persist the caller's original, unstripped name, and their
