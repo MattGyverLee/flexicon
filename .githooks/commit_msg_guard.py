@@ -73,10 +73,47 @@ NARRATION = re.compile(
     re.IGNORECASE,
 )
 
-OVERRIDE_TRAILER = re.compile(r"^Close-Keyword-Override:\s*\S", re.IGNORECASE)
+OVERRIDE_TRAILER = re.compile(r"^Close-Keyword-Override:\s*(?P<reason>\S.*)$",
+                              re.IGNORECASE)
+
+# A placeholder reason means the line is DOCUMENTING the override, not using
+# it. This guard's own first commit message was waved through by a line that
+# read "Close-Keyword-Override: <reason>   trailer" inside an explanatory
+# paragraph, which re-closed #243 and #250 -- the exact harm it exists to
+# prevent. Hence both defences below: trailer-block position, and this.
+PLACEHOLDER = re.compile(r"^<[^>]*>|^\.\.\.|^&lt;")
 
 # How far back on the line to look for a negation / narration cue.
 LOOKBEHIND = 45
+
+
+def trailer_block(lines):
+    """
+    The message's last non-empty paragraph -- where git trailers live
+    (Co-Authored-By, Signed-off-by). An override is only honoured here, so
+    that prose merely MENTIONING the trailer cannot activate it.
+    """
+    para, seen_text = [], False
+    for line in reversed(lines):
+        if line.strip():
+            para.append(line)
+            seen_text = True
+        elif seen_text:
+            break
+    return list(reversed(para))
+
+
+def override_reason(lines):
+    """Return the override reason if one is genuinely asserted, else None."""
+    for line in trailer_block(lines):
+        m = OVERRIDE_TRAILER.match(line.strip())
+        if not m:
+            continue
+        reason = m.group("reason").strip()
+        if PLACEHOLDER.match(reason):
+            continue  # documenting the syntax, not invoking it
+        return reason
+    return None
 
 
 def strip_noise(raw):
@@ -174,7 +211,7 @@ def main():
         raw = fh.read()
 
     lines = strip_noise(raw)
-    if any(OVERRIDE_TRAILER.match(ln.strip()) for ln in lines):
+    if override_reason(lines) is not None:
         return 0
 
     bad = violations(lines)

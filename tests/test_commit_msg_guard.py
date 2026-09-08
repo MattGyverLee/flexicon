@@ -151,3 +151,52 @@ class TestCommitMsgGuard:
                    "diff --git a/x b/x\n"
                    "+# do NOT close #250\n")
         assert not _blocks(guard, message)
+
+    def test_documented_override_syntax_does_not_activate_the_override(
+            self, guard, tmp_path, monkeypatch):
+        """
+        Regression: this guard's own first commit message contained the line
+        "Close-Keyword-Override: <reason>   trailer" inside an explanatory
+        paragraph. The guard read it as a real override, waved the message
+        through, and GitHub re-closed #243 and #250 on push -- the exact harm
+        the guard exists to prevent.
+
+        An override is honoured only as a genuine trailer: in the last
+        paragraph, with a real reason rather than a placeholder.
+        """
+        message = (
+            'build(hooks): add the guard\n'
+            '\n'
+            'Escape hatches, for a prose form that really is intended:\n'
+            '  Close-Keyword-Override: <reason>   trailer\n'
+            '\n'
+            'It blocks prose such as "do NOT close #250 while D4 is open".\n'
+            '\n'
+            'Co-Authored-By: Someone <nobody@example.com>\n')
+        msg = tmp_path / "COMMIT_EDITMSG"
+        msg.write_text(message, encoding="utf-8")
+        monkeypatch.delenv("FLEXICON_ALLOW_CLOSE_PROSE", raising=False)
+        monkeypatch.setattr("sys.argv", ["guard", str(msg)])
+        assert guard.main() == 1, (
+            "a documented override placeholder must NOT activate the override")
+
+    def test_override_must_sit_in_the_trailer_block(self, guard):
+        lines = guard.strip_noise(
+            "docs: do NOT close #250\n"
+            "\n"
+            "Close-Keyword-Override: deliberate, mid-message\n"
+            "\n"
+            "Some later paragraph that ends the message.\n")
+        assert guard.override_reason(lines) is None
+
+        lines = guard.strip_noise(
+            "docs: do NOT close #250\n"
+            "\n"
+            "Close-Keyword-Override: deliberate, in the trailer block\n")
+        assert guard.override_reason(lines) == "deliberate, in the trailer block"
+
+    def test_placeholder_reasons_are_rejected(self, guard):
+        for placeholder in ("<reason>", "<why this should close it>", "..."):
+            lines = guard.strip_noise(
+                "docs: do NOT close #250\n\nClose-Keyword-Override: %s\n" % placeholder)
+            assert guard.override_reason(lines) is None, placeholder
