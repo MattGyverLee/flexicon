@@ -50,3 +50,25 @@ to `SetText` (line 559-561) and `InsertAt` (line 700-702).
 
 ---
 **Doc Agent:** /lex-doc
+
+---
+
+## Follow-up: the escalated steps WERE discharged (added by the cycle-5 gate, 2026-09-08)
+
+This report correctly reported `FAIL: unverified` for its steps 2-3 rather
+than claiming a pass it had no shell tool to run, and asked for a re-run.
+That escalation was honoured, not buried:
+
+- **Discharged by the main session in commit `ed428f7`**, whose body
+  records 4/4 sites carrying the note and the offline suite at
+  1292 passed / 483 deselected.
+- **Independently re-confirmed at cycle 5**: the code-conformance and docs
+  verifiers each found all 4/4 docstring notes present at HEAD.
+
+The pytest half of the re-run is now covered by `spec.md` C18 instead: the
+offline suite is no longer reproducible in the current environment (Python
+3.14.5 against `requires-python >=3.8,<3.14`), so the 1292/483 figure
+stands on the cycle-3 and cycle-4 runs and cannot be re-derived today.
+
+Recorded here because this report was never amended to show its
+escalation had been answered. See `reviews/cycle5-verification-swarm.md`.

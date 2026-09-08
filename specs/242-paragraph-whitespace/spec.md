@@ -5,14 +5,25 @@
 leading/trailing whitespace)
 **Campaign:** `tier1-silent-data-loss`, queue item 2 of 4
 
-**Status:** CHECKPOINT 1 (spec + live probe) DONE, 2026-09-07. No behaviour
-change under `flexicon/code/` has been authorised yet -- `git diff --stat --
-flexicon/` is empty and independently re-confirmed (see
-`evidence/live-probe-cycle1.md`). Contract items C1-C7 below are FROZEN
-findings of fact. The fix shape, the CHANGELOG/breaking-change
-classification, and the scope ruling on the 8 newly-found sibling sites are
-explicitly NOT frozen here -- they are recorded as RECOMMENDATIONS awaiting
-a `/lex-lead` ruling (see section "Recommendations awaiting ruling").
+**Status: COMPLETE ON SUBSTANCE, 2026-09-08 (cycle 5). Two items OPEN --
+C16 and C18 -- neither of them substance.** Contract items **C1-C18** are
+FROZEN.
+
+The paragraph that stood here read `No behaviour change under flexicon/code/
+has been authorised yet -- git diff --stat -- flexicon/ is empty`. That was
+written at Checkpoint 1 and **was already false for a year of cycles**; it
+is corrected rather than deleted so the record shows the error. The fix
+HAS landed (C8, `066bab0`; C12, `608200c`; C14, `ed428f7`), and R1/R2/R3
+plus the coercion question are all RULED (C8-C11) -- they are no longer
+"RECOMMENDATIONS awaiting a ruling", and section 3 below is retained only
+as the historical record of what was recommended before section 3a ruled.
+
+The independent verification gate **has run twice, both green**:
+`reviews/cycle3-verification.md` (`GATE: GREEN`) and
+`reviews/cycle5-verification-swarm.md` (five adversarial verifiers, green
+on substance). **Read C16 and C18 before making any verification claim
+about this feature** -- the live-evidence anchor is not durable, and the
+offline baseline is not currently reproducible.
 
 **Cycle-1 inputs (read these before implementing):**
 - `specs/242-paragraph-whitespace/evidence/live-probe-cycle1.md` (live,
@@ -569,7 +580,9 @@ Two of the four cases (3's `trail == 0` branch and 4's `trail == 0`
 branch) are the two **preserve-today's-behaviour** cases named above,
 alongside case 1's degenerate preservation.
 
-**Inertness claim:** the change is provably inert whenever `trail == 0`
+**Inertness claim** (NARROWED by C15, 2026-09-08 -- read C15 before
+citing the byte-for-byte characterisation below)**:** the change is
+provably inert whenever `trail == 0`
 -- i.e. on every input reachable before #242 landed, since pre-fix,
 `Create`/`SetText`/`InsertAt` always stripped trailing whitespace, so
 `trail` could never be `> 0` on any paragraph built through the public
@@ -640,6 +653,161 @@ corpus-scale replication of the field report.
 
 ---
 
+## 3b. Cycle-4 and cycle-5 contract items (FROZEN, 2026-09-08)
+
+### C14 -- the `ParagraphOperations.Create` docstring note (cycle 4, 2026-09-07)
+
+**Recorded retroactively by the cycle-5 gate, 2026-09-08.** The cycle-3
+independent gate (`reviews/cycle3-verification.md`) raised one P1: of the
+four sites named in C1, only three carried the whitespace-preservation
+docstring note required by Checkpoint 3's T3 --
+`ParagraphOperations.Create` had none, so the change was documented at 3 of
+4 sites. Commit `ed428f7` added it, discharging that P1.
+
+**Binding text**, byte-identical at all four sites:
+
+```
+Note: leading/trailing whitespace in the value is preserved
+verbatim (#242); a value that is entirely whitespace still
+raises FP_ParameterError.
+```
+
+Present at `ParagraphOperations.py` `Create`, `SetText`, `InsertAt` and
+`SegmentOperations.py` `AppendSentence` (the `text` param). Verified 4/4 at
+HEAD by the cycle-5 code-conformance and docs verifiers independently.
+
+**Why this item is being written now rather than at cycle 4:** commit
+`ed428f7`'s message claims "records C12/C13/C14 in the spec", and the
+campaign record claims "Contract C1-C14 frozen", but **C14 was never
+written into this file** -- `grep -n C14 spec.md` returned zero hits until
+this edit. The work had landed and was correct; only the contract entry
+was missing. Recorded because an item that exists only in a commit message
+cannot be cited or overturned by number, which is the mechanism this
+feature's freeze discipline depends on. See
+`reviews/cycle5-verification-swarm.md` N4.
+
+### C15 -- C12's inertness claim, NARROWED (cycle 5, 2026-09-08)
+
+**This item narrows C12; it does not overturn it.** C12's "Inertness
+claim" paragraph and `evidence/live-t5-joinfix.md`'s "C12.4 inertness
+proof" both state that the four `trail == 0` prediction rows are required
+to match cycle 2's post-T1/T2 behaviour **byte-for-byte**. That
+characterisation is too strong on the evidence:
+
+- Cycle 2 measured only two seeds: `"foo "` (`test_p8`) and `"Seed."`
+  (`test_p2`, which seeded every payload with that one fixed string).
+- Of C12's four `trail == 0` rows, only the `'foo.'`-shaped
+  (already-terminated, `trail == 0`) row has a recorded cycle-2
+  counterpart. `''`, `'foo'` and `'foo!'` were **first measured at cycle
+  3**, against predictions derived by reading C12's algorithm.
+
+So **1 of the 4 rows is a byte-for-byte regression check against recorded
+cycle-2 output; 3 of the 4 are a-priori predictions that matched.** Both are
+legitimate under the C28 forward rule -- the predictions were committed
+before the measuring run (`a580f7b` before `608200c`) -- but they are not
+the same kind of evidence, and C12 conflated them.
+
+**The inertness CONCLUSION is unaffected, and is now carried by a stronger
+proof than the measurement.** The cycle-5 code-conformance verifier
+hand-diffed the `trail == 0` paths against the pre-C12 source
+(`608200c^`) case by case and established that every behavioural
+divergence from pre-C12 is gated behind `trail > 0` or
+`anchor == 0 and raw != ""`, so no `trail == 0` input can reach a changed
+line. That is an exhaustive argument over the code, where the 9-row table
+is a sample. C12's claim is therefore RIGHT in substance and imprecise in
+its citation; this item fixes the citation.
+
+### C16 -- the live-evidence durability gap (cycle 5, 2026-09-08) -- OPEN
+
+`tests/live_status.json`, which CLAUDE.md makes the machine-checkable
+anchor of every live-verification claim, **is gitignored
+(`.gitignore:99`), absent from disk, and has never been committed.** No
+evidence file in this feature quotes the JSON, and none records the
+`run_timestamp` that would bind a claim to a specific run. Every
+`run_mode: live` claim across cycles 1-3 is therefore prose that cannot be
+re-derived from the repository.
+
+**Explicit negative claim, recorded so no future reader over-reads this
+item: THIS IS NOT EVIDENCE THAT ANY RUN WAS MOCKED.** Three things argue
+the opposite, and are recorded here as the substitute evidence:
+
+1. The offline/live split is internally coherent -- 483 deselected offline
+   against 8 tests collected live, the 8 re-verified by `--collect-only`
+   at cycle 5.
+2. The LCM read-backs are genuine re-queries, not echoes of the input:
+   `test_p8` re-reads through `project.Paragraphs.GetText(para)` after the
+   write, and `test_p4` closes and reopens the project before re-reading.
+3. `reviews/cycle3-verification.md`'s independent pass reports having read
+   the file's `by_test` map while it still existed.
+
+**Remedy (NOT performed -- blocked):** a future live run must paste the
+`run_mode` AND `run_timestamp` lines verbatim into its evidence file, or
+commit a redacted per-cycle snapshot. **This is blocked by C18** -- no live
+run is possible until the interpreter is restored. The two items compound,
+and C16 cannot be discharged before C18 is.
+
+This is a gap in the project's evidence CONVENTION as applied here, not a
+defect in the #242 fix. See `reviews/cycle5-verification-swarm.md` N1.
+
+### C17 -- C1's line-number table is stale at HEAD (cycle 5, informational)
+
+C1's HEAD column has drifted at all four sites, by up to +21 lines, from
+the comments and the C12 four-case block the fix itself inserted. Actual
+values at `3d357d8`, independently derived:
+
+| Site | Method | `_ValidateParam` | Transform | `MakeString` | `Contents =` |
+|---|---|---|---|---|---|
+| `ParagraphOperations.py` | `Create` | 180 | 187 | 209 | 210 |
+| `ParagraphOperations.py` | `SetText` | 593 | 599 | 607 | 609 |
+| `ParagraphOperations.py` | `InsertAt` | 741 | 747 | 774 | 775 |
+| `SegmentOperations.py` | `AppendSentence` | 603 | 610 | 643/659/668/673 (now 4-way) | 686 |
+
+C1's own warning applies recursively: **use the code, not any table, for
+current work.** Recorded so the drift is a known quantity rather than a
+surprise. C9's cited `CHANGELOG.md:431` is likewise now `:500`, displaced
++69 lines by this feature's own entry; lines 15 and 63 are unmoved, and a
+fourth `BREAKING` hit at `:95` is #242's own -- expected, not a defect.
+
+### C18 -- the offline baseline is not reproducible in the current environment (cycle 5) -- OPEN, needs_human
+
+The machine's only Python is **3.14.5**. `pyproject.toml` declares
+`requires-python = ">=3.8,<3.14"` and pins `pythonnet >=3.0.3,<3.1`; only
+pythonnet **3.1.0** ships a 3.14-compatible wheel. `import clr` therefore
+fails at `flexicon/__init__.py:70`, 15 test modules fail collection, and
+`python -m pytest tests -m "not requires_live_project" -q` is interrupted
+before executing anything:
+
+```
+384 deselected, 7 warnings, 15 errors in 1.78s
+Interrupted: 15 errors during collection
+```
+
+**Consequences, stated precisely:**
+
+- The **1292 passed / 483 deselected** baseline that STATUS.md and
+  `.crew-handoff.json` make a hard constraint is **neither confirmed nor
+  refuted** as of 2026-09-08. It was last verified at cycle 3
+  (`reviews/cycle3-verification.md` check 6, an independent run).
+- **Zero tests ran against the changed code** at cycle 5. Per this
+  feature's own rule, that is a ZERO, never a pass.
+- The interpreter was replaced **after** the baseline was recorded; the
+  evidence files' bare `python` invocations resolved to a supported
+  interpreter at the time they ran.
+
+**This is NOT attributable to the #242 change.** The failure is an
+interpreter-level import at package `__init__`, hitting all 15 modules
+regardless of subject matter; the two changed files are not implicated by
+any of the 15 errors.
+
+**Remedy (a human decision, not a verifier's):** restore a 3.8-3.13
+interpreter with `pythonnet >=3.0.3,<3.1`, **or** rule on relaxing the pin
+to allow `pythonnet 3.1.0` on 3.14 -- an API-surface decision affecting the
+whole library, explicitly out of this feature's scope. Per CLAUDE.md this
+is a `needs_human` handoff. Do not read C18 as evidence against the fix,
+and do not discharge C16 until C18 is resolved.
+
+---
+
 ## 4. Open questions
 
 **Q1 -- Should the 8 NEW sibling sites be fixed in this feature, a
@@ -671,6 +839,18 @@ severity.
 ---
 
 ## 5. Contradictions checked for -- none found requiring side-by-side preservation
+
+**Scope note (added cycle 5, 2026-09-08):** the check recorded below covers
+**cycle 1 only**, as its own opening sentence says. `STATUS.md`'s bare
+"Contradictions found and preserved / **None.**" reads more globally than
+that. The cycle-5 gate swept all twelve review files across cycles 1-4 and
+**also found no two asserting incompatible facts** -- the near-misses
+(cycle-1 domain's Q4 vs C9, the three line-numbering conventions, the
+480 -> 482 -> 483 deselected progression) all resolve, each already
+recorded as an explicit overturn or a convention difference rather than a
+concealed conflict. The one real imprecision found was not between reports
+but inside a contract item: C12's inertness citation, now narrowed by
+C15.
 
 The three cycle-1 reports (programmer, explore, domain) and the evidence
 file were checked against each other and against re-verification of the

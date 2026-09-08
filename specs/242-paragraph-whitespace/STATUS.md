@@ -1,19 +1,35 @@
 # STATUS -- 242-paragraph-whitespace (flexicon#242)
 
-**Campaign:** `tier1-silent-data-loss`, queue item 2 of 4 -- **`active`**
-(the campaign's `active` pointer advanced here at item 1's closure; see
-`specs/tier1-silent-data-loss/QUEUE.md`).
-**Last updated:** 2026-09-07, Checkpoint 3 CLOSED / Checkpoint 4 DECLINED
-(cycle 3).
+**Campaign:** `tier1-silent-data-loss`, queue item 2 of 4 -- **`done`**
+(the campaign record set item 2 `status: done` and `active_index: null` at
+cycle 4; see `specs/tier1-silent-data-loss/QUEUE.md`). This file previously
+read `active`, which was stale.
+**Last updated:** 2026-09-08, cycle 5 (five-verifier independent gate).
 **Status:** Checkpoints 1-3 DONE. Checkpoint 4 DECLINED (not deferred).
+Checkpoint 6 (the cycle-5 gate) CLOSED on substance with two items OPEN.
 `/lex-lead` has ruled on R1, R2, R3, the coercion question, the
 AppendSentence join-boundary defect, and the Checkpoint-4/Q2 corpus
 question -- see `spec.md` C8-C13. Behaviour change under `flexicon/code/`
-HAS now landed: the four named sites' direct fix (C8, cycle 2, commits
-`be42aaf`/`066bab0`) and the AppendSentence join-boundary fix (C12, cycle
-3, commits `a580f7b`/`608200c2`). Feature is pending only the cycle-3
-independent verification gate -- **do not mark this feature
-`feature_complete`**; that is `/lex-lead`'s call once the gate returns.
+HAS landed: the four named sites' direct fix (C8, cycle 2, commits
+`be42aaf`/`066bab0`), the AppendSentence join-boundary fix (C12, cycle 3,
+commits `a580f7b`/`608200c`), and the docstring/CHANGELOG work (C14, cycle
+4, commit `ed428f7`).
+
+**THE VERIFICATION GATE HAS RUN -- TWICE, BOTH GREEN.** This file
+previously said the feature was "pending only the cycle-3 independent
+verification gate." That was stale on two counts: the cycle-3 gate had
+already returned `GATE: GREEN` (`reviews/cycle3-verification.md`), and the
+campaign record had already recorded `feature_complete APPROVED by
+lex-lead` at cycle 4. A second, independent five-verifier gate ran at cycle
+5 and also returned green on substance
+(`reviews/cycle5-verification-swarm.md`).
+
+**Two items remain OPEN, neither of them evidence against the fix and
+neither introduced by it** -- `spec.md` C18 (the test environment is
+broken: Python 3.14.5 only, outside `requires-python`, so the offline
+baseline is currently unreproducible; `needs_human`) and `spec.md` C16 (the
+`run_mode: live` claims rest on a gitignored artifact that was never
+committed; BLOCKED BY C18).
 
 > **THE CAMPAIGN IS NOT COMPLETE.** This is queue item 2 of 4. Item 1
 > (`243-closeproject-save-guard`, #243) is `done`. Items 3
@@ -144,15 +160,61 @@ vs. this pass's `Contents =` assignment lines) is a difference in
 convention, not a contradiction, and both are shown together in `spec.md`
 C1 so neither reading is lost. See `spec.md` section 5 for the full check.
 
+## Cycle 5 (2026-09-08) -- second independent gate, five verifiers
+
+`reviews/cycle5-verification-swarm.md`. Five adversarial verifiers, no
+numbers taken from prior reports: code conformance PASS, docs PASS, live
+evidence FAIL, regression FAIL, scope discipline FAIL. **All three FAILs
+were record or environment, none was substance.**
+
+- **Substance re-verified from scratch.** C8's shape at all four sites;
+  C12's four-case algorithm; C10's 8 sibling sites untouched and still
+  bug-shaped. C12's no-strip guarantee was upgraded from observed to
+  **structural**: `raw.rstrip()` occurs once inside `len(...)`, so its
+  string result is never bound and is unreachable, and every
+  `ReplaceTsString(n, n, ...)` is zero-width -- deletion at the join
+  boundary is not expressible in the code.
+- **Five record repairs landed** -- C14 written (it had been cited in
+  `ed428f7` and at campaign level but never written into `spec.md`), C15
+  narrowing C12's inertness citation, C17 recording line-number drift,
+  `tasks.md`'s four stale/false statements corrected, and
+  `AppendSentence`'s docstring summary fixed where it still stated the
+  pre-C12 rule as current.
+- **Two items OPEN** -- C18 (environment, `needs_human`) and C16 (live
+  evidence durability, blocked by C18).
+- **One item for a human to check** -- `066bab0`'s body carries `closes
+  #242`, against the campaign record's "files and closes nothing."
+  `gh issue view 242` could not resolve the issue from the cycle-5
+  session, so the issue's actual state is UNVERIFIED.
+- **Not remediated, recorded only** -- `ed428f7` breached two no-touch
+  constraints (it edited the campaign handoff and the queue's item-3/item-4
+  notes from inside a `docs(242)` commit). Bookkeeping only, no work
+  started on items 3 or 4, and not repairable without rewriting history.
+
 ## Next pickup
 
-**Checkpoints 1-3 are DONE; Checkpoint 4 is DECLINED (C13).** Nothing
-further is scheduled inside this feature except the **cycle-3
-independent verification gate** -- `/lex-lead`'s call, not made by this
-Archivist pass. Do not write `feature_complete` from this file; that
-status is `/lex-lead`'s to set once the gate returns green.
-Checkpoint 5 (the 8 sibling sites) remains DELETED -- C10 routed that
-scope to the campaign QUEUE.md, not to this feature.
+**All checkpoints are DONE, DECLINED or CLOSED, and the verification gate
+has run twice, both green.** There is **no remaining implementation, test
+or verification work inside this feature.**
+
+What remains is not this feature's to close:
+
+1. **C18 -- the test environment is broken.** `needs_human`. Python 3.14.5
+   is the only interpreter; `requires-python` is `>=3.8,<3.14` and
+   `pythonnet` is pinned `<3.1` with no 3.14 wheel, so `import clr` fails
+   and the offline suite cannot execute. **The 1292/483 baseline is
+   currently neither confirmed nor refuted.**
+2. **C16 -- the live-evidence durability gap.** Blocked by C18.
+3. **N7 -- confirm #242's state on GitHub** and reopen if the `closes
+   #242` keyword closed it unintentionally.
+
+`feature_complete` was APPROVED at campaign level at cycle 4; this file
+does not set it and never did. Checkpoint 5 (the 8 sibling sites) remains
+DELETED -- C10 routed that scope to the campaign QUEUE.md, not to this
+feature. Note that Q-242A's subject is now under active investigation at
+`specs/name-field-whitespace-identity/` while `QUEUE.md` still reads "No
+work happens on this until the user rules" -- outside this feature's
+boundary, but the campaign record should be reconciled.
 
 ## Hard constraints for any future spurt on this feature
 
@@ -162,6 +224,10 @@ scope to the campaign QUEUE.md, not to this feature.
   and paste it into the evidence file. "No tests collected" is a ZERO,
   never a pass.
 - Offline baseline is **1292 passed** as of `b0e3d14`. Never bare `pytest`.
+  **As of 2026-09-08 this baseline cannot be reproduced at all** -- see
+  `spec.md` C18. Do not treat a failing offline run as a #242 regression
+  until the interpreter is restored; check `python --version` against
+  `requires-python` FIRST.
 - The C28 forward rule: a stated prediction is committed BEFORE the
   measuring run.
 - `tests/operations/test_issue242_whitespace_probe.py` already exists --
