@@ -362,6 +362,112 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   first time -- see **Fixed**, below.
 
 ### Fixed
+- **`FLExInitialize()` no longer swallows a real `Sldr.Initialize()` failure
+  as "already initialized?", and `FLExCleanup()` no longer raises when the
+  SLDR is cold** (#249). `flexicon/code/FLExInit.py` wrapped
+  `Sldr.Initialize(True)` in a bare `except Exception` that logged
+  `logger.warning("Sldr.Initialize failed (already initialized?)")`. When
+  initialization failed for a **real** reason the SLDR stayed down for the
+  whole process: every subsequent LDML read inside liblcm's
+  `CoreLdmlInFolderWritingSystemRepository` threw "The SLDR has not been
+  initialized", and liblcm responded by treating each file as malformed --
+  renaming the project's `.ldml` to `.ldml.bad`, logging a `badldml.log`
+  entry, and re-synthesizing the writing systems from defaults. The cycle
+  repeated on every open and never terminated, ending in a downstream
+  liblcm modal "Unable to create writing system: en". Observed live: a
+  `WritingSystemStore` left with NO valid `.ldml` at all, and 16 quarantine
+  events over 8 consecutive opens, with a quarantine landing 9 seconds
+  after FLEx itself had written the file. Actual data loss was negligible
+  (only default content was ever overwritten), but the **only** signal the
+  defect emitted was a WARNING on logger `flexicon.code.FLExInit` that
+  misattributed the cause, which is why it went unnoticed.
+
+  `FLExInitialize()` now probes the public static `Sldr.IsInitialized` and
+  skips `Initialize` entirely when the SLDR is already up, so the benign
+  already-initialized case no longer raises at all and a repeated
+  `FLExInitialize()` stays a genuine no-op (the shipped examples and
+  per-test `setUp` rely on that). The `except` is narrowed to
+  `System.InvalidOperationException` and re-raises unless
+  `"already been initialized"` is in `e.Message`; it is retained only as a
+  backstop for the check-then-act race, since `Initialize`/`Cleanup`
+  serialize on a private lock. **Every genuine initialization failure now
+  propagates to the caller** rather than being downgraded to a warning.
+
+  **Second, independent fix in the same module:** `FLExCleanup()` gained
+  the matching `IsInitialized` guard. `Sldr.Cleanup()` throws
+  `System.InvalidOperationException("The SLDR has not been initialized.")`
+  when the SLDR is cold, so the previously unguarded call made
+  `FLExCleanup()` raise whenever `FLExInitialize()` had never run or
+  cleanup ran twice -- and several shipped scripts under `examples/` call
+  it twice by design. Teardown is now idempotent.
+
+  Verified by live reflection against SIL.WritingSystems 18.0.0.0 /
+  FieldWorks 9.3.10: `Sldr.IsInitialized` is a get-only public static bool
+  that is safe to read before any init and never throws; there is **no**
+  `Sldr.OfflineMode` member (the parameter is named `offlineTestMode`,
+  optional, default `False`); a second `Initialize(True)` throws
+  `System.InvalidOperationException` with `Message` exactly "The SLDR has
+  already been initialized." and never re-applies the offline-mode
+  argument; and `Cleanup()` then `Initialize(True)` is a **supported
+  cycle** -- it works and `Sldr.LanguageTags` repopulates (9596 entries),
+  which resolves the open question #249 recorded about a long-running GUI
+  consumer re-opening projects in one process.
+
+  **Not a duplicate of #179** (*"WritingSystemOperations.Create leaves
+  orphan tags; SLDR teardown in unit tests marks .ldml files as bad"*,
+  resolved in commit e42da05). Same `.ldml.bad` symptom, opposite half of
+  the lifecycle: #179 was "the SLDR got torn down mid-session" in test
+  teardown and changed zero lines of `FLExInit.py`; #249 is "the SLDR never
+  came up and we hid it", on the production path. Documented in
+  `docs/API_ISSUES_CATEGORIZED.md` "Category 12: Library-initialization /
+  SLDR lifecycle traps" and `docs/EXCEPTION_HANDLING.md` "Library
+  Initialization and the SLDR Lifecycle", including the pythonnet trap that
+  a CLR **property** getter loses its exception type (reading
+  `Sldr.LanguageTags` before init surfaces as a bare
+  `TypeError("Exception has been thrown by the target of an invocation.")`
+  with the inner `InvalidOperationException` lost).
+- **Seven more name-keyed lookups now strip whitespace on BOTH sides of
+  the comparison, not just the search argument** (#274, Q-242A bucket-A
+  sites, `specs/name-field-whitespace-identity`). This extends the
+  comparison-symmetry fix already landed for `TextOperations.Exists`,
+  `AnthropologyOperations.Find`, and `CheckOperations.FindCheckType` (the
+  Q-242A `### Changed` entry above) to the remaining seven asymmetric
+  lookup sites the census (spec.md Appendix B NF1) found:
+  `SemanticDomainOperations.FindByName`, `AgentOperations.Find`,
+  `PossibilityListOperations.FindList`/`FindItem`,
+  `possibility_item_base.Find`, `LocationOperations.Find`, and
+  `FilterOperations.Find`.
+
+  Each previously stripped only the search NEEDLE
+  (`normalize_match_key(name.strip(), ...)`) while building the HAYSTACK
+  key straight from the raw stored name with no stripping, so an object
+  created through the library's own public `Create()` with a
+  trailing-space name (Location/Agent/etc. persist the caller's bytes
+  verbatim) could not be found by any needle -- the library could mint an
+  object it could then never look up by name (the "unreachable object"
+  half, spec.md Appendix B NF2). Both sides now apply
+  `normalize_match_key(x, casefold=...).strip()`, so a padded stored name
+  is found by a padded or unpadded needle. The per-site case-sensitivity
+  is unchanged (NF3): `FilterOperations.Find` stays `casefold=False`, the
+  rest `casefold=True`.
+
+  **This is a bug fix, not a breaking change:** no lookup that already
+  succeeded changes result; only previously-unreachable padded names
+  become findable, and no name is ever mutated. Per the owner's
+  2026-09-08 decision this was done as C4's proven INLINE both-sides strip
+  at each site, **not** by adding `.strip()` inside `normalize_match_key`
+  (the rejected NF5 central-strip plan) -- `Shared/string_utils.py` and
+  `BaseOperations.py` are untouched. The containment-match
+  `ScrDraftOperations.Find` is deliberately left asymmetric (NF5 condition
+  3: edge whitespace is a word-boundary anchor for a substring search).
+
+  Live-verified for `LocationOperations.Find` and `AgentOperations.Find`
+  (create a trailing-space name, find it with the unpadded needle,
+  re-read the stored value byte-identical from the LCM): `run_mode: live`,
+  `target_sandbox` only, `specs/name-field-whitespace-identity/evidence/
+  live-inline-fix.md`. The other five sites carry the byte-identical edit
+  and are pinned whitespace-insensitive by
+  `tests/test_normalize_match_key.py`.
 - **`BaseOperations._apply_props_loop` now resolves a case- or
   separator-divergent writing-system tag instead of silently dropping the
   alt** (issue #250, Defect 4). Every `ApplySyncableProperties`-style sync

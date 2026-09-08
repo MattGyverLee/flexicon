@@ -309,13 +309,13 @@ class LocationOperations(BaseOperations):
         if not name or not name.strip():
             return None
 
-        target = normalize_match_key(name.strip(), casefold=True)
+        target = normalize_match_key(name, casefold=True).strip()
         wsHandle = self.project.project.DefaultAnalWs
 
         # Search through all locations
         for location in self.GetAll():
             location_name = ITsString(location.Name.get_String(wsHandle)).Text
-            if normalize_match_key(location_name, casefold=True) == target:
+            if normalize_match_key(location_name, casefold=True).strip() == target:
                 return location
 
         return None

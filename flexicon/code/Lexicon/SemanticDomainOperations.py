@@ -227,13 +227,13 @@ class SemanticDomainOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         if not name or not name.strip():
             return None
 
-        target = normalize_match_key(name.strip(), casefold=True)
+        target = normalize_match_key(name, casefold=True).strip()
         wsHandle = self.project.project.DefaultAnalWs
 
         # Search through all domains
         for domain in self.GetAll():
             domain_name = ITsString(domain.Name.get_String(wsHandle)).Text
-            if normalize_match_key(domain_name, casefold=True) == target:
+            if normalize_match_key(domain_name, casefold=True).strip() == target:
                 return domain
 
         return None
