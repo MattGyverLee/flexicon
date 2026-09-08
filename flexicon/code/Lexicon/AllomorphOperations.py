@@ -1371,15 +1371,74 @@ class AllomorphOperations(BaseOperations):
         """
         Resolve HVO or object to IPhEnvironment.
 
+        Casts to ``IPhEnvironment`` by ``ClassName`` BEFORE returning --
+        **contract conformance (flexicon#260), with ZERO measured
+        behavioural effect at this resolver's two call sites.** Cycle 1
+        measured LIVE, on the unmodified/uncast baseline, that both
+        callers -- ``AddPhoneEnv`` and ``RemovePhoneEnv`` -- SUCCEED with
+        a genuine int HVO: they only ever hand the resolved object to
+        ``allomorph.PhoneEnvRC.Add``/``.Remove``, a strongly-typed .NET
+        ``ILcmReferenceCollection[IPhEnvironment]`` method, and the CLR
+        binds the argument on the object's RUNTIME type (which does
+        implement ``IPhEnvironment``) rather than on the Python wrapper's
+        static type. This is UNLIKE its sibling resolver,
+        ``Grammar/EnvironmentOperations.py __ResolveObject``, whose
+        callers perform direct PYTHON ATTRIBUTE ACCESS on the resolved
+        object (``env.Name``, ``getattr(env, "StringRepresentation")``)
+        -- pythonnet's static wrapper-type gate blocks that path on an
+        uncast bare ``ICmObject``, which is a genuine behavioural defect
+        there (fixed separately, same cycle). See
+        specs/260-environment-resolver-cast/reviews/cycle1-programmer.md
+        (P2 FALSIFIED) and cycle2-programmer.md for the live evidence
+        behind both halves of this distinction.
+
+        This cast is landed anyway, NOT as a verified bug fix, but so
+        this resolver's ``Returns: IPhEnvironment`` docstring is true on
+        every entry path, and so it matches its immediate neighbour
+        ``__GetAllomorphObject``'s discipline in the same file rather
+        than leaving two adjacent shared resolvers with opposite casting
+        behaviour for the same defect family -- the exact landmine this
+        feature was opened to close (flexicon#260's own body asks for
+        this sibling by name).
+
+        ``IPhEnvironment`` has exactly ONE implementing type in the whole
+        ``SIL.LCModel`` assembly (``SIL.LCModel.DomainImpl.PhEnvironment``,
+        confirmed live via reflection), so there is nothing to
+        discriminate between -- a single ``ClassName`` guard, merging the
+        int and object branches, is the correct and complete shape
+        (unlike ``__GetAllomorphObject``'s two-branch
+        ``IMoStemAllomorph``/``IMoAffixAllomorph`` dispatch).
+
+        **Identity hazard.** ``RemovePhoneEnv`` does
+        ``if env in allomorph.PhoneEnvRC`` before ``.Remove(env)``.
+        Casting mints a NEW pythonnet wrapper over the same CLR object,
+        so that membership test now depends on .NET equality of a
+        re-wrapped object rather than the original bare one. Re-verified
+        LIVE after this cast landed (cycle2-programmer.md, P9): both of
+        this resolver's existing gate tests stay green and unchanged.
+
+        Any ``ClassName`` other than ``"PhEnvironment"`` (or a non-LCM
+        input with no ``ClassName``) is returned UNCHANGED -- this
+        SHARED resolver never raises on a miss, mirroring
+        ``__GetAllomorphObject``'s permissive shape above.
+
         Args:
             env_or_hvo: Either an IPhEnvironment object or an HVO (int).
 
         Returns:
-            IPhEnvironment: The resolved environment object.
+            IPhEnvironment: The resolved environment, cast to the
+            concrete interface when its ``ClassName`` is
+            ``"PhEnvironment"``; returned unchanged otherwise.
         """
         if isinstance(env_or_hvo, int):
-            return self.project.Object(env_or_hvo)
-        return env_or_hvo
+            obj = self.project.Object(env_or_hvo)
+        else:
+            obj = env_or_hvo
+
+        class_name = getattr(obj, "ClassName", None)
+        if class_name == "PhEnvironment":
+            return IPhEnvironment(obj)
+        return obj
 
     def __IsStemType(self, morph_type):
         """
