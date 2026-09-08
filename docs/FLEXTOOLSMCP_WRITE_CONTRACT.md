@@ -40,17 +40,16 @@ plausible guess.
 python -m pytest -m "not requires_live_project" -q
 ```
 
-Measured on that command against the current tree: **1424 passed, 117 failed,
-11 skipped, 322 deselected, 17 errors.** The suite is **not green**. The 117
-failures are a mix of causes unrelated to this feature, confirmed by
-inspection: stale `flexlibs2`->`flexicon` rename paths (e.g.
-`tests/test_write_enabled_fix.py` hardcodes `Path("flexlibs2/code/...")` — see
-issue #240), and genuine pre-existing sync-engine failures (e.g.
-`test_diff_engine.py::test_compare_unchanged_objects`, plus Mock-based
-failures and errors in `flexicon/sync/tests/test_duplicate_operations.py`).
-`tests/contract/` (Mode 1, checked-in baseline snapshot, no live liblcm) is
-separately green: 22 passed. Do not cite "the suite passes" without this
-qualification.
+Re-measured on that command against the current tree (issue #285,
+2026-09-08): **1716 passed, 690 deselected, 0 failed, 8 warnings, 5 subtests
+passed.** The stale `flexlibs2`->`flexicon` rename paths (issue #240) and the
+pre-existing sync-engine failures previously cited here (**1424 passed, 117
+failed, 11 skipped, 322 deselected, 17 errors**) have since been fixed
+upstream of this issue; those figures are historical and must not be cited as
+current. `tests/contract/` (Mode 1, checked-in baseline snapshot, no live
+liblcm) remains separately green. Do not cite the old figures without this
+qualification -- re-run the command yourself before relying on either set of
+numbers.
 
 **Do NOT use `pytest --ignore=tests/contract`.** It applies no `-m` filter, so
 it collects and EXECUTES the 322 `requires_live_project` tests. Per
@@ -244,7 +243,7 @@ check the mode it passed to `OpenProject()`, not the token.
 
 | Token | 4.3.0 (pinned floor) | Post-Track-B build (landed, unreleased) |
 |---|---|---|
-| `"ui-injection"` | Feature exists (`ui=` param, #238), but `CAPABILITIES` does not exist to report it. | **Reported.** Active in both modes. |
+| `"ui-injection"` | Feature exists (`ui=` param, #238), but `CAPABILITIES` does not exist to report it. | **Reported.** Active in both modes. `ui=None` defaults to a bare `HeadlessLcmUI()` (issue #285) — a conflicting save raises `FP_ConflictingSaveError` rather than blocking on or silently discarding through `FwLcmUI`, which remains reachable only via an explicit `ui=FwLcmUI(None, ThreadHelper())`. |
 | `"per-operation-uow"` | Not implemented (`undoable=True` opens no per-operation envelope; #237 open). | **Reported** (B1+B2 landed; 295/295 mutation sites bracketed, B2g ratchet baseline at 0). Active **only under `undoable=True`** — under `undoable=False` the atomicity unit is the session. |
 | `"refresh-from-disk"` | Feature exists (`RefreshFromDisk()`, task A4), but `CAPABILITIES` does not exist to report it. | **Reported.** Active in both modes. |
 | `"transaction-rollback"` | Not implemented (no reachable rollback in either mode today — see §5). | **Reported** (B1 landed). Active **only under `undoable=True`**, via `UndoableUnitOfWorkHelper`'s `Rollback(0)` on `Dispose`. Under `undoable=False` there is still no rollback (#236) — the token is present, the guarantee is not. |
@@ -316,6 +315,19 @@ independent verification agent):**
   through to `FLExLCM.OpenProject(projectName, ui)`. `ui=None` (the default,
   unchanged for backward compatibility) still constructs `FwLcmUI` — verified
   by monkeypatch test and by the verification agent reading `FLExLCM.py:98-99`.
+  **SUPERSEDED (issue #285, 2026-09-08): both claims in this bullet are
+  historical, not current.** `ui=None` now resolves to a bare
+  `HeadlessLcmUI()` — `FLExLCM.py:98-99` reads `ui = HeadlessLcmUI()`, not
+  `FwLcmUI(...)`; the historical `FwLcmUI` path is reachable only by passing
+  `ui=FwLcmUI(None, ThreadHelper())` explicitly. The monkeypatch test cited
+  above was inverted and renamed
+  (`tests/test_headless_lcm_ui.py::TestOpenProjectDefaultUi::
+  test_flexlcm_openproject_defaults_to_headlesslcmui`) and now asserts the
+  opposite of what this bullet says. Likewise the `undoable=False` shown in
+  the signature above is the *4.3.0* default quoted at the time this bullet
+  was written; the real default has been `undoable=True` since 4.4.0 (see
+  "DEF" in the task table below). See the CHANGELOG `[Unreleased]` #285 entry
+  for the current behaviour of both.
 - `flexicon/code/headless_ui.py::HeadlessLcmUI(ILcmUI)` — implements all 10
   methods and both properties of the real `ILcmUI` (cross-checked directly
   against `liblcm/src/SIL.LCModel/ILcmUI.cs` by the verification agent — the

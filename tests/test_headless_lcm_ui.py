@@ -11,8 +11,9 @@
 #            - ConflictingSave() raises FP_ConflictingSaveError and never
 #              returns True.
 #            - No member marshals through ISynchronizeInvoke.
-#            - Regression: FLExLCM.OpenProject(name) with no ui= still
-#              constructs FwLcmUI (backward compatibility).
+#            - Default: FLExLCM.OpenProject(name) with no ui= now constructs
+#              HeadlessLcmUI (issue #285 flipped the default; FwLcmUI remains
+#              reachable via an explicit ui=).
 #            - Static sweep: no "RollbackToMark" reference survives anywhere
 #              under flexicon/code/ (issue #236), mirroring the pattern in
 #              tests/test_custom_field_create_refusal.py.
@@ -72,6 +73,20 @@ class TestHeadlessLcmUISurface:
         ui = HeadlessLcmUI()
         with pytest.raises(FP_ConflictingSaveError):
             ui.ConflictingSave()
+
+    def test_bare_headless_lcm_ui_defaults_to_raise_on_conflicting_save(self):
+        """
+        Locks the constructor default itself (issue #285): a bare
+        `HeadlessLcmUI()` -- exactly what `OpenProject(..., ui=None)` now
+        constructs -- must have `raise_on_conflicting_save` True. This is
+        the flag that makes RAISING the library-wide default behaviour on a
+        conflicting save; it must not silently regress to `False` (log +
+        keep changes) without a corresponding review of everywhere the
+        default is relied upon.
+        """
+        HeadlessLcmUI, *_ = _import_headless_ui()
+        ui = HeadlessLcmUI()
+        assert ui._raise_on_conflicting_save is True
 
     def test_conflicting_save_error_is_an_fp_runtime_error(self):
         """
@@ -193,27 +208,29 @@ class TestNoSynchronizeInvokeMarshalling:
 
 
 # ---------------------------------------------------------------------------
-# Regression: OpenProject without ui= still constructs FwLcmUI
+# OpenProject default is now HeadlessLcmUI (issue #285); FwLcmUI is an
+# explicit opt-out, not the default.
 # ---------------------------------------------------------------------------
 
 
 class TestOpenProjectDefaultUi:
     """
-    Regression guard for backward compatibility (A1a/A1c): FLExLCM.OpenProject
-    and FLExProject.OpenProject must still hand LCM a FwLcmUI when the caller
-    does not pass ui=.
+    FLExLCM.OpenProject and FLExProject.OpenProject must hand LCM a bare
+    HeadlessLcmUI() when the caller does not pass ui= (issue #285 flipped the
+    default that #238 had deliberately left as FwLcmUI). FwLcmUI stays
+    reachable, but only via an explicit ui=.
 
     Uses a monkeypatched LcmCache.CreateCacheFromExistingData to capture the
     `ui` argument without actually opening any project (no live-LCM write,
     no real project touched).
     """
 
-    def test_flexlcm_openproject_defaults_to_fwlcmui(self, monkeypatch):
+    def test_flexlcm_openproject_defaults_to_headlesslcmui(self, monkeypatch):
         try:
             import flexicon.code.FLExLCM as FLExLCM_mod
-            from SIL.FieldWorks.FdoUi import FwLcmUI
+            from flexicon.code.headless_ui import HeadlessLcmUI
         except Exception as exc:  # pragma: no cover - environment-dependent
-            pytest.skip(f"FLExLCM / FwLcmUI not available: {exc}")
+            pytest.skip(f"FLExLCM / HeadlessLcmUI not available: {exc}")
 
         captured = {}
 
@@ -228,7 +245,7 @@ class TestOpenProjectDefaultUi:
         result = FLExLCM_mod.OpenProject("NoSuchProjectXYZ")
 
         assert result == "FAKE_CACHE"
-        assert isinstance(captured["ui"], FwLcmUI)
+        assert isinstance(captured["ui"], HeadlessLcmUI)
 
     def test_flexlcm_openproject_passes_through_explicit_ui(self, monkeypatch):
         """Companion check: an explicit ui= is passed straight through, unwrapped."""
@@ -253,6 +270,38 @@ class TestOpenProjectDefaultUi:
 
         assert result == "FAKE_CACHE"
         assert captured["ui"] is headless
+
+    def test_flexlcm_openproject_explicit_fwlcmui_opt_out_still_reaches_lcm(self, monkeypatch):
+        """
+        Regression for the opt-out path (issue #285): a caller that genuinely
+        wants the historical WinForms dialogs must still be able to pass
+        `ui=FwLcmUI(None, ThreadHelper())` explicitly and have it reach LCM
+        unchanged -- the flip only changes the *default*, not the ability to
+        opt back in.
+        """
+        try:
+            import flexicon.code.FLExLCM as FLExLCM_mod
+            from SIL.FieldWorks.FdoUi import FwLcmUI
+            from SIL.FieldWorks.Common.FwUtils import ThreadHelper
+        except Exception as exc:  # pragma: no cover - environment-dependent
+            pytest.skip(f"FLExLCM / FwLcmUI not available: {exc}")
+
+        captured = {}
+
+        class FakeLcmCache:
+            @staticmethod
+            def CreateCacheFromExistingData(projId, locale, ui, dirs, settings, dlg):
+                captured["ui"] = ui
+                return "FAKE_CACHE"
+
+        monkeypatch.setattr(FLExLCM_mod, "LcmCache", FakeLcmCache)
+
+        explicit_fw_ui = FwLcmUI(None, ThreadHelper())
+        result = FLExLCM_mod.OpenProject("NoSuchProjectXYZ", ui=explicit_fw_ui)
+
+        assert result == "FAKE_CACHE"
+        assert isinstance(captured["ui"], FwLcmUI)
+        assert captured["ui"] is explicit_fw_ui
 
     def test_flexproject_openproject_signature_accepts_ui_kwarg(self):
         """

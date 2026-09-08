@@ -209,23 +209,30 @@ class FLExProject(object):
 
         ui:
             Optional `ILcmUI` implementation, passed through to
-            `FLExLCM.OpenProject()`. When None (the default, unchanged for
-            backward compatibility), LCM is given the WinForms `FwLcmUI`,
-            which opens modal dialogs and marshals through
+            `FLExLCM.OpenProject()`. **Default since issue #285: a bare
+            `HeadlessLcmUI()`.** It never blocks and never silently
+            reverts; a conflicting save raises `FP_ConflictingSaveError`
+            instead of discarding this session's unsaved changes.
+
+                from flexicon import FLExProject
+                project = FLExProject()
+                project.OpenProject("MyProject", writeEnabled=True)
+                # ui=None -> HeadlessLcmUI() -> conflicting save raises
+                # FP_ConflictingSaveError
+
+            Interactive, FLEx-hosted callers that genuinely want the
+            WinForms dialogs should opt in explicitly:
+
+                from SIL.FieldWorks.FdoUi import FwLcmUI
+                from SIL.FieldWorks.Common.FwUtils import ThreadHelper
+                project.OpenProject("MyProject", writeEnabled=True,
+                                     ui=FwLcmUI(None, ThreadHelper()))
+
+            `FwLcmUI` opens modal dialogs and marshals through
             `Control.Invoke` -- fine for an interactive FLEx-hosted
             process, but unsafe in a headless one (issue #238): a
             conflicting save can block the commit thread on a dialog with
             no owner, or silently discard this session's unsaved changes.
-
-            Headless callers (services, scripts, MCP servers) should pass
-            `HeadlessLcmUI()` from `flexicon.code.headless_ui`:
-
-                from flexicon.code.headless_ui import HeadlessLcmUI
-                project.OpenProject("MyProject", writeEnabled=True,
-                                     ui=HeadlessLcmUI())
-
-            `HeadlessLcmUI` never blocks and never silently reverts; a
-            conflicting save raises `FP_ConflictingSaveError` instead.
 
         Note:
             A call to `OpenProject()` may fail with a `FP_FileLockedError`

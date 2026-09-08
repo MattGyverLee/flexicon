@@ -15,10 +15,11 @@
 A non-blocking ``ILcmUI`` for processes with no WinForms message pump.
 
 LCM asks its ``ILcmUI`` for decisions at several points, most importantly on a
-conflicting save. The default implementation used by FieldWorks -- and, until
-now, unconditionally by flexicon -- is ``FwLcmUI``, a WinForms adapter whose
-members open modal dialogs and marshal through ``Control.Invoke``. In a process
-with no message pump that produces three distinct failures (issue #238):
+conflicting save. The default implementation used by FieldWorks, and formerly
+used unconditionally by flexicon (until issue #285 flipped the default to
+``HeadlessLcmUI``), is ``FwLcmUI``, a WinForms adapter whose members open
+modal dialogs and marshal through ``Control.Invoke``. In a process with no
+message pump that produces three distinct failures (issue #238):
 
 1. ``ConflictingSave()`` opens ``ConflictingSaveDlg``, which has no close box
    (``ControlBox = false``), on the desktop with no owning application. Worse,
@@ -45,12 +46,16 @@ as an exception it can handle.
 Usage::
 
     from flexicon import FLExProject
-    from flexicon.code.headless_ui import HeadlessLcmUI
+    from flexicon import HeadlessLcmUI  # also importable from
+                                         # flexicon.code.headless_ui
 
     project = FLExProject()
-    project.OpenProject("MyProject", writeEnabled=True, ui=HeadlessLcmUI())
+    project.OpenProject("MyProject", writeEnabled=True)  # ui=None -> HeadlessLcmUI()
 
-Passing no ``ui`` preserves the historical ``FwLcmUI`` behaviour.
+Since issue #285, passing no ``ui`` already gets you a bare ``HeadlessLcmUI()``
+-- that is now the library-wide default. Pass ``ui=FwLcmUI(None,
+ThreadHelper())`` explicitly to opt back into the historical, WinForms-dialog
+behaviour.
 """
 
 import logging
@@ -99,6 +104,19 @@ class HeadlessLcmUI(ILcmUI):
 
         Returning None is what keeps ``DisplayMessage`` off the deadlock path
         described in the module docstring.
+
+        CONTINGENCY (cycle-1 domain audit, issue #285): ``None`` here is
+        dereferenced unguarded at exactly two liblcm sites --
+        ``UnitOfWorkService.SendPropChangedNotifications``
+        (``UnitOfWorkService.cs:537``, reached via ``UnitOfWork.cs:307/422``
+        and ``UndoStack.cs:343``) and
+        ``UndoStack.DoTasksForEndOfPropChanged`` (``UndoStack.cs:383``). Both
+        are no-ops for flexicon TODAY only because (1) nothing in the current
+        Operations surface calls ``AddNotification`` to register an
+        ``IVwNotifyChange`` subscriber, and (2) nothing touches ``Scripture``,
+        liblcm's sole ``IPropertyChangeNotifier`` implementer. If a future
+        feature adds a change-watcher or touches Scripture, re-check both
+        call sites before assuming ``None`` is still safe here.
         """
         return None
 

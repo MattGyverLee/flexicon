@@ -128,6 +128,67 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   exporting `LCMObjectWrapper` is deliberately left for a separate call.
 
 ### Changed
+- **BREAKING (behavioural): `OpenProject(..., ui=None)` now defaults to a
+  bare `HeadlessLcmUI()` instead of the WinForms `FwLcmUI`** (#285, the
+  remainder of the recommendation recorded in #238). `HeadlessLcmUI` is
+  exported at the package top level for the first time
+  (`from flexicon import HeadlessLcmUI`), the same object as
+  `flexicon.code.headless_ui.HeadlessLcmUI`, following the `cast_to_concrete`
+  export precedent from #271.
+
+  **The hazard this closes:** in a process with no WinForms message pump,
+  `FwLcmUI.ConflictingSave()` resolves to LCM's `RevertToSavedState()`
+  branch -- a conflicting save (routine once shared-mode access is in play)
+  either blocks the commit thread on an ownerless modal dialog or silently
+  discards the session's unsaved writes. #238 shipped `HeadlessLcmUI` as an
+  opt-in remedy but kept `FwLcmUI` as the default for backward compatibility;
+  every headless caller that had not read the `OpenProject` docstring still
+  got the unsafe default. Live measurement
+  (`specs/285-headless-ui-default/evidence/live-prefix-conflict.md`) found
+  this was not merely one of two possible bad outcomes but BOTH,
+  unpredictably, depending on invocation context: a bare-script run produced
+  a clean silent discard (confirmed by a fresh third-session re-read showing
+  the caller's edit reverted, nothing raised), while the same conflict under
+  `FLEXLIBS_REQUIRE_LIVE=1 pytest -m requires_live_project` reproducibly
+  blocked the commit thread for over 105 seconds.
+
+  **New default behaviour:** `ui=None` now raises `FP_ConflictingSaveError`
+  on a conflicting save (`HeadlessLcmUI()`'s `raise_on_conflicting_save=True`
+  constructor default), never blocks, and never silently discards. This is a
+  disclosed behaviour change, not a bugfix footnote: **a caller who was
+  relying on the interactive dialog -- including any of its other nine
+  `ILcmUI` decision points, e.g. `OfferToRestore`'s restore prompt -- now
+  gets logging plus a non-destructive default answer instead, and a
+  conflicting save now raises where it previously blocked or reverted
+  silently.**
+
+  **Second disclosed behaviour change -- `OfferToRestore`:** reachable from
+  flexicon's only call site, `XMLBackendProvider`'s private
+  `OfferToRestore()` (`XMLBackendProvider.cs:272/279/285`), which fires when
+  a `.fwdata` fails to parse (`ArgumentException`/`XmlException`/
+  `IOException`) and a sibling `.bak` exists, inside the normal
+  `LcmCache.CreateCacheFromExistingData` load path. Previously, `FwLcmUI`'s
+  Yes answer silently auto-swapped the `.bak` over the corrupt file; now
+  `HeadlessLcmUI` declines and LCM takes the `UnlockProject(); throw
+  LcmInitializationException` branch instead. This is the safer default for
+  the same reason as `ConflictingSave`: an unattended restore from a
+  backup of unknown age is a data-loss risk of the same polarity, and
+  `FwLcmUI`'s modal dialog would hang in a process with no message pump
+  anyway.
+
+  **Opt-out:** callers that genuinely want the historical WinForms dialogs
+  (interactive, FLEx-hosted processes) pass the old default explicitly:
+  ```python
+  from SIL.FieldWorks.FdoUi import FwLcmUI
+  from SIL.FieldWorks.Common.FwUtils import ThreadHelper
+  project.OpenProject("MyProject", writeEnabled=True,
+                       ui=FwLcmUI(None, ThreadHelper()))
+  ```
+  `SIL.LCModel.SilentLcmUI` remains explicitly rejected as an alternative
+  default: its `ConflictingSave()` returns `true` unconditionally, i.e.
+  silent total discard with no exception -- strictly worse than either the
+  old or new behaviour.
+
 - **BREAKING (behavioural): name-field writers across four Operations
   classes now persist the caller's original, unstripped name, and their
   three sibling comparison methods now strip whitespace on BOTH sides of

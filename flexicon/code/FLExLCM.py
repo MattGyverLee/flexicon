@@ -44,6 +44,7 @@ from SIL.FieldWorks.FwCoreDlgs import ChooseLangProjectDialog
 
 # Import Python mirror of CellarPropertyType constants
 from .Shared.lcm_constants import CellarPropertyType
+from .headless_ui import HeadlessLcmUI
 
 # --- Globals --------------------------------------------------------
 
@@ -81,13 +82,16 @@ def OpenProject(projectName, ui=None):
         - The name only, opened from the default project location.
 
     ui:
-        - Optional ILcmUI implementation. When None (the default) the historical
-          WinForms `FwLcmUI` is used, preserving backward compatibility.
-        - Headless callers should pass `HeadlessLcmUI()` from
-          `flexicon.code.headless_ui`. `FwLcmUI` opens modal dialogs and
-          marshals through `Control.Invoke`, which in a process with no message
-          pump blocks the commit thread and defaults to discarding writes on a
-          conflicting save. See issue #238.
+        - Optional ILcmUI implementation. When None (the default, since
+          issue #285) a bare `HeadlessLcmUI()` is used: it never blocks and
+          never silently discards a conflicting save, instead raising
+          `FP_ConflictingSaveError` so the condition surfaces to the caller.
+        - Interactive, FLEx-hosted callers that genuinely want the WinForms
+          dialogs should pass `ui=FwLcmUI(None, ThreadHelper())` explicitly.
+          `FwLcmUI` opens modal dialogs and marshals through
+          `Control.Invoke`, which in a process with no message pump blocks
+          the commit thread and, on a conflicting save, silently discards
+          this session's unsaved writes. See issues #238 and #285.
     """
 
     projectFileName = LcmFileHelper.GetXmlDataFileName(projectName)
@@ -96,7 +100,7 @@ def OpenProject(projectName, ui=None):
 
     th = ThreadHelper()
     if ui is None:
-        ui = FwLcmUI(None, th)  # IHelpTopicProvider, ISynchronizeInvoke
+        ui = HeadlessLcmUI()
     dirs = FwDirectoryFinder.LcmDirectories
     settings = LcmSettings()
     # Migration should be done within FieldWorks

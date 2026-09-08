@@ -35,7 +35,13 @@ version = "4.5.2"
 #: ``undoable=False``:
 #:
 #:   ``"ui-injection"``        Always active. ``OpenProject(..., ui=...)``
-#:                             accepts an ``ILcmUI``; defaults to ``FwLcmUI``.
+#:                             accepts an ``ILcmUI``; defaults to a bare
+#:                             ``HeadlessLcmUI()`` since issue #285 (a
+#:                             conflicting save raises
+#:                             ``FP_ConflictingSaveError`` rather than
+#:                             blocking on or silently discarding through
+#:                             the historical ``FwLcmUI``, which remains
+#:                             reachable by passing it explicitly).
 #:   ``"refresh-from-disk"``   Always active. ``FLExProject.RefreshFromDisk()``
 #:                             wraps ``IUndoStackManager.Refresh()``; needed in
 #:                             BOTH modes, since one foreign FLEx save otherwise
@@ -97,6 +103,19 @@ from .code.FLExProject import (
     FP_TransactionError,
     FP_WritingSystemError,
 )
+
+# HeadlessLcmUI (issue #285): the non-blocking, non-destructive ILcmUI that
+# OpenProject(..., ui=None) now defaults to. Exported at the top level so a
+# consumer that catches FP_ConflictingSaveError can also reach the class that
+# raises it, without reaching into flexicon.code.* -- same precedent as
+# cast_to_concrete (#271). Re-exported, not redefined: this is the same
+# object as flexicon.code.headless_ui.HeadlessLcmUI, which keeps working.
+#
+# By the time this line runs, flexicon.code.FLExLCM (imported just above via
+# FLExProject -> FLExLCM) has already imported flexicon.code.headless_ui at
+# module level, so this import is a sys.modules cache hit, not a fresh CLR
+# type emission -- see specs/285-headless-ui-default/reviews/cycle1-programmer.md.
+from .code.headless_ui import HeadlessLcmUI
 
 # Advanced Operations (v2.0+)
 
