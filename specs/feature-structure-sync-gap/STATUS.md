@@ -1720,3 +1720,153 @@ the live token. Legs, in order:
 Standing rules: no locks (rule 1 RETIRED); rule 2 one-live-pytest-token
 still binds; AMENDED git procedure; disposable worktrees for ALL mutation
 testing; predictions committed to a FILE before the run that tests them.
+
+---
+
+# CYCLE 14 -- LEAD ADJUDICATION OF THE CHECKPOINT 4 GATE
+
+**RULING: Checkpoint 4 does NOT close this cycle. It is one leg short.**
+
+Nine of the ten closing conditions stand, re-derived twice (once by the
+gate, once independently by the archivist). Condition 9's gate returned
+PASS. But the gate's LEG 2 -- the SOLE evidence for the residual named in
+`checkpoint_4.residual_named` -- is provably incomplete on exactly the call
+sites that residual is about. Closing on it would repeat the failure mode
+this gate exists to catch (cycle 10: honest code, dishonest summary; cycle
+13: a headline that dropped its falsifier's "or live" qualifier). The cost
+of closing it properly is one small sandbox-only live run of four tests.
+
+## G1-G10 adjudication (lead, against the pre-committed text at `5efebb6`)
+
+| # | Verdict | Lead's basis |
+|---|---|---|
+| G1 | **HELD** | Gate's split matches `cycle13-programmer.md` s3 row-for-row (lead re-read both). Minor evidentiary note: the prediction named the failure MODE `assert 'Name' in {}` for `test_hvo_entry_path_captures_name`; the evidence quotes the kill but never that mode. The `AttributeError` mode for the direct-cast test IS evidenced (G8 row 4). Sub-detail unevidenced; the falsifiable core (kill/survive split) is fully evidenced. |
+| G2 | **HELD** | Lead-verified first-hand: the gate's M2-M5 table matches `cycle13-programmer.md` s3 exactly, kills AND both disclosed survivals. |
+| G2a | **HELD** | RUN, not reasoned -- verbatim command and failure captured. Discharges cycle 13's explicit "noted only, not independently verified". |
+| G3 | **HELD on its committed falsifiers; its COVERAGE CLAIM is FALSE** | See THE GAP below. Set non-empty, all four named files present, zero flips across 90 collected live items at both commits -- neither falsifier fired. But three supporting claims are wrong, one substantively. |
+| G3a | **not-applicable, correctly** | No flip occurred, so there is no direction to adjudicate. Accepted -- but note this means G3a's P0 falsifier has still never been exercised on the POS **write** path. LEG 2b now exercises it. |
+| G4 | **HELD** | Lead re-ran the grep: 16. |
+| G5 | **HELD** | Tracked probe, same `hvo=42183`, 0/4 then 4/4, both worktrees, `run_mode: live`. The gate also correctly rejected a fresh-POS probe design as non-discriminating and SAID so rather than hiding it. Strongest leg in the gate. |
+| G6 | **HELD** | Delta measured in the gate's own shell: +20/+6, red set unchanged at the same foreign pair. |
+| G7 | **HELD** | 6 passed / 20 deselected, `run_mode: live`, `uncategorized_live_tests: []`. Lead corroborated independently: `tests/live_status.json` reads `"run_mode": "live"` and records the T7 `POSOperations` modify tests as `pass`, dated 2026-09-07. |
+| G8 | **HELD, with one qualification** (see condition 8 below) | Conditions 1-7 and 10 re-derived from source/git/offline by BOTH gate and archivist, independently. |
+| G9 | **HELD** | Two independent derivations of the same four hunk headers, all at old-line >=1112. |
+| G10 | **HELD** | Lead re-ran the CHANGELOG grep at `3eff177` for compareto / struct-guid -- empty, exit 1. |
+
+## Condition 8 -- single-sourced, and that is ACCEPTABLE, not a residual
+
+Condition 8 is the live-evidence condition; the gate is the entity that
+produces live evidence. The archivist ran no live test **by design** -- it
+held no live token, and rule 2 forbids a second live pytest in the same
+cycle, so "independently re-derive condition 8" would have required
+violating a standing rule. Its corroboration is therefore an ARTIFACT
+rather than a second run, and the artifact is machine-checkable: the lead
+independently read `tests/live_status.json` and confirms
+`"run_mode": "live"` plus the six T7 tests recorded as `pass`. That is the
+mechanism CLAUDE.md prescribes for exactly this situation. **Accepted. Not
+a residual.** Recorded here only so nobody later mistakes it for a
+double-sourced condition.
+
+## THE GAP -- why LEG 2 does not close P2's live half
+
+Lead-measured, first-hand, all four:
+
+1. **"16 files" is 15.** The node-id list actually passed to pytest
+   (`evidence/live-cycle14-gate.md` lines 154-234) is 81 ids spanning
+   **15** distinct files. The report says 16 in three places -- an
+   off-by-one in the very report that corrected an off-by-one.
+2. **"STRICT SUPERSET of the 12-file floor" is false.** The gate's set
+   omits `tests/operations/test_grammar_brackets_live.py` entirely and
+   never mentions it. (Its exclusion of `test_natural_classes.py` IS
+   defensible -- both hits are docstring prose.) So the answer to the
+   dispatch's explicit question is: **no, the gate's set does not genuinely
+   supersede the floor. Something fell between them, and it is the
+   highest-value file for this exact residual.**
+3. **The missed file is the worst possible one to miss.**
+   `test_grammar_brackets_live.py::TestPOSBrackets` is 4 live tests using
+   the sandbox-safe `target_sandbox` fixture that call
+   `pos_ops.Create / SetName / GetName / SetAbbreviation / GetAbbreviation
+   / Delete / GetAll`. Mapping the 16 `__ResolveObject` call sites to their
+   enclosing methods (lead-run) gives: `Delete:273, GetName:401,
+   SetName:439, GetAbbreviation:474, SetAbbreviation:511,
+   GetSubcategories:555, AddSubcategory:617, RemoveSubcategory:673/674,
+   GetCatalogSourceId:711, GetInflectionClasses:751, GetAffixSlots:792,
+   GetEntryCount:841, Duplicate:913, GetSyncableProperties:1216,
+   ApplySyncableProperties:1305`. `TestPOSBrackets` therefore exercises
+   **five of the fourteen pre-existing call sites**, and it is the ONLY
+   live file exercising the POS **write** path. It was run at NEITHER
+   commit.
+4. **Item-level coverage was overstated too.** The 15 files the gate DID
+   enumerate contain **145** `requires_live_project` items (lead
+   `--collect-only`); the gate ran 81 ids / 90 collected. Even inside its
+   own file set it exercised roughly 62% of the available live items.
+
+**Root cause:** the gate's regex does not match the local-alias pattern
+`pos_ops = target_sandbox.POS` followed by `pos_ops.SetName(...)` -- the
+same under-count class the gate believed it had compensated for by
+following module-level helpers. A lead scan for that alias pattern across
+all live test files finds exactly ONE genuinely missed file, so **the gap
+is bounded and singular** and LEG 2b is small.
+
+**What this does NOT do:** it does not reopen the other nine conditions,
+and it does not falsify G3. G3's committed falsifiers were "empty set" and
+"a flip"; neither fired, and the 90-item zero-flip result stands as real
+evidence. What fails is the report's HEADLINE claim of closure, not its
+measurement -- the exact distinction this campaign has now had to draw
+three times.
+
+## Rulings on the two gate findings
+
+1. **CompareTo/CHANGELOG omission (P2, G10 HELD) -- FIX THIS CYCLE.** A
+   disclosed behaviour change absent from the CHANGELOG a caller actually
+   reads is not something to defer. **Committer: `lex-doc` WRITES the
+   amendment, the MAIN SESSION COMMITS it** -- `lex-doc` has `Write` but no
+   `Bash` and can never commit. The amendment must be additive to the
+   existing `4e9d152` / #252 entry only (prediction H4).
+2. **15-vs-16 call sites -- bookkeeping, non-blocking. FIXED NOW** by the
+   lead in `.crew-handoff.json checkpoint_4.residual_named`, together with
+   the newly found "15 files, not 16" correction.
+
+## #252 closure draft -- NOT READY. One over-claim, per the #256 precedent
+
+The draft is mostly strong and should be KEPT: it states both halves, names
+the crew's own earlier wrong finding, names the CompareTo side effect, and
+carries an explicit "Explicitly NOT covered" section citing #266/#267 (lead
+confirmed both are real, OPEN, and correctly characterised as
+WS-resolution sites).
+
+**The one required correction.** The draft says: "a live enumeration of the
+~16 other call sites this cast also touches (89 passed/1 skipped, identical
+on both sides of the fix, zero regressions)". That reads as though all 16
+call sites were enumerated and exercised. They were not, and the run
+provably omitted the only file exercising SetName / SetAbbreviation /
+Delete / GetName / GetAbbreviation. The verification report itself is
+careful -- "many, though not exhaustively every one" -- and **the draft
+dropped that qualifier.** This is precisely the cycle-13 pattern and
+precisely the #256 precedent. Rewrite it, after LEG 2b, to state the
+measured truth: how many live items in how many files, at both commits,
+which call sites are actually covered, and which are named and deliberately
+not exercised. Do not post anything until then, and not even then without
+the user's own authorisation.
+
+## Next pickup -- CYCLE 15 = LEG 2b, then Checkpoint 4 closes
+
+Two tasks, parallel, both small:
+
+1. **`lex-verification` (holds the live token): LEG 2b.** Run
+   `test_grammar_brackets_live.py::TestPOSBrackets` at `1d88aa4`
+   (disposable worktree) and at HEAD, `FLEXLIBS_REQUIRE_LIVE=1`, both
+   sides, and adjudicate H1-H3 from
+   `evidence/live-cycle15-leg2b-predictions.md`. Sandbox-only; do NOT widen
+   to the other ~55 unrun items (six of those files write in-place to a
+   real named project -- name that residual, do not chase it).
+2. **`lex-doc` (runs nothing): the CHANGELOG amendment.** Writes only; the
+   MAIN SESSION commits.
+
+Then Checkpoint 4 closes on H1 green, the closure draft is corrected, and
+the campaign moves to the next task (T8 / T9-#253) with #252's closure
+comment held for the user's own authorisation.
+
+Standing rules unchanged: rule 1 RETIRED; rule 2 live-token BINDS; AMENDED
+git procedure; disposable worktrees mandatory; predictions committed to a
+FILE before the run (done -- `evidence/live-cycle15-leg2b-predictions.md`).
