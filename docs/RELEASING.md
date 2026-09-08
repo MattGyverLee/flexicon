@@ -23,6 +23,38 @@ complete release, and neither triggers the other.
 site stale.** A release is only complete once a GitHub Release object
 also exists. The two steps are separate on purpose -- see section 5.
 
+> ### KNOWN BROKEN as of v4.6.0: the docs half does not work
+>
+> `publish-docs.yml` has never successfully published. It fails twice
+> over, and both failures are silent from the release's point of view --
+> PyPI still gets the package, so the release *looks* complete.
+>
+> 1. **No runner.** The job declares
+>    `runs-on: [self-hosted, windows, fieldworks]`, and the repository
+>    has **zero self-hosted runners registered**. The job therefore
+>    queues until GitHub's 24-hour limit and is auto-cancelled. This is
+>    visible in the run history for v4.3.0 and v4.4.0, both
+>    `cancelled` after `24h0m`. The v4.6.0 run was cancelled manually
+>    once the cause was identified.
+> 2. **The Sphinx build itself crashes.** Reproduced locally at the
+>    v4.6.0 cut: `sphinx-build docs/sphinx flexicon/docs/flexiconAPI`
+>    dies with an unhandled .NET exception while autodoc introspects
+>    `api/flexicon.code` --
+>    `Python.Runtime.PythonException: name must be a str, not a NoneType`,
+>    thrown from `Python.Runtime.MethodBinding.get_Signature()`. autodoc
+>    is walking pythonnet-wrapped LCM members and hitting a binding whose
+>    name is null. *Caveat:* this was measured on Python 3.12.7, whereas
+>    the workflow pins 3.11 x64, so it is not proven identical on the
+>    intended runner -- but it is not runner-specific either, since it is
+>    a pythonnet introspection failure, not a FieldWorks-availability one.
+>
+> Until both are addressed, treat the documentation site as **manually
+> maintained and currently stale**. Do not assume a green release means
+> the API docs were refreshed. Fixing this needs an autodoc guard around
+> pythonnet members (or `autodoc_mock_imports` for the LCM surface), plus
+> either registering a runner or moving the job to `ubuntu-latest` with
+> the LCM imports mocked.
+
 PyPI upload uses **Trusted Publishing** (OIDC): `publish.yml` requests an
 `id-token` and authenticates as the repo. There is no stored PyPI token
 to rotate, and the `pypi` environment on GitHub gates the job.
@@ -193,6 +225,12 @@ gh release create v<version> --title "v<version> -- <theme>" --notes-file RELEAS
 
 Step 5 is not optional. Skipping it leaves `gh-pages` serving the
 previous version's API documentation against a shipped package.
+
+**Today step 5 creates the Release but does not actually refresh the
+docs** -- see the KNOWN BROKEN box in section 1. Create the Release
+anyway: it is the durable record of the version, carries the release
+notes, and is what will drive the docs build once that pipeline is
+repaired.
 
 `gh release create` with a *new* tag would fire both events at once. Push
 the tag separately anyway: it keeps the PyPI publish and the docs publish
