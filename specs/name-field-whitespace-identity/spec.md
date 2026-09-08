@@ -10,9 +10,10 @@ NOT a queue item itself.
 That ruling was the stated blocker on Q-242A ("The blocker is a name-field
 identity ruling, not effort"), so Q-242A is now UNBLOCKED.
 
-**Implementation has NOT started and CANNOT be verified in the current
-environment** -- see NF8. `git diff --stat -- flexicon/` is empty for this
-feature as of this writing.
+**Implementation has NOT started.** `git diff --stat -- flexicon/` is
+empty for this feature. The environment blocker is RESOLVED as of
+2026-09-08 (#242's C19), so implementation is actionable -- see NF8 for the
+required order of work.
 
 Contract items **NF1-NF11** below are FROZEN. They use an `NF` prefix
 deliberately so they can never be confused with #242's `C1-C18` when cited
@@ -420,11 +421,16 @@ unaffected.
 
 ### NF8 -- Verification gate: BLOCKED, and the cycle-1 predictions are UNMEASURED
 
-**No part of this feature can be verified in the current environment.**
-`specs/242-paragraph-whitespace/spec.md` **C18** applies in full: the only
-interpreter is Python 3.14.5, `requires-python` is `>=3.8,<3.14`, and
-`pythonnet` is pinned `<3.1` with no 3.14 wheel, so `import clr` fails and
-**neither the live tests NOR the offline suite can execute.**
+**UPDATED 2026-09-08: the environment blocker is RESOLVED.**
+`specs/242-paragraph-whitespace/spec.md` **C19** relaxed the pins
+(`requires-python >=3.8,<3.15`, `pythonnet >= 3.0.3, <3.2`) on the user's
+ruling; `pythonnet 3.1.0` ships a real cp314 wheel, `import clr` succeeds,
+and the offline suite executes again at **1291 passed / 483 deselected**.
+
+**Implementation of THIS feature is therefore no longer environment-blocked
+-- but it is still UNVERIFIED and unstarted.** What C19 restored is the
+ability to run tests; it did not run any test for this feature, because
+this feature has no tests yet (see below).
 
 Per CLAUDE.md, live verification is REQUIRED for any change touching an
 Operations class, a property setter, or the write path -- and all three are
@@ -449,10 +455,11 @@ what the code SAYS, which is sufficient to ground NF3-NF6, and is NOT a
 substitute for measuring what the LCM DOES. NF2's two halves are read from
 the code and remain unconfirmed against a live database.
 
-**Per the LEX crew protocol this is a `needs_human` handoff.** The
-environment must be restored before implementation begins. When it is, the
-right order is: write the harness, measure PN1-PN8 against the UNFIXED
-code to confirm the defect empirically, then implement, then re-measure.
+**The environment is no longer the blocker (C19).** The order of work
+stands unchanged and is now actionable: write the harness, measure PN1-PN8
+against the UNFIXED code to confirm the defect empirically, then implement,
+then re-measure. Live verification is now possible and therefore REQUIRED
+before any part of this feature is reported done.
 
 ---
 

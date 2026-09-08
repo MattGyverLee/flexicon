@@ -768,7 +768,7 @@ surprise. C9's cited `CHANGELOG.md:431` is likewise now `:500`, displaced
 +69 lines by this feature's own entry; lines 15 and 63 are unmoved, and a
 fourth `BREAKING` hit at `:95` is #242's own -- expected, not a defect.
 
-### C18 -- the offline baseline is not reproducible in the current environment (cycle 5) -- OPEN, needs_human
+### C18 -- the offline baseline is not reproducible in the current environment (cycle 5) -- **RESOLVED 2026-09-08, see C19**
 
 The machine's only Python is **3.14.5**. `pyproject.toml` declares
 `requires-python = ">=3.8,<3.14"` and pins `pythonnet >=3.0.3,<3.1`; only
@@ -807,6 +807,88 @@ is a `needs_human` handoff. Do not read C18 as evidence against the fix,
 and do not discharge C16 until C18 is resolved.
 
 ---
+
+### C19 -- C18 RESOLVED: newer Python allowed; the suite runs again (cycle 6, 2026-09-08)
+
+**Ruling (user decision):** allow newer Python. C18's alternative -- relaxing
+the pin rather than downgrading the interpreter -- is TAKEN.
+
+**Change applied** (`pyproject.toml`):
+
+| | before | after |
+|---|---|---|
+| `requires-python` | `>=3.8,<3.14` | `>=3.8,<3.15` |
+| `pythonnet` | `>= 3.0.3, <3.1` | `>= 3.0.3, <3.2` |
+| classifiers | ...3.13 | ...3.13, **3.14** |
+
+The `<3.1` pin carried **no documented rationale** -- `git log -S` shows it
+arrived with the `flexlibs2 -> flexicon` rename (`9b82ffa`) as an
+undocumented known-good upper bound, not as a recorded compatibility
+finding.
+
+**Verified working:** `pythonnet 3.1.0` installs a real
+`cp310.cp311.cp312.cp313.cp314` wheel on Python 3.14.5, `import clr`
+succeeds, and the offline suite executes for the first time since C18 was
+raised.
+
+**Result: 1291 passed, 2 failed, 1 skipped, 483 deselected.** Deselected
+matches the recorded baseline exactly.
+
+**The 1292 figure is no longer the right comparator**, and this item
+retires it as the binding baseline. Five commits landed after `b0e3d14`
+(where 1292 was recorded) -- `ec54432` (the rename, which also ADDED
+`tests/test_flexlibs2_alias_ratchet.py`), `4aca74a`, `a26d39c`, `bdbce02`
+and the `3d357d8` merge -- so the collected total legitimately differs.
+**New binding baseline: 1291 passed / 483 deselected at cycle 6**, with the
+two failures below named and diagnosed rather than absorbed.
+
+**NOT attributable to the upgrade:** all four failures seen on the first
+run were diagnosed to root cause, and **none was caused by Python 3.14 or
+pythonnet 3.1.** Two were repaired (C20); two remain, both pre-existing and
+both needing a human decision (see section 4, Q4 and Q5).
+
+### C20 -- Two tests were broken by the rename commit, not by the upgrade (cycle 6)
+
+`tests/operations/test_transaction_rollback.py::TestPhase2JoinOrOpen` had
+two failing tests. The pythonnet exception they surfaced
+(`'_FakeActionHandler' value cannot be converted to
+SIL.LCModel.Core.KernelInterfaces.IActionHandler`) was a **symptom, not the
+cause**.
+
+**Root cause: commit `ec54432` (the `flexlibs2 -> flexicon` rename, PR
+#241) split one coherent test into two broken ones.** It landed AFTER the
+1292 baseline, which is why the breakage went unnoticed -- the environment
+broke around the same time, so the suite was never run again until now.
+
+The original single test (present at `b0e3d14`, `@patch`-decorated) did
+`pytest.raises(RuntimeError)` and asserted on the fake helper's
+`disposed` / `rollback_value_at_dispose`. The rename produced:
+
+1. `test_rollback_flag_set_true_on_exception` -- kept the `@patch` and the
+   exception docstring, but its body was replaced with assertions on
+   `project._transaction_depth`. **That attribute does not exist**: it was
+   DELETED by design under issue #234, and `FLExProject.py:274` records it
+   as "formerly `self._transaction_depth`". On a `Mock` project the
+   attribute auto-creates, so `assert project._transaction_depth == 1`
+   compared a `Mock` to `1` and could never pass.
+2. `test_depth_restored_on_exception` -- NEW, received the original body but
+   **lost the `@patch` decorator**, so the REAL
+   `UndoableUnitOfWorkHelper` was handed a `_FakeActionHandler`. It was
+   doubly broken: an autouse fixture resets
+   `_FakeUndoableUnitOfWorkHelper.instances = []` before every test, so its
+   `instances[0]` would raise `IndexError` even if the .NET call had
+   succeeded.
+
+**Repair:** the two were merged back into the single coherent
+`@patch`-decorated test that stood at the baseline, with a comment
+recording the split so it is not "tidied" back. The bogus
+`_transaction_depth` assertions are deleted, not adapted -- they assert a
+reverted design. Depth is now observed through the action handler's
+`CurrentDepth`, already covered by a sibling test in the same class.
+
+**This is a test-only change** (no `flexicon/` code touched), so per
+CLAUDE.md it needs no live verification. Verified by execution: the two
+failures are gone and the merged test passes.
 
 ## 4. Open questions
 
@@ -866,3 +948,64 @@ issue body) and the probe's "41/86" shorthand (`reviews/cycle1-programmer.md`,
 `evidence/live-probe-cycle1.md`) are the same figure (45 identical + 41
 differing = 86 total segment baselines) cited two different ways, not two
 different measurements.
+
+---
+
+## 6. Open questions raised at cycle 6 (2026-09-08)
+
+**Q4 -- The liblcm contract baseline is stale, by one genuine upstream
+removal.** `tests/contract/test_lcm_contract.py::TestLiveRegressionCheck::
+test_no_regressions_from_baseline` reports exactly one regression:
+
+```
+ILexEntryRepository.CorrectHomographNumbers() removed
+```
+
+**This is a REAL upstream API change, not a pythonnet artifact** --
+confirmed by direct reflection on the installed liblcm, via both
+`dir(ILexEntryRepository)` and raw `clr.GetClrType(...).GetMethods()`
+(10 methods; the homograph-ish ones are `CollectHomographs`,
+`GetHomographs`, `HomographMorphOrder`, `ResetHomographs` -- no
+`CorrectHomographNumbers`).
+
+**Severity: LOW. Zero callers.** `grep -rn CorrectHomographNumbers` over
+`flexicon/` and `tests/` returns nothing outside
+`tests/contract/snapshots/liblcm_baseline.json` itself. Nothing in this
+library calls the removed method, so there is no code to adapt.
+
+The baseline snapshot was generated **2026-08-13 under Python 3.12.7**; the
+installed FieldWorks has evidently been updated since. `total_types_checked`
+also moved 255 -> 257, which is explained by `4aca74a` touching
+`tests/contract/snapshots/expected_contract.json`.
+
+**Not decided here, deliberately:** regenerating `liblcm_baseline.json`
+would accept ALL drift since August wholesale, and that snapshot is the
+regression tripwire -- absorbing it silently is exactly what it exists to
+prevent. A human should regenerate it as a deliberate, reviewed act.
+
+**Q5 -- The rename left `flexlibs2` imports in the test tree, and one of
+them is deliberate.**
+`tests/test_flexlibs2_alias_ratchet.py::TestFlexlibs2AliasIsInboundOnly::
+test_no_executable_flexlibs2_imports_outside_alias_package` -- itself added
+by `ec54432` to prevent exactly this -- reports 9 offenders:
+`tests/conftest.py:1392` and `:1451`,
+`tests/operations/test_issue251_252_256_feature_struct_probe.py:36`,
+`tests/operations/test_natural_classes.py:917` and `:954`,
+`tests/operations/test_natural_class_feature_sync.py:721`,
+`tests/operations/test_owner_cast_pattern.py:71` and `:630`,
+`tests/write_path_transactions/test_capabilities.py:96`.
+
+**This is #241's unfinished rename, entirely unrelated to the interpreter**
+-- the check is a static AST scan with no runtime component, so it fails
+identically on any Python version.
+
+**Why it was NOT fixed here, and why it is a policy question rather than a
+cleanup:** eight are incidental leftovers that should simply become
+`flexicon`, but **`tests/write_path_transactions/test_capabilities.py:96`
+is DELIBERATE** -- it wraps `import flexlibs2` in
+`warnings.catch_warnings()` suppressing `DeprecationWarning`, i.e. it
+exists to exercise the alias. The ratchet's own docstring exempts "the
+alias package and its own tests", so that site either needs an explicit
+exemption or needs to move into the alias's own tests. Deciding that is
+#240/#241's call, and the eight mechanical edits span four other features'
+test files including `tests/conftest.py`. Left for its owner.

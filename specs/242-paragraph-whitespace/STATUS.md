@@ -4,7 +4,7 @@
 (the campaign record set item 2 `status: done` and `active_index: null` at
 cycle 4; see `specs/tier1-silent-data-loss/QUEUE.md`). This file previously
 read `active`, which was stale.
-**Last updated:** 2026-09-08, cycle 5 (five-verifier independent gate).
+**Last updated:** 2026-09-08, cycle 6 (environment restored; C18 resolved).
 **Status:** Checkpoints 1-3 DONE. Checkpoint 4 DECLINED (not deferred).
 Checkpoint 6 (the cycle-5 gate) CLOSED on substance with two items OPEN.
 `/lex-lead` has ruled on R1, R2, R3, the coercion question, the
@@ -24,12 +24,20 @@ lex-lead` at cycle 4. A second, independent five-verifier gate ran at cycle
 5 and also returned green on substance
 (`reviews/cycle5-verification-swarm.md`).
 
-**Two items remain OPEN, neither of them evidence against the fix and
-neither introduced by it** -- `spec.md` C18 (the test environment is
-broken: Python 3.14.5 only, outside `requires-python`, so the offline
-baseline is currently unreproducible; `needs_human`) and `spec.md` C16 (the
-`run_mode: live` claims rest on a gitignored artifact that was never
-committed; BLOCKED BY C18).
+**C18 IS RESOLVED as of cycle 6, 2026-09-08** (`spec.md` C19). On the
+ruling "allow newer python", `pyproject.toml` was relaxed to
+`requires-python >=3.8,<3.15` and `pythonnet >= 3.0.3, <3.2`.
+`pythonnet 3.1.0` ships a real cp314 wheel, `import clr` succeeds, and the
+offline suite runs again: **1291 passed / 483 deselected, the new binding
+baseline** (1292 is retired -- five commits landed after `b0e3d14` where it
+was recorded). All four first-run failures were diagnosed to root cause and
+**none was caused by Python 3.14 or pythonnet 3.1**; two were repaired
+(C20), two remain as Q4/Q5.
+
+**`spec.md` C16 is now UNBLOCKED but NOT discharged** -- the `run_mode:
+live` claims still rest on a gitignored artifact that was never committed.
+No live test was run at cycle 6. The next live run must paste `run_mode`
+AND `run_timestamp` verbatim into its evidence file.
 
 > **THE CAMPAIGN IS NOT COMPLETE.** This is queue item 2 of 4. Item 1
 > (`243-closeproject-save-guard`, #243) is `done`. Items 3
@@ -199,13 +207,18 @@ or verification work inside this feature.**
 
 What remains is not this feature's to close:
 
-1. **C18 -- the test environment is broken.** `needs_human`. Python 3.14.5
-   is the only interpreter; `requires-python` is `>=3.8,<3.14` and
-   `pythonnet` is pinned `<3.1` with no 3.14 wheel, so `import clr` fails
-   and the offline suite cannot execute. **The 1292/483 baseline is
-   currently neither confirmed nor refuted.**
-2. **C16 -- the live-evidence durability gap.** Blocked by C18.
-3. **N7 -- confirm #242's state on GitHub** and reopen if the `closes
+1. **C16 -- the live-evidence durability gap.** UNBLOCKED by C19, not yet
+   discharged. Discharge it on the next live run by pasting `run_mode` and
+   `run_timestamp` verbatim.
+2. **Q4 -- the liblcm contract baseline is stale**, by one genuine upstream
+   removal (`ILexEntryRepository.CorrectHomographNumbers()`, confirmed by
+   direct CLR reflection, **zero callers**). Regenerating the snapshot
+   absorbs all drift since 2026-08-13, so it wants a deliberate human act.
+3. **Q5 -- the alias ratchet fails on 9 leftover `flexlibs2` test
+   imports** from #241's rename. Unrelated to the interpreter. One of the
+   nine is DELIBERATE and needs an exemption or a move -- a policy call for
+   #241's owner.
+4. **N7 -- confirm #242's state on GitHub** and reopen if the `closes
    #242` keyword closed it unintentionally.
 
 `feature_complete` was APPROVED at campaign level at cycle 4; this file
@@ -223,11 +236,10 @@ boundary, but the campaign record should be reconciled.
 - Derive every live count with `--collect-only -q -m requires_live_project`
   and paste it into the evidence file. "No tests collected" is a ZERO,
   never a pass.
-- Offline baseline is **1292 passed** as of `b0e3d14`. Never bare `pytest`.
-  **As of 2026-09-08 this baseline cannot be reproduced at all** -- see
-  `spec.md` C18. Do not treat a failing offline run as a #242 regression
-  until the interpreter is restored; check `python --version` against
-  `requires-python` FIRST.
+- Offline baseline is **1291 passed / 483 deselected** as of cycle 6
+  (`spec.md` C19). This **REPLACES the retired 1292 figure**. Two known
+  failures are named and diagnosed in `spec.md` section 6 (Q4, Q5) --
+  neither is a #242 regression. Never bare `pytest`.
 - The C28 forward rule: a stated prediction is committed BEFORE the
   measuring run.
 - `tests/operations/test_issue242_whitespace_probe.py` already exists --
