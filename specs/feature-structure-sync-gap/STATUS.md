@@ -235,26 +235,57 @@ is NOT the lead resolving a pending user decision, and NO GitHub action was
 taken to establish it -- the determination rests entirely on committed repo
 records. If the user's recollection differs, restore the entry.
 
-### Next pickup -- NOTHING THE CREW CAN DO. Four authorisations, then this feature is done.
+### FEATURE COMPLETE -- all four authorisations given, both actions executed
 
-All crew-executable work in this feature is COMPLETE. Checkpoints 1-5 are all
-closed. The three remaining items each require the user's word, and the crew has
-correctly taken zero GitHub action on all of them:
+The four parked decisions were put to the user in-session on 2026-09-08 and all
+four were answered. The two authorised GitHub actions were executed by the main
+session. Nothing here was crew-initiated.
 
-1. **AUTHORISE (or edit) the #252 closure comment.** Draft READY at
-   `reviews/cycle14-issue252-closure-draft.md`. #252 is OPEN with zero comments;
-   `4e9d152`'s "closes #252" trailer never fired (direct-to-main, no PR).
-2. **APPROVE FILING (or decline) ONE CONSOLIDATED "shared-resolver
-   live-coverage gap" issue** spanning BOTH `POSOperations.__ResolveObject`
-   (9 of 16 sites without live coverage, 7 with none) AND
-   `AllomorphOperations.__GetAllomorphObject` (7 of 11 with none). Amended at
-   cycle 16 (ruling 6) to ONE issue, not two. Third instance of one shape.
-3. **DECIDE T8's issue, retrospectively.** T8 has LANDED unfiled. File
-   after-the-fact, or close it out as spec-only.
+1. **#252 -- AUTHORISED and DONE.** The corrected draft at
+   `reviews/cycle14-issue252-closure-draft.md` was posted **verbatim** as
+   `issues/252#issuecomment-5587390977`, then the issue was CLOSED
+   (reason=COMPLETED). The comment text was extracted programmatically from the
+   draft's fenced "Proposed GitHub comment" block rather than retyped, so what is
+   on GitHub is byte-identical to what was reviewed.
+2. **Consolidated coverage-gap issue -- APPROVED and FILED as
+   [#268](https://github.com/MattGyverLee/flexicon/issues/268).** One issue, per
+   cycle-16 ruling 6, spanning BOTH `POSOperations.__ResolveObject` (9 of 16
+   without live coverage, 7 with none at all) AND
+   `AllomorphOperations.__GetAllomorphObject` (7 of 11 with none at all). The body
+   cites the cycle-14/15/16/17 artifacts by path and proposes a NARROW close
+   condition -- one HVO-entry live test per resolver at a read-only uncovered
+   site, plus the cycle-17 AST-allowlist pattern -- explicitly rejecting blanket
+   live coverage of all 27 sites as a bad trade.
+3. **T8's issue -- DECLINED by the user. Closes out as SPEC-ONLY.** T8 is landed,
+   gated at Checkpoint 5, and CHANGELOG-disclosed under this spec. This is now a
+   SETTLED decision; do not re-raise it in a future cycle.
+4. **#251 closure -- NO ACTION NEEDED; the item was STALE.** The user said close
+   it, but the main session verified first-hand that #251 was **already CLOSED**
+   (state=CLOSED, stateReason=COMPLETED, closedAt=2026-09-08T01:41:46Z) with a
+   full evidence comment already posted. No duplicate close was issued. This is
+   the SECOND stale parked item found at cycle-17 close, after the #250 D4-T6
+   entry above -- both were stale in the same direction, an action recorded as
+   pending that had in fact already been taken.
 
-Also still open and needing separate authorisation: **#251 closure** (fixed on
-the merits and closeable since cycle 12; the cycle-8 delegation was specific to
-the #250 comment and does not generalise to closing issues).
+**#250 stays OPEN and that is correct** -- it is a separate
+`WritingSystemOperations` defect, out of scope for this feature. `gh` confirms it
+carries 2 comments, corroborating the RESOLVED-STALE ruling above.
+
+### Where a future session should actually start
+
+**Not here.** This feature is closed; its handoff is terminal. The live entry
+point for the only remaining known work is **issue #268**, which is deliberately
+scoped outside this spec.
+
+Two things worth carrying forward regardless of feature:
+
+- The `IMoForm` imported-unused cosmetic at `AllomorphOperations.py:23` was
+  deferred through every gate cycle on purpose (a gate must not carry a drive-by
+  production edit). It is safe to remove in any ordinary edit.
+- The standing rules this campaign generated earned their keep and are not
+  feature-specific: `prediction_commitment_rule`,
+  `standing_rule_empty_falsifier_set_is_not_a_pass`,
+  `standing_rule_live_status_is_ephemeral`, `mutation_testing_isolation_rule`.
 
 ---
 
