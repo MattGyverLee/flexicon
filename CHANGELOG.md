@@ -60,6 +60,16 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   after the fix in `specs/feature-structure-sync-gap/evidence/live-T7.md`.
   GUID-string support remains out of scope (folded into T12).
 
+  **Disclosed behaviour change:** `POSOperations.CompareTo` is not
+  modified by T7, but its observable output changes as a side effect --
+  two POS with identical feature specs but independently-created
+  feature structs now report a difference on the `DefaultFeaturesGuid`/
+  `InherFeatValGuid` keys, where previously neither key existed to
+  compare. Pinned by `TestPOSSyncCompareToStructGuidPinning`
+  (`tests/operations/test_issue252_pos_feature_sync.py`). A candidate
+  follow-up -- comparing serialized spec content rather than struct
+  identity -- is noted but not filed as an issue.
+
 ### Changed
 - **BREAKING (behavioural): name-field writers across four Operations
   classes now persist the caller's original, unstripped name, and their
