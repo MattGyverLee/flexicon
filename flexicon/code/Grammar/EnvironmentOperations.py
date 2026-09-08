@@ -649,15 +649,63 @@ class EnvironmentOperations(BaseOperations):
         """
         Resolve HVO or object to IPhEnvironment.
 
+        Casts to ``IPhEnvironment`` by ``ClassName`` BEFORE returning
+        (contract conformance, flexicon#260). ``FLExProject.Object(hvo)``
+        returns a bare ``ICmObject``; without this cast, EVERY caller in
+        this class that performs direct Python attribute access on the
+        resolved object -- ``GetName``/``SetName`` (``env.Name...``),
+        ``GetStringRepresentation``/``SetStringRepresentation``
+        (``env.StringRepresentation...``), ``GetSyncableProperties``
+        (``getattr(env, prop_name)``) -- raises ``AttributeError`` on the
+        int-HVO entry path, and ``GetLeftContextPattern`` /
+        ``GetRightContextPattern`` (``hasattr(env, "LeftContextOA"/
+        "RightContextOA")``) silently return ``None`` instead -- a wrong
+        answer with no exception, no traceback (confirmed live: P6, P6b,
+        P7; see specs/260-environment-resolver-cast/evidence/
+        live-T2-red-p6-p6b-p7.md for the RED-before-fix reproduction).
+
+        Unlike its sibling ``AllomorphOperations.__GetEnvironmentObject``
+        (uncast too, but a genuine BUG-FREE contract mismatch there --
+        cycle 1 measured live that both of its callers only ever hand
+        the resolved object to a strongly-typed .NET reference-collection
+        method, where the CLR binds on runtime type and a cast is not
+        needed), this resolver's callers perform direct Python attribute
+        access, which pythonnet's static wrapper-type gate blocks unless
+        the object is cast to the concrete interface first.
+
+        ``IPhEnvironment`` has exactly ONE implementing type in the whole
+        ``SIL.LCModel`` assembly (``SIL.LCModel.DomainImpl.PhEnvironment``,
+        confirmed live via reflection), so there is nothing to
+        discriminate between -- a single ``ClassName`` guard, merging the
+        int and object branches, is the correct and complete shape (no
+        two-branch subtype dance like ``AllomorphOperations``'
+        ``IMoStemAllomorph``/``IMoAffixAllomorph`` split).
+
+        Any ``ClassName`` other than ``"PhEnvironment"`` (or a non-LCM
+        input with no ``ClassName``) is returned UNCHANGED -- this
+        resolver never raises on a miss, matching the permissive,
+        never-raising shape used by the other ``ClassName``-dispatched
+        resolvers in this codebase (``AllomorphOperations.
+        __GetAllomorphObject``, ``MSAOperations.__GetMsaObject``,
+        ``POSOperations.__ResolveObject``).
+
         Args:
             env_or_hvo: Either an IPhEnvironment object or an HVO (int).
 
         Returns:
-            IPhEnvironment: The resolved environment object.
+            IPhEnvironment: The resolved environment, cast to the
+            concrete interface when its ``ClassName`` is
+            ``"PhEnvironment"``; returned unchanged otherwise.
         """
         if isinstance(env_or_hvo, int):
-            return self.project.Object(env_or_hvo)
-        return env_or_hvo
+            obj = self.project.Object(env_or_hvo)
+        else:
+            obj = env_or_hvo
+
+        class_name = getattr(obj, "ClassName", None)
+        if class_name == "PhEnvironment":
+            return IPhEnvironment(obj)
+        return obj
 
     # ========== SYNC INTEGRATION METHODS ==========
 
