@@ -10,6 +10,51 @@ None
 
 ## History
 
+### 2026-09-08 - v4.6.0 release cut: six behavioural repairs, and the 4.5.x line finally ships
+
+Cuts v4.6.0 from `main` at `cb1d355`. Bumps `flexicon/__init__.py` to 4.6.0,
+promotes the `[Unreleased]` block to `[4.6.0] - 2026-09-08`, and adds
+`RELEASE_NOTES_v4.6.0.md` plus `docs/RELEASING.md`, the project's first
+written release runbook.
+
+**The 4.5.x discovery.** Versions 4.5.0, 4.5.1 and 4.5.2 were fully
+changelogged on 2026-08-19 but never tagged, so `publish.yml` -- which
+fires only on a `v*` tag push -- never ran and none of them reached PyPI.
+The last published version was 4.4.1 (2026-08-18). Their content ships
+inside 4.6.0 rather than being back-filled with tags onto old commits;
+the changelog sections stay as the historical record. `docs/RELEASING.md`
+section 2 now requires checking PyPI against the tag list before a cut,
+so a silent non-publish cannot recur unnoticed.
+
+**Also newly documented:** `publish-docs.yml` fires on a GitHub *Release*
+being published, not on the tag push. A bare tag therefore ships the
+package while leaving `gh-pages` serving the previous version's API docs.
+The runbook now makes creating the Release a required step, not an
+optional courtesy.
+
+**What is in the release:**
+
+- Six `BREAKING (behavioural)` changes, all correctness repairs to
+  silently-wrong behaviour, none an API-signature break: the headless-UI
+  default (#285), whitespace preservation in name and text writers (#242,
+  Q-242A), empty-name rejection in `CheckOperations` (Q-242B),
+  `GetMorphType` returning `IMoMorphType` (#254), `SaveChanges()` raising
+  `FP_TransactionError` mid-transaction (#243), and unstripped paragraph
+  content (#242).
+- Feature-structure sync for `MSAOperations` (#251), `POSOperations`
+  (#252) and `AllomorphOperations`, each of which previously synced a
+  correct name and GUID with a permanently null feature structure.
+- `cast_to_concrete` promoted to a public top-level export (#271).
+- Python 3.14 / pythonnet 3.1 support (`requires-python >=3.8,<3.15`).
+
+Versioned as a minor bump per the 4.4.0 precedent, which shipped a
+behavioural default flip the same way. `v5.0.0` remains reserved for the
+`flexlibs2` alias removal.
+
+**Gate:** offline suite 1732 passed / 695 deselected / 0 failed,
+superseding the 1291/483 baseline recorded at `33c5f7b`. `python -m build`
+clean. `local-compat-check` green on `main`.
+
 ### 2026-08-18 - v4.4.0 release cut: the write path becomes transactional
 
 Merges `write-path-transactions-b1-b3` into main and cuts v4.4.0, completing

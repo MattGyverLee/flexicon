@@ -11,6 +11,24 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+---
+
+## [4.6.0] - 2026-09-08
+
+> **Contains six behavioural breaking changes -- read the **Changed**
+> section before upgrading.** None is an API-signature break: every
+> changed default or return value is a correctness repair to behaviour
+> that was silently wrong. Versioned as a minor bump per the precedent
+> set by 4.4.0, which shipped a behavioural default flip the same way;
+> `v5.0.0` stays reserved for the `flexlibs2` alias removal.
+>
+> **This release also ships 4.5.0, 4.5.1 and 4.5.2.** Those three
+> versions were written into this changelog but never tagged, so
+> `publish.yml` never fired and they never reached PyPI -- 4.4.1 was
+> the last version actually published. Upgrading from 4.4.1 therefore
+> picks up all four releases at once; their entries are kept below as
+> the historical record.
+
 ### Added
 - **`MSAOperations.GetSyncableProperties`/`ApplySyncableProperties`.**
   Task T6 of `specs/feature-structure-sync-gap`, closes #251.
