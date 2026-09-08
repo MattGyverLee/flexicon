@@ -140,6 +140,36 @@ can lie dormant on a feature branch and trigger on merge. If a crew or
 campaign record says an issue is to be left open, that is binding: phrase
 around the verb.
 
+This is now enforced by a `commit-msg` hook, so the mistake is caught while
+the commit is still cheap to amend rather than after it reaches GitHub.
+
+**Enable it once per clone** (`core.hooksPath` is local config, not
+something a checkout can carry):
+
+```
+git config core.hooksPath .githooks
+```
+
+The guard is `.githooks/commit_msg_guard.py`, covered by
+`tests/test_commit_msg_guard.py`. It blocks only the four hazard shapes --
+a **negation** ("do NOT close #250"), a **possessive** ("close #243's crew
+review"), a **quotation** (`said "partially closes #151"`), and
+**narration** of a close that already happened. The genuine convention is
+deliberately untouched: a close keyword in a footer (`Closes #N.`) or a
+subject parenthetical (`feat(x): y (closes #N)`) always passes, and a
+negation elsewhere on such a line does not trigger the guard. Backtested
+against all 801 commits on `main`: 136 contain a close keyword, 130 pass,
+and the 6 it blocks are all genuine hazards -- the three that actually
+fired (#242, #243, #250), two `does not close #237` bodies, and one quoted
+directive.
+
+If a prose form is genuinely intended, say so explicitly rather than
+disabling the hook:
+
+```
+Close-Keyword-Override: <why this should genuinely close the issue>
+```
+
 #### Confirm which repo `gh` is talking to before trusting an issue result
 
 This repo has two remotes -- `origin` (`MattGyverLee/flexicon`) and

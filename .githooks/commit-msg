@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+#   commit-msg
+#
+#   Blocks GitHub auto-close keywords used in prose about an issue.
+#   See .githooks/commit_msg_guard.py for the rule and its rationale.
+#
+#   Enable in a fresh clone with:
+#       git config core.hooksPath .githooks
+#
+
+hook_dir=$(dirname "$0")
+guard="$hook_dir/commit_msg_guard.py"
+
+[ -f "$guard" ] || exit 0   # never block a commit because the guard is missing
+
+if command -v python >/dev/null 2>&1; then
+    python "$guard" "$1"
+elif command -v py >/dev/null 2>&1; then
+    py -3 "$guard" "$1"
+else
+    echo "[WARN] commit-msg: no python found; auto-close guard SKIPPED" >&2
+    exit 0
+fi
