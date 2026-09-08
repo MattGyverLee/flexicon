@@ -373,11 +373,18 @@ class TestLexiconAddComplexFormUsesTheSeam:
                 appended=[],
             ),
             ComplexEntryTypesRS=SimpleNamespace(appended=[]),
+            RefType=None,
+            HideMinorEntry=None,
         )
-        created_ref.ComponentLexemesRS.Append = (
+        # Model .Add(), the member ILcmReferenceSequence<T> actually
+        # exposes. This stub originally mirrored .Append(), which does
+        # not exist on the interface -- so the mock passed against the
+        # dead production code. Live verification caught it; the stub
+        # now models the real API. (issue #272)
+        created_ref.ComponentLexemesRS.Add = (
             created_ref.ComponentLexemesRS.appended.append
         )
-        created_ref.ComplexEntryTypesRS.Append = (
+        created_ref.ComplexEntryTypesRS.Add = (
             created_ref.ComplexEntryTypesRS.appended.append
         )
 
@@ -411,6 +418,20 @@ class TestLexiconAddComplexFormUsesTheSeam:
             component_b,
         ]
         assert created_ref.ComplexEntryTypesRS.appended == [cf_type]
+
+        # RefType must be stamped krtComplexForm. A fresh ILexEntryRef
+        # defaults to 0 == krtVariant, so omitting it silently filed the
+        # components under a VARIANT reference and the entry was never a
+        # complex form -- GetComplexFormComponents(), which filters on
+        # krtComplexForm, then returned []. Caught by live verification
+        # once the GetFactory migration unblocked this code path.
+        from SIL.LCModel import LexEntryRefTags
+
+        assert created_ref.RefType == LexEntryRefTags.krtComplexForm, (
+            "LexiconAddComplexForm must set RefType = krtComplexForm; "
+            f"got {created_ref.RefType!r}"
+        )
+        assert created_ref.HideMinorEntry == 0
 
 
 class TestAudioPathBuilderMechanics:

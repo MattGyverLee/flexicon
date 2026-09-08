@@ -4905,12 +4905,12 @@ class FLExProject(object):
             Replaces any existing complex form types with the specified one.
         """
         if hasattr(entry_ref, "ComplexEntryTypesRS"):
-            # Clear-then-Append is two mutations: a failure between them would
+            # Clear-then-Add is two mutations: a failure between them would
             # leave the entry ref with no complex form type at all, which is
             # neither the old value nor the requested one.
             with self._TransactionCM("Set complex form type"):
                 entry_ref.ComplexEntryTypesRS.Clear()
-                entry_ref.ComplexEntryTypesRS.Append(complex_form_type)
+                entry_ref.ComplexEntryTypesRS.Add(complex_form_type)
 
     def LexiconAddComplexForm(self, entry, components, complex_form_type):
         """
@@ -4935,20 +4935,31 @@ class FLExProject(object):
         Note:
             Creates an entry reference linking the complex form to its components.
         """
-        from SIL.LCModel import ILexEntryRefFactory
+        from SIL.LCModel import ILexEntryRefFactory, LexEntryRefTags
 
         with self._TransactionCM(f"Add complex form ({len(components)} component(s))"):
             factory = self.GetFactory(ILexEntryRefFactory)
             entry_ref = factory.Create()
             entry.EntryRefsOS.Add(entry_ref)
 
+            # RefType MUST be set explicitly. A freshly created
+            # ILexEntryRef leaves it at 0 == krtVariant, so omitting this
+            # filed the components under a VARIANT reference and the
+            # entry was never a complex form at all -- which is why
+            # LexEntry.GetComplexFormComponents(), which filters on
+            # krtComplexForm, could not see them. Matches
+            # LexEntryOperations.AddComplexFormComponent, the sibling
+            # entry point, which sets both of these. (issue #272)
+            entry_ref.RefType = LexEntryRefTags.krtComplexForm
+            entry_ref.HideMinorEntry = 0  # Show the complex form
+
             # Add components
             for component in components:
-                entry_ref.ComponentLexemesRS.Append(component)
+                entry_ref.ComponentLexemesRS.Add(component)
 
             # Set complex form type
             if complex_form_type:
-                entry_ref.ComplexEntryTypesRS.Append(complex_form_type)
+                entry_ref.ComplexEntryTypesRS.Add(complex_form_type)
 
             return entry_ref
 

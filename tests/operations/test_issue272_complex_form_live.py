@@ -34,6 +34,8 @@
 
 import pytest
 
+from flexicon import cast_to_concrete
+
 pytestmark = pytest.mark.requires_live_project
 
 
@@ -48,10 +50,20 @@ def _component_forms(project, entry):
     trusting the ILexEntryRef the write returned -- asserting on the
     returned object would not prove persistence.
     """
+    # ServiceLocator.GetObject() is declared to return ICmObject, and
+    # ComponentLexemesRS is polymorphic, so both the entry and each
+    # component must be downcast before their concrete surface is
+    # reachable -- pythonnet only exposes the static type's attributes.
+    # This is the #269/#270 mechanism; cast_to_concrete is public per
+    # #271. Without these casts the helper itself raises
+    # AttributeError: 'ICmObject' object has no attribute 'EntryRefsOS'.
+    entry = cast_to_concrete(entry)
+
     forms = []
     for ref in entry.EntryRefsOS:
         for component in ref.ComponentLexemesRS:
-            form = component.LexemeFormOA
+            component = cast_to_concrete(component)
+            form = getattr(component, "LexemeFormOA", None)
             text = None
             if form is not None and form.Form is not None:
                 text = form.Form.BestVernacularAlternative.Text
@@ -103,7 +115,9 @@ class TestLexiconAddComplexFormLive:
             )
 
             # --- post-state, re-queried from the LCM by Hvo ---
-            reread = target_project.project.ServiceLocator.GetObject(hvo)
+            reread = cast_to_concrete(
+                target_project.project.ServiceLocator.GetObject(hvo)
+            )
             after = _component_forms(target_project, reread)
             assert after == [
                 f"{TEST_PREFIX}black",
@@ -151,7 +165,9 @@ class TestAddComplexFormComponentLive:
             # proof of success is the re-read below.
             entries.AddComplexFormComponent(complex_form, component)
 
-            reread = target_project.project.ServiceLocator.GetObject(hvo)
+            reread = cast_to_concrete(
+                target_project.project.ServiceLocator.GetObject(hvo)
+            )
             after = _component_forms(target_project, reread)
             assert after == [f"{TEST_PREFIX}sun"], (
                 "Component did not persist to the LCM; re-read "
@@ -216,8 +232,8 @@ class TestAudioPathBuildersLive:
 
             target_project.SetAudioPath(form_field, audio_ws, path)
 
-            reread = target_project.project.ServiceLocator.GetObject(
-                created.Hvo
+            reread = cast_to_concrete(
+                target_project.project.ServiceLocator.GetObject(created.Hvo)
             )
             after = target_project.GetAudioPath(
                 reread.LexemeFormOA.Form, audio_ws
