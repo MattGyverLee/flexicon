@@ -86,3 +86,84 @@ FALSIFIER (two-sided): if a full verbatim live_status.json block IS present,
 the verdict is a clean PASS and this prediction is falsified in the
 conservative direction; if run_mode/timestamp are NOT actually quoted, or the
 quote postdates cycle 16, condition 8 FAILS outright.
+
+---
+
+# POST-HOC ERRATUM (lead, cycle-17 adjudication -- appended, nothing above rewritten)
+
+The predictions above are preserved VERBATIM as committed at `8691c65`. This
+erratum is appended below them so the audit trail stays intact; do not edit the
+prediction text itself.
+
+## ERRATUM 1 -- G3's test-name mapping was wrong in one place (two symptoms)
+
+G3's text names the M-T8-1 dead set as `{TestT8LiveDirectCast,
+TestT8LiveHasattrTrap}` and names `TestT8LiveRoundTrip` as the survivor. Both
+halves of that mapping are wrong, from a single authoring error: the lead
+believed the HVO-entry test lived in `TestT8LiveHasattrTrap`, when it actually
+lives in `TestT8LiveRoundTrip`. Corrected mapping, against the inventory as it
+stood at `e7f1048` (i.e. before this prediction was committed):
+
+| G3's semantic label | Class named in G3 | Test that actually carries it | M-T8-1 outcome |
+|---|---|---|---|
+| "the direct-cast test" | `TestT8LiveDirectCast` | `::test_hvo_path_casts_to_concrete_affix_allomorph` | DIES (as predicted) |
+| "the HVO-entry test" | `TestT8LiveHasattrTrap` (WRONG) | `TestT8LiveRoundTrip::test_hvo_entry_path_captures_form` (:933) | DIES (as predicted, different class) |
+| "the feature-struct round-trip" | `TestT8LiveRoundTrip` (imprecise -- that class holds 3 tests, only 1 is the round-trip) | `TestT8LiveRoundTrip::test_ms_env_features_capture_apply_roundtrip` (:894) | SURVIVES (as predicted) |
+
+Read literally, the error produced TWO breaches of G3's falsifier, not one:
+(i) a predicted-dead test survived (`TestT8LiveHasattrTrap`); and
+(ii) a member of a predicted-survivor class died
+(`TestT8LiveRoundTrip::test_hvo_entry_path_captures_form`). The cycle-17 gate
+report disclosed only (i). Both are recorded here.
+
+## ERRATUM 2 -- `TestT8LiveHasattrTrap` CANNOT die under M-T8-1. Do not read its green as suspicious.
+
+`TestT8LiveHasattrTrap::test_bare_moaffixallomorph_hasattr_all_four_false` calls
+only `sandbox.Object(allo.Hvo)` and asserts `hasattr` is False for four members
+on that BARE object. It never calls `__GetAllomorphObject`. M-T8-1 makes
+`__GetAllomorphObject` return its argument unchanged; it does not change what a
+bare `ICmObject` view is. The assertions therefore remain true by construction.
+Predicting this test's death was not merely mislabeled -- it was IMPOSSIBLE.
+Its survival is correct and structurally necessary, not a resilience finding
+and not a regression.
+
+## Why this is a labeling defect and NOT a post-hoc falsifier substitution
+
+The discriminating question: could the corrected mapping have been derived from
+G3's own semantic labels plus the test inventory AT PREDICTION TIME, with no
+reference to the outcome? Yes, and it is forced:
+
+- `test_hvo_entry_path_captures_form` is the only test in the file named for the
+  HVO entry path, and its docstring says so outright ("GetSyncableProperties(hvo)
+  must capture Form on the HVO entry path").
+- `test_ms_env_features_capture_apply_roundtrip` is the only feature-struct
+  round trip in the file.
+- Every test involved PRE-EXISTED this prediction. `8691c65` is a child of
+  `e7f1048` and a strict ancestor of all four cycle-17 measurement commits
+  (`44c67eb`, `14dce75`, `a962728`, `12d44cb`) -- verified from the DAG. No test
+  was written, renamed or re-marked in cycle 17 to satisfy a falsifier.
+
+A genuine post-hoc substitution has a signature this episode does not have: the
+semantically-named test SURVIVES and the gate goes shopping among the reds for a
+replacement claim. Here the semantically-named HVO-entry test is precisely the
+one that died, and the semantically-named round-trip is precisely the one that
+survived. The asymmetric split was confirmed on the exact axes predicted.
+
+`standing_rule_empty_falsifier_set_is_not_a_pass` does NOT bite. That rule
+targets a no-change measurement whose falsifier set is empty on the affected
+axis. G3 is not a no-change measurement: M-T8-1 produced three real kills (2
+live + 1 offline collateral), M-T8-2 produced one naming `MoStemAllomorph`
+exactly, and three named survivors DO traverse `__GetAllomorphObject` indirectly
+and could have flipped. The falsifier set was non-empty and load-bearing in both
+directions. The clause that carries the reopening consequence -- "a NOT-KILLED
+mutation is a P0 and reopens Checkpoint 5" -- did not fire: every mutation
+applied in cycle 17 was killed by at least one test.
+
+## ERRATUM 3 -- G4's "six T8 commits" premise
+
+The cycle-17 gate prompt and STATUS.md described range `09fcbf8..e7f1048` as
+"six commits". `git rev-list --count 09fcbf8..e7f1048` = **8**
+(`cf2fdfe`, `df37e35`, `016a97a`, `bd98c6b`, `191556f`, `6484d81`, `fdd8694`,
+`e7f1048`). `cf2fdfe` IS chronologically first, so the provenance claim that
+rested on the ordering holds. Prose-accuracy defect only; no prediction's truth
+value changes.

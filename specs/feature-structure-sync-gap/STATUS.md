@@ -2,11 +2,271 @@
 
 Repo: flexicon (main). Issues: flexicon#251, #252, #256, and **#253 (folded in)**.
 
-## Where things stand (as of 2026-09-08, spurt 13 / cycle 16 end)
+## Where things stand (as of 2026-09-08, spurt 14 / cycle 17 end)
+
+**CHECKPOINT 5 IS CLOSED.** The independent cycle-17 verification gate passed all
+five legs. T8 (`AllomorphOperations` `MsEnvFeaturesOA` capture/apply + the two
+pre-existing HVO-path defects) is landed, independently gated, and done.
+
+**Every remaining item in this feature is USER-DECISION-GATED.** There is no
+further crew work that can proceed without the user. No GitHub action has been
+taken at any point in cycles 16-17.
+
+### Cycle-17 artifacts
+
+Predictions `8691c65` (PRE-RUN, committed by the prior session before any
+cycle-17 measurement -- `prediction_commitment_rule` verified SATISFIED from the
+DAG: `8691c65` is a child of `e7f1048` and a strict ancestor of all four
+measurement commits). Then `edb2efe` + `e662378` (archivist, LEG 5 / LEG 2
+static), `44c67eb` (live HVO-int gate test), `14dce75` (module-wide hasattr
+allowlist test), `a962728` (live evidence), `12d44cb` (gate report).
+
+**Production stayed FROZEN, hash-verified:**
+`git hash-object flexicon/code/Lexicon/AllomorphOperations.py` ==
+`git rev-parse HEAD:flexicon/code/Lexicon/AllomorphOperations.py` ==
+`6a0c6e94fdba934b38fdeea1bdf01a9eb8a0ab7d`. The `IMoForm` imported-unused
+cosmetic remains DEFERRED, correctly -- a gate cycle carries no drive-by
+production edit. No worktree residue (`git worktree list` main-only); no index
+contamination (`git status --porcelain --untracked-files=no` shows only the
+pre-existing `.claude/ralph-loop.local.md` deletion).
+
+### G1-G5 adjudication (lead, against the pre-committed text at `8691c65`)
+
+- **G1 HELD (clean).** LEG 1 built the falsifier P4 never had. New durable live
+  file `tests/operations/test_t8_hvo_path_gate.py` passes a GENUINE `int`
+  (`isinstance(hvo, int)` asserted) through `GetForm` (read) and `SetForm`
+  (write) on `target_sandbox`; 2 passed live, `run_mode: live`. Under M-G1 both
+  go RED with `AttributeError: 'ICmObject' object has no attribute 'Form'`.
+  **P4's HVO axis is now MEASURED and durably pinned** -- this is the
+  substantive discharge of cycle-16 ruling 2, and it is what
+  `standing_rule_empty_falsifier_set_is_not_a_pass` demanded.
+- **G2 HELD exactly.** Live probe on an `ILexEntry` (ClassName `"LexEntry"`,
+  neither allomorph subtype): no raise, dict exactly
+  `{'Form': {}, 'MorphTypeRA': None}`. Lead corroborated the MECHANISM from
+  source rather than accepting the number: `props["Form"] = form_dict` is
+  assigned UNCONDITIONALLY at `:575` (outside the gate) and
+  `props["MorphTypeRA"] = None` in the `else` at `:587`, while `IsAbstract` is
+  assigned only INSIDE its gate -- which is exactly why the measured dict has
+  `Form` and `MorphTypeRA` keys but no `IsAbstract` key. The measured shape is
+  derivable from the source, not just reported.
+- **G2b HELD exactly.** Lead re-grepped: SEVEN `hasattr` calls -- `:358`/`:368`
+  (`owner`, Delete), `:460`/`:466` (`parent`, Duplicate), `:570`/`:579`/`:584`
+  (`allomorph`), and all three `allomorph`-scoped calls confirmed inside
+  `GetSyncableProperties` (`def` at `:521`, next `def` at `:599`). Every cell of
+  the prediction's 7-row table is correct. An "exactly 3 in the file" assertion
+  would indeed have failed for the wrong reason.
+- **G3 SPLIT -- substantively HELD. A LABELING DEFECT, not a post-hoc falsifier
+  substitution. Checkpoint 5 does NOT reopen on it.** See ruling 1 below; this
+  was the one place a PASS could have been wrong.
+- **G4 HELD exactly, RE-DERIVED FIRST-HAND by the lead** at HEAD `12d44cb`:
+  `2 failed, 439 passed, 526 deselected`, red set exactly the two foreign
+  `TestPhase2JoinOrOpen` failures. Delta explained: 437 -> 439 = the 2 new
+  offline allowlist tests; 524 -> 526 = the 2 new live HVO-gate tests landing in
+  `deselected`. **The pinned baseline is now 439 / 2 / 526.**
+- **G5 HELD as PASS-WITH-QUALIFIER** -- the lead's own conservative branch,
+  confirmed first-hand. `live-T8.md:17` and `:61` are inline key-level quotes;
+  no fenced JSON block appears anywhere in that file;
+  `git log -- .../live-T8.md` returns exactly one commit, `bd98c6b` (cycle 16).
+  In-cycle and substantive, not literal-verbatim. The two-sided falsifier is
+  untriggered in both directions.
+
+### RULING 1 -- G3 is a LABELING DEFECT, and the gate under-reported it
+
+The gate reported ONE literal breach of G3's falsifier. There were **TWO**:
+(i) a predicted-dead test survived (`TestT8LiveHasattrTrap`), and (ii) a member
+of a predicted-survivor class died
+(`TestT8LiveRoundTrip::test_hvo_entry_path_captures_form`). The gate missed (ii)
+because it silently re-scoped "`TestT8LiveRoundTrip` SURVIVES" from the class
+down to a two-test subset, in a falsifier list **the gate itself authored after
+the run**. That re-scoping is corrected on the record.
+
+Both symptoms reduce to ONE root cause, and it is the **lead's** authoring
+error, not the gate's: G3 was written believing the HVO-entry test lived in
+`TestT8LiveHasattrTrap` when it actually lives in `TestT8LiveRoundTrip`.
+
+**The discriminating test the lead applied** (labeling defect vs. post-hoc
+substitution): could the corrected mapping be derived from G3's own SEMANTIC
+labels plus the test inventory AT PREDICTION TIME, with no reference to the
+outcome? Verified against
+`git show e7f1048:tests/operations/test_t8_allomorph_feature_sync.py` -- yes,
+and it is forced. `test_hvo_entry_path_captures_form` (`:933`) is the only test
+in the file named AND docstringed for the HVO entry path;
+`test_ms_env_features_capture_apply_roundtrip` (`:894`) is the only
+feature-struct round trip. Both pre-existed `8691c65`. **No test was written,
+renamed or re-marked in cycle 17 to satisfy a falsifier.**
+
+A genuine post-hoc substitution has a signature this episode does not have: the
+semantically-named test SURVIVES, and the gate goes shopping among the reds for
+a replacement claim. Here the semantically-named HVO-entry test is precisely the
+one that died, and the semantically-named round-trip is precisely the one that
+survived. The asymmetric split was confirmed on the exact axes predicted.
+
+**`standing_rule_empty_falsifier_set_is_not_a_pass` does NOT bite,** and the
+reason matters because this is the rule most likely to be misapplied here. That
+rule targets a NO-CHANGE / zero-flip measurement whose falsifier set is empty on
+the affected axis. G3 is not a no-change measurement: M-T8-1 produced three real
+kills (2 live + 1 offline collateral), M-T8-2 produced one naming
+`MoStemAllomorph` exactly, and three named survivors DO traverse
+`__GetAllomorphObject` indirectly and could have flipped. The falsifier set was
+non-empty and load-bearing in both directions.
+
+**The clause carrying the reopening consequence did not fire.** G3 said "a
+NOT-KILLED mutation is a P0 and reopens Checkpoint 5". Every mutation applied in
+cycle 17 -- M-G1, the GetForm `hasattr` insertion, M-T8-1, M-T8-2 -- was killed
+by at least one test. Nothing went un-killed.
+
+**Also recorded, so no future cycle misreads it:** `TestT8LiveHasattrTrap`
+CANNOT die under M-T8-1. It calls only `sandbox.Object(allo.Hvo)` and asserts
+`hasattr` is False on the BARE object; it never calls `__GetAllomorphObject`,
+and M-T8-1 does not change what a bare `ICmObject` view is. Predicting its death
+was not merely mislabeled -- it was IMPOSSIBLE. Its green is correct and
+structurally necessary. Full correction table: the POST-HOC ERRATUM appended to
+`evidence/live-cycle17-gate-predictions.md` (appended BELOW the predictions,
+which are preserved verbatim -- a pre-committed prediction is never rewritten
+in place).
+
+### RULING 2 -- LEG 2 kept the live measurement out of a durable test CORRECTLY, on both halves
+
+**Half 1 -- the silent-drop shape.** Compliant with the lead's binding cycle-17
+ruling. The gate used a disposable probe, ran it live, deleted it, and preserved
+verbatim stdout in a COMMITTED evidence file; the index was clean before and
+after. This ruling is now PERSISTED here rather than living only in dispatch
+text:
+
+> **BINDING (lead, cycle 17): the unrecognised-ClassName silent-drop shape must
+> NOT be pinned as expected behaviour by a durable test.** Condition 3's
+> residual is a known-REACHABLE defect path. A durable green test asserting
+> `{'Form': {}, 'MorphTypeRA': None}` would convert a defect into a
+> specification and make the eventual fix look like a regression. Measure it,
+> preserve its provenance in a committed evidence file, do not specify it.
+
+A future cycle will otherwise think this collides with the cycle-13 lesson
+(a deleted probe cost P1 its provenance -- `TestT8LiveHasattrTrap`'s docstring
+cites it). It does not. That lesson is about PROVENANCE LOSS, not deletion per
+se, and it is cured here by verbatim stdout in a committed file. Both rules hold
+at once: **measured, provenance-preserved, not specified.**
+
+**Half 2 -- the new allowlist test is genuinely NON-TAUTOLOGICAL. The lead
+reproduced the killing mutation first-hand rather than accept the gate's word.**
+In a fresh detached worktree at HEAD (pre-hash `6a0c6e9...`), inserting
+`if hasattr(allomorph, "MsEnvFeaturesOA"): pass` inside `GetForm`:
+
+- `test_t8_allomorph_hasattr_allowlist.py` -> **2 failed**, and the message
+  correctly localised the intruder as `('GetForm', 'MsEnvFeaturesOA')` --
+  proving the enclosing-function ATTRIBUTION works, not merely the count;
+- CONTROL: the shipped per-function file `test_t8_allomorph_feature_sync.py`
+  under the IDENTICAL mutation -> **21 passed, 6 deselected, fully GREEN.**
+
+So the coverage gap the archivist found is real and the new test genuinely
+closes it. Restored via `git checkout --` INSIDE the worktree; post-restore hash
+`6a0c6e94fdba934b38fdeea1bdf01a9eb8a0ab7d` == committed blob; worktree removed;
+`git worktree list` main-only; `git worktree prune -v` silent.
+
+The mutation is also the REALISTIC threat shape, not a contrived one: `GetForm`'s
+resolved local is ALREADY named `allomorph` (`:853`), so the intruding probe is
+a genuine one-line addition needing no rename. The test's self-disclosed
+residual limitation -- defeated only by renaming the local in the same edit that
+adds the probe -- is accurate and acceptable.
+
+### RULING 3 -- cycle-16 ruling 3's prose is CORRECTED (bottom line survives)
+
+The archivist is right and the lead's own earlier wording was imprecise.
+Cycle-16 ruling 3 said the shipped AST test "allowlists `slot=` literals and
+merely checks that hasattr's second argument is a string literal". That
+describes a DIFFERENT assertion
+(`test_no_non_none_slot_literal_anywhere_in_feature_struct_calls`, `:267`) plus
+the `_hasattr_second_args` helper's internal precondition -- not the allowlist
+test's actual gate, which does properly allowlist
+`{Form, IsAbstract, MorphTypeRA}` within `GetSyncableProperties`. Ruling 3's
+BOTTOM LINE -- "it does NOT pin *these three are the only gates*" -- is
+CONFIRMED, but for a narrower and more precise reason: coverage was enumerated
+by FUNCTION NAME (5 named functions), not by identity of the resolved object, so
+any of the **9** other `__GetAllomorphObject` call sites (`GetForm`, `SetForm`,
+`SetFormAudio`, `GetFormAudio`, `GetMorphType`, `SetMorphType`, `GetPhoneEnv`,
+`AddPhoneEnv`, `RemovePhoneEnv`) could gain a probe silently. That is now closed
+module-wide.
+
+### Checkpoint 5 -- the five legs, and the verdict
+
+| Leg | Condition | Verdict |
+|---|---|---|
+| LEG 1 | P4's unmeasured HVO half | **PASS** -- falsifier built, durably committed, flips under M-G1 |
+| LEG 2 | condition 3, surviving hasattr gates | **PASS** -- measured live; module-wide allowlist test shipped and lead-verified non-tautological |
+| LEG 3 | condition 9, independence | **PASS** (P1 doc fix) -- independent agent, from-scratch worktrees, both mutations reproduced and killed, hashes verified |
+| LEG 4 | condition 10, moved baseline | **PASS** -- lead re-derived 439/2/526 first-hand |
+| LEG 5 | condition 8, evidence durability | **PASS-WITH-QUALIFIER** -- exactly as predicted |
+
+Conditions 3, 8, 9, 10 and P4's HVO half were the four open items at cycle-16
+close. **All four are discharged. CHECKPOINT 5 IS CLOSED.**
+
+Note for condition 8 going forward: cycle-17's OWN evidence file carries TWO
+FULL VERBATIM `live_status.json` blocks, so the cycle-15 ephemerality rule is
+satisfied in the LITERAL sense for cycle-17 measurements. The qualifier attaches
+only to the cycle-16 artifact and is not retroactively upgraded.
+
+### Outstanding items -- one P1 (now FIXED) and two P2 cosmetics. None blocking.
+
+- **P1 (FIXED this cycle):** G3's test-name mapping. Corrected via the appended
+  POST-HOC ERRATUM in `evidence/live-cycle17-gate-predictions.md`, covering BOTH
+  symptoms (the gate had disclosed only one). Also corrected there: the "six T8
+  commits" premise -- `git rev-list --count 09fcbf8..e7f1048` = **8**.
+  `cf2fdfe` IS chronologically first, so the provenance claim holds.
+- **P2 (logged, deliberately NOT fixed):** in
+  `test_t8_allomorph_hasattr_allowlist.py`,
+  `test_seven_total_hasattr_calls_not_asserted_as_a_gate` is named and
+  docstringed "informational / not a gate", but it is a plain `assert total == 7`
+  and WILL go red on any unrelated `hasattr` edit in `Delete`/`Duplicate`. It is
+  a gate in fact whatever its name says. Defensible as a loud tripwire (which is
+  the docstring's stated intent), but the NAME misdescribes it. Cosmetic.
+- **P2 (still deferred, correctly):** the `IMoForm` imported-unused cosmetic at
+  `AllomorphOperations.py:23`. Pre-existing at `09fcbf8`, not a T8 regression.
+
+### BOOKKEEPING CORRECTION -- the parked-decision list had a STALE entry
+
+`user_decisions_outstanding[1]` ("the D4-T6 comment on #250 is UNPOSTED and
+needs the user") is **STALE**. Three independent records contradict it: the
+cycle-8 lead ruling (the user DELEGATED that specific decision), the recorded
+comment ID `issues/250#issuecomment-5576611010`, and this file's own cycle-8
+section headed "## #250 -- the D4-T6 comment is POSTED". Marked RESOLVED-STALE.
+
+To be unambiguous about what that is and is not: this is **deleting a duplicate
+record of an already-executed, already-user-delegated action from cycle 8**. It
+is NOT the lead resolving a pending user decision, and NO GitHub action was
+taken to establish it -- the determination rests entirely on committed repo
+records. If the user's recollection differs, restore the entry.
+
+### Next pickup -- NOTHING THE CREW CAN DO. Four authorisations, then this feature is done.
+
+All crew-executable work in this feature is COMPLETE. Checkpoints 1-5 are all
+closed. The three remaining items each require the user's word, and the crew has
+correctly taken zero GitHub action on all of them:
+
+1. **AUTHORISE (or edit) the #252 closure comment.** Draft READY at
+   `reviews/cycle14-issue252-closure-draft.md`. #252 is OPEN with zero comments;
+   `4e9d152`'s "closes #252" trailer never fired (direct-to-main, no PR).
+2. **APPROVE FILING (or decline) ONE CONSOLIDATED "shared-resolver
+   live-coverage gap" issue** spanning BOTH `POSOperations.__ResolveObject`
+   (9 of 16 sites without live coverage, 7 with none) AND
+   `AllomorphOperations.__GetAllomorphObject` (7 of 11 with none). Amended at
+   cycle 16 (ruling 6) to ONE issue, not two. Third instance of one shape.
+3. **DECIDE T8's issue, retrospectively.** T8 has LANDED unfiled. File
+   after-the-fact, or close it out as spec-only.
+
+Also still open and needing separate authorisation: **#251 closure** (fixed on
+the merits and closeable since cycle 12; the cycle-8 delegation was specific to
+the #250 comment and does not generalise to closing issues).
+
+---
+
+
+## Where things stand (as of 2026-09-08, spurt 13 / cycle 16 end) *(SUPERSEDED by the cycle-17 section above -- Checkpoint 5 is now CLOSED)*
 
 **T8 IS LANDED. CHECKPOINT 5 IS OPEN** -- it does NOT close this cycle. T8
 (AllomorphOperations `MsEnvFeaturesOA` capture/apply + two pre-existing
-HVO-path defects) shipped in six commits on `main`: `cf2fdfe` (predictions,
+HVO-path defects) shipped in SEVEN commits on `main` (the range
+`09fcbf8..e7f1048` holds EIGHT, the eighth being `e7f1048`, the cycle-16
+ruling commit itself -- corrected at cycle 17; "six" was wrong):
+`cf2fdfe` (predictions,
 FIRST, before any run), `df37e35` (production), `016a97a` (tests, 21 offline
 + 6 live), `bd98c6b` (live evidence + mutation testing), `191556f`
 (CHANGELOG), `6484d81` (programmer report), plus `fdd8694` (archivist
@@ -120,7 +380,7 @@ would fragment it. Outstanding decision 3 is AMENDED to one consolidated
 "shared-resolver live-coverage gap" proposal spanning both classes. Still needs
 the USER; no GitHub action taken.
 
-### Next pickup
+### Next pickup *(DONE -- cycle 17 ran and PASSED; see the cycle-17 section above)*
 
 **Cycle 17 = the INDEPENDENT Checkpoint 5 verification gate**, five legs, run by
 a different agent than the implementer (the Checkpoint 3a/3b/4 standard -- the
@@ -129,7 +389,7 @@ in `.crew-handoff.json` under `next_checkpoint`.
 
 ---
 
-## HISTORICAL LOG (everything below predates cycle 16)
+## HISTORICAL LOG (everything below predates cycle 17)
 
 ## Where things stand (as of 2026-09-07, spurt 5 / cycle 6 end)
 
