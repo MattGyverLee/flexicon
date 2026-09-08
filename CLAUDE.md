@@ -95,14 +95,47 @@ flexlibs2/
 ## Git Conventions
 
 ### Branches
-- `main` - Production-ready code
-- `master` - Current development (default branch)
+- `main` - production-ready code, **and the repository's default branch**
 - Feature branches should reference issues when applicable
 
 ### Commits
 - Keep commits focused and logical
 - Reference relevant changes and fixes
 - Include `Co-Authored-By:` footer when appropriate
+
+#### NEVER write close/fix/resolve immediately before an issue number
+unless you actually intend GitHub to close that issue.
+
+`closes #N` is the intended convention when a commit genuinely resolves an
+issue, and is used that way in 100+ commits on `main`. The hazard is using
+one of those verbs in **prose about** an issue. GitHub does not read your
+intent, and a possessive or descriptive phrasing still fires:
+
+```
+BAD:   test(243): pin the fail-open branch; close #243's crew review (T9)
+       -> GitHub parsed "close #243" and CLOSED issue #243, against an
+          explicit ruling that it stay open. This really happened
+          (commit b0e3d14); see specs/242-paragraph-whitespace/spec.md
+          section 6 and evidence/n7-issue-state.md.
+BAD:   fix(x): Fixes #242's P8 anomaly
+GOOD:  test(243): pin the fail-open branch; close the crew review for #243
+GOOD:  fix(x): fix the P8 anomaly reported in #242
+```
+
+The keyword fires only when the commit reaches the default branch, so it
+can lie dormant on a feature branch and trigger on merge. If a crew or
+campaign record says an issue is to be left open, that is binding: phrase
+around the verb.
+
+#### Confirm which repo `gh` is talking to before trusting an issue result
+
+This repo has two remotes -- `origin` (`MattGyverLee/flexicon`) and
+`upstream` (`cdfarrow/flexlibs`, the fork parent). With no default set,
+`gh` prefers `upstream`, whose issue numbering tops out near #17, so every
+issue this project cites returns "Could not resolve to an issue" -- which
+reads exactly like "the issue does not exist." Run
+`gh repo set-default MattGyverLee/flexicon` on a fresh checkout, or pass
+`--repo` explicitly.
 
 ### Before Committing
 - Verify code follows project style
@@ -302,7 +335,37 @@ if rule.ClassName == 'PhRegularRule':
     print(concrete.RightHandSidesOS)
 ```
 
-#### 5. Warn on Type Mismatch, Don't Block
+#### 5. Don't Add a Flag for Behaviour That Should Be Unconditional
+
+**The caller-managed-flag anti-pattern:** do not add a keyword argument
+that makes the caller opt in to *correct* behaviour, when the rest of the
+library already provides that behaviour for free.
+
+```python
+# Avoid: correctness becomes the caller's problem, and the sites that
+# needed fixing get to stay wrong by default.
+def SetText(self, para, content, preserve_whitespace=False): ...
+
+# Good: fix the behaviour unconditionally.
+def SetText(self, para, content): ...   # always preserves the payload
+```
+
+The test is whether a house convention already exists. If most of the
+library already does the right thing and a handful of sites do not, those
+sites are **outliers to be conformed**, and a flag merely licenses them to
+stay outliers. `specs/242-paragraph-whitespace/spec.md` C8 rejected a
+`preserve_whitespace=` kwarg on exactly this ground: 82 sibling writer
+sites already persisted the caller's value unmodified while only 12 did
+not.
+
+This does **not** forbid every behavioural keyword. A flag is legitimate
+when correct behaviour is genuinely call-site-dependent -- for example
+`normalize_match_key(text, casefold=...)`
+(`flexicon/code/Shared/string_utils.py:50`), where case sensitivity really
+does differ per lookup and both branches are exercised in earnest. The
+anti-pattern is specifically a flag whose `False` default preserves a bug.
+
+#### 6. Warn on Type Mismatch, Don't Block
 ```python
 # Good: Warn user, show consequences, let them decide
 result = phonRuleOps.MergeObject(rule1, rule2)
