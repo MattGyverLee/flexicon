@@ -718,7 +718,7 @@ class TestNaturalClassSyncEmptyFeatureStructPreservation:
         from flexicon.code.Grammar.NaturalClassOperations import (
             NaturalClassOperations,
         )
-        from flexlibs2.code.FLExProject import FP_ParameterError
+        from flexicon.code.FLExProject import FP_ParameterError
 
         fake_nc = _FakeBaseNaturalClass("PhNCSegments", "Stops")
         ops = NaturalClassOperations(_FakeProject())

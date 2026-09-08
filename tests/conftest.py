@@ -1389,7 +1389,7 @@ def target_project():
         _unavailable("Requires SIL.LCModel (FieldWorks installed)")
 
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception as exc:
         _unavailable(f"Could not import FLExProject: {exc}")
 
@@ -1448,7 +1448,7 @@ def target_sandbox():
         )
 
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception as exc:
         _unavailable(f"Could not import FLExProject: {exc}")
 

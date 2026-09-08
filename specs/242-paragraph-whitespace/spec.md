@@ -717,7 +717,7 @@ line. That is an exhaustive argument over the code, where the 9-row table
 is a sample. C12's claim is therefore RIGHT in substance and imprecise in
 its citation; this item fixes the citation.
 
-### C16 -- the live-evidence durability gap (cycle 5, 2026-09-08) -- OPEN
+### C16 -- the live-evidence durability gap (cycle 5) -- **DISCHARGED 2026-09-08 (cycle 6)**
 
 `tests/live_status.json`, which CLAUDE.md makes the machine-checkable
 anchor of every live-verification claim, **is gitignored
@@ -740,11 +740,28 @@ the opposite, and are recorded here as the substitute evidence:
 3. `reviews/cycle3-verification.md`'s independent pass reports having read
    the file's `by_test` map while it still existed.
 
-**Remedy (NOT performed -- blocked):** a future live run must paste the
-`run_mode` AND `run_timestamp` lines verbatim into its evidence file, or
-commit a redacted per-cycle snapshot. **This is blocked by C18** -- no live
-run is possible until the interpreter is restored. The two items compound,
-and C16 cannot be discharged before C18 is.
+**DISCHARGED, cycle 6, 2026-09-08.** C18's resolution (C19) restored the
+ability to run tests; a live run was then performed and its
+`run_mode`/`run_timestamp` pasted verbatim into
+`evidence/live-cycle6-c16-discharge.md`:
+
+```
+run_mode:        live
+run_timestamp:   2026-09-08T15:25:51Z
+```
+
+Command: `FLEXLIBS_REQUIRE_LIVE=1 python -m pytest
+tests/operations/test_issue242_whitespace_probe.py -m requires_live_project
+-q` -> **8 passed**. `target_sandbox` only; the real Target was never
+opened; no restore script run.
+
+**A stale path was found and is NOT fixed:** `tests/LIVE_TESTING.md:47`
+names the golden fixture on a `D:` drive that does not exist on this
+machine. The identical file (same name, same datestamp) was found at
+`C:\Github\GramTransackups\Target 2026-07-06 0218.fwbackup` and copied
+into the gitignored `tests/fixtures/`. The first live attempt failed loudly
+rather than skipping -- the fail-loud flag working as designed. Correcting
+that doc path is left for its owner.
 
 This is a gap in the project's evidence CONVENTION as applied here, not a
 defect in the #242 fix. See `reviews/cycle5-verification-swarm.md` N1.
@@ -953,9 +970,37 @@ different measurements.
 
 ## 6. Open questions raised at cycle 6 (2026-09-08)
 
-**Q4 -- The liblcm contract baseline is stale, by one genuine upstream
-removal.** `tests/contract/test_lcm_contract.py::TestLiveRegressionCheck::
-test_no_regressions_from_baseline` reports exactly one regression:
+**Q4 -- RESOLVED 2026-09-08: baseline regenerated, all three accepted
+deltas recorded.** Decision, full drift inventory, usage cross-check and
+before/after test output:
+[`evidence/q4-contract-baseline.md`](./evidence/q4-contract-baseline.md).
+
+The complete drift -- verified across *every* snapshot field, not just the
+`properties`/`methods` lists that `compare_snapshots()` diffs -- is exactly
+three items:
+
+| # | Kind | Item | Origin | Impact |
+|---|------|------|--------|--------|
+| 1 | method removed | `ILexEntryRepository.CorrectHomographNumbers(ILexEntry)` | upstream liblcm | none: zero callers, and `expected_contract.json`'s `type_usage["ILexEntryRepository"]` is `{}` |
+| 2 | type added | `IFsComplexValue` | flexicon-side contract growth | coverage gain: used at `BaseOperations.py:1891,1997`, `lcm_casting.py:401` |
+| 3 | type added | `IFsComplexValueFactory` | flexicon-side, commit `4aca74a` | coverage gain: used at `BaseOperations.py:2278,2337` |
+
+Zero changes to `constructors`, `interfaces`, `implements_idisposable`,
+`reflected_properties` or `member_checks` across all 255 shared types, so
+the offline shape assertions in `TestTransactionLayerContract` and
+`tests/test_b1t_action_handler_double.py` are untouched. Regenerated with
+the documented command (`python -m tests.contract.generate_lcm_snapshot -c
+tests/contract/snapshots/expected_contract.json -o
+tests/contract/snapshots/liblcm_baseline.json`); the metadata now honestly
+records liblcm `11.0.0.0` / `11.0.0-beta.161`, Python 3.14.5, 2026-09-08
+(a `_get_lcm_version()` bug that made every prior snapshot say `"unknown"`
+was fixed in the same pass). `tests/contract` went from **1 failed, 21
+passed** to **22 passed**.
+
+Original statement of the question, retained for the record:
+
+`tests/contract/test_lcm_contract.py::TestLiveRegressionCheck::
+test_no_regressions_from_baseline` reported exactly one regression:
 
 ```
 ILexEntryRepository.CorrectHomographNumbers() removed
@@ -978,10 +1023,21 @@ installed FieldWorks has evidently been updated since. `total_types_checked`
 also moved 255 -> 257, which is explained by `4aca74a` touching
 `tests/contract/snapshots/expected_contract.json`.
 
-**Not decided here, deliberately:** regenerating `liblcm_baseline.json`
-would accept ALL drift since August wholesale, and that snapshot is the
-regression tripwire -- absorbing it silently is exactly what it exists to
-prevent. A human should regenerate it as a deliberate, reviewed act.
+**Concern raised when the question was opened:** regenerating
+`liblcm_baseline.json` would accept ALL drift since August wholesale, and
+that snapshot is the regression tripwire -- absorbing it silently is exactly
+what it exists to prevent.
+
+**How that concern was discharged:** the drift was enumerated exhaustively
+first (three items, table above, including the deep-reflection fields the
+regression test does not diff), each item was cross-checked against actual
+usage in `flexicon/`, and the regeneration was then done with the project's
+documented command and recorded item-by-item. Nothing was absorbed
+silently. The alternative of xfail-ing the test was rejected as strictly
+worse: it would blind the tripwire to all *future* removals -- including
+ones with callers -- to tolerate one removal with none, and would leave the
+baseline permanently mis-describing the installed liblcm for the offline
+shape assertions that read it.
 
 **Q5 -- The rename left `flexlibs2` imports in the test tree, and one of
 them is deliberate.**

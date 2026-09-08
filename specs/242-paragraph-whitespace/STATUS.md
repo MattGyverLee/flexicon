@@ -205,21 +205,76 @@ were record or environment, none was substance.**
 has run twice, both green.** There is **no remaining implementation, test
 or verification work inside this feature.**
 
-What remains is not this feature's to close:
+**Everything technical is closed at cycle 6.** C16, C18, Q4, Q5 and N7 are
+all resolved. Offline suite: **1293 passed / 1 skipped / 483 deselected,
+ZERO failures**, run serially. Live probe: **8 passed**, `run_mode: live`.
 
-1. **C16 -- the live-evidence durability gap.** UNBLOCKED by C19, not yet
-   discharged. Discharge it on the next live run by pasting `run_mode` and
-   `run_timestamp` verbatim.
-2. **Q4 -- the liblcm contract baseline is stale**, by one genuine upstream
-   removal (`ILexEntryRepository.CorrectHomographNumbers()`, confirmed by
-   direct CLR reflection, **zero callers**). Regenerating the snapshot
-   absorbs all drift since 2026-08-13, so it wants a deliberate human act.
-3. **Q5 -- the alias ratchet fails on 9 leftover `flexlibs2` test
-   imports** from #241's rename. Unrelated to the interpreter. One of the
-   nine is DELIBERATE and needs an exemption or a move -- a policy call for
-   #241's owner.
-4. **N7 -- confirm #242's state on GitHub** and reopen if the `closes
-   #242` keyword closed it unintentionally.
+1. **C16 -- DISCHARGED 2026-09-08.** A live run was performed and its
+   anchor pasted verbatim per C16's own standard:
+   `run_mode: live`, `run_timestamp: 2026-09-08T15:25:51Z`, #242 probe
+   **8 passed**, `target_sandbox` only, real Target never opened. See
+   [`evidence/live-cycle6-c16-discharge.md`](./evidence/live-cycle6-c16-discharge.md).
+   The first attempt failed LOUDLY rather than skipping -- the fail-loud
+   flag working as designed -- because `tests/LIVE_TESTING.md:47` points
+   the golden fixture at a `D:` drive that does not exist here. The
+   identical file was found at
+   `C:\Github\GramTrans\backups\Target 2026-07-06 0218.fwbackup` and
+   copied into the gitignored `tests/fixtures/`. **Not a substitute** --
+   same filename and datestamp as the documented golden copy.
+2. **Q4 -- RESOLVED 2026-09-08.** The baseline was regenerated with the
+   documented generator command after the drift was enumerated
+   exhaustively: exactly three items (the one upstream removal
+   `ILexEntryRepository.CorrectHomographNumbers()`, **zero callers**, plus
+   two flexicon-side type additions `IFsComplexValue` /
+   `IFsComplexValueFactory` that *increase* tripwire coverage). No change
+   to any deep-reflection field on the 255 shared types. `tests/contract`:
+   1 failed / 21 passed -> **22 passed**. Full inventory, usage
+   cross-check and commands in
+   [`evidence/q4-contract-baseline.md`](./evidence/q4-contract-baseline.md).
+   It also fixed a latent bug that made **every** snapshot ever taken
+   record `liblcm_version: "unknown"` (`clr.ListAssemblies()` returns
+   short names under pythonnet 3.x); the install is liblcm
+   11.0.0-beta.161 / FieldWorks 9.3.9.
+3. **Q5 -- RESOLVED 2026-09-08.** All 9 sites re-verified in context: 8
+   incidental leftovers became `flexicon`; the 1 genuinely deliberate
+   alias test was **moved** to `tests/test_flexlibs2_alias_surface.py` and
+   that file allowlisted. Allowlisting `test_capabilities.py` wholesale was
+   rejected -- file-granular exemption would blind a 98-line write-path
+   file of which 10 lines concern the alias -- and so was an
+   `importlib.import_module` dodge, which would have passed the ratchet
+   while hiding a real runtime alias walk from it. A fix that makes the
+   ratchet pass by blinding it is worse than leaving it red. See
+   [`evidence/q5-alias-ratchet.md`](./evidence/q5-alias-ratchet.md).
+4. **N7 -- RESOLVED 2026-09-08, and it found something worse.** See
+   [`evidence/n7-issue-state.md`](./evidence/n7-issue-state.md).
+   #242 **is** closed (2026-09-07T19:25:16Z, `COMPLETED`, by `066bab0`).
+   The earlier "could not resolve" result was a wrong-repo artifact: with
+   two remotes and no `gh` default, bare `gh` was querying the fork parent
+   `cdfarrow/flexlibs`, whose numbering tops out near #17.
+   **`gh repo set-default MattGyverLee/flexicon` has been set.**
+   **#243 was auto-closed by the same push and has been REOPENED.**
+   `b0e3d14`'s subject `close #243's crew review (T9)` -- meaning close the
+   crew *review* -- was parsed by GitHub as `close #243`, directly against
+   #243's explicit ruling that it stay "deliberately left OPEN ... rather
+   than closing and depending on a follow-up being written", with its
+   `.fwdata` half (C10) still unfixed. A possessive or descriptive use of
+   close/fix/resolve + #N still fires; `608200c`'s `Fixes #242's` shows the
+   same shape.
+
+## THE ONE REMAINING ITEM IS A USER DECISION
+
+**#242's disposition.** It has been **left closed, deliberately.** The
+defect *as filed* is genuinely fixed and twice-verified, so `COMPLETED` is
+defensible for the issue as written. The risk is that the descoped
+residuals -- **Q-242A**, **Q-242B** (flagged Tier-1 silent data loss in its
+own right) and **Q-242C** -- are now tracked ONLY in the campaign
+`QUEUE.md`, which is precisely the "closing and depending on a follow-up
+being written" failure mode the #243 ruling warned against.
+
+Either **file those three as issues and leave #242 closed**, or **reopen
+#242 to carry them**. No agent filed anything: `QUEUE.md` records them as
+awaiting user approval, and creating public issues is not an agent's call.
+
 
 `feature_complete` was APPROVED at campaign level at cycle 4; this file
 does not set it and never did. Checkpoint 5 (the 8 sibling sites) remains
@@ -236,10 +291,15 @@ boundary, but the campaign record should be reconciled.
 - Derive every live count with `--collect-only -q -m requires_live_project`
   and paste it into the evidence file. "No tests collected" is a ZERO,
   never a pass.
-- Offline baseline is **1291 passed / 483 deselected** as of cycle 6
-  (`spec.md` C19). This **REPLACES the retired 1292 figure**. Two known
-  failures are named and diagnosed in `spec.md` section 6 (Q4, Q5) --
-  neither is a #242 regression. Never bare `pytest`.
+- Offline baseline is **1293 passed / 1 skipped / 483 deselected, ZERO
+  failures** as of cycle 6. This **REPLACES the retired 1292 and the
+  interim 1291**. Never bare `pytest`.
+- **Run live and contract tests SERIALLY.** Two agents initialising
+  FieldWorks/LCM concurrently produced a Windows access violation in
+  `FLExInit.py:64` that does NOT reproduce serially -- contention, not a
+  defect.
+- **Capture live evidence BEFORE any offline run.** Every offline pytest
+  run rewrites `tests/live_status.json` with `run_mode: mock`.
 - The C28 forward rule: a stated prediction is committed BEFORE the
   measuring run.
 - `tests/operations/test_issue242_whitespace_probe.py` already exists --

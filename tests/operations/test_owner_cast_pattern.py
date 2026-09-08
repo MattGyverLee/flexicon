@@ -68,7 +68,7 @@ def ngoreme_readonly():
     if "SIL.LCModel" not in sys.modules:
         pytest.skip("Requires SIL.LCModel (FieldWorks installed)")
     try:
-        from flexlibs2.code.FLExProject import FLExProject
+        from flexicon.code.FLExProject import FLExProject
     except Exception as exc:
         pytest.skip(f"Could not import FLExProject: {exc}")
 
@@ -627,7 +627,7 @@ class TestFeatureStructOwnerCastT1:
     def test_cast_to_concrete_resolves_all_nine_owner_classnames(
         self, ngoreme_readonly, capsys
     ):
-        from flexlibs2.code.lcm_casting import cast_to_concrete
+        from flexicon.code.lcm_casting import cast_to_concrete
         from SIL.LCModel import (
             IPhNCFeatures,
             IPhNCSegments,
