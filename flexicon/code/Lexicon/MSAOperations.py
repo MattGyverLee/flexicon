@@ -1122,10 +1122,21 @@ class MSAOperations(BaseOperations):
         subtype-only member were read directly -- this module avoids that
         specific failure mode by routing all subtype access through
         ``_ResolveFeatureStrucOwner`` (which casts internally regardless),
-        but the eager cast here still keeps this resolver symmetric with
-        the sibling ``__GetNaturalClassObject``/``__GetPhonemeObject``
-        C2 fix sites and gives every downstream caller a properly
+        so the eager cast here gives every downstream caller a properly
         concrete-typed object regardless of entry path.
+
+        CORRECTION (2026-09-08, cycle 2 of spec
+        260-environment-resolver-cast, task T5): this docstring previously
+        claimed ``Grammar/NaturalClassOperations.py``'s
+        ``__GetNaturalClassObject``/``__GetPhonemeObject`` were "sibling C2
+        fix sites" implying they already cast the way this resolver does.
+        They do NOT -- both are plain ``isinstance(x, int)`` HVO/object
+        resolvers with no ``ClassName`` cast at all (confirmed by reading
+        ``Grammar/NaturalClassOperations.py`` directly). That was a false
+        "already fixed" marker; do not rely on it. Those two resolvers are
+        part of the Class-A caller-usage re-triage tracked in
+        ``specs/260-environment-resolver-cast/STATUS.md`` and have not been
+        fixed as of this correction.
 
         Args:
             msa_or_hvo: An MSA object, a wrapper exposing one via
