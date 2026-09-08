@@ -36,16 +36,19 @@ and `MoInflAffMsa`/`InflFeatsOA`. `MoDerivAffMsa`'s two slots
 (`FromMsFeaturesOA` via `slot="From"`, `ToMsFeaturesOA` via `slot="To"`)
 are exercised through the resolver but NOT by this direct-cast pattern,
 and `MoUnclassifiedAffixMsa` has no feature-struct member to read at
-all. Every mutation run against this pattern in the T6b gate was
-KILLED; nothing was left NOT-KILLED. One previously un-run "reasoned
+all. Every mutation run against this
+direct-cast pattern in the T6b gate was KILLED. Scope that claim
+carefully: the six pre-existing live tests still do NOT kill the cast
+when it is removed -- `_ResolveFeatureStrucOwner` re-derives ClassName
+and re-casts independently, so they pass either way. That is precisely
+why T6b existed, and it remains true after it. One previously un-run "reasoned
 kill" claim was independently mutation-run by the gate this cycle and
 killed cleanly -- logged as an informational process note, not a
 coverage gap.
 
 **Why there's a T6b at all:** T6's own follow-up gate found the direct
-cast's advertised coverage was decorative rather than falsifiable; the
-claim was corrected and real mutation-resistant coverage was added in
-its place. Full findings:
+cast was unexercised and the summary overclaimed it; the claim was
+corrected and real mutation-resistant coverage was added in its place. Full findings:
 `specs/feature-structure-sync-gap/reviews/cycle12-verification-T6b-gate.md`
 (verdict: CHECKPOINT 3b: PASS).
 
