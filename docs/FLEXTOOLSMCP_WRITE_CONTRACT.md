@@ -315,6 +315,19 @@ independent verification agent):**
   through to `FLExLCM.OpenProject(projectName, ui)`. `ui=None` (the default,
   unchanged for backward compatibility) still constructs `FwLcmUI` — verified
   by monkeypatch test and by the verification agent reading `FLExLCM.py:98-99`.
+  **SUPERSEDED (issue #285, 2026-09-08): both claims in this bullet are
+  historical, not current.** `ui=None` now resolves to a bare
+  `HeadlessLcmUI()` — `FLExLCM.py:98-99` reads `ui = HeadlessLcmUI()`, not
+  `FwLcmUI(...)`; the historical `FwLcmUI` path is reachable only by passing
+  `ui=FwLcmUI(None, ThreadHelper())` explicitly. The monkeypatch test cited
+  above was inverted and renamed
+  (`tests/test_headless_lcm_ui.py::TestOpenProjectDefaultUi::
+  test_flexlcm_openproject_defaults_to_headlesslcmui`) and now asserts the
+  opposite of what this bullet says. Likewise the `undoable=False` shown in
+  the signature above is the *4.3.0* default quoted at the time this bullet
+  was written; the real default has been `undoable=True` since 4.4.0 (see
+  "DEF" in the task table below). See the CHANGELOG `[Unreleased]` #285 entry
+  for the current behaviour of both.
 - `flexicon/code/headless_ui.py::HeadlessLcmUI(ILcmUI)` — implements all 10
   methods and both properties of the real `ILcmUI` (cross-checked directly
   against `liblcm/src/SIL.LCModel/ILcmUI.cs` by the verification agent — the
