@@ -409,19 +409,63 @@ def cast_to_concrete(obj):
     """
     Cast an LCM object to its concrete interface type based on ClassName.
 
-    This function examines the object's ClassName property and casts it to
-    the appropriate derived interface type. If the ClassName is not in the
-    known mappings, the original object is returned unchanged.
+    **Public API.** Import it as::
+
+        from flexicon import cast_to_concrete
+
+    This is the supported remedy for the whole
+    ``'ICmObject' object has no attribute 'X'`` failure class. pythonnet
+    respects .NET interface typing strictly, so an element pulled out of a
+    collection typed as ``IEnumerable<ICmObject>`` (or any base interface)
+    exposes only the base interface's members, even when the underlying
+    object is a ``LexEntry`` with a ``HeadWord``. ``cast_to_concrete`` looks
+    up ``obj.ClassName`` and hands back a view typed as the concrete
+    interface, from which the derived members are reachable.
+
+    flexicon's own Operations classes cast internally, so most callers never
+    need this. It is exported as the **escape hatch** for two cases that stay
+    outside that coverage:
+
+    1. Direct-LCM work -- when you have reached past the wrapper API and are
+       holding raw LCM objects yourself.
+    2. Collections that are legitimately polymorphic, such as
+       ``ILexEntry.ComponentLexemesRS`` or ``ILexReference.TargetsRS``, whose
+       elements may each be either an ``ILexEntry`` or an ``ILexSense``.
+
+    Totality guarantee
+        This function is **total**: it never raises for an input it does not
+        recognise. An object whose ``ClassName`` is not in the mapping, an
+        object with no ``ClassName`` at all, and a cast that fails inside the
+        CLR all yield *the original object, unchanged*. That is precisely why
+        it is preferable to the hand-rolled ``ILexEntry(x)`` workaround, which
+        throws when ``x`` is legitimately an ``ILexSense`` -- exactly the case
+        a polymorphic collection guarantees you will hit. Because the result
+        may be the uncast original, guard derived-member access with
+        ``hasattr`` (or ``getattr(..., None)``) rather than assuming the cast
+        landed.
+
+        The corollary is that ``cast_to_concrete`` is not a validator: a
+        return value is never evidence that the object was of any particular
+        type. Check ``obj.ClassName`` if you need to know.
 
     Args:
         obj: An LCM object with a ClassName property (e.g., IMoMorphSynAnalysis,
-            IMoForm, or any ICmObject).
+            IMoForm, or any ICmObject). Any other object is returned as-is.
 
     Returns:
         The object cast to its concrete interface type, or the original object
         if the ClassName is not recognized or casting fails.
 
     Example::
+
+        from flexicon import cast_to_concrete
+
+        # A polymorphic collection: elements may be entries OR senses.
+        for component in entry.EntryRefsOS[0].ComponentLexemesRS:
+            concrete = cast_to_concrete(component)
+            headword = getattr(concrete, "HeadWord", None)   # entries only
+            if headword is not None:
+                print(headword.Text)
 
         # Iterate MSAs and access derived properties
         for msa in entry.MorphoSyntaxAnalysesOC:
@@ -446,9 +490,12 @@ def cast_to_concrete(obj):
 
     Notes:
         - Returns the original object if ClassName is not in the mapping
+        - Returns the original object if it has no ClassName attribute at all
         - Returns the original object if casting fails for any reason
         - Thread-safe for the interface loading (uses lazy initialization)
-        - The interface cache is loaded on first call
+        - The interface cache is loaded on first call, which is also the
+          first point at which SIL.LCModel is imported -- importing this
+          module (or ``flexicon`` itself) needs no FieldWorks install
     """
     _ensure_interfaces()
 

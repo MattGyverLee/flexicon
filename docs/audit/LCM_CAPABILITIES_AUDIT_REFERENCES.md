@@ -474,7 +474,10 @@ By category (unique class counts):
 - **Utility Classes:** 6 (`TsStringUtils`, `ReflectionHelper`, `ThreadHelper`, `LcmFileHelper`, `FwRegistryHelper`, `FwUtils`)
 - **UI/Infrastructure:** 10+ (`ProjectId`, `FwLcmUI`, `ChooseLangProjectDialog`, `ProgressDialogWithTask`, `FwDirectoryFinder`, `VersionInfoProvider`, `FwAppArgs`, etc.)
 - **Writing System Classes:** 2 (`Sldr`, `WritingSystemDefinition`)
-- **Casting/Helper Modules:** 3 (`lcm_casting.py`, `CastingOperations.py`, `PythonicWrapper.py`)
+- **Casting/Helper Modules:** 2 (`lcm_casting.py`, `PythonicWrapper.py`)
+  -- earlier revisions also listed `CastingOperations.py`, which does not
+  and never did exist; corrected under #271. The public casting entry point
+  is `from flexicon import cast_to_concrete`.
 
 Top 10 most-used classes (by file count):
 1. `ITsString` -- 87 files

@@ -251,9 +251,20 @@ The API must support both levels without forcing users to consciously manage the
 ### Key Design Rules
 
 #### 1. Hide Interface/ClassName/Casting Complexity
-- Users should NEVER see `IPhSegmentRule`, `ClassName`, or casting logic
-- `cast_to_concrete()` and `validate_merge_compatibility()` are for internal use only
-- Objects returned from operations should work transparently across concrete types
+- Users should NEVER *have to* see `IPhSegmentRule`, `ClassName`, or casting
+  logic in the normal course of using an Operations class -- the Operations
+  classes cast internally (in `__ResolveObject` and in collection getters)
+  so that objects returned from operations work transparently across
+  concrete types
+- `validate_merge_compatibility()` is for internal use only
+- `cast_to_concrete()` is **public** (`from flexicon import cast_to_concrete`,
+  issue #271). It is the documented *escape hatch*, not the primary remedy:
+  reach for it when a caller has left the wrapper API and holds raw LCM
+  objects, or for collections that stay legitimately polymorphic (e.g.
+  `ComponentLexemesRS` / `TargetsRS`, which legally mix `ILexEntry` and
+  `ILexSense`). Being total -- an unrecognised `ClassName` returns the object
+  unchanged -- it is strictly safer than the `ILexEntry(x)` workaround users
+  otherwise land on, which throws on a legitimately-`ILexSense` element.
 
 #### 2. Maximize Functionality in Simple Queries
 ```python
@@ -373,13 +384,20 @@ class RuleCollection:
 
 ## Casting Architecture Standards
 
-### Casting is Implementation Detail
+### Casting is Mostly an Implementation Detail
 
-Users never see casting. Internal architecture uses:
+Users should not need to cast when going through an Operations class.
+The casting utilities are:
 
-- `cast_to_concrete()` - Convert base interface to concrete type (internal only)
+- `cast_to_concrete()` - Convert base interface to concrete type. **Public**
+  (`from flexicon import cast_to_concrete`, issue #271); used internally
+  throughout, and exported as the documented escape hatch for direct-LCM
+  work and legitimately-polymorphic collections. Total: an unrecognised
+  `ClassName`, a missing `ClassName`, or a failed CLR cast all return the
+  object unchanged, so guard derived-member access with `hasattr`.
 - `validate_merge_compatibility()` - Check if objects can merge safely
-- `clone_properties()` - Deep clone with automatic casting
+  (internal only)
+- `clone_properties()` - Deep clone with automatic casting (internal only)
 
 ### Cloning Always Uses clone_properties()
 
@@ -458,7 +476,10 @@ When implementing a collection for filtering and display:
 - `flexlibs2/code/FLExProject.py` - Main project interface
 - `flexlibs2/code/Shared/wrapper_base.py` - LCMObjectWrapper base class
 - `flexlibs2/code/Shared/smart_collection.py` - SmartCollection base class
-- `flexlibs2/code/lcm_casting.py` - Casting utilities (internal use only)
+- `flexlibs2/code/lcm_casting.py` - Casting utilities. `cast_to_concrete` is
+  exported from the package top level and is public (issue #271); the rest of
+  the module (`clone_properties`, `validate_merge_compatibility`, the
+  interface cache) is internal.
 
 ### Utilities & Documentation
 - `flexlibs2/code/Shared/string_utils.py` - Text normalization utilities
