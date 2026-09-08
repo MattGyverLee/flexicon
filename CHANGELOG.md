@@ -128,6 +128,46 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   exporting `LCMObjectWrapper` is deliberately left for a separate call.
 
 ### Changed
+- **BREAKING (behavioural): `OpenProject(..., ui=None)` now defaults to a
+  bare `HeadlessLcmUI()` instead of the WinForms `FwLcmUI`** (#285, the
+  remainder of the recommendation recorded in #238). `HeadlessLcmUI` is
+  exported at the package top level for the first time
+  (`from flexicon import HeadlessLcmUI`), the same object as
+  `flexicon.code.headless_ui.HeadlessLcmUI`, following the `cast_to_concrete`
+  export precedent from #271.
+
+  **The hazard this closes:** in a process with no WinForms message pump,
+  `FwLcmUI.ConflictingSave()` resolves to LCM's `RevertToSavedState()`
+  branch -- a conflicting save (routine once shared-mode access is in play)
+  either blocks the commit thread on an ownerless modal dialog or silently
+  discards the session's unsaved writes. #238 shipped `HeadlessLcmUI` as an
+  opt-in remedy but kept `FwLcmUI` as the default for backward compatibility;
+  every headless caller that had not read the `OpenProject` docstring still
+  got the unsafe default.
+
+  **New default behaviour:** `ui=None` now raises `FP_ConflictingSaveError`
+  on a conflicting save (`HeadlessLcmUI()`'s `raise_on_conflicting_save=True`
+  constructor default), never blocks, and never silently discards. This is a
+  disclosed behaviour change, not a bugfix footnote: **a caller who was
+  relying on the interactive dialog -- including any of its other nine
+  `ILcmUI` decision points, e.g. `OfferToRestore`'s restore prompt -- now
+  gets logging plus a non-destructive default answer instead, and a
+  conflicting save now raises where it previously blocked or reverted
+  silently.**
+
+  **Opt-out:** callers that genuinely want the historical WinForms dialogs
+  (interactive, FLEx-hosted processes) pass the old default explicitly:
+  ```python
+  from SIL.FieldWorks.FdoUi import FwLcmUI
+  from SIL.FieldWorks.Common.FwUtils import ThreadHelper
+  project.OpenProject("MyProject", writeEnabled=True,
+                       ui=FwLcmUI(None, ThreadHelper()))
+  ```
+  `SIL.LCModel.SilentLcmUI` remains explicitly rejected as an alternative
+  default: its `ConflictingSave()` returns `true` unconditionally, i.e.
+  silent total discard with no exception -- strictly worse than either the
+  old or new behaviour.
+
 - **BREAKING (behavioural): name-field writers across four Operations
   classes now persist the caller's original, unstripped name, and their
   three sibling comparison methods now strip whitespace on BOTH sides of
