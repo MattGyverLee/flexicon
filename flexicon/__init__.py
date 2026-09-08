@@ -303,3 +303,21 @@ from .code.PythonicWrapper import (
     p,
     PythonicWrapper,
 )
+
+# LCM casting escape hatch -- public since #271.
+#
+# `cast_to_concrete` is the supported remedy for the
+# `'ICmObject' object has no attribute 'X'` failure class. flexicon's own
+# Operations classes cast internally, so most callers never need it; it is
+# exported for direct-LCM work and for collections that stay legitimately
+# polymorphic (e.g. `ComponentLexemesRS`, which legally mixes ILexEntry and
+# ILexSense elements).
+#
+# Eager import is safe: lcm_casting imports only `logging` at module scope
+# and defers every `SIL.LCModel` import into a lazy `_ensure_interfaces()`
+# call made on first use, so `import flexicon` still works on a machine
+# with no FieldWorks installed. The module is already loaded transitively
+# by BaseOperations, so this adds no import cost.
+from .code.lcm_casting import (
+    cast_to_concrete,
+)

@@ -823,8 +823,10 @@ class DataNotebookOperations(BaseOperations):
         # Get the record types list from the project
         if hasattr(self.project.lp, "RecTypesOA"):
             rec_types_list = self.project.lp.RecTypesOA
+            # PossibilitiesOS is declared over ICmPossibility; cast
+            # elements so subtype surface is reachable (issue #270).
             if rec_types_list is not None:
-                return list(rec_types_list.PossibilitiesOS)
+                return self._GetTypedElements(rec_types_list.PossibilitiesOS)
 
         return []
 
@@ -2234,8 +2236,10 @@ class DataNotebookOperations(BaseOperations):
         # Get the status list from the project
         if hasattr(self.project.lp, "StatusOA"):
             status_list = self.project.lp.StatusOA
+            # PossibilitiesOS is declared over ICmPossibility; cast
+            # elements so subtype surface is reachable (issue #270).
             if status_list:
-                return list(status_list.PossibilitiesOS)
+                return self._GetTypedElements(status_list.PossibilitiesOS)
 
         return []
 

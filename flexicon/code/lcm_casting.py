@@ -402,6 +402,69 @@ def _ensure_interfaces() -> None:
     if IFsClosedValue is not None:
         _interface_cache["FsClosedValue"] = IFsClosedValue
 
+    # Possibility subtypes and discourse cell-part subtypes (issue #270).
+    #
+    # These are the element types of collections whose DECLARED element
+    # type is a base interface, so pythonnet hands the elements back as
+    # that base and every subtype-only property is invisible:
+    #
+    #   ICmPossibilityList.PossibilitiesOS  -> ICmPossibility  (55 props)
+    #   ICmPossibility.SubPossibilitiesOS   -> ICmPossibility
+    #   IConstChartRow.CellsOS              -> IConstituentChartCellPart
+    #
+    # The possibility subtypes registered here really do add surface over
+    # ICmPossibility (per tests/contract/snapshots/liblcm_baseline.json:
+    # IPartOfSpeech 74 props, ICmPerson 64, IMoMorphType 64,
+    # ICmAnnotationDefn 67, ICmSemanticDomain 60, ILexEntryType 57,
+    # ICmLocation 56), so a getter over a generic possibility list has to
+    # cast or those properties are unreachable. The four cell-part
+    # subtypes are what makes an `isinstance(cell, IConstChartTag)` filter
+    # over CellsOS work at all -- uncast it matches nothing and the filter
+    # silently yields an empty list.
+    #
+    # IPartOfSpeech / ICmAnthroItem / ICmPossibility are already
+    # registered above. ILexEntryInflType, ICmCustomItem, IChkTerm and
+    # IConstituentChartCellPart are deliberately NOT registered: they are
+    # absent from tests/contract/snapshots/expected_contract.json, so
+    # importing them here would trip
+    # test_no_new_type_dependencies without a baseline regeneration and a
+    # live contract re-verification.
+    try:
+        from SIL.LCModel import (
+            ICmSemanticDomain,
+            ICmLocation,
+            ICmPerson,
+            IMoMorphType,
+            ICmAnnotationDefn,
+            ILexEntryType,
+            IConstChartRow,
+            IConstChartTag,
+            IConstChartWordGroup,
+            IConstChartMovedTextMarker,
+            IConstChartClauseMarker,
+        )
+    except ImportError:
+        ICmSemanticDomain = ICmLocation = ICmPerson = None
+        IMoMorphType = ICmAnnotationDefn = ILexEntryType = None
+        IConstChartRow = IConstChartTag = IConstChartWordGroup = None
+        IConstChartMovedTextMarker = IConstChartClauseMarker = None
+
+    for _class_name, _iface in (
+        ("CmSemanticDomain", ICmSemanticDomain),
+        ("CmLocation", ICmLocation),
+        ("CmPerson", ICmPerson),
+        ("MoMorphType", IMoMorphType),
+        ("CmAnnotationDefn", ICmAnnotationDefn),
+        ("LexEntryType", ILexEntryType),
+        ("ConstChartRow", IConstChartRow),
+        ("ConstChartTag", IConstChartTag),
+        ("ConstChartWordGroup", IConstChartWordGroup),
+        ("ConstChartMovedTextMarker", IConstChartMovedTextMarker),
+        ("ConstChartClauseMarker", IConstChartClauseMarker),
+    ):
+        if _iface is not None:
+            _interface_cache[_class_name] = _iface
+
     _interfaces_loaded = True
 
 
@@ -409,19 +472,63 @@ def cast_to_concrete(obj):
     """
     Cast an LCM object to its concrete interface type based on ClassName.
 
-    This function examines the object's ClassName property and casts it to
-    the appropriate derived interface type. If the ClassName is not in the
-    known mappings, the original object is returned unchanged.
+    **Public API.** Import it as::
+
+        from flexicon import cast_to_concrete
+
+    This is the supported remedy for the whole
+    ``'ICmObject' object has no attribute 'X'`` failure class. pythonnet
+    respects .NET interface typing strictly, so an element pulled out of a
+    collection typed as ``IEnumerable<ICmObject>`` (or any base interface)
+    exposes only the base interface's members, even when the underlying
+    object is a ``LexEntry`` with a ``HeadWord``. ``cast_to_concrete`` looks
+    up ``obj.ClassName`` and hands back a view typed as the concrete
+    interface, from which the derived members are reachable.
+
+    flexicon's own Operations classes cast internally, so most callers never
+    need this. It is exported as the **escape hatch** for two cases that stay
+    outside that coverage:
+
+    1. Direct-LCM work -- when you have reached past the wrapper API and are
+       holding raw LCM objects yourself.
+    2. Collections that are legitimately polymorphic, such as
+       ``ILexEntry.ComponentLexemesRS`` or ``ILexReference.TargetsRS``, whose
+       elements may each be either an ``ILexEntry`` or an ``ILexSense``.
+
+    Totality guarantee
+        This function is **total**: it never raises for an input it does not
+        recognise. An object whose ``ClassName`` is not in the mapping, an
+        object with no ``ClassName`` at all, and a cast that fails inside the
+        CLR all yield *the original object, unchanged*. That is precisely why
+        it is preferable to the hand-rolled ``ILexEntry(x)`` workaround, which
+        throws when ``x`` is legitimately an ``ILexSense`` -- exactly the case
+        a polymorphic collection guarantees you will hit. Because the result
+        may be the uncast original, guard derived-member access with
+        ``hasattr`` (or ``getattr(..., None)``) rather than assuming the cast
+        landed.
+
+        The corollary is that ``cast_to_concrete`` is not a validator: a
+        return value is never evidence that the object was of any particular
+        type. Check ``obj.ClassName`` if you need to know.
 
     Args:
         obj: An LCM object with a ClassName property (e.g., IMoMorphSynAnalysis,
-            IMoForm, or any ICmObject).
+            IMoForm, or any ICmObject). Any other object is returned as-is.
 
     Returns:
         The object cast to its concrete interface type, or the original object
         if the ClassName is not recognized or casting fails.
 
     Example::
+
+        from flexicon import cast_to_concrete
+
+        # A polymorphic collection: elements may be entries OR senses.
+        for component in entry.EntryRefsOS[0].ComponentLexemesRS:
+            concrete = cast_to_concrete(component)
+            headword = getattr(concrete, "HeadWord", None)   # entries only
+            if headword is not None:
+                print(headword.Text)
 
         # Iterate MSAs and access derived properties
         for msa in entry.MorphoSyntaxAnalysesOC:
@@ -446,9 +553,12 @@ def cast_to_concrete(obj):
 
     Notes:
         - Returns the original object if ClassName is not in the mapping
+        - Returns the original object if it has no ClassName attribute at all
         - Returns the original object if casting fails for any reason
         - Thread-safe for the interface loading (uses lazy initialization)
-        - The interface cache is loaded on first call
+        - The interface cache is loaded on first call, which is also the
+          first point at which SIL.LCModel is imported -- importing this
+          module (or ``flexicon`` itself) needs no FieldWorks install
     """
     _ensure_interfaces()
 
@@ -469,6 +579,49 @@ def cast_to_concrete(obj):
     except Exception:
         # If casting fails for any reason, return original
         return obj
+
+
+def cast_all(collection):
+    """
+    Materialise `collection` as a list with every element cast to its
+    concrete LCM interface.
+
+    This is the collection-level counterpart to `cast_to_concrete()`, added
+    for issue #270: the Pattern A sweep cast `.Owner` return sites but left
+    every *collection* getter handing back raw base-interface elements, so
+    collection elements could not be round-tripped back into flexicon
+    methods (`isinstance(comp, ILexEntry)` was False for every element of
+    `GetComplexFormComponents()`, and `hasattr(item, "SubPossibilitiesOS")`
+    was False for elements of a possibility list).
+
+    Prefer `BaseOperations._GetTypedElements()` from inside an Operations
+    class -- it delegates here and saves each class importing this module.
+
+    Args:
+        collection: Any iterable of LCM objects (an `ILcmOwningSequence`,
+            `ILcmReferenceSequence`, a generator, or a plain list). None is
+            accepted and yields an empty list.
+
+    Returns:
+        list: A new list of the same length and order, each element passed
+            through `cast_to_concrete()`. Elements whose ClassName is not
+            registered come back unchanged, so the call is total and safe
+            over heterogeneous or non-LCM contents.
+
+    Notes:
+        - Deliberately NOT applied blanket-wise inside
+          `EnumerableWrapper._ensure_list()`. See issue #270 for the
+          reasoning: (1) most affected getters return plain Python lists
+          which `_needs_enumerable_wrap()` intentionally does not wrap, so
+          a wrapper-level cast would miss them; (2) it would add a
+          per-element ClassName lookup to every large `GetAll*` in the
+          library; and (3) it would silently change element identity for
+          `EnumerableWrapper.__contains__`/`==` callers that pass in an
+          uncast object.
+    """
+    if collection is None:
+        return []
+    return [cast_to_concrete(item) for item in collection]
 
 
 # MSA ClassName -> the property that holds its Part-of-Speech reference.

@@ -133,7 +133,14 @@ class PossibilityItemOperations(BaseOperations):
                 raise FP_ParameterError(
                     f"HVO {obj_or_hvo} does not refer to a valid {self._get_item_class_name()}"
                 )
-            return obj
+            # FLExProject.Object() hands back a bare ICmObject, on which
+            # `hasattr(obj, "SubPossibilitiesOS")` is False even for a real
+            # possibility. Subclass methods guard on exactly that hasattr
+            # (PublicationOperations.GetDivisions / GetSubPublications), so
+            # without this cast an HVO argument silently returned an empty
+            # list instead of the item's children (issue #270).
+            from ..lcm_casting import cast_to_concrete
+            return cast_to_concrete(obj)
         return obj_or_hvo
 
     # ========== CORE CRUD OPERATIONS ==========
@@ -154,7 +161,11 @@ class PossibilityItemOperations(BaseOperations):
         list_obj = self._get_list_object()
         if not list_obj:
             return []
-        return list(list_obj.PossibilitiesOS)
+        # PossibilitiesOS is declared over ICmPossibility. Subclasses of
+        # this base wrap arbitrary FLEx lists, so an element's real class
+        # may be any ICmPossibility subtype; cast so subtype-only surface
+        # is reachable and isinstance works (issue #270).
+        return self._GetTypedElements(list_obj.PossibilitiesOS)
 
     @OperationsMethod
     def Create(self, name, wsHandle=None):

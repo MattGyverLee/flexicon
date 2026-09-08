@@ -48,7 +48,11 @@ This audit reveals a **well-designed abstraction layer** that intentionally hide
 - **Total Import Statements:** 569
 - **Unique Classes/Interfaces Imported:** 233
 - **Operations Classes in API:** 60 (exposed via FLExProject properties)
-- **Helper Classes:** 7 (CastingOperations, PythonicWrapper, lcm_casting, etc.)
+- **Helper Classes:** 7 (PythonicWrapper, lcm_casting, etc.)
+  - Correction (#271): earlier revisions of this line listed a
+    `CastingOperations` helper. No such module or class has ever existed in
+    the tree; the casting entry point is `lcm_casting.cast_to_concrete`,
+    exported as `from flexicon import cast_to_concrete`.
 
 ### Distribution by Namespace
 

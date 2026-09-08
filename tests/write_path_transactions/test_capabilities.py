@@ -85,14 +85,7 @@ class TestCapabilities:
         assert caps == frozenset()
         assert "per-operation-uow" not in caps
 
-    def test_capabilities_reachable_through_the_flexlibs2_alias(self):
-        """`sys.modules["flexlibs2"]` is the flexicon module object itself, so
-        the alias must expose the same set -- FlexTools scripts on disk still
-        import under the old name."""
-        import warnings
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            import flexlibs2
-
-        assert flexlibs2.CAPABILITIES is flexicon.CAPABILITIES
+    # The `flexlibs2`-alias reachability test that used to live here moved to
+    # tests/test_flexlibs2_alias_surface.py. It has to import the deprecated
+    # alias executably, and that file -- not this one -- is the site the
+    # alias ratchet (tests/test_flexlibs2_alias_ratchet.py) exempts.

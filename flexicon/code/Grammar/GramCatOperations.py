@@ -369,12 +369,14 @@ class GramCatOperations(BaseOperations):
 
         cat = self.__ResolveObject(cat_or_hvo)
 
+        # SubPossibilitiesOS is declared over ICmPossibility; cast the
+        # elements so subtype surface is reachable (issue #270).
         if not recursive:
-            return list(cat.SubPossibilitiesOS)
+            return self._GetTypedElements(cat.SubPossibilitiesOS)
 
         result = []
         def walk(collection):
-            for child in collection:
+            for child in self._GetTypedElements(collection):
                 result.append(child)
                 if hasattr(child, "SubPossibilitiesOS") and child.SubPossibilitiesOS.Count > 0:
                     walk(child.SubPossibilitiesOS)

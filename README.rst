@@ -171,6 +171,46 @@ More domains coming in v2.3+
 **Migration Guide**: See `MIGRATION.md <MIGRATION.md>`_ for detailed
 examples comparing old and new API.
 
+Exported Helpers
+^^^^^^^^^^^^^^^^
+
+Alongside the Operations classes, ``flexicon`` exports a few small helpers
+for working with LCM objects directly.
+
+``wrap`` / ``unwrap`` / ``PythonicWrapper`` -- suffix-free property access.
+``wrap(obj).AlternateForms`` finds ``AlternateFormsOS`` for you, so you do
+not have to remember which of the ``OS`` / ``OC`` / ``OA`` / ``RS`` / ``RC``
+/ ``RA`` suffixes a given field carries. Note that ``wrap`` does **not**
+cast: it only searches suffix variants of a name on the object it is given.
+
+``cast_to_concrete`` -- the escape hatch for
+``'ICmObject' object has no attribute 'X'``:
+
+.. code-block:: python
+
+  from flexicon import cast_to_concrete
+
+  # ComponentLexemesRS legally mixes ILexEntry and ILexSense elements, so
+  # the CLR hands them back typed as the base interface and HeadWord is
+  # unreachable. cast_to_concrete repairs that.
+  for component in entry.EntryRefsOS[0].ComponentLexemesRS:
+      concrete = cast_to_concrete(component)
+      headword = getattr(concrete, "HeadWord", None)   # entries only
+      if headword is not None:
+          print(headword.Text)
+
+flexicon's own Operations classes cast internally, so you will rarely need
+this -- it is there for direct-LCM work and for collections that stay
+legitimately polymorphic.
+
+``cast_to_concrete`` is **total**: an object whose ``ClassName`` is not
+recognised, an object with no ``ClassName``, and a cast that fails inside
+the CLR all yield the *original object, unchanged*. That is why it is
+preferable to the ``from SIL.LCModel import ILexEntry; ILexEntry(x)``
+workaround, which throws the moment ``x`` is legitimately an ``ILexSense``.
+Because the result may be the uncast original, guard derived-member access
+with ``hasattr`` or ``getattr(..., None)`` as above.
+
 Contract Testing
 ^^^^^^^^^^^^^^^^
 

@@ -908,6 +908,37 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   `\"Genesis\"`?") that #242's own four filed sites never had to answer,
   because none of them has a name-uniqueness check. No work happens on
   this until the user rules on the dedup-identity question.
+
+  **UPDATE 2026-09-08 -- BLOCKER DISCHARGED, NOW FILED AS
+  [flexicon#274](https://github.com/MattGyverLee/flexicon/issues/274).**
+  The dedup-identity question is RULED: whitespace is NOT identity-bearing
+  for name fields (`"Genesis "` IS `"Genesis"`); case stays as each site
+  has it. Store verbatim, compare on a normalized key. Full frozen ruling
+  at `specs/name-field-whitespace-identity/spec.md` NF1-NF11, with
+  `tasks.md` alongside it.
+
+  The scope also GREW on investigation, and the question as filed above
+  rested on a false premise. The identity defect is **not** created by
+  preserving whitespace -- it is live today through the public API alone.
+  `normalize_match_key` strips the needle but never the haystack (10 of 40
+  comparison pairs), so: five `Create` methods persist raw names with no
+  uniqueness guard and are paired with such a lookup, meaning **this
+  library can create an object it can then never find by name**; and four
+  more strip before asking a guard that consults the same blind lookup,
+  so duplicate guards silently fail to fire. See `spec.md` NF2.
+
+  Implementation is unstarted and, per NF8, must begin by writing the
+  harness and measuring PN1-PN8 against the UNFIXED code -- those
+  predictions are still unmeasured and their harness does not exist.
+
+  **[MERGE NOTE, 2026-09-08 -- reconciling this entry.]** The RULING and
+  the **#274 filing above STAND.** The sentence "Implementation is
+  unstarted" does NOT: it was written on `origin/main` (PR #282), whose
+  branch point predated this campaign's implementation commits, so it was
+  true on that branch and is false on `main`. The bullet immediately below
+  is the accurate status. See `specs/name-field-whitespace-identity/spec.md`
+  Appendix A for the full reconciliation.
+
 - **AUTHORISED BY THE OWNER 2026-09-07 and MOVED to sub-item 2a
   (`specs/name-field-whitespace-identity/`), landed TOGETHER with Q-242A
   at the same expressions per that feature's `spec.md` C6 -- separate
@@ -936,6 +967,23 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   `_ValidateParam`, and persists an empty name with no exception (see
   `spec.md` C7). The exposure is strictly WIDER than the row states -- no
   type error on the caller's part is required to lose the entire payload.
+
+  **UPDATE 2026-09-08 -- APPROVED AND FILED AS
+  [flexicon#273](https://github.com/MattGyverLee/flexicon/issues/273)**,
+  separately from Q-242A and labelled `bug`, preserving the severity split.
+  Still UNMEASURED: this is predictions PN5/PN6 in
+  `specs/name-field-whitespace-identity/evidence/live-probe-cycle1.md`, and
+  the harness that would confirm them does not exist yet. The issue body
+  says so explicitly, so nobody treats a code-read finding as a measured
+  one.
+
+  **[MERGE NOTE, 2026-09-08 -- reconciling this entry.]** The **#273 filing
+  above STANDS.** Its "still UNMEASURED / the harness does not exist"
+  caveat does NOT: it was written on `origin/main` (PR #282) before this
+  campaign's cycle-1 live probe was visible there. PN5/PN6 WERE measured
+  live -- see the correction bullet immediately above and
+  `specs/name-field-whitespace-identity/evidence/live-probe-cycle1.md`.
+
 - **NEW (item 2, cycle 2, 2026-09-07) -- Q-242C: coerce-vs-reject for
   non-`str` payloads.** `BaseOperations._ValidateParam`
   (`BaseOperations.py:2377`) is a `None`-check plus a stale-LCM guard
@@ -946,6 +994,15 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   consultation before changing shared validation methods, so this is
   queued rather than implemented incidentally inside #242. No work
   happens on this until the user rules on it.
+
+  **UPDATE 2026-09-08 -- DELIBERATELY NOT FILED as a GitHub issue, and
+  still awaiting a ruling.** Q-242A and Q-242B were filed (#274, #273);
+  this one was held back on purpose. It is a **design decision, not a
+  defect** -- nothing is broken until someone rules on coerce-vs-reject --
+  and filing it as `bug` would misclassify it and invite exactly the
+  unilateral 12-site sweep that `spec.md` C11 declined. It stays here
+  until a ruling makes it actionable.
+
 - **Q-CHK1** -- `CheckOperations._GetCheckList()`
   (`flexicon/code/System/CheckOperations.py:1168-1179`) is a hardcoded stub
   that always returns `None`, forcing `_GetOrCreateCheckList()`
@@ -961,6 +1018,20 @@ surface is chosen: **store-vs-active** and **case/separator normalization**
   is a design question, not a typo fix. Found by this feature's cycle-1 probe;
   worked around at the test-instance level ONLY (see C9), zero `flexicon/`
   lines touched. UNAUTHORISED; no work until the user approves.
+
+  **[MERGE NOTE, 2026-09-08 -- Q-CHK1 IS NOW HALF-DISCHARGED by the
+  origin/main merge.]** Defect 1 (the `GetInstance`/`GetService` typo) was
+  FIXED by the incoming #272 work, independently of this campaign: the
+  call at `_GetOrCreateCheckList` now reads
+  `self.project.GetFactory(ICmPossibilityListFactory)`, and there is no
+  remaining `ServiceLocator.GetInstance` site in `CheckOperations.py`.
+  Defect 2 STANDS UNCHANGED and is still the blocker: `_GetCheckList()`
+  is still a hardcoded `return None` stub, so `_GetOrCreateCheckList()`
+  still takes its create-a-new-list branch every time, and the
+  unowned-list design question (what SHOULD `_GetCheckList` return, and
+  who owns the check list?) is untouched. The C9 test-instance workaround
+  therefore remains necessary. Still UNAUTHORISED; the remaining half is a
+  design decision, not a typo fix.
 - **Q-DISC1** -- `DiscourseOperations.CreateChart` is unreachable through its
   own public API, for two independent pre-existing defects, both confirmed by
   `git blame` to predate this feature: (1) `IConstChartFactory` NameError at

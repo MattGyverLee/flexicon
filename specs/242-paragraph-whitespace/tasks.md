@@ -1,13 +1,23 @@
 # TASKS -- 242-paragraph-whitespace
 
-Derived from `spec.md` sections 2-4 (C1-C11, R1-R3 [DISCHARGED], Q1-Q3).
+Derived from `spec.md` sections 2-4 (C1-C18, R1-R3 [DISCHARGED], Q1-Q3
+[all RESOLVED/DISCHARGED]).
 Issue: #242. Campaign: `tier1-silent-data-loss`, queue item 2 of 4.
 
-**R1/R2/R3 and the coercion question are now RULED (`spec.md` C8-C11,
-2026-09-07). NO BEHAVIOUR CHANGE UNDER `flexicon/code/` HAS BEEN MADE YET**
--- `git diff --stat -- flexicon/` is empty and independently re-confirmed
-(`evidence/live-probe-cycle1.md`) as of this pass. Checkpoint 3's code
-tasks (T1/T2) are now UNBLOCKED and may proceed with C8's exact fix shape;
+**CORRECTED 2026-09-08 (cycle-5 gate, `reviews/cycle5-verification-swarm.md`
+N5).** The paragraph that stood here read `NO BEHAVIOUR CHANGE UNDER
+flexicon/code/ HAS BEEN MADE YET -- git diff --stat -- flexicon/ is empty`.
+**That was false when it was committed** and is refuted ~160 lines below in
+this same file (T1 `DONE, cycle 2`, T2 DONE, T5 DONE) and by
+`STATUS.md`. It was written at Checkpoint 2, before the code landed, and
+never updated. It is corrected rather than deleted so the record shows the
+error and its repair.
+
+**Current truth:** R1/R2/R3 and the coercion question are RULED (`spec.md`
+C8-C11). **The behaviour change HAS landed** -- commits `066bab0` (the four
+sites, C8) and `608200c` (the AppendSentence join boundary, C12), with
+docstrings and CHANGELOG in `ed428f7` (C14). Checkpoint 3's code tasks
+proceeded with C8's exact fix shape;
 this mirrors `243-closeproject-save-guard/tasks.md`'s discipline of gating
 implementation tasks behind a named ruling rather than letting an
 implementer guess.
@@ -95,7 +105,7 @@ below this line may be started until `/lex-lead` rules on R1/R2/R3.**
 
 ---
 
-## Checkpoint 2 -- CP-RULING: `/lex-lead` decides fix shape, CHANGELOG classification, and the 8-sites scope (UNSTARTED)
+## Checkpoint 2 -- CP-RULING: `/lex-lead` decides fix shape, CHANGELOG classification, and the 8-sites scope (DONE -- C8/C9/C10/C11)
 
 Not a code task. `/lex-lead` reads `spec.md` sections 2-4 and rules on:
 
@@ -141,7 +151,7 @@ Update `STATUS.md` / `.crew-handoff.json`, commit, stop.
 
 ---
 
-## Checkpoint 3 -- Implement the direct fix at the four named sites (UNSTARTED, ruling landed per `spec.md` C8)
+## Checkpoint 3 -- Implement the direct fix at the four named sites (CLOSED, T1-T7 all DONE)
 
 Scope now matches C8's ruling exactly, not the provisional R1 recommendation
 it discharges. Binding shape at all four sites (C1's table):
@@ -299,3 +309,54 @@ C10 routed those 8 sites to `specs/tier1-silent-data-loss/QUEUE.md`
 feature, so there is no scope left for a checkpoint here -- see C10 for
 the full rationale. Do not re-add this checkpoint without a new ruling
 overturning C10 by number.
+
+---
+
+## Checkpoint 6 -- cycle-5 independent gate (CLOSED on substance, 2 items OPEN)
+
+Not a code checkpoint. Recorded 2026-09-08 by the five-verifier swarm gate;
+full report at `reviews/cycle5-verification-swarm.md`.
+
+**Verdict: GATE GREEN ON SUBSTANCE, needs_human ON ENVIRONMENT.** The
+second independent gate over this feature (the first,
+`reviews/cycle3-verification.md`, also returned GREEN). Fix shape, C12
+algorithm, routing, declines, deletions, C28 order and fixture safety all
+re-verified from scratch with no numbers taken from prior reports.
+
+- [x] T1 -- Record C14 (the `Create` docstring note) as a frozen contract
+      item. It had been cited in `ed428f7`'s message and at campaign level
+      but **never written into `spec.md`**; the work had landed, the record
+      had not.
+- [x] T2 -- Narrow C12's inertness characterisation as **C15**. 1 of the 4
+      `trail == 0` rows is a byte-for-byte cycle-2 regression check, not
+      4 of 4; the conclusion is now carried by an exhaustive code hand-diff
+      instead.
+- [x] T3 -- Correct this file's four stale/false statements (see the
+      CORRECTED note at the top).
+- [x] T4 -- Fix `AppendSentence`'s docstring summary, which still stated
+      the pre-C12 rule as current and contradicted its own `Note:`.
+      Pure-docs; no live verification required per CLAUDE.md.
+- [x] T5 -- Record C17 (C1's line-number drift; C9's `:431` -> `:500`).
+
+### OPEN -- not this feature's to close
+
+- [ ] **C18 -- restore a working test environment.** `needs_human`. The
+      only interpreter is Python 3.14.5; `requires-python` is `>=3.8,<3.14`
+      and `pythonnet` is pinned `<3.1`, which has no 3.14 wheel. The
+      offline suite cannot execute, so the **1292/483 baseline is neither
+      confirmed nor refuted** as of 2026-09-08 (last verified at cycle 3).
+      Requires either a 3.8-3.13 interpreter with
+      `pythonnet >=3.0.3,<3.1`, or a ruling on relaxing the pin -- an
+      API-surface decision, out of this feature's scope.
+- [ ] **C16 -- make the live-evidence claim durable.** BLOCKED BY C18.
+      `tests/live_status.json` is gitignored and was never committed, so
+      the `run_mode: live` claims cannot be re-derived. Remedy is a fresh
+      live run pasting `run_mode` + `run_timestamp` verbatim into the
+      evidence file. **Not evidence of a mock run** -- see C16 for the
+      three independent arguments that the runs were genuinely live.
+- [ ] **N7 -- confirm #242's state on GitHub.** `066bab0`'s body carries
+      the auto-close keyword `closes #242`, against the campaign record's
+      "files and closes nothing." `gh issue view 242` could not resolve the
+      issue from the cycle-5 session, so whether it is actually closed is
+      UNVERIFIED. A human should check and reopen if the closure was
+      unintended.

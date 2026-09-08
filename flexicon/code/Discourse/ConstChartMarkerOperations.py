@@ -179,7 +179,10 @@ class ConstChartMarkerOperations(BaseOperations):
             list[ICmPossibility]: All markers, or an empty list when
             the marker list is not yet initialised.
         """
-        return list(self.__WalkMarkers(self.__GetChartMarkers()))
+        # The walk descends PossibilitiesOS / SubPossibilitiesOS, both
+        # declared over ICmPossibility; cast the yielded markers so
+        # subtype surface is reachable (issue #270).
+        return self._GetTypedElements(self.__WalkMarkers(self.__GetChartMarkers()))
 
     # --- Marker Properties ---------------------------------------------
 

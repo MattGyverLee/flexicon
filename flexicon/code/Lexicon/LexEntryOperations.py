@@ -2434,21 +2434,57 @@ class LexEntryOperations(BaseOperations):
         """
         Resolve HVO or object to ILexEntry.
 
+        Both inputs are routed through ``cast_to_concrete`` (issue #269).
+        pythonnet only surfaces the attributes of an object's *static*
+        type, so an entry that arrives typed as ``ICmObject`` -- from a
+        polymorphic collection such as ``ComponentLexemesRS`` /
+        ``GetComplexFormComponents``, or from ``FLExProject.Object()``,
+        whose ``ServiceLocator.GetObject()`` is declared to return
+        ``ICmObject`` -- exposes no ``HeadWord``, ``LexemeFormOA`` or
+        ``SensesOS`` and does not satisfy ``isinstance(obj, ILexEntry)``
+        until it is explicitly downcast. See the same mechanism
+        documented at ``Lexicon/VariantOperations.py:690-694`` and
+        ``Lexicon/LexSenseOperations.py:2000-2003``.
+
+        ``cast_to_concrete`` is total: an unrecognised ``ClassName`` (or
+        a failed cast) yields the original object, so no call that works
+        today can be made worse by the cast.
+
         Args:
             entry_or_hvo: Either an ILexEntry object or an HVO (int)
 
         Returns:
-            ILexEntry: The resolved entry object
+            ILexEntry: The resolved entry object, cast to its concrete
+                interface where the ClassName is recognised
 
         Raises:
             FP_ParameterError: If HVO doesn't refer to a lexical entry
+                (``ComponentLexemesRS`` may legitimately hold an
+                ILexSense, and a sense's HVO must still be refused)
         """
+        from ..lcm_casting import cast_to_concrete
+
         if isinstance(entry_or_hvo, int):
-            obj = self.project.Object(entry_or_hvo)
-            if not isinstance(obj, ILexEntry):
+            obj = cast_to_concrete(self.project.Object(entry_or_hvo))
+            # The guard is the UNION of the two checks, never just the
+            # ClassName comparison. `isinstance` alone is the #269
+            # false negative (an ICmObject-typed view of a real entry
+            # fails it), but `ClassName == "LexEntry"` alone would be
+            # narrower than today's behaviour in two cases:
+            #   * a hypothetical LexEntry subclass, whose ClassName is
+            #     its own name and is absent from cast_to_concrete's
+            #     registry (lcm_casting.py:325 registers only
+            #     "LexEntry" -> ILexEntry), yet which still satisfies
+            #     isinstance(ILexEntry);
+            #   * an already-ILexEntry-typed object whose ClassName is
+            #     unavailable, where cast_to_concrete returns it
+            #     unchanged (lcm_casting.py's `hasattr` early-out).
+            # Keeping the isinstance leg makes this a strict widening.
+            if not (isinstance(obj, ILexEntry)
+                    or getattr(obj, "ClassName", None) == "LexEntry"):
                 raise FP_ParameterError("HVO does not refer to a lexical entry")
             return obj
-        return entry_or_hvo
+        return cast_to_concrete(entry_or_hvo)
 
     def __WSHandle(self, wsHandle):
         """
@@ -2742,8 +2778,17 @@ class LexEntryOperations(BaseOperations):
         complex_entry = self.__ResolveObject(complex_entry_or_hvo)
         component = self.__ResolveObject(component_or_hvo)
 
-        # Validate component is entry or sense
-        if not isinstance(component, (ILexEntry, ILexSense)):
+        # Validate component is entry or sense.
+        #
+        # Compare ClassName rather than using isinstance (issue #270): an
+        # LCM object that arrived as a base ICmObject -- which is what
+        # ComponentLexemesRS elements and HVO-resolved objects are -- fails
+        # `isinstance(obj, ILexEntry)` even when it really is an entry, so
+        # the isinstance form rejected exactly the objects
+        # GetComplexFormComponents() returns and made Get/Add
+        # non-composable. ClassName is declared on ICmObject itself, so it
+        # is readable whether or not the object has been cast.
+        if getattr(component, "ClassName", None) not in ("LexEntry", "LexSense"):
             raise FP_ParameterError("Component must be an ILexEntry or ILexSense")
 
         # Find or create complex form EntryRef
@@ -2756,7 +2801,7 @@ class LexEntryOperations(BaseOperations):
         with self._TransactionCM("Add complex form component"):
             if entry_ref is None:
                 # Create new LexEntryRef for complex form
-                factory = self.project.project.ServiceLocator.GetInstance(ILexEntryRefFactory)
+                factory = self.project.GetFactory(ILexEntryRefFactory)
                 entry_ref = factory.Create()
                 complex_entry.EntryRefsOS.Add(entry_ref)
                 entry_ref.RefType = LexEntryRefTags.krtComplexForm
@@ -2840,8 +2885,14 @@ class LexEntryOperations(BaseOperations):
             >>> idiom = project.LexEntry.Find("kick the bucket")
             >>> components = project.LexEntry.GetComplexFormComponents(idiom)
             >>> for comp in components:
-            ...     if isinstance(comp, ILexEntry):
+            ...     # Branch on ClassName, not isinstance: ComponentLexemesRS
+            ...     # is declared over ICmObject and mixes entries and
+            ...     # senses, and ClassName is the one discriminator that is
+            ...     # readable on either (issue #270).
+            ...     if comp.ClassName == "LexEntry":
             ...         print(project.LexEntry.GetHeadword(comp))
+            ...     elif comp.ClassName == "LexSense":
+            ...         print(project.Senses.GetGloss(comp))
 
         Notes:
             - Returns empty list if not a complex form
@@ -2858,7 +2909,12 @@ class LexEntryOperations(BaseOperations):
         # Find complex form EntryRef
         for entry_ref in complex_entry.EntryRefsOS:
             if entry_ref.RefType == LexEntryRefTags.krtComplexForm:
-                return list(entry_ref.ComponentLexemesRS)
+                # ComponentLexemesRS is declared over ICmObject and legally
+                # mixes entries and senses, so its elements arrive as bare
+                # ICmObject: no ILexEntry/ILexSense property is reachable
+                # and they cannot be fed back into any flexicon method.
+                # Cast each element to its concrete interface (issue #270).
+                return self._GetTypedElements(entry_ref.ComponentLexemesRS)
 
         return []
 

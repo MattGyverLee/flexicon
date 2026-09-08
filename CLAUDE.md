@@ -108,14 +108,47 @@ in everything you write.
 ## Git Conventions
 
 ### Branches
-- `main` - Production-ready code
-- `master` - Current development (default branch)
+- `main` - production-ready code, **and the repository's default branch**
 - Feature branches should reference issues when applicable
 
 ### Commits
 - Keep commits focused and logical
 - Reference relevant changes and fixes
 - Include `Co-Authored-By:` footer when appropriate
+
+#### NEVER write close/fix/resolve immediately before an issue number
+unless you actually intend GitHub to close that issue.
+
+`closes #N` is the intended convention when a commit genuinely resolves an
+issue, and is used that way in 100+ commits on `main`. The hazard is using
+one of those verbs in **prose about** an issue. GitHub does not read your
+intent, and a possessive or descriptive phrasing still fires:
+
+```
+BAD:   test(243): pin the fail-open branch; close #243's crew review (T9)
+       -> GitHub parsed "close #243" and CLOSED issue #243, against an
+          explicit ruling that it stay open. This really happened
+          (commit b0e3d14); see specs/242-paragraph-whitespace/spec.md
+          section 6 and evidence/n7-issue-state.md.
+BAD:   fix(x): Fixes #242's P8 anomaly
+GOOD:  test(243): pin the fail-open branch; close the crew review for #243
+GOOD:  fix(x): fix the P8 anomaly reported in #242
+```
+
+The keyword fires only when the commit reaches the default branch, so it
+can lie dormant on a feature branch and trigger on merge. If a crew or
+campaign record says an issue is to be left open, that is binding: phrase
+around the verb.
+
+#### Confirm which repo `gh` is talking to before trusting an issue result
+
+This repo has two remotes -- `origin` (`MattGyverLee/flexicon`) and
+`upstream` (`cdfarrow/flexlibs`, the fork parent). With no default set,
+`gh` prefers `upstream`, whose issue numbering tops out near #17, so every
+issue this project cites returns "Could not resolve to an issue" -- which
+reads exactly like "the issue does not exist." Run
+`gh repo set-default MattGyverLee/flexicon` on a fresh checkout, or pass
+`--repo` explicitly.
 
 ### Before Committing
 - Verify code follows project style
@@ -264,9 +297,20 @@ The API must support both levels without forcing users to consciously manage the
 ### Key Design Rules
 
 #### 1. Hide Interface/ClassName/Casting Complexity
-- Users should NEVER see `IPhSegmentRule`, `ClassName`, or casting logic
-- `cast_to_concrete()` and `validate_merge_compatibility()` are for internal use only
-- Objects returned from operations should work transparently across concrete types
+- Users should NEVER *have to* see `IPhSegmentRule`, `ClassName`, or casting
+  logic in the normal course of using an Operations class -- the Operations
+  classes cast internally (in `__ResolveObject` and in collection getters)
+  so that objects returned from operations work transparently across
+  concrete types
+- `validate_merge_compatibility()` is for internal use only
+- `cast_to_concrete()` is **public** (`from flexicon import cast_to_concrete`,
+  issue #271). It is the documented *escape hatch*, not the primary remedy:
+  reach for it when a caller has left the wrapper API and holds raw LCM
+  objects, or for collections that stay legitimately polymorphic (e.g.
+  `ComponentLexemesRS` / `TargetsRS`, which legally mix `ILexEntry` and
+  `ILexSense`). Being total -- an unrecognised `ClassName` returns the object
+  unchanged -- it is strictly safer than the `ILexEntry(x)` workaround users
+  otherwise land on, which throws on a legitimately-`ILexSense` element.
 
 #### 2. Maximize Functionality in Simple Queries
 ```python
@@ -304,7 +348,37 @@ if rule.ClassName == 'PhRegularRule':
     print(concrete.RightHandSidesOS)
 ```
 
-#### 5. Warn on Type Mismatch, Don't Block
+#### 5. Don't Add a Flag for Behaviour That Should Be Unconditional
+
+**The caller-managed-flag anti-pattern:** do not add a keyword argument
+that makes the caller opt in to *correct* behaviour, when the rest of the
+library already provides that behaviour for free.
+
+```python
+# Avoid: correctness becomes the caller's problem, and the sites that
+# needed fixing get to stay wrong by default.
+def SetText(self, para, content, preserve_whitespace=False): ...
+
+# Good: fix the behaviour unconditionally.
+def SetText(self, para, content): ...   # always preserves the payload
+```
+
+The test is whether a house convention already exists. If most of the
+library already does the right thing and a handful of sites do not, those
+sites are **outliers to be conformed**, and a flag merely licenses them to
+stay outliers. `specs/242-paragraph-whitespace/spec.md` C8 rejected a
+`preserve_whitespace=` kwarg on exactly this ground: 82 sibling writer
+sites already persisted the caller's value unmodified while only 12 did
+not.
+
+This does **not** forbid every behavioural keyword. A flag is legitimate
+when correct behaviour is genuinely call-site-dependent -- for example
+`normalize_match_key(text, casefold=...)`
+(`flexicon/code/Shared/string_utils.py:50`), where case sensitivity really
+does differ per lookup and both branches are exercised in earnest. The
+anti-pattern is specifically a flag whose `False` default preserves a bug.
+
+#### 6. Warn on Type Mismatch, Don't Block
 ```python
 # Good: Warn user, show consequences, let them decide
 result = phonRuleOps.MergeObject(rule1, rule2)
@@ -386,13 +460,20 @@ class RuleCollection:
 
 ## Casting Architecture Standards
 
-### Casting is Implementation Detail
+### Casting is Mostly an Implementation Detail
 
-Users never see casting. Internal architecture uses:
+Users should not need to cast when going through an Operations class.
+The casting utilities are:
 
-- `cast_to_concrete()` - Convert base interface to concrete type (internal only)
+- `cast_to_concrete()` - Convert base interface to concrete type. **Public**
+  (`from flexicon import cast_to_concrete`, issue #271); used internally
+  throughout, and exported as the documented escape hatch for direct-LCM
+  work and legitimately-polymorphic collections. Total: an unrecognised
+  `ClassName`, a missing `ClassName`, or a failed CLR cast all return the
+  object unchanged, so guard derived-member access with `hasattr`.
 - `validate_merge_compatibility()` - Check if objects can merge safely
-- `clone_properties()` - Deep clone with automatic casting
+  (internal only)
+- `clone_properties()` - Deep clone with automatic casting (internal only)
 
 ### Cloning Always Uses clone_properties()
 
@@ -471,7 +552,10 @@ When implementing a collection for filtering and display:
 - `flexicon/code/FLExProject.py` - Main project interface
 - `flexicon/code/Shared/wrapper_base.py` - LCMObjectWrapper base class
 - `flexicon/code/Shared/smart_collection.py` - SmartCollection base class
-- `flexicon/code/lcm_casting.py` - Casting utilities (internal use only)
+- `flexicon/code/lcm_casting.py` - Casting utilities. `cast_to_concrete` is
+  exported from the package top level and is public (issue #271); the rest of
+  the module (`clone_properties`, `validate_merge_compatibility`, the
+  interface cache) is internal.
 
 ### Utilities & Documentation
 - `flexicon/code/Shared/string_utils.py` - Text normalization utilities

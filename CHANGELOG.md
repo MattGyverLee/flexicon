@@ -94,6 +94,39 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   before and after the fix, plus a mutation-testing pass, in
   `specs/feature-structure-sync-gap/evidence/live-T8.md`.
 
+- **`cast_to_concrete` is now a public, top-level export** (#271):
+  `from flexicon import cast_to_concrete`. It was already the correct remedy
+  for the whole `'ICmObject' object has no attribute 'X'` failure class and
+  already shipped in the wheel, but it was documented as internal-only, so
+  consumers reached into the private `flexicon.code.lcm_casting` path,
+  re-implemented it with hardcoded `ILexEntry(...)` casts, or guessed at
+  public names that do not exist (`from flexicon import CastingOperations`
+  fails; there has never been a `CastingOperations` module -- two stale
+  audit documents that named one have been corrected). Also re-exported as
+  `flexicon.code.cast_to_concrete`; the long-standing
+  `flexicon.code.lcm_casting.cast_to_concrete` path is unchanged, and all
+  three are the same function object. Available under the deprecated
+  `flexlibs2` alias too, via the existing namespace shim.
+
+  The export is behaviour-neutral -- no code changed, only its
+  reachability and documentation. `import flexicon` still works with no
+  FieldWorks installed: `lcm_casting` imports only `logging` at module
+  scope and defers every `SIL.LCModel` import into a lazy
+  `_ensure_interfaces()` call made on first cast.
+
+  The documented contract is that the function is **total**: an
+  unrecognised `ClassName`, a missing `ClassName`, and a cast that fails
+  inside the CLR all return the *original object, unchanged*. That is what
+  makes it preferable to the `ILexEntry(x)` workaround users otherwise
+  land on, which throws when `x` is legitimately an `ILexSense` -- and
+  `ComponentLexemesRS` / `TargetsRS` legally mix the two. Guard
+  derived-member access with `hasattr` / `getattr(..., None)` accordingly.
+  Because flexicon's Operations classes cast internally, this is the
+  documented *escape hatch* for direct-LCM work and legitimately
+  polymorphic collections, not the primary remedy.
+  `validate_merge_compatibility` and `clone_properties` remain internal;
+  exporting `LCMObjectWrapper` is deliberately left for a separate call.
+
 ### Changed
 - **BREAKING (behavioural): name-field writers across four Operations
   classes now persist the caller's original, unstripped name, and their

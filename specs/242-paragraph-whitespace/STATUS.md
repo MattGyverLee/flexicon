@@ -1,19 +1,43 @@
 # STATUS -- 242-paragraph-whitespace (flexicon#242)
 
-**Campaign:** `tier1-silent-data-loss`, queue item 2 of 4 -- **`active`**
-(the campaign's `active` pointer advanced here at item 1's closure; see
-`specs/tier1-silent-data-loss/QUEUE.md`).
-**Last updated:** 2026-09-07, Checkpoint 3 CLOSED / Checkpoint 4 DECLINED
-(cycle 3).
+**Campaign:** `tier1-silent-data-loss`, queue item 2 of 4 -- **`done`**
+(the campaign record set item 2 `status: done` and `active_index: null` at
+cycle 4; see `specs/tier1-silent-data-loss/QUEUE.md`). This file previously
+read `active`, which was stale.
+**Last updated:** 2026-09-08, cycle 6 (environment restored; C18 resolved).
 **Status:** Checkpoints 1-3 DONE. Checkpoint 4 DECLINED (not deferred).
+Checkpoint 6 (the cycle-5 gate) CLOSED on substance with two items OPEN.
 `/lex-lead` has ruled on R1, R2, R3, the coercion question, the
 AppendSentence join-boundary defect, and the Checkpoint-4/Q2 corpus
 question -- see `spec.md` C8-C13. Behaviour change under `flexicon/code/`
-HAS now landed: the four named sites' direct fix (C8, cycle 2, commits
-`be42aaf`/`066bab0`) and the AppendSentence join-boundary fix (C12, cycle
-3, commits `a580f7b`/`608200c2`). Feature is pending only the cycle-3
-independent verification gate -- **do not mark this feature
-`feature_complete`**; that is `/lex-lead`'s call once the gate returns.
+HAS landed: the four named sites' direct fix (C8, cycle 2, commits
+`be42aaf`/`066bab0`), the AppendSentence join-boundary fix (C12, cycle 3,
+commits `a580f7b`/`608200c`), and the docstring/CHANGELOG work (C14, cycle
+4, commit `ed428f7`).
+
+**THE VERIFICATION GATE HAS RUN -- TWICE, BOTH GREEN.** This file
+previously said the feature was "pending only the cycle-3 independent
+verification gate." That was stale on two counts: the cycle-3 gate had
+already returned `GATE: GREEN` (`reviews/cycle3-verification.md`), and the
+campaign record had already recorded `feature_complete APPROVED by
+lex-lead` at cycle 4. A second, independent five-verifier gate ran at cycle
+5 and also returned green on substance
+(`reviews/cycle5-verification-swarm.md`).
+
+**C18 IS RESOLVED as of cycle 6, 2026-09-08** (`spec.md` C19). On the
+ruling "allow newer python", `pyproject.toml` was relaxed to
+`requires-python >=3.8,<3.15` and `pythonnet >= 3.0.3, <3.2`.
+`pythonnet 3.1.0` ships a real cp314 wheel, `import clr` succeeds, and the
+offline suite runs again: **1291 passed / 483 deselected, the new binding
+baseline** (1292 is retired -- five commits landed after `b0e3d14` where it
+was recorded). All four first-run failures were diagnosed to root cause and
+**none was caused by Python 3.14 or pythonnet 3.1**; two were repaired
+(C20), two remain as Q4/Q5.
+
+**`spec.md` C16 is now UNBLOCKED but NOT discharged** -- the `run_mode:
+live` claims still rest on a gitignored artifact that was never committed.
+No live test was run at cycle 6. The next live run must paste `run_mode`
+AND `run_timestamp` verbatim into its evidence file.
 
 > **THE CAMPAIGN IS NOT COMPLETE.** This is queue item 2 of 4. Item 1
 > (`243-closeproject-save-guard`, #243) is `done`. Items 3
@@ -144,15 +168,121 @@ vs. this pass's `Contents =` assignment lines) is a difference in
 convention, not a contradiction, and both are shown together in `spec.md`
 C1 so neither reading is lost. See `spec.md` section 5 for the full check.
 
+## Cycle 5 (2026-09-08) -- second independent gate, five verifiers
+
+`reviews/cycle5-verification-swarm.md`. Five adversarial verifiers, no
+numbers taken from prior reports: code conformance PASS, docs PASS, live
+evidence FAIL, regression FAIL, scope discipline FAIL. **All three FAILs
+were record or environment, none was substance.**
+
+- **Substance re-verified from scratch.** C8's shape at all four sites;
+  C12's four-case algorithm; C10's 8 sibling sites untouched and still
+  bug-shaped. C12's no-strip guarantee was upgraded from observed to
+  **structural**: `raw.rstrip()` occurs once inside `len(...)`, so its
+  string result is never bound and is unreachable, and every
+  `ReplaceTsString(n, n, ...)` is zero-width -- deletion at the join
+  boundary is not expressible in the code.
+- **Five record repairs landed** -- C14 written (it had been cited in
+  `ed428f7` and at campaign level but never written into `spec.md`), C15
+  narrowing C12's inertness citation, C17 recording line-number drift,
+  `tasks.md`'s four stale/false statements corrected, and
+  `AppendSentence`'s docstring summary fixed where it still stated the
+  pre-C12 rule as current.
+- **Two items OPEN** -- C18 (environment, `needs_human`) and C16 (live
+  evidence durability, blocked by C18).
+- **One item for a human to check** -- `066bab0`'s body carries `closes
+  #242`, against the campaign record's "files and closes nothing."
+  `gh issue view 242` could not resolve the issue from the cycle-5
+  session, so the issue's actual state is UNVERIFIED.
+- **Not remediated, recorded only** -- `ed428f7` breached two no-touch
+  constraints (it edited the campaign handoff and the queue's item-3/item-4
+  notes from inside a `docs(242)` commit). Bookkeeping only, no work
+  started on items 3 or 4, and not repairable without rewriting history.
+
 ## Next pickup
 
-**Checkpoints 1-3 are DONE; Checkpoint 4 is DECLINED (C13).** Nothing
-further is scheduled inside this feature except the **cycle-3
-independent verification gate** -- `/lex-lead`'s call, not made by this
-Archivist pass. Do not write `feature_complete` from this file; that
-status is `/lex-lead`'s to set once the gate returns green.
-Checkpoint 5 (the 8 sibling sites) remains DELETED -- C10 routed that
-scope to the campaign QUEUE.md, not to this feature.
+**All checkpoints are DONE, DECLINED or CLOSED, and the verification gate
+has run twice, both green.** There is **no remaining implementation, test
+or verification work inside this feature.**
+
+**Everything technical is closed at cycle 6.** C16, C18, Q4, Q5 and N7 are
+all resolved. Offline suite: **1293 passed / 1 skipped / 483 deselected,
+ZERO failures**, run serially. Live probe: **8 passed**, `run_mode: live`.
+
+1. **C16 -- DISCHARGED 2026-09-08.** A live run was performed and its
+   anchor pasted verbatim per C16's own standard:
+   `run_mode: live`, `run_timestamp: 2026-09-08T15:25:51Z`, #242 probe
+   **8 passed**, `target_sandbox` only, real Target never opened. See
+   [`evidence/live-cycle6-c16-discharge.md`](./evidence/live-cycle6-c16-discharge.md).
+   The first attempt failed LOUDLY rather than skipping -- the fail-loud
+   flag working as designed -- because `tests/LIVE_TESTING.md:47` points
+   the golden fixture at a `D:` drive that does not exist here. The
+   identical file was found at
+   `C:\Github\GramTrans\backups\Target 2026-07-06 0218.fwbackup` and
+   copied into the gitignored `tests/fixtures/`. **Not a substitute** --
+   same filename and datestamp as the documented golden copy.
+2. **Q4 -- RESOLVED 2026-09-08.** The baseline was regenerated with the
+   documented generator command after the drift was enumerated
+   exhaustively: exactly three items (the one upstream removal
+   `ILexEntryRepository.CorrectHomographNumbers()`, **zero callers**, plus
+   two flexicon-side type additions `IFsComplexValue` /
+   `IFsComplexValueFactory` that *increase* tripwire coverage). No change
+   to any deep-reflection field on the 255 shared types. `tests/contract`:
+   1 failed / 21 passed -> **22 passed**. Full inventory, usage
+   cross-check and commands in
+   [`evidence/q4-contract-baseline.md`](./evidence/q4-contract-baseline.md).
+   It also fixed a latent bug that made **every** snapshot ever taken
+   record `liblcm_version: "unknown"` (`clr.ListAssemblies()` returns
+   short names under pythonnet 3.x); the install is liblcm
+   11.0.0-beta.161 / FieldWorks 9.3.9.
+3. **Q5 -- RESOLVED 2026-09-08.** All 9 sites re-verified in context: 8
+   incidental leftovers became `flexicon`; the 1 genuinely deliberate
+   alias test was **moved** to `tests/test_flexlibs2_alias_surface.py` and
+   that file allowlisted. Allowlisting `test_capabilities.py` wholesale was
+   rejected -- file-granular exemption would blind a 98-line write-path
+   file of which 10 lines concern the alias -- and so was an
+   `importlib.import_module` dodge, which would have passed the ratchet
+   while hiding a real runtime alias walk from it. A fix that makes the
+   ratchet pass by blinding it is worse than leaving it red. See
+   [`evidence/q5-alias-ratchet.md`](./evidence/q5-alias-ratchet.md).
+4. **N7 -- RESOLVED 2026-09-08, and it found something worse.** See
+   [`evidence/n7-issue-state.md`](./evidence/n7-issue-state.md).
+   #242 **is** closed (2026-09-07T19:25:16Z, `COMPLETED`, by `066bab0`).
+   The earlier "could not resolve" result was a wrong-repo artifact: with
+   two remotes and no `gh` default, bare `gh` was querying the fork parent
+   `cdfarrow/flexlibs`, whose numbering tops out near #17.
+   **`gh repo set-default MattGyverLee/flexicon` has been set.**
+   **#243 was auto-closed by the same push and has been REOPENED.**
+   `b0e3d14`'s subject `close #243's crew review (T9)` -- meaning close the
+   crew *review* -- was parsed by GitHub as `close #243`, directly against
+   #243's explicit ruling that it stay "deliberately left OPEN ... rather
+   than closing and depending on a follow-up being written", with its
+   `.fwdata` half (C10) still unfixed. A possessive or descriptive use of
+   close/fix/resolve + #N still fires; `608200c`'s `Fixes #242's` shows the
+   same shape.
+
+## THE ONE REMAINING ITEM IS A USER DECISION
+
+**#242's disposition.** It has been **left closed, deliberately.** The
+defect *as filed* is genuinely fixed and twice-verified, so `COMPLETED` is
+defensible for the issue as written. The risk is that the descoped
+residuals -- **Q-242A**, **Q-242B** (flagged Tier-1 silent data loss in its
+own right) and **Q-242C** -- are now tracked ONLY in the campaign
+`QUEUE.md`, which is precisely the "closing and depending on a follow-up
+being written" failure mode the #243 ruling warned against.
+
+Either **file those three as issues and leave #242 closed**, or **reopen
+#242 to carry them**. No agent filed anything: `QUEUE.md` records them as
+awaiting user approval, and creating public issues is not an agent's call.
+
+
+`feature_complete` was APPROVED at campaign level at cycle 4; this file
+does not set it and never did. Checkpoint 5 (the 8 sibling sites) remains
+DELETED -- C10 routed that scope to the campaign QUEUE.md, not to this
+feature. Note that Q-242A's subject is now under active investigation at
+`specs/name-field-whitespace-identity/` while `QUEUE.md` still reads "No
+work happens on this until the user rules" -- outside this feature's
+boundary, but the campaign record should be reconciled.
 
 ## Hard constraints for any future spurt on this feature
 
@@ -161,7 +291,15 @@ scope to the campaign QUEUE.md, not to this feature.
 - Derive every live count with `--collect-only -q -m requires_live_project`
   and paste it into the evidence file. "No tests collected" is a ZERO,
   never a pass.
-- Offline baseline is **1292 passed** as of `b0e3d14`. Never bare `pytest`.
+- Offline baseline is **1293 passed / 1 skipped / 483 deselected, ZERO
+  failures** as of cycle 6. This **REPLACES the retired 1292 and the
+  interim 1291**. Never bare `pytest`.
+- **Run live and contract tests SERIALLY.** Two agents initialising
+  FieldWorks/LCM concurrently produced a Windows access violation in
+  `FLExInit.py:64` that does NOT reproduce serially -- contention, not a
+  defect.
+- **Capture live evidence BEFORE any offline run.** Every offline pytest
+  run rewrites `tests/live_status.json` with `run_mode: mock`.
 - The C28 forward rule: a stated prediction is committed BEFORE the
   measuring run.
 - `tests/operations/test_issue242_whitespace_probe.py` already exists --

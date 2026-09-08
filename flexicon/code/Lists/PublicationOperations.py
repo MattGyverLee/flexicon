@@ -159,12 +159,14 @@ class PublicationOperations(PossibilityItemOperations):
         if not list_obj:
             return []
 
+        # Cast elements: PossibilitiesOS is declared over ICmPossibility
+        # (issue #270).
         if not recursive:
-            return list(list_obj.PossibilitiesOS)
+            return self._GetTypedElements(list_obj.PossibilitiesOS)
 
         all_pubs = []
         def walk(collection):
-            for pub in collection:
+            for pub in self._GetTypedElements(collection):
                 all_pubs.append(pub)
                 if hasattr(pub, "SubPossibilitiesOS") and pub.SubPossibilitiesOS.Count > 0:
                     walk(pub.SubPossibilitiesOS)
@@ -621,9 +623,10 @@ class PublicationOperations(PossibilityItemOperations):
 
         publication = self._PossibilityItemOperations__ResolveObject(publication_or_hvo)
 
-        # Divisions are stored as sub-possibilities
+        # Divisions are stored as sub-possibilities. Elements are declared
+        # over ICmPossibility, so cast them (issue #270).
         if hasattr(publication, "SubPossibilitiesOS"):
-            return list(publication.SubPossibilitiesOS)
+            return self._GetTypedElements(publication.SubPossibilitiesOS)
 
         return []
 
@@ -829,11 +832,11 @@ class PublicationOperations(PossibilityItemOperations):
             return []
 
         if not recursive:
-            return list(publication.SubPossibilitiesOS)
+            return self._GetTypedElements(publication.SubPossibilitiesOS)
 
         result = []
         def walk(collection):
-            for child in collection:
+            for child in self._GetTypedElements(collection):
                 result.append(child)
                 if hasattr(child, "SubPossibilitiesOS") and child.SubPossibilitiesOS.Count > 0:
                     walk(child.SubPossibilitiesOS)

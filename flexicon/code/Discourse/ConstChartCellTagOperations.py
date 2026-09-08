@@ -130,11 +130,17 @@ class ConstChartCellTagOperations(BaseOperations):
         self._ValidateParam(column, "column")
         row = self.__ResolveRow(row_or_hvo)
         column_hvo = column.Hvo
+        # CellsOS is declared over IConstituentChartCellPart, so its
+        # elements fail isinstance(cell, IConstChartTag) even when they are
+        # tags -- the old filter matched nothing. Discriminate on ClassName
+        # and cast the match (issue #270).
+        from ..lcm_casting import cast_to_concrete
         for cell in row.CellsOS:
-            if not isinstance(cell, IConstChartTag):
+            if cell.ClassName != "ConstChartTag":
                 continue
-            if cell.ColumnRA is not None and cell.ColumnRA.Hvo == column_hvo:
-                return cell
+            tag = cast_to_concrete(cell)
+            if tag.ColumnRA is not None and tag.ColumnRA.Hvo == column_hvo:
+                return tag
         return None
 
     @wrap_enumerable
@@ -152,7 +158,13 @@ class ConstChartCellTagOperations(BaseOperations):
         """
         self._ValidateParam(row_or_hvo, "row_or_hvo")
         row = self.__ResolveRow(row_or_hvo)
-        return [c for c in row.CellsOS if isinstance(c, IConstChartTag)]
+        # isinstance() over CellsOS matched nothing because the elements
+        # arrive as the declared base IConstituentChartCellPart, so this
+        # returned an empty list for every row. Filter on ClassName, then
+        # cast so IConstChartTag surface is reachable (issue #270).
+        return self._GetTypedElements(
+            c for c in row.CellsOS if c.ClassName == "ConstChartTag"
+        )
 
     # --- Tag Properties ------------------------------------------------
 

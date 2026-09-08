@@ -556,10 +556,17 @@ class SegmentOperations(BaseOperations):
         Edits IStTxtPara.Contents first (firing AnalysisAdjuster on existing
         segments), then adds the new ISegment to SegmentsOS.
 
-        A sentence terminator ('. ') is automatically inserted before the new
-        text when the current paragraph Contents is non-empty and does not
-        already end with one of {. ! ?}. When the paragraph is empty, the
-        text is written directly.
+        A sentence terminator is automatically inserted before the new text
+        when the current paragraph Contents is non-empty and does not
+        already end with one of {. ! ?}. The test is applied to the last
+        NON-WHITESPACE character, and the terminator is anchored there, so
+        trailing whitespace in the existing Contents is preserved rather
+        than written over (#242 C12). What gets inserted depends on whether
+        that trailing whitespace is present: '. ' when it is absent (the
+        period supplies its own separating space), or '.' alone when it is
+        present (the existing whitespace already separates the sentences).
+        When the paragraph is empty, the text is written directly. See the
+        Note: below for the full invariant.
 
         Args:
             paragraph_or_hvo: The IStTxtPara object or HVO.

@@ -146,12 +146,18 @@ class VariantOperations(BaseOperations):
         if self.project.lp.LexDbOA.VariantEntryTypesOA is None:
             return
 
+        # VariantEntryTypesOA.PossibilitiesOS is declared over
+        # ICmPossibility but really holds LexEntryType (and
+        # LexEntryInflType) items, so ILexEntryType surface -- ReverseAbbr
+        # and friends -- is unreachable and isinstance(t, ILexEntryType)
+        # is False without a cast (issue #270).
+        from ..lcm_casting import cast_to_concrete
         for vtype in self.project.lp.LexDbOA.VariantEntryTypesOA.PossibilitiesOS:
-            yield vtype
+            yield cast_to_concrete(vtype)
             # Also yield any subtypes
             if vtype.SubPossibilitiesOS.Count > 0:
                 for subtype in vtype.SubPossibilitiesOS:
-                    yield subtype
+                    yield cast_to_concrete(subtype)
 
     @OperationsMethod
     def FindType(self, name):
@@ -892,11 +898,11 @@ class VariantOperations(BaseOperations):
 
         variant = self.__GetVariantObject(variant_or_hvo)
 
-        components = []
-        for comp_lex in variant.ComponentLexemesRS:
-            components.append(comp_lex)
-
-        return components
+        # ComponentLexemesRS is declared over ICmObject (it can hold
+        # entries or senses), so uncast elements expose no ILexEntry
+        # property and fail isinstance(ILexEntry). Cast each one so the
+        # documented ILexEntry contract actually holds (issue #270).
+        return self._GetTypedElements(variant.ComponentLexemesRS)
 
     @OperationsMethod
     def AddComponentLexeme(self, variant_or_hvo, entry_or_hvo):

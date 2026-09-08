@@ -813,9 +813,17 @@ class DiscourseOperations(BaseOperations):
         """
         row_obj = self.__GetRowObject(row_or_hvo)
 
-        # Get cells from the row
+        # Get cells from the row. Cast row_obj first: an object that
+        # arrived as a bare ICmObject answers False to
+        # hasattr(row_obj, "CellsOS") even when it is a real chart row,
+        # which silently returned an empty list. Cells themselves are
+        # declared over IConstituentChartCellPart, so cast them too --
+        # this method deliberately returns every cell-part subtype, and
+        # callers need each one's concrete surface (issue #270).
+        from ..lcm_casting import cast_to_concrete
+        row_obj = cast_to_concrete(row_obj)
         if hasattr(row_obj, "CellsOS"):
-            return list(row_obj.CellsOS)
+            return self._GetTypedElements(row_obj.CellsOS)
         return []
 
     @OperationsMethod

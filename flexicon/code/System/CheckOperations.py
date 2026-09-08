@@ -1231,7 +1231,7 @@ class CheckOperations(BaseOperations):
         from SIL.LCModel import ICmPossibilityListFactory
 
         with self._TransactionCM("Create consistency check list"):
-            factory = self.project.project.ServiceLocator.GetInstance(ICmPossibilityListFactory)
+            factory = self.project.GetFactory(ICmPossibilityListFactory)
             new_list = factory.Create()
 
             wsHandle = self.project.project.DefaultAnalWs

@@ -1223,12 +1223,15 @@ class AnthropologyOperations(BaseOperations, _LCMNativeCatalogImportMixin):
         if not hasattr(item, "SubPossibilitiesOS"):
             return []
 
+        # SubPossibilitiesOS is declared over ICmPossibility, so ICmAnthroItem
+        # surface is invisible on raw elements and they fail isinstance
+        # against ICmAnthroItem. Cast each one (issue #270).
         if not recursive:
-            return list(item.SubPossibilitiesOS)
+            return self._GetTypedElements(item.SubPossibilitiesOS)
 
         result = []
         def walk(collection):
-            for child in collection:
+            for child in self._GetTypedElements(collection):
                 result.append(child)
                 if hasattr(child, "SubPossibilitiesOS") and child.SubPossibilitiesOS.Count > 0:
                     walk(child.SubPossibilitiesOS)

@@ -874,7 +874,11 @@ class LexReferenceOperations(BaseOperations):
 
         lex_ref = self.__ResolveLexRef(lex_ref_or_hvo)
 
-        return list(lex_ref.TargetsRS)
+        # TargetsRS is declared over ICmObject and holds senses or
+        # entries; uncast elements expose neither interface's properties
+        # and cannot be passed back to Senses/LexEntry operations
+        # (issue #270).
+        return self._GetTypedElements(lex_ref.TargetsRS)
 
     @OperationsMethod
     def AddTarget(self, lex_ref_or_hvo, sense_or_entry):
