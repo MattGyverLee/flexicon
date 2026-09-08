@@ -426,6 +426,48 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   `Sldr.LanguageTags` before init surfaces as a bare
   `TypeError("Exception has been thrown by the target of an invocation.")`
   with the inner `InvalidOperationException` lost).
+- **Seven more name-keyed lookups now strip whitespace on BOTH sides of
+  the comparison, not just the search argument** (#274, Q-242A bucket-A
+  sites, `specs/name-field-whitespace-identity`). This extends the
+  comparison-symmetry fix already landed for `TextOperations.Exists`,
+  `AnthropologyOperations.Find`, and `CheckOperations.FindCheckType` (the
+  Q-242A `### Changed` entry above) to the remaining seven asymmetric
+  lookup sites the census (spec.md Appendix B NF1) found:
+  `SemanticDomainOperations.FindByName`, `AgentOperations.Find`,
+  `PossibilityListOperations.FindList`/`FindItem`,
+  `possibility_item_base.Find`, `LocationOperations.Find`, and
+  `FilterOperations.Find`.
+
+  Each previously stripped only the search NEEDLE
+  (`normalize_match_key(name.strip(), ...)`) while building the HAYSTACK
+  key straight from the raw stored name with no stripping, so an object
+  created through the library's own public `Create()` with a
+  trailing-space name (Location/Agent/etc. persist the caller's bytes
+  verbatim) could not be found by any needle -- the library could mint an
+  object it could then never look up by name (the "unreachable object"
+  half, spec.md Appendix B NF2). Both sides now apply
+  `normalize_match_key(x, casefold=...).strip()`, so a padded stored name
+  is found by a padded or unpadded needle. The per-site case-sensitivity
+  is unchanged (NF3): `FilterOperations.Find` stays `casefold=False`, the
+  rest `casefold=True`.
+
+  **This is a bug fix, not a breaking change:** no lookup that already
+  succeeded changes result; only previously-unreachable padded names
+  become findable, and no name is ever mutated. Per the owner's
+  2026-09-08 decision this was done as C4's proven INLINE both-sides strip
+  at each site, **not** by adding `.strip()` inside `normalize_match_key`
+  (the rejected NF5 central-strip plan) -- `Shared/string_utils.py` and
+  `BaseOperations.py` are untouched. The containment-match
+  `ScrDraftOperations.Find` is deliberately left asymmetric (NF5 condition
+  3: edge whitespace is a word-boundary anchor for a substring search).
+
+  Live-verified for `LocationOperations.Find` and `AgentOperations.Find`
+  (create a trailing-space name, find it with the unpadded needle,
+  re-read the stored value byte-identical from the LCM): `run_mode: live`,
+  `target_sandbox` only, `specs/name-field-whitespace-identity/evidence/
+  live-inline-fix.md`. The other five sites carry the byte-identical edit
+  and are pinned whitespace-insensitive by
+  `tests/test_normalize_match_key.py`.
 - **`BaseOperations._apply_props_loop` now resolves a case- or
   separator-divergent writing-system tag instead of silently dropping the
   alt** (issue #250, Defect 4). Every `ApplySyncableProperties`-style sync

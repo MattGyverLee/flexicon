@@ -394,6 +394,14 @@ trail and because `specs/tier1-silent-data-loss/QUEUE.md` points at it.
 Derived from `spec.md` NF1-NF11 (all FROZEN, 2026-09-08).
 Origin: Q-242A in `specs/tier1-silent-data-loss/QUEUE.md`.
 
+> **[EDITORIAL 2026-09-08]** The "BLOCKED on C18" statement below is
+> superseded: **C18 was RESOLVED the same day by C19**
+> (`specs/242-paragraph-whitespace/spec.md:828`) -- the pin was relaxed and
+> the offline suite executes again on pythonnet 3.1.0 / Python 3.14.5. The
+> verbatim text is preserved for the audit trail; Checkpoint 2 is now
+> unblocked and executable. Live verification remains mandatory per
+> CLAUDE.md before any result is reported clean.
+
 **Checkpoint 1 (the ruling) is DONE. Checkpoints 2-4 are BLOCKED on
 `specs/242-paragraph-whitespace/spec.md` C18** -- the environment cannot
 execute the live tests OR the offline suite, so nothing below can be
@@ -442,28 +450,74 @@ the C28 forward rule.
       PN1-PN8 and the NF2 halves empirically. **A refuted prediction is a
       successful cycle** -- the evidence file's refutation clause binds.
       Fill in its RESULTS section in a second commit.
-- [ ] T3 -- Add unit cases to `tests/test_normalize_match_key.py` for
+- [x] T3 -- Add unit cases to `tests/test_normalize_match_key.py` for
       `" x "`, `"   "` and `" *** "`. **None exist today in either
       direction** (`spec.md` NF7 H7), so the suite currently cannot catch
       this change failing. These land WITH the change, not after.
+      - **[ANNOTATION 2026-09-08]** DONE, but re-aimed at the C4 contract,
+        not NF5's. `TestNormalizeMatchKeyWhitespaceIdentity` now asserts the
+        helper does **NOT** strip (`normalize_match_key(" x ") == " x "`,
+        C4 fence) and that the INLINE both-sides pattern
+        `normalize_match_key(x, casefold=...).strip()` is
+        whitespace-insensitive (`" x "`->`"x"`, `"   "`->`""`). The four
+        earlier `xfail(strict=True)` cases that encoded the REJECTED
+        central-strip locus were replaced and now PASS. 15/15 in
+        `tests/test_normalize_match_key.py`.
 - [ ] T4 -- `normalize_match_key`: `text = normalize_text(text).strip(" \t\r\n")`,
       placed AFTER the null-marker check (NF5 condition 1, NF7 H4) and
       using the restricted character set (NF5 condition 2, NF7 H5).
+      - **[ANNOTATION 2026-09-08]** SUPERSEDED by the owner's 2026-09-08
+        decision to "Extend C4's inline fix." NF5's central strip inside
+        `normalize_match_key` is REJECTED for this work; the C4 fence
+        (`spec.md:250`) forbids editing `Shared/string_utils.py`. NOT DONE
+        and will not be done under this feature -- deliberately.
 - [ ] T5 -- Fence `ScrDraftOperations.Find` off the shared helper (NF5
       condition 3, NF7 H2). Containment is not equality. Comment it so a
       future reader does not "tidy" it back.
+      - **[ANNOTATION 2026-09-08]** MOOT under the C4-inline approach. The
+        fence existed only to keep the containment matcher away from a
+        central strip inside the helper; with the helper left untouched
+        (T4 superseded), there is no shared strip to fence off from.
+        `ScrDraftOperations.Find` was left entirely unmodified.
 - [ ] T6 -- Drop the now-redundant needle-only `.strip()` at all **10**
       bucket-A sites. **Use both greps** -- 7 are inline
       (`normalize_match_key(name.strip(), ...)`) and 3 are reassignment-style
       (`name = name.strip()` first); an inline-only pattern match silently
       misses three (`spec.md` NF11 item 3).
+      - **[ANNOTATION 2026-09-08]** DONE as an inline-CONVERT (not a drop),
+        at the **7** still-asymmetric bucket-A sites. Under C4-inline the
+        needle-only `.strip()` is not removed but MOVED to the KEY on BOTH
+        sides: `normalize_match_key(name, casefold=...).strip()` on needle
+        and haystack. The 3 reassignment-style sites are the already-fixed
+        Text/Anthropology/Check families (this shape landed at T2/T3/T4 of
+        the main plan above) and were not re-touched. Sites converted:
+        `SemanticDomainOperations.FindByName`, `AgentOperations.Find`,
+        `PossibilityListOperations.FindList`/`FindItem`,
+        `possibility_item_base.Find`, `LocationOperations.Find`,
+        `FilterOperations.Find` (casefold=False preserved). Evidence:
+        `evidence/live-inline-fix.md`.
 - [ ] T7 -- Add needle guards at the unguarded sites so a whitespace-only
       needle cannot degenerate into the promiscuous `""` key (NF5
       condition 4, NF7 H6): `PhonemeOperations.py:462` and `:929`,
       `PhonologicalRuleOperations.py:332`, `POSOperations.py:343`,
       `DataNotebookOperations.py:479`.
+      - **[ANNOTATION 2026-09-08]** NO-OP for the 7 sites in scope: all
+        seven already open with
+        `if not name or not name.strip(): return None`, so a whitespace-only
+        needle is already rejected before it reaches the key. The T7 list
+        above names DIFFERENT sites (Phoneme/PhonologicalRule/POS/
+        DataNotebook) that only mattered under NF5's central strip, where a
+        stripped-to-`""` key would have gone promiscuous; with the C4-inline
+        approach and the helper untouched, no new guard was added anywhere.
 - [ ] T8 -- Re-run the probe. The NF2 halves must now be fixed: uniqueness
       guards fire, created objects are findable.
+      - **[ANNOTATION 2026-09-08]** DONE for the unreachable-object half at
+        Location and Agent. Added PN21/PN22 to
+        `tests/operations/test_name_field_identity_probe.py`: create a
+        trailing-space name via the public `Create()`, find it with the
+        unpadded needle (previously unreachable), re-read the stored name
+        byte-identical from the LCM. 22/22 live, `run_mode: live`,
+        `run_timestamp 2026-09-08T21:03:31Z`, `target_sandbox` only.
 
 ### Checkpoint 3 -- The 8 filed writer sites (BLOCKED on C18)
 
@@ -499,10 +553,12 @@ the C28 forward rule.
 
 ### Open, NOT this feature's to close
 
-- [ ] **C18** (`specs/242-paragraph-whitespace/spec.md`) -- restore a
-      3.8-3.13 interpreter with `pythonnet >=3.0.3,<3.1`, or rule on
-      relaxing the pin. `needs_human`. **Everything above is blocked on
-      this.**
+- [x] **C18** (`specs/242-paragraph-whitespace/spec.md`) -- **RESOLVED
+      2026-09-08 by C19** (`spec.md:828`): the user ruled to relax the pin
+      (`requires-python <3.15`, `pythonnet <3.2`; verified on pythonnet
+      3.1.0 / Python 3.14.5, offline suite executing again). The Appendix B
+      Checkpoint 2-4 "BLOCKED on C18" gates are therefore CLEARED and
+      Q-242A (#274) is executable. `needs_human` discharged.
 - [ ] **NF7 H1** -- `strip_display_marker`'s ordering defect
       (`morph_type_utils.py:108-109`): a `" -suffix"` needle keeps its `-`
       marker. Pre-existing, NOT fixed by this feature (the marker strip

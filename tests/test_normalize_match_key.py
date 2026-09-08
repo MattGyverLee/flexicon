@@ -177,5 +177,97 @@ class TestNormalizeMatchKey:
         )
 
 
+class TestNormalizeMatchKeyWhitespaceIdentity:
+    """
+    Whitespace-identity coverage for `normalize_match_key`
+    (GitHub #274 / spec `name-field-whitespace-identity`).
+
+    THE C4 FENCE (owner decision, 2026-09-08 -- "Extend C4's inline fix").
+    An earlier draft of this class asserted the REJECTED NF5 central-strip
+    locus: that `normalize_match_key(" x ")` should itself return `"x"`.
+    That plan is DEAD. The frozen contract C4
+    (`specs/name-field-whitespace-identity/spec.md:250`) forbids adding
+    `.strip()` to `normalize_match_key`, forbids a shared helper, and fences
+    `Shared/string_utils.py` off entirely. The whitespace-insensitivity is
+    achieved by an INLINE `.strip()` on BOTH sides at each comparison site
+    -- `normalize_match_key(x, casefold=...).strip()` -- NOT inside the
+    helper. These tests pin exactly that split: the helper DOES NOT strip,
+    and the inline both-sides pattern IS whitespace-insensitive.
+
+    All pure-Python; no live LCM required.
+    """
+
+    # ---- the helper deliberately does NOT strip (C4 fence) --------------
+
+    def test_helper_does_not_strip_whitespace(self):
+        """
+        C4 (owner decision 2026-09-08): `normalize_match_key` must NOT strip
+        edge whitespace. It applies normalize_text -> NFD -> optional
+        casefold and nothing else, so a padded input keys to its own padded
+        NFD/casefold form -- byte-for-byte, whitespace intact. This is what
+        keeps `Shared/string_utils.py` untouched by #274.
+        """
+        assert normalize_match_key(" x ") == " x "
+        assert normalize_match_key(" x ", casefold=False) == " x "
+        assert normalize_match_key("\tx\r\n") == "\tx\r\n"
+        assert normalize_match_key("   ") == "   "
+        assert normalize_match_key("   ", casefold=False) == "   "
+
+    def test_helper_does_not_collapse_padded_null_marker(self):
+        """
+        `normalize_text` maps ONLY the bare ``"***"`` to ``""`` by exact
+        equality; a padded ``" *** "`` is not equal to ``"***"`` and so is
+        preserved by the helper (no stripping inside it, per C4).
+        """
+        assert normalize_match_key(" *** ") == " *** "
+        assert normalize_match_key("***") == ""
+
+    # ---- the INLINE both-sides pattern IS whitespace-insensitive --------
+
+    def test_inline_pattern_is_whitespace_insensitive(self):
+        """
+        The fix shape actually applied at the 7 bucket-A sites is
+        `normalize_match_key(x, casefold=...).strip()` on BOTH needle and
+        haystack. Under that pattern a padded value on EITHER side keys
+        equal to the bare form, so a padded stored name is findable with an
+        unpadded needle and vice versa.
+        """
+        def key(x, casefold=True):
+            return normalize_match_key(x, casefold=casefold).strip()
+
+        bare = key("x")
+        assert key(" x ") == bare       # both
+        assert key("x ") == bare        # trailing (haystack)
+        assert key(" x") == bare        # leading  (needle)
+        assert key("\tx\r\n") == bare
+        assert key("x ") == key(" x")
+        # case-sensitive sites (FilterOperations) behave the same way.
+        assert key(" x ", casefold=False) == key("x", casefold=False)
+
+    def test_inline_pattern_whitespace_only_reduces_to_empty(self):
+        """
+        A whitespace-only needle (``"   "`` / ``"\\t\\r\\n"``) reduces to
+        ``""`` under the inline pattern -- which is exactly why the
+        Find/Exists guards (``if not name or not name.strip(): return None``)
+        reject it before it can degenerate into a promiscuous empty-key
+        match.
+
+        Note the C4-faithful non-collapse of the PADDED null marker: because
+        `normalize_match_key` maps only the BARE ``"***"`` to ``""`` and does
+        NOT strip (C4 fence), ``" *** "`` keys to ``"***"``, not ``""``. It
+        is therefore a legitimate truthy needle that survives the guard
+        (``"***".strip()`` is truthy) and matches an item literally named
+        ``"***"`` -- it does NOT collapse into the empty-field bucket. Only
+        genuine whitespace-only input reduces to the empty key.
+        """
+        def key(x):
+            return normalize_match_key(x).strip()
+
+        assert key("   ") == ""
+        assert key("\t\r\n") == ""
+        assert key(" *** ") == "***"          # padded marker != empty bucket
+        assert key(" *** ") != key("***")     # bare marker DOES empty out
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
