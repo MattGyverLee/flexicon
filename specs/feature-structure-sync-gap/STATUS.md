@@ -2,6 +2,135 @@
 
 Repo: flexicon (main). Issues: flexicon#251, #252, #256, and **#253 (folded in)**.
 
+## Where things stand (as of 2026-09-08, spurt 13 / cycle 16 end)
+
+**T8 IS LANDED. CHECKPOINT 5 IS OPEN** -- it does NOT close this cycle. T8
+(AllomorphOperations `MsEnvFeaturesOA` capture/apply + two pre-existing
+HVO-path defects) shipped in six commits on `main`: `cf2fdfe` (predictions,
+FIRST, before any run), `df37e35` (production), `016a97a` (tests, 21 offline
++ 6 live), `bd98c6b` (live evidence + mutation testing), `191556f`
+(CHANGELOG), `6484d81` (programmer report), plus `fdd8694` (archivist
+call-site coverage, committed by the main session after the programmer
+released the index). `run_mode: live`, 6/6 live tests pass.
+
+**T8 REMAINS UNFILED.** No GitHub issue exists for it and NO GitHub action of
+any kind was taken this cycle -- correctly. Filing is a USER decision.
+
+### Cycle-16 prediction verdicts (P4 is a SPLIT verdict, not a clean HELD)
+
+- **P1 HELD** -- measured pre-fix at parent `09fcbf8` in a disposable
+  worktree; `GetSyncableProperties(hvo)` returned exactly
+  `{'Form': {}, 'MorphTypeRA': None}`. Pinned by a durable test
+  (`TestT8LiveHasattrTrap`), so the cycle-13 provenance loss does not recur.
+- **P2 HELD with a real kill** -- mutation M-T8-2 (delete the
+  `ClassName == "MoAffixAllomorph"` guard) turned the live stem test RED with
+  `FP_ParameterError` naming `MoStemAllomorph`. The test is not decorative.
+- **P3 HELD** -- AST test confirms no non-`None` `slot=` literal. The
+  slot-disambiguation test is correctly ABSENT (single C1 row, N/A per R16-1).
+- **P4 SPLIT: HELD on the object path, UNMEASURED on the HVO path.** See
+  ruling 2 below. It must NOT be cited as an unqualified HELD.
+- **P5 HELD** -- mutation M-T8-1 produced the exact predicted split
+  (direct-cast and HVO-entry tests died; the round-trip SURVIVED via the
+  `_ResolveFeatureStrucOwner` compensating layer). Restore hash-verified.
+
+### Cycle-16 lead rulings
+
+**Ruling 1 -- the prediction-commitment rule is SATISFIED, on ordering grounds.**
+`cf2fdfe` is the first of the six T8 commits and sits directly on `09fcbf8`,
+i.e. it landed before the production commit `df37e35` and before any live run.
+Verified from `git log --oneline`, not from the report's own claim.
+
+**Ruling 2 -- P4 is a SPLIT verdict. The decisive fact is in the resolver body,
+and it cuts BOTH ways.**
+`__GetAllomorphObject` applies its `getattr(obj, "ClassName")` + cast AFTER the
+int/object branches merge (`AllomorphOperations.py:1359-1369`, read first-hand).
+So the cast executes on the OBJECT path too, not only the HVO path. Therefore:
+
+- On the **object-path axis P4 is genuinely non-vacuous**. The 4 covered sites
+  (Delete/345, Duplicate/422, GetForm/629, SetForm/678) have real live coverage
+  and DID traverse the new cast line. Zero flips there falsifiably excludes
+  "the ClassName cast breaks or alters behaviour on an already-concrete
+  object." That is a real measurement with real power.
+- On the **HVO-int axis P4 is UNMEASURED**, because the falsifier set is EMPTY.
+  No live test anywhere in `tests/` passes an int to any `Allomorphs` method
+  (archivist finding, re-verified first-hand), and 7 of the 11 sites have no
+  live coverage of any kind. Zero flips was the only possible outcome on the
+  one axis P4's reason clause is actually about. That is the cycle-14 leg-2
+  defect shape: a real measurement that could not have found its counterexample.
+
+Which report settled it: I verified the **archivist** first-hand (grepped
+`test_allomorphs_live.py` -- every argument is `allomorph`/`allo`/`victim`, an
+object, never an int) and I read the resolver body myself. I did NOT re-run the
+programmer's live comparator legs. The archivist is right, so P4 does not pass
+as an unqualified HELD.
+
+The programmer NAMED this vacuity itself rather than hiding it (report lines
+75-78) -- the cycle-14 lesson correctly applied, and it earns credit. But
+naming a gap does not close it, and P4's own pre-committed text authorises
+exactly this disposition: "if you cannot measure both sides, say so explicitly
+and it becomes a cycle-17 gate leg." The HVO half is now LEG 1 of that gate.
+
+**Ruling 3 -- Checkpoint 5 condition (3) is only PARTIALLY met; the three
+hasattr gates SURVIVED.**
+Verified first-hand: the pre-existing `Form`/`IsAbstract`/`MorphTypeRA` gates
+are still present at `AllomorphOperations.py:570/579/584` -- they were only
+rewired from `item` to the resolved `allomorph`, never removed. The T8
+feature-struct branch itself has zero hasattr probes, which is what condition
+(3) was aimed at, and the immediate defect is fixed. But the gates plus the
+resolver's deliberately never-raising shape (R16-4(ii)) leave the silent-drop
+path REACHABLE for any unrecognised `ClassName`. The AST test that shipped
+allowlists `slot=` literals (P3) and only checks that hasattr's second
+argument is a string literal -- it does NOT pin "these three are the only
+gates." That missing allowlist is LEG 2 of the cycle-17 gate.
+
+**Ruling 4 -- the comparator baseline has MOVED. 416/2/518 is RETIRED.**
+Re-derived first-hand, offline, after the tree was released:
+`pytest tests/operations tests/contract -m "not requires_live_project" -q`
+-> **2 failed, 437 passed, 524 deselected**. Red set is still exactly the two
+foreign `TestPhase2JoinOrOpen` failures. Cycle 17 measures against
+**437/2/524**. The +21/+6 delta from 416/518 is precisely T8's new tests.
+Separately, the 3-site WS ratchet was run by the main session and is GREEN
+(21 passed) -- R16-3's P0 tripwire did NOT fire; no 4th WS resolution site.
+
+**Ruling 5 -- all three static-analysis flags are triaged; none blocks, and none
+is a T8 regression.**
+- `IMoForm` imported-unused at `:23` -- pyright is right that it is unused, but
+  it was ALREADY unused at `09fcbf8` (zero executable uses at BOTH commits,
+  verified). Pre-existing cosmetic, NOT introduced by T8. Deliberately NOT
+  fixed here: a gate cycle must not carry a drive-by production edit.
+- `ApplySyncableProperties` super() at `:663` -- **CONFIRMED REAL, not assumed.**
+  `BaseOperations.ApplySyncableProperties` exists at `BaseOperations.py:1349`,
+  `AllomorphOperations(BaseOperations)` at `:51`, and the call correctly passes
+  the resolved `allomorph` plus `base_props` with the feature keys popped
+  first (C6). Pyright loses the MRO through pythonnet; artifact, no action.
+- `FP_ParameterError` unknown-symbol x6 and `_require_lcmodel` at `:58` -- both
+  artifacts, proved not assumed. The import resolves at runtime to
+  `flexicon.code.exceptions.FP_ParameterError` via an implicit re-export
+  pyright will not follow, and `_require_lcmodel` is an
+  `@pytest.fixture(autouse=True)`, for which "not accessed" is the expected
+  shape. No action.
+
+**Ruling 6 -- the 7-of-11 coverage gap does NOT get its own issue proposal; it
+MERGES with the POS one.**
+This is the THIRD instance of one shape: a shared resolver whose call sites are
+mostly unexercised live (POSOperations `__ResolveObject`, 9 of 16 uncovered / 7
+with none, already outstanding decision 3; now AllomorphOperations
+`__GetAllomorphObject`, 7 of 11 with none). Filing two near-identical issues
+would fragment it. Outstanding decision 3 is AMENDED to one consolidated
+"shared-resolver live-coverage gap" proposal spanning both classes. Still needs
+the USER; no GitHub action taken.
+
+### Next pickup
+
+**Cycle 17 = the INDEPENDENT Checkpoint 5 verification gate**, five legs, run by
+a different agent than the implementer (the Checkpoint 3a/3b/4 standard -- the
+implementer's own mutations do not satisfy condition (9)). Legs are enumerated
+in `.crew-handoff.json` under `next_checkpoint`.
+
+---
+
+## HISTORICAL LOG (everything below predates cycle 16)
+
 ## Where things stand (as of 2026-09-07, spurt 5 / cycle 6 end)
 
 **CHECKPOINT 2c IS CLOSED.** T14a landed (`b3ba083b`) --
