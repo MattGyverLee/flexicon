@@ -733,6 +733,169 @@ This mirrors LCM's own guard pattern (`OverridesLing_Lex.cs:1500`). It converts 
 
 ---
 
+## Category 12: Library-initialization / SLDR lifecycle traps (issue #249)
+
+### [DONE] RESOLVED - `IsInitialized` probe replaces exception matching in `FLExInit`
+
+**Status**: Implemented in `flexicon/code/FLExInit.py` (`FLExInitialize()` and
+`FLExCleanup()`).
+
+**Problem (symptom)**: A project open leaves the project's
+`WritingSystemStore` with `.ldml` files renamed to `.ldml.bad`, a
+`badldml.log` entry per file, writing systems silently re-synthesized from
+defaults, and eventually a liblcm modal *"Unable to create writing system:
+en"*. The cycle repeats on **every** open and never terminates. Observed
+live: a `WritingSystemStore` left with no valid `.ldml` at all, and 16
+quarantine events across 8 consecutive opens -- with the quarantine
+happening 9 seconds *after* FLEx itself had written the file.
+
+**Cause**: `Sldr.Initialize(True)` was wrapped in a bare `except Exception`
+that logged `logger.warning("Sldr.Initialize failed (already
+initialized?)")`. When initialization failed for a **real** reason, the SLDR
+stayed down for the whole process. Every subsequent LDML read inside
+liblcm's `CoreLdmlInFolderWritingSystemRepository` then threw *"The SLDR has
+not been initialized"*; liblcm interprets that as a malformed file, so it
+quarantines the `.ldml`, logs it, and rebuilds the writing system from
+defaults. Data loss was negligible (only default content was ever
+overwritten), but the failure was self-perpetuating and the **only** signal
+it emitted was a WARNING on logger `flexicon.code.FLExInit` that
+misattributed the cause -- which is why it went unnoticed.
+
+The API-level defect is the shape: **matching an initializer's exception
+message instead of probing the state the initializer guards on**. `Sldr`
+publishes that state.
+
+### Verified member table
+
+Live reflection against **SIL.WritingSystems 18.0.0.0 / FieldWorks 9.3.10**:
+
+| Member | Signature / type | Verified behaviour |
+|---|---|---|
+| `Sldr.IsInitialized` | `public static bool` (get-only) | Safe to read **before** any init; never throws. Mirrors the guard `Initialize()`/`Cleanup()` use internally. |
+| `Sldr.Initialize(offlineTestMode)` | static; the parameter is optional, default `False` | A second call throws `System.InvalidOperationException`, and **never** re-applies the offline-mode argument. |
+| `Sldr.Cleanup()` | static | Throws `System.InvalidOperationException` when the SLDR is cold (from the private `CheckInitialized()`). |
+| `Sldr.OfflineMode` | **DOES NOT EXIST** | There is no such member. The parameter is named `offlineTestMode`. Do not write `Sldr.OfflineMode`. |
+| `Sldr.LanguageTags` | static property | Reading it **before** init surfaces through pythonnet as a bare `TypeError` -- see the property-getter trap below. Populated (9596 entries) once initialized. |
+
+### The two exact exception messages
+
+Both are `System.InvalidOperationException`, and the message text is exact:
+
+| Call | Condition | `e.Message` |
+|---|---|---|
+| `Sldr.Initialize(True)` | already initialized | `The SLDR has already been initialized.` |
+| `Sldr.Cleanup()` | never initialized, or already cleaned up | `The SLDR has not been initialized.` |
+
+The two are **not** symmetric ("has already been" vs "has not been"), so a
+substring match written for one does not fire for the other.
+
+### `Cleanup()` then `Initialize(True)` is a supported cycle
+
+Verified: tearing the SLDR down and bringing it back up in the same process
+works, and `Sldr.LanguageTags` repopulates (9596 entries). This resolves
+the open question recorded in #249 -- a long-running GUI consumer that opens
+and closes several projects in one process may legitimately cycle the SLDR.
+
+### The pythonnet property-getter trap
+
+Reading `Sldr.LanguageTags` before initialization does **not** raise the
+`System.InvalidOperationException` you would expect. It surfaces as a bare:
+
+```
+TypeError: Exception has been thrown by the target of an invocation.
+```
+
+The inner `InvalidOperationException` -- and with it the message that names
+the cause -- is **lost**. Only **method** calls are reliably exception-typed
+across the pythonnet boundary; **CLR property getters** are not. So never
+build state detection on a property read's exception type, and never assume
+that a `TypeError` from a CLR property access is a Python-side type problem.
+
+### Correct access pattern
+
+Probe the state. Keep the `except` only as a race backstop, narrowed to the
+one type and the one message, and re-raise everything else:
+
+```python
+import System
+from SIL.WritingSystems import Sldr
+
+# Startup
+if Sldr.IsInitialized:
+    logger.debug("Sldr already initialized; skipping Sldr.Initialize()")
+else:
+    try:
+        Sldr.Initialize(True)          # offlineTestMode=True
+    except System.InvalidOperationException as e:
+        # Backstop for the check-then-act race only: Initialize()/Cleanup()
+        # serialize on a private lock, so another thread can win between
+        # the probe and the call. Anything else is a real failure.
+        if "already been initialized" not in e.Message:
+            raise
+        logger.debug("Sldr was initialized concurrently; continuing")
+
+# Teardown -- must tolerate already being done.
+if Sldr.IsInitialized:
+    Sldr.Cleanup()
+```
+
+Because the probe means the benign case never raises, repeated
+`FLExInitialize()` calls stay a genuine no-op -- which the shipped examples
+and per-test `setUp` rely on. The matching `IsInitialized` guard in
+`FLExCleanup()` fixes a second, independent defect: the previously
+unguarded `Sldr.Cleanup()` made `FLExCleanup()` raise whenever
+`FLExInitialize()` had never run or cleanup ran twice, and several shipped
+scripts under `examples/` call it twice by design.
+
+### [WARN] Anti-patterns
+
+```python
+# WRONG -- converts a hard failure into silent, self-perpetuating
+# downstream data damage, and misattributes the cause in the log.
+try:
+    Sldr.Initialize(True)
+except Exception:
+    logger.warning("Sldr.Initialize failed (already initialized?)")
+
+# WRONG -- no such member.
+Sldr.OfflineMode = True
+
+# WRONG -- the InvalidOperationException is lost; you get a bare TypeError.
+try:
+    tags = Sldr.LanguageTags
+except System.InvalidOperationException:
+    Sldr.Initialize(True)
+
+# WRONG -- teardown that cannot be run twice.
+Sldr.Cleanup()
+```
+
+### Relationship to issue #179 (issue #179, RESOLVED -- commit e42da05)
+
+Issue #179 (*"WritingSystemOperations.Create leaves orphan tags; SLDR
+teardown in unit tests marks .ldml files as bad"*) shows the **same
+`.ldml.bad` symptom** but is **not a duplicate** -- the cause is the
+opposite half of the same lifecycle:
+
+| | #179 | #249 |
+|---|---|---|
+| Cause | SLDR was **torn down mid-session** | SLDR **never came up**, and the failure was hidden |
+| Where | Unit-test teardown | The production init path |
+| Fix | Removed `FLExCleanup()` from test teardown, plus a `WritingSystemOperations.Create` registration fix | `IsInitialized` probes in `FLExInitialize()`/`FLExCleanup()`; narrowed `except`; genuine failures now propagate |
+| Lines changed in `FLExInit.py` | **0** | The whole SLDR init/cleanup block |
+
+Either half of the lifecycle going wrong produces `.ldml.bad`, so the
+symptom alone does not identify which. Check whether `Sldr.IsInitialized`
+is `False` at the time of the LDML read, and whether anything called
+`Sldr.Cleanup()` earlier in the process.
+
+### See also
+
+- `docs/EXCEPTION_HANDLING.md` -- "Library Initialization and the SLDR
+  Lifecycle" for the general rule and the bare-except reasoning.
+
+---
+
 ## Summary Statistics
 
 ### By Status (Updated):

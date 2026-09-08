@@ -402,6 +402,70 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   first time -- see **Fixed**, below.
 
 ### Fixed
+- **`FLExInitialize()` no longer swallows a real `Sldr.Initialize()` failure
+  as "already initialized?", and `FLExCleanup()` no longer raises when the
+  SLDR is cold** (#249). `flexicon/code/FLExInit.py` wrapped
+  `Sldr.Initialize(True)` in a bare `except Exception` that logged
+  `logger.warning("Sldr.Initialize failed (already initialized?)")`. When
+  initialization failed for a **real** reason the SLDR stayed down for the
+  whole process: every subsequent LDML read inside liblcm's
+  `CoreLdmlInFolderWritingSystemRepository` threw "The SLDR has not been
+  initialized", and liblcm responded by treating each file as malformed --
+  renaming the project's `.ldml` to `.ldml.bad`, logging a `badldml.log`
+  entry, and re-synthesizing the writing systems from defaults. The cycle
+  repeated on every open and never terminated, ending in a downstream
+  liblcm modal "Unable to create writing system: en". Observed live: a
+  `WritingSystemStore` left with NO valid `.ldml` at all, and 16 quarantine
+  events over 8 consecutive opens, with a quarantine landing 9 seconds
+  after FLEx itself had written the file. Actual data loss was negligible
+  (only default content was ever overwritten), but the **only** signal the
+  defect emitted was a WARNING on logger `flexicon.code.FLExInit` that
+  misattributed the cause, which is why it went unnoticed.
+
+  `FLExInitialize()` now probes the public static `Sldr.IsInitialized` and
+  skips `Initialize` entirely when the SLDR is already up, so the benign
+  already-initialized case no longer raises at all and a repeated
+  `FLExInitialize()` stays a genuine no-op (the shipped examples and
+  per-test `setUp` rely on that). The `except` is narrowed to
+  `System.InvalidOperationException` and re-raises unless
+  `"already been initialized"` is in `e.Message`; it is retained only as a
+  backstop for the check-then-act race, since `Initialize`/`Cleanup`
+  serialize on a private lock. **Every genuine initialization failure now
+  propagates to the caller** rather than being downgraded to a warning.
+
+  **Second, independent fix in the same module:** `FLExCleanup()` gained
+  the matching `IsInitialized` guard. `Sldr.Cleanup()` throws
+  `System.InvalidOperationException("The SLDR has not been initialized.")`
+  when the SLDR is cold, so the previously unguarded call made
+  `FLExCleanup()` raise whenever `FLExInitialize()` had never run or
+  cleanup ran twice -- and several shipped scripts under `examples/` call
+  it twice by design. Teardown is now idempotent.
+
+  Verified by live reflection against SIL.WritingSystems 18.0.0.0 /
+  FieldWorks 9.3.10: `Sldr.IsInitialized` is a get-only public static bool
+  that is safe to read before any init and never throws; there is **no**
+  `Sldr.OfflineMode` member (the parameter is named `offlineTestMode`,
+  optional, default `False`); a second `Initialize(True)` throws
+  `System.InvalidOperationException` with `Message` exactly "The SLDR has
+  already been initialized." and never re-applies the offline-mode
+  argument; and `Cleanup()` then `Initialize(True)` is a **supported
+  cycle** -- it works and `Sldr.LanguageTags` repopulates (9596 entries),
+  which resolves the open question #249 recorded about a long-running GUI
+  consumer re-opening projects in one process.
+
+  **Not a duplicate of #179** (*"WritingSystemOperations.Create leaves
+  orphan tags; SLDR teardown in unit tests marks .ldml files as bad"*,
+  resolved in commit e42da05). Same `.ldml.bad` symptom, opposite half of
+  the lifecycle: #179 was "the SLDR got torn down mid-session" in test
+  teardown and changed zero lines of `FLExInit.py`; #249 is "the SLDR never
+  came up and we hid it", on the production path. Documented in
+  `docs/API_ISSUES_CATEGORIZED.md` "Category 12: Library-initialization /
+  SLDR lifecycle traps" and `docs/EXCEPTION_HANDLING.md` "Library
+  Initialization and the SLDR Lifecycle", including the pythonnet trap that
+  a CLR **property** getter loses its exception type (reading
+  `Sldr.LanguageTags` before init surfaces as a bare
+  `TypeError("Exception has been thrown by the target of an invocation.")`
+  with the inner `InvalidOperationException` lost).
 - **`BaseOperations._apply_props_loop` now resolves a case- or
   separator-divergent writing-system tag instead of silently dropping the
   alt** (issue #250, Defect 4). Every `ApplySyncableProperties`-style sync
