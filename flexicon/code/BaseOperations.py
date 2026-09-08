@@ -1601,6 +1601,48 @@ class BaseOperations:
         from .lcm_casting import cast_to_concrete
         return cast_to_concrete(owner)
 
+    def _GetTypedElements(self, collection):
+        """
+        Materialise `collection` with each element cast to its concrete
+        LCM interface.
+
+        The collection counterpart to `_GetTypedOwner()`. LCM collections
+        are declared over a BASE interface -- `ComponentLexemesRS` and
+        `TargetsRS` over `ICmObject`, `PossibilitiesOS` and
+        `SubPossibilitiesOS` over `ICmPossibility`, `CellsOS` over
+        `IConstituentChartCellPart` -- and pythonnet hands the elements
+        back as that base. Every subtype-only property is then invisible,
+        `isinstance(element, ILexEntry)` is False for objects that really
+        are entries, and `hasattr(element, "SubPossibilitiesOS")` is False
+        on an `ICmObject` element that really is a possibility. That makes
+        collection elements impossible to round-trip back into other
+        flexicon methods (issue #270).
+
+        Args:
+            collection: Any iterable of LCM objects (an owning/reference
+                sequence, a generator, or a plain list). None yields [].
+
+        Returns:
+            list: New list, same order and length, each element passed
+                through `cast_to_concrete()`. Unrecognised ClassNames come
+                back unchanged, so the call is total.
+
+        Notes:
+            - Returning a plain list is deliberate: the `GetAll` contract
+              (docs/getall-contract.md) only promises a behavioural
+              collection, and `_needs_enumerable_wrap()` leaves lists
+              alone.
+            - Callers that need to *filter* by subtype should compare
+              `element.ClassName` rather than `isinstance`, because an
+              element that has not been through this helper will fail an
+              `isinstance` check against its own concrete interface.
+
+        See Also:
+            _GetTypedOwner, flexicon.code.lcm_casting.cast_all
+        """
+        from .lcm_casting import cast_all
+        return cast_all(collection)
+
     def _ResolveFeatureStrucOwner(self, owner, slot=None):
         """
         Resolve which atomic-owning ('OA') property on ``owner`` holds an

@@ -1015,7 +1015,14 @@ class NoteOperations(BaseOperations):
         # previous BeginObjectRA fallback was unreachable. (issue #133
         # sweep -- BeginObjectRA is exposed as the annotated-object
         # reference via separate accessors.)
-        return note.Owner
+        #
+        # Route through _GetTypedOwner so the caller gets the owner's
+        # CONCRETE interface. A raw .Owner is a bare ICmObject: none of
+        # ILexEntry/ILexSense/ILangProject's typed properties are
+        # reachable on it and it fails isinstance against its own
+        # interface, so it cannot be handed back to another flexicon
+        # method. (Pattern A sweep gap, issue #270.)
+        return self._GetTypedOwner(note)
 
     @OperationsMethod
     def GetGuid(self, note):

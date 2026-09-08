@@ -447,10 +447,15 @@ class PossibilityListOperations(BaseOperations):
 
         poss_list = self.__ResolveList(list_or_hvo)
 
+        # PossibilitiesOS / SubPossibilitiesOS are declared over
+        # ICmPossibility, so subtype-only surface (IPartOfSpeech,
+        # ICmPerson, ICmSemanticDomain, ILexEntryType, ...) is invisible
+        # on the raw elements and they fail isinstance against their own
+        # interface. Cast each element (issue #270).
         if not recursive:
-            return list(poss_list.PossibilitiesOS)
+            return self._GetTypedElements(poss_list.PossibilitiesOS)
 
-        return list(self.project.UnpackNestedPossibilityList(
+        return self._GetTypedElements(self.project.UnpackNestedPossibilityList(
             poss_list.PossibilitiesOS, ICmPossibility, True))
 
     @OperationsMethod
@@ -1117,12 +1122,15 @@ class PossibilityListOperations(BaseOperations):
 
         item = self.__ResolveItem(item_or_hvo)
 
+        # SubPossibilitiesOS is declared over ICmPossibility, so subtype-
+        # only surface is invisible on the raw elements and they fail
+        # isinstance against their own interface. Cast each one (issue #270).
         if not recursive:
-            return list(item.SubPossibilitiesOS)
+            return self._GetTypedElements(item.SubPossibilitiesOS)
 
         result = []
         def walk(collection):
-            for child in collection:
+            for child in self._GetTypedElements(collection):
                 result.append(child)
                 if hasattr(child, "SubPossibilitiesOS") and child.SubPossibilitiesOS.Count > 0:
                     walk(child.SubPossibilitiesOS)

@@ -2778,8 +2778,17 @@ class LexEntryOperations(BaseOperations):
         complex_entry = self.__ResolveObject(complex_entry_or_hvo)
         component = self.__ResolveObject(component_or_hvo)
 
-        # Validate component is entry or sense
-        if not isinstance(component, (ILexEntry, ILexSense)):
+        # Validate component is entry or sense.
+        #
+        # Compare ClassName rather than using isinstance (issue #270): an
+        # LCM object that arrived as a base ICmObject -- which is what
+        # ComponentLexemesRS elements and HVO-resolved objects are -- fails
+        # `isinstance(obj, ILexEntry)` even when it really is an entry, so
+        # the isinstance form rejected exactly the objects
+        # GetComplexFormComponents() returns and made Get/Add
+        # non-composable. ClassName is declared on ICmObject itself, so it
+        # is readable whether or not the object has been cast.
+        if getattr(component, "ClassName", None) not in ("LexEntry", "LexSense"):
             raise FP_ParameterError("Component must be an ILexEntry or ILexSense")
 
         # Find or create complex form EntryRef
@@ -2876,8 +2885,14 @@ class LexEntryOperations(BaseOperations):
             >>> idiom = project.LexEntry.Find("kick the bucket")
             >>> components = project.LexEntry.GetComplexFormComponents(idiom)
             >>> for comp in components:
-            ...     if isinstance(comp, ILexEntry):
+            ...     # Branch on ClassName, not isinstance: ComponentLexemesRS
+            ...     # is declared over ICmObject and mixes entries and
+            ...     # senses, and ClassName is the one discriminator that is
+            ...     # readable on either (issue #270).
+            ...     if comp.ClassName == "LexEntry":
             ...         print(project.LexEntry.GetHeadword(comp))
+            ...     elif comp.ClassName == "LexSense":
+            ...         print(project.Senses.GetGloss(comp))
 
         Notes:
             - Returns empty list if not a complex form
@@ -2894,7 +2909,12 @@ class LexEntryOperations(BaseOperations):
         # Find complex form EntryRef
         for entry_ref in complex_entry.EntryRefsOS:
             if entry_ref.RefType == LexEntryRefTags.krtComplexForm:
-                return list(entry_ref.ComponentLexemesRS)
+                # ComponentLexemesRS is declared over ICmObject and legally
+                # mixes entries and senses, so its elements arrive as bare
+                # ICmObject: no ILexEntry/ILexSense property is reachable
+                # and they cannot be fed back into any flexicon method.
+                # Cast each element to its concrete interface (issue #270).
+                return self._GetTypedElements(entry_ref.ComponentLexemesRS)
 
         return []
 

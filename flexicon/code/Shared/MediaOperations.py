@@ -1244,10 +1244,15 @@ class MediaOperations(BaseOperations):
             media = media_or_hvo
 
         # Get all incoming references
-        # ICmFile objects track their owners via the Owner property
+        # ICmFile objects track their owners via the Owner property.
+        # _GetTypedOwner casts the owner to its concrete interface --
+        # a raw .Owner is a bare ICmObject whose typed properties are
+        # unreachable and which fails isinstance against its own
+        # interface (Pattern A sweep gap, issue #270).
         owners = []
-        if hasattr(media, "Owner") and media.Owner:
-            owners.append(media.Owner)
+        typed_owner = self._GetTypedOwner(media)
+        if typed_owner is not None:
+            owners.append(typed_owner)
 
         return owners
 
