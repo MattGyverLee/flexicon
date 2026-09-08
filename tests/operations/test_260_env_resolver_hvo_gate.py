@@ -59,6 +59,19 @@
 #          and UNCHANGED; a flip in either direction means the cycle-1
 #          falsification was wrong and #260 must be re-opened.
 #
+#   CYCLE-2 ADDITION (T4, P10). The two classes above pass the
+#   ALLOMORPH as an already-typed object and only the ENVIRONMENT as a
+#   genuine int HVO -- so they exercise __GetEnvironmentObject's HVO
+#   branch but NOT __GetAllomorphObject's (T8's cast). Measured live:
+#   hasattr(bare_allo, "PhoneEnvRC") is False on a bare
+#   project.Object(allo.Hvo) view (P10 HELD) -- PhoneEnvRC is
+#   subtype-only, so the flexicon#268 "AddPhoneEnv/RemovePhoneEnv now
+#   have live coverage" claim was only half true until
+#   TestHvoPathBothIntCastAddPhoneEnv / ...Remove... (below) were added,
+#   which pass BOTH the allomorph and the environment as genuine int
+#   HVOs, so __GetAllomorphObject's ClassName-dispatched cast (T8) is
+#   also exercised non-vacuously at these two call sites.
+#
 #   Platform: Python.NET
 #             FieldWorks Version 9+
 #
@@ -185,6 +198,119 @@ class TestHvoPathCastRemovePhoneEnv:
             assert env_hvo not in fresh_hvos, (
                 f"RemovePhoneEnv(allomorph, hvo) did not write through "
                 f"the concrete PhoneEnvRC member: re-read hvos "
+                f"{fresh_hvos!r}, expected {env_hvo!r} absent."
+            )
+        finally:
+            sandbox.LexEntry.Delete(entry)
+            if env is not None:
+                sandbox.Environments.Delete(env)
+
+
+class TestHvoPathBothIntCastAddPhoneEnv:
+    """
+    T4 (P10 HELD): hasattr(bare_allo, "PhoneEnvRC") is False on a bare
+    project.Object(allo.Hvo) view -- PhoneEnvRC is subtype-only, so
+    passing the allomorph itself as a genuine int HVO (not just the
+    environment) is required to exercise __GetAllomorphObject's T8
+    cast non-vacuously at THIS call site. Without this class, the
+    flexicon#268 "AddPhoneEnv now has live coverage" claim covered only
+    the environment-HVO half of the call.
+    """
+
+    @pytest.mark.live_phase("AllomorphOperations", "modify")
+    def test_add_phone_env_via_genuine_hvo_int_on_both_args(self, target_sandbox):
+        sandbox = target_sandbox
+        entry = _make_entry(sandbox, "260gate_bothadd")
+        env = None
+        try:
+            allo = sandbox.Allomorphs.Create(
+                entry, f"{TEST_PREFIX}bothaddform", morphType="suffix"
+            )
+            allo_hvo = allo.Hvo
+            env = sandbox.Environments.Create(f"{TEST_PREFIX}260_bothadd_env")
+            env_hvo = env.Hvo
+
+            # THE TRAP, on BOTH arguments this time.
+            assert isinstance(allo_hvo, int) and isinstance(env_hvo, int), (
+                "test setup error: both allo_hvo and env_hvo must be "
+                "genuine Python ints -- otherwise one of the two "
+                "resolvers under test is exercised vacuously."
+            )
+
+            # P10 precondition: PhoneEnvRC really is unreachable on the
+            # bare allomorph view, so passing allo_hvo genuinely
+            # exercises __GetAllomorphObject's cast (not just
+            # __GetEnvironmentObject's).
+            bare_allo = sandbox.Object(allo_hvo)
+            assert not hasattr(bare_allo, "PhoneEnvRC"), (
+                "P10 precondition failed: PhoneEnvRC is reachable on "
+                "the bare ICmObject view of the allomorph -- the trap "
+                "this test relies on no longer holds; re-derive the "
+                "site and the #268 coverage claim."
+            )
+
+            sandbox.Allomorphs.AddPhoneEnv(allo_hvo, env_hvo)
+
+            # Re-fetch fresh from the LCM after the write -- never
+            # assert on the value just passed in.
+            fresh_envs = sandbox.Allomorphs.GetPhoneEnv(sandbox.Object(allo_hvo))
+            fresh_hvos = [e.Hvo for e in fresh_envs]
+            assert env_hvo in fresh_hvos, (
+                f"AddPhoneEnv(hvo, hvo) did not write through the "
+                f"concrete PhoneEnvRC member: re-read hvos "
+                f"{fresh_hvos!r}, expected {env_hvo!r} present."
+            )
+        finally:
+            sandbox.LexEntry.Delete(entry)
+            if env is not None:
+                sandbox.Environments.Delete(env)
+
+
+class TestHvoPathBothIntCastRemovePhoneEnv:
+    """
+    T4 (P10 HELD) -- second call site. Setup adds the environment via
+    the raw LCM collection on the already-typed allomorph object (NOT
+    via AddPhoneEnv), so this test's precondition never depends on
+    either resolver under test.
+    """
+
+    @pytest.mark.live_phase("AllomorphOperations", "modify")
+    def test_remove_phone_env_via_genuine_hvo_int_on_both_args(self, target_sandbox):
+        sandbox = target_sandbox
+        entry = _make_entry(sandbox, "260gate_bothremove")
+        env = None
+        try:
+            allo = sandbox.Allomorphs.Create(
+                entry, f"{TEST_PREFIX}bothremoveform", morphType="suffix"
+            )
+            allo_hvo = allo.Hvo
+            env = sandbox.Environments.Create(f"{TEST_PREFIX}260_bothremove_env")
+            env_hvo = env.Hvo
+
+            assert isinstance(allo_hvo, int) and isinstance(env_hvo, int), (
+                "test setup error: both allo_hvo and env_hvo must be "
+                "genuine Python ints -- otherwise one of the two "
+                "resolvers under test is exercised vacuously."
+            )
+
+            bare_allo = sandbox.Object(allo_hvo)
+            assert not hasattr(bare_allo, "PhoneEnvRC"), (
+                "P10 precondition failed: PhoneEnvRC is reachable on "
+                "the bare ICmObject view of the allomorph -- the trap "
+                "this test relies on no longer holds; re-derive the "
+                "site and the #268 coverage claim."
+            )
+
+            # Precondition setup bypasses both resolvers under test.
+            allo.PhoneEnvRC.Add(env)
+
+            sandbox.Allomorphs.RemovePhoneEnv(allo_hvo, env_hvo)
+
+            fresh_envs = sandbox.Allomorphs.GetPhoneEnv(sandbox.Object(allo_hvo))
+            fresh_hvos = [e.Hvo for e in fresh_envs]
+            assert env_hvo not in fresh_hvos, (
+                f"RemovePhoneEnv(hvo, hvo) did not write through the "
+                f"concrete PhoneEnvRC member: re-read hvos "
                 f"{fresh_hvos!r}, expected {env_hvo!r} absent."
             )
         finally:

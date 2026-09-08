@@ -88,3 +88,14 @@ P11: offline suite stays at 439 passed / 2 failed / (526 + N)
      deselected, red set exactly the two foreign
      `TestPhase2JoinOrOpen` failures. Write the exact N into this file
      BEFORE running.
+
+N = 8 (cycle-2 new live-marked tests, written BEFORE running the
+offline suite): 6 new methods in the new file
+`tests/operations/test_260_environment_resolver_gate.py`
+(TestP6DirectAttributeAccess x4, TestP6bSyncableProperties x1,
+TestP7SilentLeftContextLoss x1), plus 2 new methods appended to
+`tests/operations/test_260_env_resolver_hvo_gate.py`
+(TestHvoPathBothIntCastAddPhoneEnv,
+TestHvoPathBothIntCastRemovePhoneEnv -- the T4/P10 both-int-HVO
+coverage). Cycle-1's N=2 is already baked into the 528 baseline
+(526 + 2), so P11's expected deselected count is 528 + 8 = 536.
