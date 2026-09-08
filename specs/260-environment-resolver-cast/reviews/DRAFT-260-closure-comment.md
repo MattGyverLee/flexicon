@@ -1,4 +1,15 @@
-# DRAFT closure comment for flexicon#260 -- FOR USER REVIEW, NOT POSTED
+# Closure comment for flexicon#260 -- POSTED 2026-09-08
+
+**Status: POSTED AND CLOSED.** The "Proposed comment body" section below was
+posted verbatim as `issues/260#issuecomment-5588471357` and #260 was closed
+(reason=COMPLETED) by the main session, on the user's explicit instruction
+("stop after 260 is closed"). The body was extracted programmatically from the
+fenced section rather than retyped, so what is on GitHub is byte-identical to
+what is recorded here. The "Reviewer notes" section was NOT posted.
+
+**Superseded header, kept as the historical record:**
+
+> # DRAFT closure comment for flexicon#260 -- FOR USER REVIEW, NOT POSTED
 
 **Status: DRAFT. No GitHub action has been taken.** Nothing below has been
 posted, and #260 has not been labelled or closed. Closure routes through the

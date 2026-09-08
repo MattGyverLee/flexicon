@@ -1,7 +1,7 @@
 {
   "feature": "260-environment-resolver-cast",
-  "status": "in_progress",
-  "last_cycle": 1,
+  "status": "feature_complete",
+  "last_cycle": 2,
   "spurts_completed": 1,
   "issues": [
     260,
@@ -24,8 +24,8 @@
     "cycle1-lead-finding-SPEC-ERROR-LEFT-IN-PLACE spec.md transferred part 1's 'the observed failure came from an OBJECT input, so the fix must merge the int and object branches' reasoning onto the ENVIRONMENT half, where no failure was ever observed. Sound for part 1 (and T8 did merge the branches); never evidence about part 2. Corrected in the closure draft's reviewer notes, left in spec.md as the historical record.",
     "cycle1-lead-verified-FIRST-HAND (do not re-derive): EnvironmentOperations.__ResolveObject has 9 call sites (:214, :255, :298, :362, :422, :478, :534, :589, :688) and is uncast; direct attribute access at :258, :304, :365, :428, :700; hasattr-gated silent-None at :481, :537. MSAOperations.py (~:1126) does falsely claim NaturalClassOperations.__GetNaturalClassObject / __GetPhonemeObject are 'C2 fix sites' -- both are confirmed uncast (NaturalClassOperations.py:106 and :120, PhonemeOperations.py:1263), so T5 stands."
   ],
-  "next_checkpoint": "Cycle 2 -- T2 (the real defect) through T5, then #260 closes",
-  "next_entry": "Dispatch cycle 2: lex-programmer on T2 first -- RED-first live gate on Grammar/EnvironmentOperations.py __ResolveObject (:648) against predictions P6/P6b/P7/P8 already committed PRE-RUN in predictions.md; then T3 (guarded cast in AllomorphOperations.__GetEnvironmentObject, P9 re-run LIVE not just offline because of the RemovePhoneEnv `env in PhoneEnvRC` identity hazard), then T4 (P10: measure hasattr(bare_allo,'PhoneEnvRC') and either make the #268 coverage claim true or WITHDRAW it), then T5 (correct the false C2-fix-site claim in MSAOperations.py ~:1126). Write N into predictions.md for P11 BEFORE running.",
+  "next_checkpoint": "NONE. #260 is closed and the user fenced scope there.",
+  "next_entry": "STOP. The user's instruction was 'stop after 260 is closed' and #260 is closed (issuecomment-5588471357). Do NOT start another cycle without a fresh user instruction. If this feature is ever reopened, the two live threads are recorded under unfiled_but_recorded above: the P7 wrong-property-name bug (highest value -- a real silent-wrong-answer defect with a live test anchor already written) and the Class-A caller-usage re-triage. Both need a GitHub filing decision from the user first.",
   "blockers": [],
   "standing_rules": [
     "prediction_commitment_rule -- predictions committed to specs/<feature>/predictions.md or evidence/ under a [PREDICTION] heading BEFORE the run that tests them; a prediction living only in a dispatch prompt is not pre-committed",
@@ -35,5 +35,17 @@
     "no locks -- single-worker campaign",
     "explicit-path staging only -- never git add -A / . / -u, never git commit -a; known tree noise: unstaged deletion of .claude/ralph-loop.local.md, untracked .vscode/, specs/duplicate-signature-harmonisation/, two .spec-context.json files"
   ],
-  "updated": "2026-09-08"
+  "updated": "2026-09-08",
+  "github_actions_cycle2": {
+    "authorised_by": "USER, explicitly: 'stop after 260 is closed'. Scope was fenced by the same instruction -- close #260 and STOP.",
+    "executed_by": "main session",
+    "260": "CLOSED reason=COMPLETED. Comment body posted VERBATIM from reviews/DRAFT-260-closure-comment.md's 'Proposed comment body' section as issues/260#issuecomment-5588471357 (extracted programmatically, not retyped; the 'Reviewer notes' section was NOT posted). Both halves disclosed honestly: part 1 fixed by T8+gated, part 2 investigated and reported as a CONTRACT fix with ZERO measured behavioural effect, plus the real defect found one file over in EnvironmentOperations and fixed.",
+    "nothing_else": "NO other GitHub action. Per the user's scope fence, the following were deliberately NOT filed and remain UNFILED: (a) the P7 discovery (LeftContextOA/RightContextOA wrong-property-name bug), (b) the Class-A caller-usage re-triage sweep issues, (c) #261. #268 was not commented on."
+  },
+  "unfiled_but_recorded": {
+    "note": "These are NOT lost -- each is committed with live evidence. They are unfiled because the user fenced scope at '#260 closed', not because they were judged unimportant.",
+    "P7_wrong_property_name": "EnvironmentOperations.GetLeftContextPattern / GetRightContextPattern / Duplicate's deep-copy block all read LeftContextOA/RightContextOA, which do NOT exist anywhere in the LCM API for IPhEnvironment -- confirmed by live .NET reflection; the real names are LeftContextRA/RightContextRA (Reference Atomic). These methods therefore return None / copy nothing for EVERY environment, cast or not. Silent wrong answer, no exception -- which is why it survived while its loud AttributeError twin was reported within a day. Live anchor: tests/operations/test_260_environment_resolver_gate.py::TestP7DiscoveredWrongPropertyName. Disclosed publicly in #260's closure comment Part 3, so it is searchable, but it has NO issue of its own. RECOMMEND filing.",
+    "class_A_retriage": "reviews/cycle1-archivist.md inventories ~55 uncast resolvers across 9 modules, but that figure counts CONTRACT MISMATCHES, not defects -- it was produced in parallel with, and therefore without knowledge of, the P2 falsification. Lead ruling: re-triage on the caller-usage axis (does at least one caller do Python attribute access / hasattr on the resolved object for a non-ICmObject member?) with promotions citing caller file:line + member name. NO sweep issue may be filed on the ~55 figure.",
+    "261": "DataNotebookOperations.__GetRecordObject -- already has its own issue (#261). Untouched this session."
+  }
 }
