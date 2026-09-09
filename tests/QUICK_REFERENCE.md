@@ -13,7 +13,7 @@
 
 ### Execute Phase 2-3 Tests
 ```bash
-cd /d/Github/flexlibs2
+cd /d/Github/flexicon
 pytest tests/phase2_validation_tests.py tests/phase3_lexicon_validation_tests.py -v
 ```
 
@@ -271,7 +271,7 @@ Remaining operations to test: 22 classes, ~322 tests
 ## Key Files
 
 ```
-/d/Github/flexlibs2/tests/
+/d/Github/flexicon/tests/
 ├── conftest.py                          # START HERE
 ├── test_validation_base.py
 ├── test_helpers.py
