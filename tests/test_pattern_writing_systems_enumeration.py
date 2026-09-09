@@ -127,6 +127,7 @@ class TestWritingSystemsLiveSmoke:
         ]
 
         for class_name, method_name, object_source in test_cases:
+            props = None
             try:
                 ops = getattr(flex_project, class_name, None)
                 if ops is None:
@@ -144,7 +145,6 @@ class TestWritingSystemsLiveSmoke:
                 # will raise AttributeError.
                 try:
                     props = ops.GetSyncableProperties(item)
-                    assert isinstance(props, dict), f"{class_name}: GetSyncableProperties returned non-dict"
                 except AttributeError as exc:
                     if any(
                         bad_pattern in str(exc)
@@ -159,4 +159,14 @@ class TestWritingSystemsLiveSmoke:
 
             except Exception as exc:
                 pytest.skip(f"Could not test {class_name}: {exc}")
+
+            # Issue #291 bug class: this assert MUST sit outside the
+            # `except Exception -> pytest.skip` above. AssertionError is a
+            # subclass of Exception, so inside the try a genuine failure was
+            # converted into a silent SKIP. (pytest.fail/skip raise
+            # BaseException subclasses, so the deliberate ones above are
+            # unaffected either way.)
+            assert isinstance(props, dict), (
+                f"{class_name}: GetSyncableProperties returned non-dict"
+            )
 

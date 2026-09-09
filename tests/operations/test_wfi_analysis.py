@@ -672,18 +672,23 @@ class TestWfiAnalysisDeleteWithMorphBundles:
 
             # The bundle's HVO must no longer resolve in the repository.
             # Object() returns None (or raises) for deleted objects.
+            #
+            # Issue #291: the assert MUST stay outside the try. Wrapping
+            # it in `except Exception` swallows the AssertionError it
+            # raises, so a genuinely surviving bundle reported green.
             try:
                 leftover = writable_project.Object(bundle_hvo)
-                assert leftover is None, (
-                    "WfiMorphBundle survived deletion of its owning "
-                    "analysis -- cascade delete did not fire. "
-                    f"bundle_hvo={bundle_hvo}, leftover={leftover!r}"
-                )
             except Exception:
                 # Any exception from Object() also means the bundle is
                 # gone (repository lookup failed), which is the expected
                 # cascade behaviour.
-                pass
+                leftover = None
+
+            assert leftover is None, (
+                "WfiMorphBundle survived deletion of its owning "
+                "analysis -- cascade delete did not fire. "
+                f"bundle_hvo={bundle_hvo}, leftover={leftover!r}"
+            )
 
         finally:
             if analysis is not None:
