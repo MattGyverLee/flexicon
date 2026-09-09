@@ -75,7 +75,7 @@
 <div class="viewcode-block" id="ConstChartWordGroupOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Discourse.html#flexicon.code.Discourse.ConstChartWordGroupOperations.ConstChartWordGroupOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConstChartWordGroupOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class provides operations for managing word groups in constituent chart rows</span>
 <span class="sd">    for discourse analysis in FieldWorks projects.</span>
 
@@ -86,13 +86,13 @@
 
 <span class="sd">    Usage::</span>
 
-<span class="sd">        from flexlibs2 import FLExProject</span>
+<span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
 
 <span class="sd">        # Get a row</span>
-<span class="sd">        chart = project.ConstCharts.Find(&quot;Genesis 1 Analysis&quot;)</span>
+<span class="sd">        chart = project.ConstCharts.Find("Genesis 1 Analysis")</span>
 <span class="sd">        row = project.ConstChartRows.Find(chart, 0)</span>
 
 <span class="sd">        # Create a word group (referencing text segments)</span>
@@ -104,22 +104,22 @@
 <span class="sd">            pass</span>
 
 <span class="sd">        project.CloseProject()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize ConstChartWordGroupOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="c1"># --- Core CRUD Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">,</span> <span class="n">begin_segment</span><span class="p">,</span> <span class="n">end_segment</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new word group in a chart row.</span>
 
 <span class="sd">        Word groups represent a range of text segments being analyzed. The</span>
@@ -140,7 +140,7 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Get segments from a text</span>
-<span class="sd">            &gt;&gt;&gt; text = project.Texts.Find(&quot;Genesis 1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; text = project.Texts.Find("Genesis 1")</span>
 <span class="sd">            &gt;&gt;&gt; para = text.ContentsOA.ParagraphsOS[0]</span>
 <span class="sd">            &gt;&gt;&gt; segments = list(para.SegmentsOS)</span>
 <span class="sd">            &gt;&gt;&gt;</span>
@@ -152,7 +152,7 @@
 <span class="sd">            ... )</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Word group is appended to the row&#39;s cells collection</span>
+<span class="sd">            - Word group is appended to the row's cells collection</span>
 <span class="sd">            - Segments must be from the analyzed text</span>
 <span class="sd">            - Begin segment must come before or equal to end segment</span>
 <span class="sd">            - Factory.Create() automatically adds word group to repository</span>
@@ -160,27 +160,27 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Delete, Find, GetBeginSegment, GetEndSegment</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">begin_segment</span><span class="p">,</span> <span class="s2">&quot;begin_segment&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">end_segment</span><span class="p">,</span> <span class="s2">&quot;end_segment&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">"row_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">begin_segment</span><span class="p">,</span> <span class="s2">"begin_segment"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">end_segment</span><span class="p">,</span> <span class="s2">"end_segment"</span><span class="p">)</span>
 
         <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRow</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Validate segments</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">begin_segment</span><span class="p">,</span> <span class="n">ISegment</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;begin_segment must be an ISegment object&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"begin_segment must be an ISegment object"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">end_segment</span><span class="p">,</span> <span class="n">ISegment</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;end_segment must be an ISegment object&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"end_segment must be an ISegment object"</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create word group&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create word group"</span><span class="p">):</span>
             <span class="c1"># Create the new word group using the factory</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IConstChartWordGroupFactory</span><span class="p">)</span>
             <span class="n">new_word_group</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="c1"># Add to row&#39;s cells collection</span>
+            <span class="c1"># Add to row's cells collection</span>
             <span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_word_group</span><span class="p">)</span>
 
             <span class="c1"># Set the segment references</span>
@@ -191,7 +191,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete a word group from its chart row.</span>
 
 <span class="sd">        Args:</span>
@@ -217,20 +217,21 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Find</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">&quot;group_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">"group_or_hvo"</span><span class="p">)</span>
 
         <span class="c1"># Resolve to word group object</span>
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Delete the word group (LCM handles removal from repository)</span>
-        <span class="n">group</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete chart word group"</span><span class="p">):</span>
+            <span class="c1"># Delete the word group (LCM handles removal from repository)</span>
+            <span class="n">group</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find a word group in a row by its index position.</span>
 
 <span class="sd">        Args:</span>
@@ -248,7 +249,7 @@
 <span class="sd">            &gt;&gt;&gt; wg = project.ConstChartWordGroups.Find(row, 0)  # First word group</span>
 <span class="sd">            &gt;&gt;&gt; if wg:</span>
 <span class="sd">            ...     begin = project.ConstChartWordGroups.GetBeginSegment(wg)</span>
-<span class="sd">            ...     print(f&quot;Word group starts at segment {begin.Hvo}&quot;)</span>
+<span class="sd">            ...     print(f"Word group starts at segment {begin.Hvo}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Index is zero-based (0 = first word group)</span>
@@ -257,8 +258,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">"row_or_hvo"</span><span class="p">)</span>
 
         <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRow</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
 
@@ -270,14 +271,14 @@
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all word groups in a chart row.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            row_or_hvo: Either an IConstChartRow object or its HVO</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            list: List of IConstChartWordGroup objects (empty list if none)</span>
+<span class="sd">            list[IConstChartWordGroup]: List of word groups (empty list if none)</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If row_or_hvo is None</span>
@@ -286,7 +287,7 @@
 <span class="sd">            &gt;&gt;&gt; row = project.ConstChartRows.Find(chart, 0)</span>
 <span class="sd">            &gt;&gt;&gt; word_groups = project.ConstChartWordGroups.GetAll(row)</span>
 <span class="sd">            &gt;&gt;&gt; for i, wg in enumerate(word_groups):</span>
-<span class="sd">            ...     print(f&quot;Word group {i}&quot;)</span>
+<span class="sd">            ...     print(f"Word group {i}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns empty list if row has no word groups</span>
@@ -295,18 +296,27 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Find, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">&quot;row_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="s2">"row_or_hvo"</span><span class="p">)</span>
 
         <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRow</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span><span class="p">)</span>
+        <span class="c1"># CellsOS is declared over IConstituentChartCellPart and holds</span>
+        <span class="c1"># every cell-part subtype (word groups, tags, moved-text markers,</span>
+        <span class="c1"># clause markers). Returning it unfiltered contradicted this</span>
+        <span class="c1"># method's documented IConstChartWordGroup contract, and the raw</span>
+        <span class="c1"># elements exposed no IConstChartWordGroup surface at all. Filter</span>
+        <span class="c1"># on ClassName -- an uncast element fails</span>
+        <span class="c1"># isinstance(c, IConstChartWordGroup) -- then cast (issue #270).</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedElements</span><span class="p">(</span>
+            <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">CellsOS</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">"ConstChartWordGroup"</span>
+        <span class="p">)</span>
 
     <span class="c1"># --- Word Group Properties ---</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetBeginSegment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the beginning segment of a word group.</span>
 
 <span class="sd">        Args:</span>
@@ -322,7 +332,7 @@
 <span class="sd">            &gt;&gt;&gt; wg = project.ConstChartWordGroups.Find(row, 0)</span>
 <span class="sd">            &gt;&gt;&gt; begin_seg = project.ConstChartWordGroups.GetBeginSegment(wg)</span>
 <span class="sd">            &gt;&gt;&gt; if begin_seg:</span>
-<span class="sd">            ...     print(f&quot;Starts at segment {begin_seg.Hvo}&quot;)</span>
+<span class="sd">            ...     print(f"Starts at segment {begin_seg.Hvo}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns None if segment reference not set</span>
@@ -331,16 +341,16 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetBeginSegment, GetEndSegment</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">&quot;group_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">"group_or_hvo"</span><span class="p">)</span>
 
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">BeginSegmentRA</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="s2">&quot;BeginSegmentRA&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">BeginSegmentRA</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="s2">"BeginSegmentRA"</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetBeginSegment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_or_hvo</span><span class="p">,</span> <span class="n">segment</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the beginning segment of a word group.</span>
 
 <span class="sd">        Args:</span>
@@ -364,21 +374,22 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetBeginSegment, SetEndSegment</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">&quot;group_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">"group_or_hvo"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">segment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">segment</span><span class="p">,</span> <span class="n">ISegment</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;segment must be an ISegment object or None&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"segment must be an ISegment object or None"</span><span class="p">)</span>
 
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">)</span>
 
-        <span class="n">group</span><span class="o">.</span><span class="n">BeginSegmentRA</span> <span class="o">=</span> <span class="n">segment</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set word group begin segment"</span><span class="p">):</span>
+            <span class="n">group</span><span class="o">.</span><span class="n">BeginSegmentRA</span> <span class="o">=</span> <span class="n">segment</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetEndSegment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the ending segment of a word group.</span>
 
 <span class="sd">        Args:</span>
@@ -394,7 +405,7 @@
 <span class="sd">            &gt;&gt;&gt; wg = project.ConstChartWordGroups.Find(row, 0)</span>
 <span class="sd">            &gt;&gt;&gt; end_seg = project.ConstChartWordGroups.GetEndSegment(wg)</span>
 <span class="sd">            &gt;&gt;&gt; if end_seg:</span>
-<span class="sd">            ...     print(f&quot;Ends at segment {end_seg.Hvo}&quot;)</span>
+<span class="sd">            ...     print(f"Ends at segment {end_seg.Hvo}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns None if segment reference not set</span>
@@ -403,16 +414,16 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetEndSegment, GetBeginSegment</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">&quot;group_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">"group_or_hvo"</span><span class="p">)</span>
 
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">EndSegmentRA</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="s2">&quot;EndSegmentRA&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">EndSegmentRA</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="s2">"EndSegmentRA"</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetEndSegment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_or_hvo</span><span class="p">,</span> <span class="n">segment</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the ending segment of a word group.</span>
 
 <span class="sd">        Args:</span>
@@ -436,21 +447,22 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetEndSegment, SetBeginSegment</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">&quot;group_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">"group_or_hvo"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">segment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">segment</span><span class="p">,</span> <span class="n">ISegment</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;segment must be an ISegment object or None&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"segment must be an ISegment object or None"</span><span class="p">)</span>
 
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">)</span>
 
-        <span class="n">group</span><span class="o">.</span><span class="n">EndSegmentRA</span> <span class="o">=</span> <span class="n">segment</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set word group end segment"</span><span class="p">):</span>
+            <span class="n">group</span><span class="o">.</span><span class="n">EndSegmentRA</span> <span class="o">=</span> <span class="n">segment</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetColumn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the column position of a word group in the chart.</span>
 
 <span class="sd">        Args:</span>
@@ -467,7 +479,7 @@
 <span class="sd">            &gt;&gt;&gt; column = project.ConstChartWordGroups.GetColumn(wg)</span>
 <span class="sd">            &gt;&gt;&gt; if column:</span>
 <span class="sd">            ...     col_name = ITsString(column.Name.BestAnalysisAlternative).Text</span>
-<span class="sd">            ...     print(f&quot;Column: {col_name}&quot;)</span>
+<span class="sd">            ...     print(f"Column: {col_name}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns None if column not set</span>
@@ -476,16 +488,16 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetColumn</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">&quot;group_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">"group_or_hvo"</span><span class="p">)</span>
 
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">ColumnRA</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="s2">&quot;ColumnRA&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">ColumnRA</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="s2">"ColumnRA"</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetColumn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_or_hvo</span><span class="p">,</span> <span class="n">column</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the column position of a word group in the chart.</span>
 
 <span class="sd">        Args:</span>
@@ -510,19 +522,20 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetColumn</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">&quot;group_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="s2">"group_or_hvo"</span><span class="p">)</span>
 
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">)</span>
 
-        <span class="n">group</span><span class="o">.</span><span class="n">ColumnRA</span> <span class="o">=</span> <span class="n">column</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set word group column"</span><span class="p">):</span>
+            <span class="n">group</span><span class="o">.</span><span class="n">ColumnRA</span> <span class="o">=</span> <span class="n">column</span>
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve HVO or object to IConstChartWordGroup.</span>
 
 <span class="sd">        Args:</span>
@@ -532,17 +545,17 @@
 <span class="sd">            IConstChartWordGroup: The resolved word group object</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a word group</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            FP_ParameterError: If HVO doesn't refer to a word group</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">group_or_hvo</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IConstChartWordGroup</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a word group&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a word group"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">return</span> <span class="n">group_or_hvo</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveRow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve HVO or object to IConstChartRow.</span>
 
 <span class="sd">        Args:</span>
@@ -552,19 +565,19 @@
 <span class="sd">            IConstChartRow: The resolved row object</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a chart row</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            FP_ParameterError: If HVO doesn't refer to a chart row</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">row_or_hvo</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IConstChartRow</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a chart row&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a chart row"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">return</span> <span class="n">row_or_hvo</span>
 
     <span class="c1"># --- Reordering Support ---</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the owning sequence for word groups.</span>
 
 <span class="sd">        Args:</span>
@@ -576,7 +589,7 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Required for BaseOperations reordering methods</span>
 <span class="sd">            - Returns the CellsOS collection from the row</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">CellsOS</span></div>
 
 </pre></div>
@@ -616,8 +629,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

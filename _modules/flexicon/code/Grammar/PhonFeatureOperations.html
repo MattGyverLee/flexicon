@@ -101,19 +101,19 @@
 
 <span class="c1"># Canonical relative subdir for the PhonFeats catalog under FWCodeDir.</span>
 <span class="c1"># Kept as a module constant so verification / tests can reference it.</span>
-<span class="n">PHON_FEATS_CATALOG_FILENAME</span> <span class="o">=</span> <span class="s2">&quot;PhonFeatsEticGlossList.xml&quot;</span>
-<span class="n">PHON_FEATS_CATALOG_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;Language Explorer/MGA/GlossLists&quot;</span>
+<span class="n">PHON_FEATS_CATALOG_FILENAME</span> <span class="o">=</span> <span class="s2">"PhonFeatsEticGlossList.xml"</span>
+<span class="n">PHON_FEATS_CATALOG_SUBDIR</span> <span class="o">=</span> <span class="s2">"Language Explorer/MGA/GlossLists"</span>
 
 <span class="c1"># Optional prefix the wrapper accepts on CatalogSourceId values. Bare</span>
-<span class="c1"># ids (&quot;fPAConsonantal&quot;) are what FieldWorks itself writes; &quot;PHON:&quot; is</span>
+<span class="c1"># ids ("fPAConsonantal") are what FieldWorks itself writes; "PHON:" is</span>
 <span class="c1"># accepted as a user-facing convenience and is stripped before lookup.</span>
-<span class="n">CATALOG_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;PHON&quot;</span>
+<span class="n">CATALOG_PREFIX</span> <span class="o">=</span> <span class="s2">"PHON"</span>
 
 
 <div class="viewcode-block" id="PhonFeatureOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.PhonFeatureOperations.PhonFeatureOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PhonFeatureOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">,</span> <span class="n">CatalogBackedMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class provides operations for managing phonological features and</span>
 <span class="sd">    feature values in a FieldWorks project.</span>
 
@@ -130,34 +130,34 @@
 
 <span class="sd">    Usage::</span>
 
-<span class="sd">        from flexlibs2 import FLExProject</span>
+<span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
 
 <span class="sd">        phonFeats = project.PhonFeatures</span>
 
 <span class="sd">        # Bulk-import the standard MGA feature set.</span>
 <span class="sd">        result = phonFeats.ImportCatalog()</span>
-<span class="sd">        print(f&quot;Created {result.created_count}, &quot;</span>
-<span class="sd">              f&quot;skipped {result.skipped_count}&quot;)</span>
+<span class="sd">        print(f"Created {result.created_count}, "</span>
+<span class="sd">              f"skipped {result.skipped_count}")</span>
 
 <span class="sd">        # Or create a specific feature with its +/- values.</span>
-<span class="sd">        cons = phonFeats.CreateFromCatalog(&quot;fPAConsonantal&quot;)</span>
+<span class="sd">        cons = phonFeats.CreateFromCatalog("fPAConsonantal")</span>
 
 <span class="sd">        # Compose a feature structure for a phoneme.</span>
 <span class="sd">        plus = next(v for v in phonFeats.GetValues(cons)</span>
-<span class="sd">                    if phonFeats.GetAbbreviation(v) == &quot;+&quot;)</span>
+<span class="sd">                    if phonFeats.GetAbbreviation(v) == "+")</span>
 <span class="sd">        struct = phonFeats.MakeFeatStruc([(cons, plus)], owner=phoneme)</span>
 
 <span class="sd">        project.CloseProject()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># --- CatalogBackedMixin configuration ------------------------------</span>
     <span class="c1"># The PhonFeats catalog ships with FW under</span>
     <span class="c1"># Language Explorer/MGA/GlossLists/PhonFeatsEticGlossList.xml and is</span>
     <span class="c1"># parsed by parse_etic_gloss_list. Unlike POS, FW writes BARE entry</span>
-    <span class="c1"># ids (no &quot;PHON:&quot; prefix) to CatalogSourceId; the mixin honours that</span>
+    <span class="c1"># ids (no "PHON:" prefix) to CatalogSourceId; the mixin honours that</span>
     <span class="c1"># with CATALOG_PREFIX_WRITE = None. Features are flat (each top-level</span>
     <span class="c1"># entry owns IFsSymFeatVal value children handled by</span>
     <span class="c1"># _handle_entry_children), so the recursive-entries flag is off.</span>
@@ -165,16 +165,16 @@
     <span class="n">CATALOG_SUBDIR</span> <span class="o">=</span> <span class="n">PHON_FEATS_CATALOG_SUBDIR</span>
     <span class="n">CATALOG_PARSER</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">parse_etic_gloss_list</span><span class="p">)</span>
     <span class="n">CATALOG_PREFIX_WRITE</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">DOMAIN_LABEL</span> <span class="o">=</span> <span class="s2">&quot;feature&quot;</span>
+    <span class="n">DOMAIN_LABEL</span> <span class="o">=</span> <span class="s2">"feature"</span>
     <span class="n">_supports_recursive_entries</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize PhonFeatureOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="c1"># ========================================================================</span>
@@ -184,18 +184,18 @@
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all phonological features in the project.</span>
 
-<span class="sd">        Yields:</span>
-<span class="sd">            IFsClosedFeature: Each feature in PhFeatureSystemOA.FeaturesOC.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EnumerableWrapper[IFsClosedFeature]: Each feature in PhFeatureSystemOA.FeaturesOC.</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - ``FeaturesOC`` is typed as ``IFsFeatDefn`` in C#. Each yielded</span>
 <span class="sd">              item is cast to ``IFsClosedFeature`` (the only concrete shape</span>
 <span class="sd">              this catalog uses) so callers can access ``ValuesOC`` directly.</span>
 <span class="sd">            - Returns nothing if the project has no PhFeatureSystemOA.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhFeatureSystemOA</span>
         <span class="k">if</span> <span class="n">feature_system</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
@@ -204,7 +204,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the name of a phonological feature or value.</span>
 
 <span class="sd">        Args:</span>
@@ -212,56 +212,56 @@
 <span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: The Name in the requested WS, or &quot;&quot; if not set.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;feature_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">            str: The Name in the requested WS, or "" if not set.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">"feature_or_hvo"</span><span class="p">)</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the abbreviation of a phonological feature or value.</span>
 
 <span class="sd">        For values, the abbreviation is typically ``+`` or ``-``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;feature_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">"feature_or_hvo"</span><span class="p">)</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
         <span class="n">abbr</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the description of a phonological feature or value.</span>
 
-<span class="sd">        Returns &quot;&quot; if the object has no Description property.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;feature_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        Returns "" if the object has no Description property.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">"feature_or_hvo"</span><span class="p">)</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"Description"</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">""</span>
         <span class="n">desc</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all IFsSymFeatVal values defined on a closed feature.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            feature_or_hvo: The IFsClosedFeature object or HVO.</span>
 
 <span class="sd">        Yields:</span>
-<span class="sd">            IFsSymFeatVal: Each value (typically &quot;+&quot; and &quot;-&quot; for binary</span>
+<span class="sd">            IFsSymFeatVal: Each value (typically "+" and "-" for binary</span>
 <span class="sd">            phonological features).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;feature_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">"feature_or_hvo"</span><span class="p">)</span>
         <span class="n">feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
         <span class="c1"># ValuesOC is typed as IFsSymFeatVal directly.</span>
         <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">feature</span><span class="o">.</span><span class="n">ValuesOC</span><span class="p">:</span>
@@ -269,12 +269,12 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find a phonological feature by name.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): The name to search for. Compared via NFD-normalised</span>
-<span class="sd">                        casefold match against each feature&#39;s Name in the</span>
+<span class="sd">                        casefold match against each feature's Name in the</span>
 <span class="sd">                        chosen WS.</span>
 <span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
 
@@ -286,8 +286,8 @@
 <span class="sd">              ``GetValues(feature)``.</span>
 <span class="sd">            - Matches the feature-name convention used by other linguistic</span>
 <span class="sd">              Find methods (case-insensitive, NFD-normalised).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">target</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -306,10 +306,10 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check whether a phonological feature with the given name exists.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">wsHandle</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="c1"># ========================================================================</span>
@@ -318,12 +318,12 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">catalogSourceId</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new phonological feature (IFsClosedFeature).</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            name (str): Feature name (e.g. &quot;consonantal&quot;).</span>
-<span class="sd">            abbreviation (str): Short abbreviation (e.g. &quot;cons&quot;).</span>
+<span class="sd">            name (str): Feature name (e.g. "consonantal").</span>
+<span class="sd">            abbreviation (str): Short abbreviation (e.g. "cons").</span>
 <span class="sd">            catalogSourceId (str, optional): Optional catalog id. If it</span>
 <span class="sd">                starts with the ``PHON:`` prefix (case-insensitive),</span>
 <span class="sd">                the feature is created from the MGA catalog (canonical</span>
@@ -333,7 +333,7 @@
 <span class="sd">                the existing object; the user-supplied name/abbreviation</span>
 <span class="sd">                are only overlaid when the analysis-WS slots are empty</span>
 <span class="sd">                (a fresh import). When the canonical labels already match</span>
-<span class="sd">                the user&#39;s args, the call is a no-op. When they conflict,</span>
+<span class="sd">                the user's args, the call is a no-op. When they conflict,</span>
 <span class="sd">                the call refuses with FP_ParameterError -- pass</span>
 <span class="sd">                ``force=True`` to overlay anyway. Otherwise the value is</span>
 <span class="sd">                written verbatim to ``CatalogSourceId``.</span>
@@ -348,17 +348,17 @@
 <span class="sd">            FP_ReadOnlyError, FP_NullParameterError, FP_ParameterError:</span>
 <span class="sd">                Per BaseOperations validation rules. FP_ParameterError is</span>
 <span class="sd">                also raised when the catalog returns an existing feature</span>
-<span class="sd">                with canonical labels that conflict with the user&#39;s args</span>
+<span class="sd">                with canonical labels that conflict with the user's args</span>
 <span class="sd">                and ``force=False``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="s2">&quot;abbreviation&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="s2">"abbreviation"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Name cannot be empty"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">abbreviation</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">abbreviation</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Abbreviation cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Abbreviation cannot be empty"</span><span class="p">)</span>
 
         <span class="c1"># Catalog-driven creation: defer to CreateFromCatalog for the</span>
         <span class="c1"># canonical GUID + values, then overlay user-supplied strings</span>
@@ -366,8 +366,8 @@
         <span class="c1"># Otherwise the canonical labels (possibly set by the FLEx UI</span>
         <span class="c1"># user or a prior programmatic call) would be silently</span>
         <span class="c1"># overwritten. (issue #138)</span>
-        <span class="k">if</span> <span class="n">catalogSourceId</span> <span class="ow">and</span> <span class="n">catalogSourceId</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">CATALOG_PREFIX</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span><span class="p">):</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create phonological feature &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">catalogSourceId</span> <span class="ow">and</span> <span class="n">catalogSourceId</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">CATALOG_PREFIX</span> <span class="o">+</span> <span class="s2">":"</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Create phonological feature '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
                 <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
                 <span class="n">new_feat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CreateFromCatalog</span><span class="p">(</span><span class="n">catalogSourceId</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">__OverlayCanonicalLabels</span><span class="p">(</span>
@@ -378,7 +378,7 @@
         <span class="c1"># Uniqueness check by name within the feature system.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Phonological feature &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; already exists&quot;</span>
+                <span class="sa">f</span><span class="s2">"Phonological feature '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' already exists"</span>
             <span class="p">)</span>
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
@@ -386,8 +386,8 @@
         <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhFeatureSystemOA</span>
         <span class="k">if</span> <span class="n">feature_system</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">&quot;Project has no PhFeatureSystemOA; cannot create &quot;</span>
-                <span class="s2">&quot;phonological features.&quot;</span>
+                <span class="s2">"Project has no PhFeatureSystemOA; cannot create "</span>
+                <span class="s2">"phonological features."</span>
             <span class="p">)</span>
 
         <span class="c1"># Phase 2 ownership-ordering rule: attach to the owning collection</span>
@@ -397,7 +397,7 @@
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
             <span class="n">IFsClosedFeatureFactory</span>
         <span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create phonological feature &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Create phonological feature '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
             <span class="n">new_feat</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
             <span class="n">feature_system</span><span class="o">.</span><span class="n">FeaturesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_feat</span><span class="p">)</span>
             <span class="n">new_feat</span> <span class="o">=</span> <span class="n">IFsClosedFeature</span><span class="p">(</span><span class="n">new_feat</span><span class="p">)</span>
@@ -416,64 +416,70 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the name of a phonological feature or value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;feature_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">"feature_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Name cannot be empty"</span><span class="p">)</span>
 
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">obj</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set feature name '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">,</span> <span class="n">abbrev</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the abbreviation of a phonological feature or value.</span>
 
 <span class="sd">        For values, the abbreviation is typically ``+`` or ``-``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;feature_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbrev</span><span class="p">,</span> <span class="s2">&quot;abbrev&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">"feature_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbrev</span><span class="p">,</span> <span class="s2">"abbrev"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">abbrev</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">abbrev</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Abbreviation cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Abbreviation cannot be empty"</span><span class="p">)</span>
 
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbrev</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set feature abbreviation '</span><span class="si">{</span><span class="n">abbrev</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the description of a phonological feature or value.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ParameterError: If the object has no Description property.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;feature_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">"feature_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">"description"</span><span class="p">)</span>
 
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"Description"</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">&quot;Target object has no Description multistring property.&quot;</span>
+                <span class="s2">"Target object has no Description multistring property."</span>
             <span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">obj</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set feature description"</span><span class="p">):</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete a phonological feature.</span>
 
 <span class="sd">        Args:</span>
@@ -485,14 +491,15 @@
 <span class="sd">            - Deletion removes the feature from PhFeatureSystemOA.FeaturesOC.</span>
 <span class="sd">              LCM will cascade-delete its IFsSymFeatVal children and any</span>
 <span class="sd">              references from IFsClosedValue.FeatureRA.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;feature_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">"feature_or_hvo"</span><span class="p">)</span>
 
         <span class="n">feat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Unwrap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">))</span>
         <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhFeatureSystemOA</span>
         <span class="k">if</span> <span class="n">feature_system</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">feature_system</span><span class="o">.</span><span class="n">FeaturesOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete phonological feature"</span><span class="p">):</span>
+                <span class="n">feature_system</span><span class="o">.</span><span class="n">FeaturesOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
 
     <span class="c1"># ========================================================================</span>
     <span class="c1"># WRITE METHODS - VALUE (IFsSymFeatVal under a feature)</span>
@@ -500,15 +507,15 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">CreateValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">value_marker</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new symbolic value (IFsSymFeatVal) under a closed feature.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            feature_or_hvo: The IFsClosedFeature or HVO that owns the value.</span>
-<span class="sd">            name (str): Value name (e.g. &quot;positive&quot;, &quot;negative&quot;).</span>
+<span class="sd">            name (str): Value name (e.g. "positive", "negative").</span>
 <span class="sd">            abbreviation (str): Short abbreviation. For standard binary</span>
 <span class="sd">                                phonological features, conventionally</span>
-<span class="sd">                                &quot;+&quot; or &quot;-&quot;.</span>
+<span class="sd">                                "+" or "-".</span>
 <span class="sd">            value_marker (str, optional): Currently informational only --</span>
 <span class="sd">                                accepted for API symmetry with FW UIs that</span>
 <span class="sd">                                ask the user to choose +/-, but the abbreviation</span>
@@ -521,16 +528,16 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Applies the Phase 2 ownership-ordering rule: factory.Create()</span>
 <span class="sd">              -&gt; feature.ValuesOC.Add() -&gt; set Name + Abbreviation.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">&quot;feature_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="s2">&quot;abbreviation&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">,</span> <span class="s2">"feature_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="s2">"abbreviation"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Name cannot be empty"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">abbreviation</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Abbreviation cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Abbreviation cannot be empty"</span><span class="p">)</span>
 
         <span class="n">feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Unwrap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">feature_or_hvo</span><span class="p">))</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
@@ -538,7 +545,7 @@
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
             <span class="n">IFsSymFeatValFactory</span>
         <span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create feature value &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Create feature value '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
             <span class="n">new_val</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
             <span class="c1"># Ownership-first: attach to feature.ValuesOC before mutating strings.</span>
             <span class="n">feature</span><span class="o">.</span><span class="n">ValuesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
@@ -558,13 +565,13 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">DeleteValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete a phonological feature value.</span>
 
-<span class="sd">        Removes the value from its owning feature&#39;s ValuesOC.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        Removes the value from its owning feature's ValuesOC.</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">value_or_hvo</span><span class="p">,</span> <span class="s2">&quot;value_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">value_or_hvo</span><span class="p">,</span> <span class="s2">"value_or_hvo"</span><span class="p">)</span>
 
         <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Unwrap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">value_or_hvo</span><span class="p">))</span>
         <span class="n">owner</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">Owner</span>
@@ -574,8 +581,12 @@
             <span class="c1"># guards against the unlikely case that owner is some other type</span>
             <span class="c1"># (should not happen in practice, but preserves robustness).</span>
             <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># The cast stays inside the try but outside the bracket, so a</span>
+                <span class="c1"># non-IFsClosedFeature owner is swallowed without opening an</span>
+                <span class="c1"># empty named undo entry.</span>
                 <span class="n">feat</span> <span class="o">=</span> <span class="n">IFsClosedFeature</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
-                <span class="n">feat</span><span class="o">.</span><span class="n">ValuesOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete feature value"</span><span class="p">):</span>
+                    <span class="n">feat</span><span class="o">.</span><span class="n">ValuesOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
 
@@ -584,95 +595,271 @@
     <span class="c1"># ========================================================================</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">MakeFeatStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Build an IFsFeatStruc populated with (feature, value) pairs.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MakeFeatStruc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Build an IFsFeatStruc populated from user-facing specs.</span>
+
+<span class="sd">        Thin call-through to ``BaseOperations._MakeFeatStruc`` (spec</span>
+<span class="sd">        ``feature-structure-sync-gap``, contract C3; closes issue #256).</span>
+<span class="sd">        The two previously byte-identical-except-for-the-owner-check</span>
+<span class="sd">        bodies here and in ``InflectionFeatureOperations.MakeFeatStruc``</span>
+<span class="sd">        are now ONE generalized implementation, resolved via T2's</span>
+<span class="sd">        ``ClassName``-driven ``_ResolveFeatureStrucOwner`` instead of the</span>
+<span class="sd">        ``hasattr(owner, "FeaturesOA")`` gate. See</span>
+<span class="sd">        ``BaseOperations._MakeFeatStruc`` for the full contract (both</span>
+<span class="sd">        accepted ``specs`` shapes, ``slot=`` disambiguation, per-operand</span>
+<span class="sd">        resolution, and the Raises list).</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            specs (list[tuple]): A list of ``(feature, value)`` tuples.</span>
-<span class="sd">                Each side may be an IFsClosedFeature / IFsSymFeatVal</span>
-<span class="sd">                object, a wrapper, or an HVO. Items are added to the</span>
-<span class="sd">                struct&#39;s ``FeatureSpecsOC`` in the order provided.</span>
-
-<span class="sd">            owner: LCM object that owns the struct via its</span>
-<span class="sd">                ``FeaturesOA`` atomic-owning property. **Required.**</span>
-<span class="sd">                The struct is attached to ``owner.FeaturesOA`` BEFORE</span>
-<span class="sd">                its FeatureSpecsOC is populated, because LCM property</span>
-<span class="sd">                setters and getters both NPE on free-floating</span>
-<span class="sd">                IFsFeatStruc objects (Phase 2 ownership rule).</span>
-<span class="sd">                Phonemes and natural classes both use ``FeaturesOA``.</span>
-
-<span class="sd">                ``owner=None`` is rejected unconditionally (issue #28).</span>
-<span class="sd">                The previous unowned-empty mode returned a struct</span>
-<span class="sd">                whose property accessors NPE&#39;d inside</span>
-<span class="sd">                ``CmObject.get_Services()``; that footgun is now gone.</span>
+<span class="sd">            specs: Recursive dict (canonical) OR a flat list of</span>
+<span class="sd">                ``(feature, value)`` tuples (legacy, supported</span>
+<span class="sd">                indefinitely). See ``BaseOperations._MakeFeatStruc``.</span>
+<span class="sd">            owner: LCM object that owns the struct via its C1-resolved</span>
+<span class="sd">                owning property. **Required** -- ``owner=None`` always</span>
+<span class="sd">                raises (issue #28). Phonemes and natural classes both</span>
+<span class="sd">                use ``FeaturesOA``, resolved the same way as every other</span>
+<span class="sd">                owner in the C1 table.</span>
+<span class="sd">            slot: Disambiguates an owner with more than one</span>
+<span class="sd">                feature-structure-owning property. Ignored for</span>
+<span class="sd">                single-property owners (phonemes/natural classes always</span>
+<span class="sd">                are). See ``BaseOperations._ResolveFeatureStrucOwner``.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IFsFeatStruc: The populated feature structure, attached to</span>
-<span class="sd">            ``owner.FeaturesOA``.</span>
+<span class="sd">            ``owner``'s C1-resolved owning property.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If ``owner`` is None, if a spec tuple</span>
-<span class="sd">                is malformed, or if ``owner`` has no FeaturesOA</span>
-<span class="sd">                property.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">specs</span><span class="p">,</span> <span class="s2">&quot;specs&quot;</span><span class="p">)</span>
+<span class="sd">            FP_ParameterError: If ``owner`` is None, if a spec entry</span>
+<span class="sd">                is malformed, or if ``owner``'s ``ClassName`` is not a</span>
+<span class="sd">                recognized/unambiguous feature-structure owner (see</span>
+<span class="sd">                ``BaseOperations._ResolveFeatureStrucOwner``).</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MakeFeatStruc</span><span class="p">(</span><span class="n">specs</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="n">owner</span><span class="p">,</span> <span class="n">slot</span><span class="o">=</span><span class="n">slot</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="c1"># ========================================================================</span>
+    <span class="c1"># SYNC INTEGRATION METHODS</span>
+    <span class="c1"># ========================================================================</span>
+    <span class="c1">#</span>
+    <span class="c1"># Symmetric with the 8 Grammar Operations subclasses that support</span>
+    <span class="c1"># property-level cross-project transfer (GramTrans). Unlike the flat</span>
+    <span class="c1"># POS / InflectionClass cases, an IFsClosedFeature OWNS its symbolic</span>
+    <span class="c1"># values (ValuesOC -&gt; IFsSymFeatVal). GetSyncableProperties therefore</span>
+    <span class="c1"># surfaces each value with its own GUID + Name/Abbreviation/Description</span>
+    <span class="c1"># so ApplySyncableProperties can co-create them GUID-aligned; a synced</span>
+    <span class="c1"># feature would otherwise be an empty shell and per-phoneme FeaturesOA</span>
+    <span class="c1"># specs could not be rewired against it (issue #222).</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Get dictionary of syncable properties for cross-project sync.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: The IFsClosedFeature object, wrapper, or HVO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Property names mapped to values. Shapes emitted:</span>
+
+<span class="sd">            - ``Name`` / ``Abbreviation`` / ``Description``:</span>
+<span class="sd">              ``{ws_id: text}`` multistring dicts (non-empty alts only).</span>
+<span class="sd">            - ``CatalogSourceId``: plain ``str`` provenance tag, when set.</span>
+<span class="sd">            - ``Values``: a list of dicts, one per owned ``IFsSymFeatVal``,</span>
+<span class="sd">              each ``{"Guid": str, "Name": {...}, "Abbreviation": {...},</span>
+<span class="sd">              "Description": {...}}``. The per-value ``Guid`` is preserved</span>
+<span class="sd">              so a downstream GUID-aligned create rebuilds the value on the</span>
+<span class="sd">              target side.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Does not include the feature's own GUID/HVO (identity is</span>
+<span class="sd">              managed by the caller / match strategy).</span>
+<span class="sd">            - Value string reads are guarded so a single malformed alt</span>
+<span class="sd">              never aborts the whole extraction (issue #222).</span>
+<span class="sd">        """</span>
+        <span class="n">feat</span> <span class="o">=</span> <span class="n">IFsClosedFeature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__Unwrap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item</span><span class="p">)))</span>
+        <span class="n">all_ws</span> <span class="o">=</span> <span class="p">{</span><span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()}</span>
+
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">prop_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"Name"</span><span class="p">,</span> <span class="s2">"Abbreviation"</span><span class="p">,</span> <span class="s2">"Description"</span><span class="p">):</span>
+            <span class="n">ws_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ReadMultiString</span><span class="p">(</span><span class="n">feat</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">,</span> <span class="n">all_ws</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ws_values</span><span class="p">:</span>
+                <span class="n">props</span><span class="p">[</span><span class="n">prop_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ws_values</span>
+
+        <span class="c1"># CatalogSourceId is a plain-string provenance tag; carry it so the</span>
+        <span class="c1"># target feature keeps its catalog linkage. The base apply loop</span>
+        <span class="c1"># handles the str shape via setattr.</span>
+        <span class="n">csid</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">feat</span><span class="p">,</span> <span class="s2">"CatalogSourceId"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">csid</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"CatalogSourceId"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">csid</span><span class="p">)</span>
+
+        <span class="c1"># Owned symbolic values. Each carries its own GUID for GUID-aligned</span>
+        <span class="c1"># co-create on the target side.</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">feat</span><span class="o">.</span><span class="n">ValuesOC</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">IFsSymFeatVal</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+            <span class="n">value_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"Guid"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">Guid</span><span class="p">)}</span>
+            <span class="k">for</span> <span class="n">prop_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"Name"</span><span class="p">,</span> <span class="s2">"Abbreviation"</span><span class="p">,</span> <span class="s2">"Description"</span><span class="p">):</span>
+                <span class="n">ws_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ReadMultiString</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">,</span> <span class="n">all_ws</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ws_values</span><span class="p">:</span>
+                    <span class="n">value_dict</span><span class="p">[</span><span class="n">prop_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ws_values</span>
+            <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value_dict</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"Values"</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span>
+
+        <span class="k">return</span> <span class="n">props</span>
+
+    <span class="nd">@OperationsMethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Apply syncable properties (from GetSyncableProperties) onto a feature.</span>
+
+<span class="sd">        Handles the feature's own multistring / CatalogSourceId fields via</span>
+<span class="sd">        the BaseOperations loop, then co-creates the owned ``Values``</span>
+<span class="sd">        (IFsSymFeatVal) GUID-aligned so the synced feature is not left an</span>
+<span class="sd">        empty shell (issue #222).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: Target IFsClosedFeature (already created + owned +</span>
+<span class="sd">                GUID-assigned by the caller).</span>
+<span class="sd">            props: dict produced by GetSyncableProperties.</span>
+<span class="sd">            ws_map: Optional source-&gt;target writing-system Id mapping.</span>
+<span class="sd">            fill_gaps: If True, only fill empty target alts / add missing</span>
+<span class="sd">                values; never overwrite existing target data.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Value identity is by GUID: an existing value with the same</span>
+<span class="sd">              GUID is updated in place; a missing one is created with that</span>
+<span class="sd">              GUID via the IFsSymFeatVal factory (Create(guid, feature),</span>
+<span class="sd">              falling back to Create(guid)+Add).</span>
+<span class="sd">            - Must run inside the caller's unit of work (same contract as</span>
+<span class="sd">              the base implementation, which sets strings without opening</span>
+<span class="sd">              its own transaction).</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"ApplySyncableProperties: item is None"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">&quot;MakeFeatStruc requires an owner. LCM property &quot;</span>
-                <span class="s2">&quot;accessors NPE on free-floating IFsFeatStruc objects, &quot;</span>
-                <span class="s2">&quot;so the previous unowned-empty mode produced an &quot;</span>
-                <span class="s2">&quot;unusable struct (issue #28). Pass owner=phoneme / &quot;</span>
-                <span class="s2">&quot;owner=natural_class / owner=context.&quot;</span>
+                <span class="sa">f</span><span class="s2">"ApplySyncableProperties: props must be a dict, got "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">props</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
-        <span class="c1"># Normalize and validate specs up front, before any LCM mutation.</span>
-        <span class="n">normalized</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pair</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">specs</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pair</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">pair</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;specs[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">] must be a (feature, value) tuple&quot;</span>
-                <span class="p">)</span>
-            <span class="n">feat_in</span><span class="p">,</span> <span class="n">val_in</span> <span class="o">=</span> <span class="n">pair</span>
-            <span class="n">feat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Unwrap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">feat_in</span><span class="p">))</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Unwrap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">val_in</span><span class="p">))</span>
-            <span class="n">normalized</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">feat</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span>
+        <span class="c1"># Resolve once so an HVO or wrapper input is handled uniformly by the</span>
+        <span class="c1"># base loop and the value co-create below.</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">IFsClosedFeature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__Unwrap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item</span><span class="p">)))</span>
 
-        <span class="c1"># Create the struct and attach it to its owner BEFORE any</span>
-        <span class="c1"># FeatureSpecsOC mutation. Skipping the attach (or doing it</span>
-        <span class="c1"># after) trips the Phase 2 NPE pattern -- LCM property setters</span>
-        <span class="c1"># on free-floating structs raise NullReferenceException.</span>
-        <span class="n">owner_unwrapped</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Unwrap</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner_unwrapped</span><span class="p">,</span> <span class="s2">&quot;FeaturesOA&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">&quot;owner has no FeaturesOA property; cannot attach FsFeatStruc.&quot;</span>
-            <span class="p">)</span>
-
-        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
-            <span class="n">IFsFeatStrucFactory</span>
+        <span class="c1"># Feature-level scalar/multistring fields via the base loop.</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Values"</span><span class="p">)</span>
+        <span class="n">scalar_props</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">"Values"</span><span class="p">}</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span>
+            <span class="n">feature</span><span class="p">,</span> <span class="n">scalar_props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span>
         <span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Make feature structure&quot;</span><span class="p">):</span>
-            <span class="n">struct</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
-            <span class="n">owner_unwrapped</span><span class="o">.</span><span class="n">FeaturesOA</span> <span class="o">=</span> <span class="n">struct</span>
-            <span class="c1"># Re-fetch via the owning property to hold the LCM view of the</span>
-            <span class="c1"># now-owned struct.</span>
-            <span class="n">struct</span> <span class="o">=</span> <span class="n">IFsFeatStruc</span><span class="p">(</span><span class="n">owner_unwrapped</span><span class="o">.</span><span class="n">FeaturesOA</span><span class="p">)</span>
 
-            <span class="c1"># Populate FeatureSpecsOC. Each spec is an IFsClosedValue with</span>
-            <span class="c1"># FeatureRA -&gt; feature and ValueRA -&gt; value.</span>
-            <span class="n">cv_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
-                <span class="n">IFsClosedValueFactory</span>
-            <span class="p">)</span>
-            <span class="k">for</span> <span class="n">feat</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">normalized</span><span class="p">:</span>
-                <span class="n">closed_value</span> <span class="o">=</span> <span class="n">cv_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
-                <span class="n">struct</span><span class="o">.</span><span class="n">FeatureSpecsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">closed_value</span><span class="p">)</span>
-                <span class="n">cv</span> <span class="o">=</span> <span class="n">IFsClosedValue</span><span class="p">(</span><span class="n">closed_value</span><span class="p">)</span>
-                <span class="n">cv</span><span class="o">.</span><span class="n">FeatureRA</span> <span class="o">=</span> <span class="n">feat</span>
-                <span class="n">cv</span><span class="o">.</span><span class="n">ValueRA</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">if</span> <span class="n">values</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyValues</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="p">)</span>
 
-            <span class="k">return</span> <span class="n">struct</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ApplyValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Co-create / update the IFsSymFeatVal children of a feature from a</span>
+<span class="sd">        list of value dicts emitted by GetSyncableProperties.</span>
+<span class="sd">        """</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">IFsClosedFeature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__Unwrap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item</span><span class="p">)))</span>
+        <span class="n">existing_by_guid</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">IFsSymFeatVal</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">feature</span><span class="o">.</span><span class="n">ValuesOC</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">value_dict</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">guid_str</span> <span class="o">=</span> <span class="n">value_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Guid"</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">guid_str</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">existing_by_guid</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid_str</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__CreateValueWithGuid</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">guid_str</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">guid_str</span><span class="p">:</span>
+                    <span class="n">existing_by_guid</span><span class="p">[</span><span class="n">guid_str</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">val</span>
+
+            <span class="c1"># Apply the value's own multistrings through the base loop.</span>
+            <span class="n">sub_props</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">k</span><span class="p">:</span> <span class="n">value_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"Name"</span><span class="p">,</span> <span class="s2">"Abbreviation"</span><span class="p">,</span> <span class="s2">"Description"</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">value_dict</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">sub_props</span><span class="p">:</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span>
+                    <span class="n">val</span><span class="p">,</span> <span class="n">sub_props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span>
+                <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__CreateValueWithGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">guid_str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Create an IFsSymFeatVal under ``feature`` preserving ``guid_str``.</span>
+
+<span class="sd">        Mirrors the catalog-import value creation (Path A 2-arg factory</span>
+<span class="sd">        overload, Path B Create(Guid)+Add). Falls back to a random-GUID</span>
+<span class="sd">        create only if no GUID was supplied or both GUID paths fail, so a</span>
+<span class="sd">        value is never silently dropped.</span>
+<span class="sd">        """</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
+            <span class="n">IFsSymFeatValFactory</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Every exit path creates a value, so the whole Path A / Path B /</span>
+        <span class="c1"># last-resort chain is one unit: a Path-B create whose Add then fails</span>
+        <span class="c1"># must not leave a free-floating value behind.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create feature value"</span><span class="p">):</span>
+            <span class="n">new_val</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">guid_str</span><span class="p">:</span>
+                <span class="n">guid</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Guid</span><span class="p">(</span><span class="n">guid_str</span><span class="p">)</span>
+                <span class="c1"># Path A: 2-arg factory overload if pythonnet exposes it.</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">new_val</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">feature</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">new_val</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">new_val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Path B: implementation-side Create(Guid) then Add().</span>
+                    <span class="n">concrete_factory</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">factory</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">factory</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">)</span>
+                        <span class="k">else</span> <span class="n">factory</span>
+                    <span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">new_val</span> <span class="o">=</span> <span class="n">concrete_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+                        <span class="n">feature</span><span class="o">.</span><span class="n">ValuesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="n">new_val</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="n">new_val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Last resort: random GUID (no canonical GUID available or both</span>
+                <span class="c1"># aligned-create paths failed). Ownership-first as elsewhere.</span>
+                <span class="n">new_val</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+                <span class="n">feature</span><span class="o">.</span><span class="n">ValuesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">IFsSymFeatVal</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ReadMultiString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">,</span> <span class="n">all_ws</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Read a multistring property into a ``{ws_id: text}`` dict, guarding</span>
+<span class="sd">        each per-WS read so one malformed alt cannot abort extraction.</span>
+
+<span class="sd">        Returns None when the property is absent, empty, or not a</span>
+<span class="sd">        multistring. Feature / value Name/Abbreviation/Description are all</span>
+<span class="sd">        IMultiUnicode, so the scalar branch is defensive only.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">prop_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">prop_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">ws_values</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">prop_obj</span><span class="p">,</span> <span class="s2">"get_String"</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">ws_id</span><span class="p">,</span> <span class="n">ws_handle</span> <span class="ow">in</span> <span class="n">all_ws</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">prop_obj</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                    <span class="n">ws_values</span><span class="p">[</span><span class="n">ws_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="k">return</span> <span class="n">ws_values</span> <span class="ow">or</span> <span class="kc">None</span>
 
     <span class="c1"># ========================================================================</span>
     <span class="c1"># CATALOG (eticGlossList) IMPORT METHODS</span>
@@ -692,17 +879,17 @@
     <span class="c1"># --- CatalogBackedMixin hooks --------------------------------------</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_root_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the top-level owner (PhFeatureSystemOA).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return the top-level owner (PhFeatureSystemOA)."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhFeatureSystemOA</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve the IFsClosedFeature factory for the mixin&#39;s Path B.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Resolve the IFsClosedFeature factory for the mixin's Path B."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
             <span class="n">IFsClosedFeatureFactory</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_factory_create_attached</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Path A: try the 2-arg factory overload. For features, parent_obj</span>
 <span class="sd">        is always None (features are flat, owned directly by</span>
 <span class="sd">        PhFeatureSystemOA.FeaturesOC), so we always pass the feature</span>
@@ -710,40 +897,47 @@
 
 <span class="sd">        Pythonnet may not expose the 2-arg overload on the interface</span>
 <span class="sd">        variable; returning None lets the mixin fall back to Path B.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_factory</span><span class="p">()</span>
         <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_root_list</span><span class="p">()</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">feature_system</span><span class="p">)</span>
+            <span class="c1"># Reached from inside the mixin's "Create ... from catalog"</span>
+            <span class="c1"># bracket (catalog_backed.py), so this joins that transaction</span>
+            <span class="c1"># rather than opening its own (nesting-aware per B1). Stated</span>
+            <span class="c1"># anyway so the site is grep-auditable per D5.</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create phonological feature from catalog"</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">feature_system</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_path_b_attach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_obj</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Path B fallback: attach a free-floating feature to</span>
 <span class="sd">        PhFeatureSystemOA.FeaturesOC. parent_obj is ignored (always None</span>
 <span class="sd">        for top-level features).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_get_root_list</span><span class="p">()</span><span class="o">.</span><span class="n">FeaturesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_obj</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="c1"># Joins the mixin's catalog bracket per B1.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Attach phonological feature from catalog"</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_root_list</span><span class="p">()</span><span class="o">.</span><span class="n">FeaturesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_obj</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_cast_to_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the IFsClosedFeature view of a raw LCM feature object.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return the IFsClosedFeature view of a raw LCM feature object."""</span>
         <span class="k">return</span> <span class="n">IFsClosedFeature</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_set_localized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">abbrev</span><span class="p">,</span> <span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-WS multistring writes for Name/Abbreviation/Description.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Per-WS multistring writes for Name/Abbreviation/Description."""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">,</span> <span class="n">abbrev</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"Description"</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Description</span><span class="p">,</span> <span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_walk_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Yield each IFsClosedFeature in PhFeatureSystemOA. Features are</span>
 <span class="sd">        flat (no hierarchy among themselves), so this is a single-level</span>
 <span class="sd">        walk. Value children are NOT included here -- value idempotency</span>
 <span class="sd">        is checked per-feature in _handle_entry_children.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">feature_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhFeatureSystemOA</span>
         <span class="k">if</span> <span class="n">feature_system</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
@@ -751,7 +945,7 @@
             <span class="k">yield</span> <span class="n">IFsClosedFeature</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_handle_entry_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">created_feature</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create IFsSymFeatVal items for each value child of `entry` under</span>
 <span class="sd">        `created_feature.ValuesOC`. Idempotency is checked per-feature</span>
 <span class="sd">        against the existing value GUIDs on the feature.</span>
@@ -759,13 +953,13 @@
 <span class="sd">        ``result`` is a CatalogImportResult when called from</span>
 <span class="sd">        ImportCatalog, or None when called from CreateFromCatalog /</span>
 <span class="sd">        FixGuidsAgainstCatalog (we still create missing values; we just</span>
-<span class="sd">        don&#39;t accumulate counts).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        don't accumulate counts).</span>
+<span class="sd">        """</span>
         <span class="n">existing_value_guids</span> <span class="o">=</span> <span class="p">{</span>
             <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">created_feature</span><span class="o">.</span><span class="n">ValuesOC</span>
         <span class="p">}</span>
         <span class="k">for</span> <span class="n">value_entry</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
-            <span class="n">v_guid</span> <span class="o">=</span> <span class="n">value_entry</span><span class="o">.</span><span class="n">guid</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="n">value_entry</span><span class="o">.</span><span class="n">guid</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">v_guid</span> <span class="o">=</span> <span class="n">value_entry</span><span class="o">.</span><span class="n">guid</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="n">value_entry</span><span class="o">.</span><span class="n">guid</span> <span class="k">else</span> <span class="s2">""</span>
             <span class="k">if</span> <span class="n">v_guid</span> <span class="ow">and</span> <span class="n">v_guid</span> <span class="ow">in</span> <span class="n">existing_value_guids</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">result</span><span class="o">.</span><span class="n">skipped_count</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -779,20 +973,20 @@
                     <span class="n">result</span><span class="o">.</span><span class="n">created_guids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v_guid</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">v_guid</span><span class="p">:</span>
                 <span class="c1"># Track within this pass so a duplicate entry (e.g.</span>
-                <span class="c1"># badly-formed catalog) won&#39;t re-create.</span>
+                <span class="c1"># badly-formed catalog) won't re-create.</span>
                 <span class="n">existing_value_guids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">v_guid</span><span class="p">)</span>
 
     <span class="c1"># --- Value-child creation ------------------------------------------</span>
     <span class="c1">#</span>
     <span class="c1"># The mixin handles feature-level creation. Value (IFsSymFeatVal)</span>
-    <span class="c1"># creation stays local because IFsSymFeatVal doesn&#39;t fit the same</span>
+    <span class="c1"># creation stays local because IFsSymFeatVal doesn't fit the same</span>
     <span class="c1"># _create_from_entry contract (no CatalogSourceId field; different</span>
     <span class="c1"># parent shape). Keeping it here keeps the mixin simpler.</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_CreateValueFromEntry</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">value_entry</span><span class="p">,</span> <span class="n">parent_feature</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Internal: instantiate one IFsSymFeatVal under `parent_feature`</span>
 <span class="sd">        from a value-typed CatalogEntry. Applies the canonical GUID and</span>
 <span class="sd">        per-WS strings.</span>
@@ -800,68 +994,74 @@
 <span class="sd">        Applies the Phase 2 ownership-ordering rule: attach first (via</span>
 <span class="sd">        the 2-arg factory overload, or fall back to Create+Add), then</span>
 <span class="sd">        mutate properties.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
             <span class="n">IFsSymFeatValFactory</span>
         <span class="p">)</span>
+        <span class="c1"># Parsed outside the transaction: a malformed catalog GUID must raise</span>
+        <span class="c1"># before any undo task is opened (mirrors the mixin's own ordering).</span>
         <span class="n">guid</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">Guid</span><span class="p">(</span><span class="n">value_entry</span><span class="o">.</span><span class="n">guid</span><span class="p">)</span>
 
-        <span class="n">new_val</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="c1"># Path A: 2-arg factory overload if pythonnet exposes it.</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">new_val</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">parent_feature</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="c1"># Create-and-populate is one unit: a Path-B create whose Add or</span>
+        <span class="c1"># subsequent per-WS writes fail must not leave a half-built value.</span>
+        <span class="c1"># Joins the mixin's catalog bracket when called through it (B1).</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Create feature value '</span><span class="si">{</span><span class="n">value_entry</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">' from catalog"</span><span class="p">):</span>
             <span class="n">new_val</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="k">if</span> <span class="n">new_val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Path B: implementation-side Create(Guid) followed by Add().</span>
-            <span class="n">concrete_factory</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">factory</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">factory</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">)</span>
-                <span class="k">else</span> <span class="n">factory</span>
-            <span class="p">)</span>
+            <span class="c1"># Path A: 2-arg factory overload if pythonnet exposes it.</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">new_val</span> <span class="o">=</span> <span class="n">concrete_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="c1"># No safe fallback: parameterless Create() would generate</span>
-                <span class="c1"># a random GUID. Match the mixin&#39;s Path-A+B-failure</span>
-                <span class="c1"># discipline (Phase 5a).</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Could not create feature value &#39;</span><span class="si">{</span><span class="n">value_entry</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;with canonical GUID </span><span class="si">{</span><span class="n">value_entry</span><span class="o">.</span><span class="n">guid</span><span class="si">}</span><span class="s2"> via either &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;Create(Guid, parent) or Create(Guid) factory &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;overloads.&quot;</span>
-                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
-            <span class="n">parent_feature</span><span class="o">.</span><span class="n">ValuesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
+                <span class="n">new_val</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">parent_feature</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">new_val</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="n">new_val</span> <span class="o">=</span> <span class="n">IFsSymFeatVal</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">new_val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Path B: implementation-side Create(Guid) followed by Add().</span>
+                <span class="n">concrete_factory</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">factory</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">factory</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="n">factory</span>
+                <span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">new_val</span> <span class="o">=</span> <span class="n">concrete_factory</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="c1"># No safe fallback: parameterless Create() would generate</span>
+                    <span class="c1"># a random GUID. Match the mixin's Path-A+B-failure</span>
+                    <span class="c1"># discipline (Phase 5a).</span>
+                    <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"Could not create feature value '</span><span class="si">{</span><span class="n">value_entry</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">' "</span>
+                        <span class="sa">f</span><span class="s2">"with canonical GUID </span><span class="si">{</span><span class="n">value_entry</span><span class="o">.</span><span class="n">guid</span><span class="si">}</span><span class="s2"> via either "</span>
+                        <span class="sa">f</span><span class="s2">"Create(Guid, parent) or Create(Guid) factory "</span>
+                        <span class="sa">f</span><span class="s2">"overloads."</span>
+                    <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+                <span class="n">parent_feature</span><span class="o">.</span><span class="n">ValuesOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
 
-        <span class="c1"># Per-WS strings (abbreviation is the +/- marker; term is the</span>
-        <span class="c1"># positive/negative name).</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span>
-            <span class="n">new_val</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">value_entry</span><span class="o">.</span><span class="n">term</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span>
-            <span class="n">new_val</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">,</span> <span class="n">value_entry</span><span class="o">.</span><span class="n">abbrev</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_val</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+            <span class="n">new_val</span> <span class="o">=</span> <span class="n">IFsSymFeatVal</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
+
+            <span class="c1"># Per-WS strings (abbreviation is the +/- marker; term is the</span>
+            <span class="c1"># positive/negative name).</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span>
-                <span class="n">new_val</span><span class="o">.</span><span class="n">Description</span><span class="p">,</span> <span class="n">value_entry</span><span class="o">.</span><span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span>
+                <span class="n">new_val</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">value_entry</span><span class="o">.</span><span class="n">term</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span>
             <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span>
+                <span class="n">new_val</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">,</span> <span class="n">value_entry</span><span class="o">.</span><span class="n">abbrev</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_val</span><span class="p">,</span> <span class="s2">"Description"</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_multistring</span><span class="p">(</span>
+                    <span class="n">new_val</span><span class="o">.</span><span class="n">Description</span><span class="p">,</span> <span class="n">value_entry</span><span class="o">.</span><span class="n">def_</span><span class="p">,</span> <span class="n">missing_ws_seen</span><span class="p">,</span> <span class="n">warnings</span>
+                <span class="p">)</span>
 
-        <span class="c1"># IFsSymFeatVal does not have a CatalogSourceId field in stock</span>
-        <span class="c1"># LCM, so we don&#39;t try to set one. Value-level catalog provenance</span>
-        <span class="c1"># is recoverable indirectly via the parent feature&#39;s</span>
-        <span class="c1"># CatalogSourceId and the value&#39;s canonical GUID.</span>
+            <span class="c1"># IFsSymFeatVal does not have a CatalogSourceId field in stock</span>
+            <span class="c1"># LCM, so we don't try to set one. Value-level catalog provenance</span>
+            <span class="c1"># is recoverable indirectly via the parent feature's</span>
+            <span class="c1"># CatalogSourceId and the value's canonical GUID.</span>
 
-        <span class="k">return</span> <span class="n">new_val</span>
+            <span class="k">return</span> <span class="n">new_val</span>
 
     <span class="c1"># ========================================================================</span>
     <span class="c1"># PRIVATE HELPER METHODS</span>
     <span class="c1"># ========================================================================</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__OverlayCanonicalLabels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feat</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">,</span> <span class="n">force</span><span class="p">,</span> <span class="n">catalogSourceId</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Overlay user-supplied name + abbreviation onto a feature returned</span>
 <span class="sd">        by CreateFromCatalog -- but only when it is safe to do so.</span>
 
@@ -878,55 +1078,60 @@
 <span class="sd">        - Slots differ and force=True -&gt; overlay (caller opted in).</span>
 
 <span class="sd">        (issue #138)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">existing_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">feat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-        <span class="n">existing_abbr</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">feat</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+<span class="sd">        """</span>
+        <span class="n">existing_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">feat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">""</span>
+        <span class="n">existing_abbr</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">feat</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">""</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="p">(</span><span class="n">existing_name</span> <span class="ow">or</span> <span class="n">existing_abbr</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">existing_name</span> <span class="o">==</span> <span class="n">name</span> <span class="ow">and</span> <span class="n">existing_abbr</span> <span class="o">==</span> <span class="n">abbreviation</span><span class="p">:</span>
                 <span class="c1"># Already labeled exactly as requested; idempotent.</span>
                 <span class="k">return</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Phonological feature for catalog id </span><span class="si">{</span><span class="n">catalogSourceId</span><span class="si">!r}</span><span class="s2"> &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;already exists with canonical labels &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Name=</span><span class="si">{</span><span class="n">existing_name</span><span class="si">!r}</span><span class="s2"> Abbreviation=</span><span class="si">{</span><span class="n">existing_abbr</span><span class="si">!r}</span><span class="s2">. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Refusing to overwrite with Name=</span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Abbreviation=</span><span class="si">{</span><span class="n">abbreviation</span><span class="si">!r}</span><span class="s2">. Pass force=True to &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;overlay anyway.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Phonological feature for catalog id </span><span class="si">{</span><span class="n">catalogSourceId</span><span class="si">!r}</span><span class="s2"> "</span>
+                <span class="sa">f</span><span class="s2">"already exists with canonical labels "</span>
+                <span class="sa">f</span><span class="s2">"Name=</span><span class="si">{</span><span class="n">existing_name</span><span class="si">!r}</span><span class="s2"> Abbreviation=</span><span class="si">{</span><span class="n">existing_abbr</span><span class="si">!r}</span><span class="s2">. "</span>
+                <span class="sa">f</span><span class="s2">"Refusing to overwrite with Name=</span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> "</span>
+                <span class="sa">f</span><span class="s2">"Abbreviation=</span><span class="si">{</span><span class="n">abbreviation</span><span class="si">!r}</span><span class="s2">. Pass force=True to "</span>
+                <span class="sa">f</span><span class="s2">"overlay anyway."</span>
             <span class="p">)</span>
 
+        <span class="c1"># The idempotent-return and refuse-to-clobber guards above stay</span>
+        <span class="c1"># outside: neither may open an empty named undo entry. Callers reach</span>
+        <span class="c1"># this from inside their own bracket, so this joins (B1).</span>
         <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">feat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
         <span class="n">mkstr_abbr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">feat</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Overlay canonical labels '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+            <span class="n">feat</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+            <span class="n">feat</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve HVO or object to its LCM object. Wrappers are passed</span>
 <span class="sd">        through unchanged here; use __Unwrap() to peel them off if you</span>
 <span class="sd">        need to call LCM property setters on the result.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">obj_or_hvo</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">obj_or_hvo</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__Unwrap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Peel off LCMObjectWrapper-style wrappers, if any. Plain LCM</span>
 <span class="sd">        objects pass through. Mirrors the Phase 4 wrapper-aware pattern.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Wrapper classes expose ._obj to the underlying LCM object.</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"Hvo"</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">_obj</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"Hvo"</span><span class="p">):</span>
             <span class="c1"># Both shapes: wrapper that proxies .Hvo. Prefer the inner LCM obj.</span>
             <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">_obj</span>
         <span class="k">return</span> <span class="n">obj</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span>
@@ -970,8 +1175,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

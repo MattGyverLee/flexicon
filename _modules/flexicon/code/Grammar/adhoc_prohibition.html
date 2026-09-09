@@ -54,7 +54,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Wrapper class for ad hoc morphosyntactic prohibition objects.</span>
 
 <span class="sd">This module provides AdhocProhibition, a wrapper class that transparently</span>
@@ -88,7 +88,7 @@
 
 <span class="sd">Example::</span>
 
-<span class="sd">    from flexlibs2.code.Grammar.adhoc_prohibition import AdhocProhibition</span>
+<span class="sd">    from flexicon.code.Grammar.adhoc_prohibition import AdhocProhibition</span>
 
 <span class="sd">    # Wrap a prohibition from GetAllAdhocCoProhibitions()</span>
 <span class="sd">    prohib = morphRuleOps.GetAllAdhocCoProhibitions()[0]</span>
@@ -96,7 +96,7 @@
 
 <span class="sd">    # Access common properties</span>
 <span class="sd">    print(wrapped.guid)  # Works for all prohibition types</span>
-<span class="sd">    print(wrapped.prohibition_type)  # &quot;Grammatical&quot;, &quot;Morpheme&quot;, or &quot;Allomorph&quot;</span>
+<span class="sd">    print(wrapped.prohibition_type)  # "Grammatical", "Morpheme", or "Allomorph"</span>
 
 <span class="sd">    # Check capabilities</span>
 <span class="sd">    if wrapped.is_morpheme_prohibition:</span>
@@ -108,7 +108,7 @@
 <span class="sd">    if wrapped.as_morpheme_prohibition():</span>
 <span class="sd">        concrete = wrapped.as_morpheme_prohibition()</span>
 <span class="sd">        # Use concrete interface for advanced operations</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.wrapper_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LCMObjectWrapper</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
@@ -117,7 +117,7 @@
 <div class="viewcode-block" id="AdhocProhibition">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.adhoc_prohibition.AdhocProhibition">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AdhocProhibition</span><span class="p">(</span><span class="n">LCMObjectWrapper</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Wrapper for ad hoc morphosyntactic prohibition objects.</span>
 
 <span class="sd">    Handles the three concrete types of prohibitions (MoAdhocProhibGr,</span>
@@ -136,11 +136,11 @@
 <span class="sd">        wrapped = AdhocProhibition(prohib)</span>
 <span class="sd">        print(wrapped.prohibition_type)</span>
 <span class="sd">        if wrapped.is_grammatical_prohibition:</span>
-<span class="sd">            print(&quot;This is a grammatical feature prohibition&quot;)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">            print("This is a grammatical feature prohibition")</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lcm_obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize wrapper with an IMoAdhocProhib object.</span>
 
 <span class="sd">        Args:</span>
@@ -151,12 +151,12 @@
 
 <span class="sd">            prohib = collection[0]</span>
 <span class="sd">            wrapped = AdhocProhibition(prohib)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lcm_obj</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">guid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the GUID of this prohibition.</span>
 
 <span class="sd">        Returns:</span>
@@ -165,41 +165,41 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            prohib_id = wrapped.guid</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">prohibition_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get a human-readable type identifier for this prohibition.</span>
 
 <span class="sd">        Returns the prohibition type as a friendly string:</span>
-<span class="sd">        - &quot;Grammatical&quot; for MoAdhocProhibGr</span>
-<span class="sd">        - &quot;Morpheme&quot; for MoAdhocProhibMorph</span>
-<span class="sd">        - &quot;Allomorph&quot; for MoAdhocProhibAllomorph</span>
-<span class="sd">        - &quot;Unknown&quot; if type is not recognized</span>
+<span class="sd">        - "Grammatical" for MoAdhocProhibGr</span>
+<span class="sd">        - "Morpheme" for MoAdhocProhibMorph</span>
+<span class="sd">        - "Allomorph" for MoAdhocProhibAllomorph</span>
+<span class="sd">        - "Unknown" if type is not recognized</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: Human-readable type name.</span>
 
 <span class="sd">        Example::</span>
 
-<span class="sd">            print(wrapped.prohibition_type)  # &quot;Morpheme&quot;</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            print(wrapped.prohibition_type)  # "Morpheme"</span>
+<span class="sd">        """</span>
         <span class="n">class_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span>
 
-        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoAdhocProhibGr&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;Grammatical&quot;</span>
-        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoAdhocProhibMorph&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;Morpheme&quot;</span>
-        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoAdhocProhibAllomorph&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;Allomorph&quot;</span>
+        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"MoAdhocProhibGr"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"Grammatical"</span>
+        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"MoAdhocProhibMorph"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"Morpheme"</span>
+        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"MoAdhocProhibAllomorph"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"Allomorph"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;Unknown&quot;</span>
+            <span class="k">return</span> <span class="s2">"Unknown"</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_grammatical_prohibition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is a grammatical feature prohibition.</span>
 
 <span class="sd">        Grammatical prohibitions restrict which feature values can combine.</span>
@@ -211,12 +211,12 @@
 
 <span class="sd">            if wrapped.is_grammatical_prohibition:</span>
 <span class="sd">                feature = wrapped.FeatureRA</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoAdhocProhibGr&quot;</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"MoAdhocProhibGr"</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_morpheme_prohibition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is a morpheme co-occurrence prohibition.</span>
 
 <span class="sd">        Morpheme prohibitions restrict which morphemes can combine together.</span>
@@ -229,12 +229,12 @@
 <span class="sd">            if wrapped.is_morpheme_prohibition:</span>
 <span class="sd">                morph = wrapped.MorphemeRA</span>
 <span class="sd">                prohibited = wrapped.ProhibitedMorphemeRA</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoAdhocProhibMorph&quot;</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"MoAdhocProhibMorph"</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_allomorph_prohibition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is an allomorph variant prohibition.</span>
 
 <span class="sd">        Allomorph prohibitions restrict which allomorph variants can combine.</span>
@@ -247,13 +247,13 @@
 <span class="sd">            if wrapped.is_allomorph_prohibition:</span>
 <span class="sd">                allo = wrapped.AllomorphRA</span>
 <span class="sd">                prohibited = wrapped.ProhibitedAllomorphRA</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;MoAdhocProhibAllomorph&quot;</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"MoAdhocProhibAllomorph"</span>
 
 <div class="viewcode-block" id="AdhocProhibition.as_grammatical_prohibition">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.adhoc_prohibition.AdhocProhibition.as_grammatical_prohibition">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_grammatical_prohibition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cast to grammatical prohibition type if applicable.</span>
 
 <span class="sd">        For advanced users who need to access grammatical-specific properties</span>
@@ -269,7 +269,7 @@
 <span class="sd">            if concrete:</span>
 <span class="sd">                feature = concrete.FeatureRA</span>
 <span class="sd">                feature_value = concrete.FeatureValueRA</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_grammatical_prohibition</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
         <span class="k">return</span> <span class="kc">None</span></div>
@@ -278,7 +278,7 @@
 <div class="viewcode-block" id="AdhocProhibition.as_morpheme_prohibition">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.adhoc_prohibition.AdhocProhibition.as_morpheme_prohibition">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_morpheme_prohibition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cast to morpheme prohibition type if applicable.</span>
 
 <span class="sd">        For advanced users who need to access morpheme-specific properties</span>
@@ -294,7 +294,7 @@
 <span class="sd">            if concrete:</span>
 <span class="sd">                morpheme = concrete.MorphemeRA</span>
 <span class="sd">                prohibited = concrete.ProhibitedMorphemeRA</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_morpheme_prohibition</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
         <span class="k">return</span> <span class="kc">None</span></div>
@@ -303,7 +303,7 @@
 <div class="viewcode-block" id="AdhocProhibition.as_allomorph_prohibition">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.adhoc_prohibition.AdhocProhibition.as_allomorph_prohibition">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_allomorph_prohibition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cast to allomorph prohibition type if applicable.</span>
 
 <span class="sd">        For advanced users who need to access allomorph-specific properties</span>
@@ -319,29 +319,29 @@
 <span class="sd">            if concrete:</span>
 <span class="sd">                allo = concrete.AllomorphRA</span>
 <span class="sd">                prohibited = concrete.ProhibitedAllomorphRA</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_allomorph_prohibition</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Technical representation showing prohibition type.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: Representation like &quot;AdhocProhibition(MoAdhocProhibMorph)&quot;</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="sd">            str: Representation like "AdhocProhibition(MoAdhocProhibMorph)"</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Human-readable string representation.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: Description like &quot;Morpheme prohibition (uuid...)&quot;</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prohibition_type</span><span class="si">}</span><span class="s2"> prohibition (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">guid</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">...)&quot;</span></div>
+<span class="sd">            str: Description like "Morpheme prohibition (uuid...)"</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prohibition_type</span><span class="si">}</span><span class="s2"> prohibition (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">guid</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">...)"</span></div>
 
 </pre></div>
 
@@ -380,8 +380,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

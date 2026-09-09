@@ -49,17 +49,17 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;FLExProject exception hierarchy for error handling and reporting.&quot;&quot;&quot;</span>
+<span class="sd">"""FLExProject exception hierarchy for error handling and reporting."""</span>
 
 
 <div class="viewcode-block" id="FP_ProjectError">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.exceptions.FP_ProjectError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FP_ProjectError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception raised for any problems opening the project.</span>
+<span class="w">    </span><span class="sd">"""Exception raised for any problems opening the project.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        - message -- explanation of the error</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -73,10 +73,10 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">projectName</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
         <span class="c1"># Normally this will be a mispelled/wrong project name...</span>
         <span class="k">if</span> <span class="n">projectName</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;Project file not found: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">projectName</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s2">"Project file not found: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">projectName</span>
         <span class="c1"># ...however, it could be an internal FLEx error.</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;File not found error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">e</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s2">"File not found error: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">e</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
 
 
@@ -86,8 +86,8 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">FP_FileLockedError</span><span class="p">(</span><span class="n">FP_ProjectError</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">message</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;This project is in use by another program. To allow shared access to this project, &quot;</span>
-            <span class="s2">&quot;turn on the sharing option in the Sharing tab of the Fieldworks Project Properties dialog.&quot;</span>
+            <span class="s2">"This project is in use by another program. To allow shared access to this project, "</span>
+            <span class="s2">"turn on the sharing option in the Sharing tab of the Fieldworks Project Properties dialog."</span>
         <span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
 
@@ -97,7 +97,7 @@
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.exceptions.FP_MigrationRequired">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FP_MigrationRequired</span><span class="p">(</span><span class="n">FP_ProjectError</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;This project needs to be opened in FieldWorks in order for it to be migrated to the latest format.&quot;</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s2">"This project needs to be opened in FieldWorks in order for it to be migrated to the latest format."</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
 
 
@@ -108,11 +108,11 @@
 <div class="viewcode-block" id="FP_RuntimeError">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.exceptions.FP_RuntimeError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FP_RuntimeError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception raised for any problems running the module.</span>
+<span class="w">    </span><span class="sd">"""Exception raised for any problems running the module.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        - message -- explanation of the error</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -124,7 +124,7 @@
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.exceptions.FP_ReadOnlyError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FP_ReadOnlyError</span><span class="p">(</span><span class="n">FP_RuntimeError</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;Trying to write to the project database without changes enabled.&quot;</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s2">"Trying to write to the project database without changes enabled."</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
 
 
@@ -133,7 +133,7 @@
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.exceptions.FP_WritingSystemError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FP_WritingSystemError</span><span class="p">(</span><span class="n">FP_RuntimeError</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writingSystemName</span><span class="p">):</span>
-        <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;Invalid Writing System for this project: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">writingSystemName</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s2">"Invalid Writing System for this project: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">writingSystemName</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
 
 
@@ -142,7 +142,7 @@
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.exceptions.FP_NullParameterError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FP_NullParameterError</span><span class="p">(</span><span class="n">FP_RuntimeError</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;Null parameter.&quot;</span><span class="p">)</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">"Null parameter."</span><span class="p">)</span></div>
 
 
 
@@ -157,6 +157,30 @@
 <div class="viewcode-block" id="FP_TransactionError">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.exceptions.FP_TransactionError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FP_TransactionError</span><span class="p">(</span><span class="n">FP_RuntimeError</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FP_ConflictingSaveError">
+<a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.exceptions.FP_ConflictingSaveError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FP_ConflictingSaveError</span><span class="p">(</span><span class="n">FP_RuntimeError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Raised when LCM reports that another client saved changes which cannot be</span>
+<span class="sd">    reconciled with this session's unsaved changes.</span>
+
+<span class="sd">    Raised by ``flexicon.code.headless_ui.HeadlessLcmUI.ConflictingSave()``.</span>
+<span class="sd">    Raising is deliberate: the alternatives LCM offers are to block on a</span>
+<span class="sd">    modal dialog or to discard the caller's unsaved work; neither is</span>
+<span class="sd">    acceptable unattended. The caller is expected to abandon or retry the</span>
+<span class="sd">    operation.</span>
+
+<span class="sd">    Subclasses ``FP_RuntimeError`` (rather than ``FP_ProjectError``) because</span>
+<span class="sd">    the condition is discovered mid-session, on a save that occurs after the</span>
+<span class="sd">    project is already open and in use -- it is a runtime failure of an</span>
+<span class="sd">    in-progress write, not a problem opening the project.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
 
@@ -197,8 +221,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

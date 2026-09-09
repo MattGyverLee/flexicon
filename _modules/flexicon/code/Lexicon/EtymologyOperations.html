@@ -78,7 +78,7 @@
 <div class="viewcode-block" id="EtymologyOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.EtymologyOperations.EtymologyOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">EtymologyOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class provides operations for managing etymological information in a</span>
 <span class="sd">    FieldWorks project.</span>
 
@@ -91,55 +91,55 @@
 
 <span class="sd">    Usage::</span>
 
-<span class="sd">        from flexlibs2 import FLExProject</span>
+<span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
 
 <span class="sd">        # Access via FLExProject.Etymology property (if configured)</span>
 <span class="sd">        # Or create directly:</span>
-<span class="sd">        from flexlibs2.code.EtymologyOperations import EtymologyOperations</span>
+<span class="sd">        from flexicon.code.EtymologyOperations import EtymologyOperations</span>
 <span class="sd">        etymOps = EtymologyOperations(project)</span>
 
 <span class="sd">        # Get an entry</span>
-<span class="sd">        entry = project.LexEntry.Find(&quot;computer&quot;)</span>
+<span class="sd">        entry = project.LexEntry.Find("computer")</span>
 
 <span class="sd">        # Create an etymology</span>
 <span class="sd">        etym = etymOps.Create(</span>
 <span class="sd">            entry,</span>
-<span class="sd">            source=&quot;English&quot;,</span>
-<span class="sd">            form=&quot;compute&quot;,</span>
-<span class="sd">            gloss=&quot;to calculate&quot;,</span>
-<span class="sd">            ws=&quot;en&quot;</span>
+<span class="sd">            source="English",</span>
+<span class="sd">            form="compute",</span>
+<span class="sd">            gloss="to calculate",</span>
+<span class="sd">            ws="en"</span>
 <span class="sd">        )</span>
 
 <span class="sd">        # Set additional information</span>
-<span class="sd">        etymOps.SetComment(etym, &quot;Borrowed in the 1980s&quot;, &quot;en&quot;)</span>
-<span class="sd">        etymOps.SetBibliography(etym, &quot;Smith 2020:145&quot;)</span>
+<span class="sd">        etymOps.SetComment(etym, "Borrowed in the 1980s", "en")</span>
+<span class="sd">        etymOps.SetBibliography(etym, "Smith 2020:145")</span>
 
 <span class="sd">        # Get all etymologies</span>
 <span class="sd">        for etym in etymOps.GetAll(entry):</span>
 <span class="sd">            source = etymOps.GetSource(etym)</span>
 <span class="sd">            form = etymOps.GetForm(etym)</span>
-<span class="sd">            print(f&quot;From {source}: {form}&quot;)</span>
+<span class="sd">            print(f"From {source}: {form}")</span>
 
 <span class="sd">        project.CloseProject()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize EtymologyOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Specify which sequence to reorder for etymologies.</span>
 <span class="sd">        For Etymology, we reorder entry.EtymologyOS</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">EtymologyOS</span>
 
     <span class="c1"># --- Core CRUD Operations ---</span>
@@ -147,32 +147,32 @@
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all etymologies for a lexical entry, or all etymologies in the entire project.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entry_or_hvo: The ILexEntry object or HVO. If None, iterates all etymologies</span>
 <span class="sd">                         in the entire project.</span>
 
-<span class="sd">        Yields:</span>
-<span class="sd">            ILexEtymology: Each etymology object for the entry (or project).</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EnumerableWrapper[ILexEtymology]: Each etymology object for the entry (or project).</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
 <span class="sd">            &gt;&gt;&gt; # Get etymologies for specific entry</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; for etym in etymOps.GetAll(entry):</span>
 <span class="sd">            ...     source = etymOps.GetSource(etym)</span>
 <span class="sd">            ...     form = etymOps.GetForm(etym)</span>
 <span class="sd">            ...     gloss = etymOps.GetGloss(etym)</span>
-<span class="sd">            ...     print(f&quot;Etymology: {source} &#39;{form}&#39; ({gloss})&quot;)</span>
-<span class="sd">            Etymology: Greek &#39;tele&#39; (far)</span>
-<span class="sd">            Etymology: Greek &#39;phone&#39; (sound)</span>
+<span class="sd">            ...     print(f"Etymology: {source} '{form}' ({gloss})")</span>
+<span class="sd">            Etymology: Greek 'tele' (far)</span>
+<span class="sd">            Etymology: Greek 'phone' (sound)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Get ALL etymologies in entire project</span>
 <span class="sd">            &gt;&gt;&gt; for etym in etymOps.GetAll():</span>
 <span class="sd">            ...     source = etymOps.GetSource(etym)</span>
-<span class="sd">            ...     print(f&quot;Etymology source: {source}&quot;)</span>
+<span class="sd">            ...     print(f"Etymology source: {source}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - When entry_or_hvo is provided:</span>
@@ -187,7 +187,7 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Delete, Reorder</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">entry_or_hvo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Iterate ALL etymologies in entire project</span>
             <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lexDB</span><span class="o">.</span><span class="n">Entries</span><span class="p">:</span>
@@ -202,7 +202,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">gloss</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new etymology for a lexical entry.</span>
 
 <span class="sd">        Args:</span>
@@ -221,50 +221,59 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etym = etymOps.Create(</span>
 <span class="sd">            ...     entry,</span>
-<span class="sd">            ...     source=&quot;Greek&quot;,</span>
-<span class="sd">            ...     form=&quot;tele&quot;,</span>
-<span class="sd">            ...     gloss=&quot;far&quot;</span>
+<span class="sd">            ...     source="Greek",</span>
+<span class="sd">            ...     form="tele",</span>
+<span class="sd">            ...     gloss="far"</span>
 <span class="sd">            ... )</span>
 <span class="sd">            &gt;&gt;&gt; print(etymOps.GetForm(etym))</span>
 <span class="sd">            tele</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create minimal etymology (add details later)</span>
 <span class="sd">            &gt;&gt;&gt; etym2 = etymOps.Create(entry)</span>
-<span class="sd">            &gt;&gt;&gt; etymOps.SetSource(etym2, &quot;Greek&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; etymOps.SetForm(etym2, &quot;phone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; etymOps.SetSource(etym2, "Greek")</span>
+<span class="sd">            &gt;&gt;&gt; etymOps.SetForm(etym2, "phone")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - All text fields are optional at creation</span>
-<span class="sd">            - Etymology is added at the end of the entry&#39;s etymology list</span>
+<span class="sd">            - Etymology is added at the end of the entry's etymology list</span>
 <span class="sd">            - Use Set methods to add/update information after creation</span>
 <span class="sd">            - Multiple etymologies can track compound or complex origins</span>
 <span class="sd">            - Default writing system is analysis WS</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Delete, SetSource, SetForm, SetGloss</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">"entry_or_hvo"</span><span class="p">)</span>
 
         <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create etymology&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create etymology"</span><span class="p">):</span>
             <span class="c1"># Create the new etymology using the factory</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexEtymologyFactory</span><span class="p">)</span>
             <span class="n">new_etymology</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="c1"># Add to entry&#39;s etymology collection (must be done before setting properties)</span>
+            <span class="c1"># Add to entry's etymology collection (must be done before setting properties)</span>
             <span class="n">entry</span><span class="o">.</span><span class="n">EtymologyOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_etymology</span><span class="p">)</span>
 
-            <span class="c1"># Set optional fields if provided</span>
+            <span class="c1"># Set optional fields if provided.</span>
+            <span class="c1"># NOTE (live-reflection, 2026-08-18): ILexEtymology has NO</span>
+            <span class="c1"># "Source" field in the installed LCM -- it was not renamed,</span>
+            <span class="c1"># the whole scalar/multi-string field is gone. The free-text</span>
+            <span class="c1"># "source language" slot users expect from `source=` is now</span>
+            <span class="c1"># LanguageNotes (IMultiString, UI label "Source Language</span>
+            <span class="c1"># Notes"); the separate controlled-vocabulary field is</span>
+            <span class="c1"># LanguageRS (a reference SEQUENCE onto the Languages list,</span>
+            <span class="c1"># exposed via GetLanguage/SetLanguage -- out of scope here,</span>
+            <span class="c1"># see docs/API_ISSUES_CATEGORIZED.md Category 8).</span>
             <span class="k">if</span> <span class="n">source</span><span class="p">:</span>
                 <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-                <span class="n">new_etymology</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+                <span class="n">new_etymology</span><span class="o">.</span><span class="n">LanguageNotes</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">form</span><span class="p">:</span>
                 <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
@@ -278,7 +287,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete an etymology from its owning entry.</span>
 
 <span class="sd">        Args:</span>
@@ -290,7 +299,7 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = list(etymOps.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if len(etymologies) &gt; 0:</span>
 <span class="sd">            ...     # Delete the last etymology</span>
@@ -302,16 +311,16 @@
 <span class="sd">            - Consider archiving data before deletion</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Removes the etymology from the owning entry&#39;s collection</span>
+<span class="sd">            - Removes the etymology from the owning entry's collection</span>
 <span class="sd">            - Other etymologies in the list are automatically renumbered</span>
 <span class="sd">            - No error if entry has no other etymologies</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetAll</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
 
@@ -322,21 +331,22 @@
         <span class="c1"># owner, not on the base interface).</span>
         <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">etymology</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Etymology has no owning entry&quot;</span><span class="p">)</span>
-        <span class="n">owner</span><span class="o">.</span><span class="n">EtymologyOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">etymology</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Etymology has no owning entry"</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete etymology"</span><span class="p">):</span>
+            <span class="n">owner</span><span class="o">.</span><span class="n">EtymologyOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">etymology</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Duplicate an etymology, creating a new copy with a new GUID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            item_or_hvo: The ILexEtymology object or HVO to duplicate.</span>
 <span class="sd">            insert_after (bool): If True (default), insert after the source etymology.</span>
-<span class="sd">                                If False, insert at end of entry&#39;s etymology list.</span>
-<span class="sd">            deep (bool): If True, also duplicate owned objects (if any exist).</span>
-<span class="sd">                        If False (default), only copy simple properties and references.</span>
-<span class="sd">                        Note: Etymology has no owned objects, so deep has no effect.</span>
+<span class="sd">                                If False, insert at end of entry's etymology list.</span>
+<span class="sd">            deep (bool): Accepted for API uniformity across Operations classes.</span>
+<span class="sd">                        Etymology has no owned objects, so this parameter is ignored.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            ILexEtymology: The newly created duplicate etymology with a new GUID.</span>
@@ -347,44 +357,45 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = list(etymOps.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if etymologies:</span>
 <span class="sd">            ...     # Duplicate etymology</span>
 <span class="sd">            ...     dup = etymOps.Duplicate(etymologies[0])</span>
-<span class="sd">            ...     print(f&quot;Original: {etymOps.GetGuid(etymologies[0])}&quot;)</span>
-<span class="sd">            ...     print(f&quot;Duplicate: {etymOps.GetGuid(dup)}&quot;)</span>
+<span class="sd">            ...     print(f"Original: {etymOps.GetGuid(etymologies[0])}")</span>
+<span class="sd">            ...     print(f"Duplicate: {etymOps.GetGuid(dup)}")</span>
 <span class="sd">            Original: 12345678-1234-1234-1234-123456789abc</span>
 <span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
 <span class="sd">            ...</span>
 <span class="sd">            ...     # Verify content was copied</span>
-<span class="sd">            ...     print(f&quot;Source: {etymOps.GetSource(dup)}&quot;)</span>
-<span class="sd">            ...     print(f&quot;Form: {etymOps.GetForm(dup)}&quot;)</span>
+<span class="sd">            ...     print(f"Source: {etymOps.GetSource(dup)}")</span>
+<span class="sd">            ...     print(f"Form: {etymOps.GetForm(dup)}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Factory.Create() automatically generates a new GUID</span>
-<span class="sd">            - insert_after=True preserves the original etymology&#39;s position</span>
-<span class="sd">            - Simple properties copied: Source, Form, Gloss, Comment, Bibliography</span>
+<span class="sd">            - insert_after=True preserves the original etymology's position</span>
+<span class="sd">            - Simple properties copied: LanguageNotes (source language notes),</span>
+<span class="sd">              Form, Gloss, Comment, Bibliography</span>
 <span class="sd">            - Reference properties copied: LanguageNotesRA</span>
 <span class="sd">            - Etymology has no owned objects, so deep parameter has no effect</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Delete, GetGuid</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">"item_or_hvo"</span><span class="p">)</span>
 
         <span class="c1"># Get source etymology and parent. source.Owner is typed as</span>
         <span class="c1"># ICmObject; cast to ILexEntry so EtymologyOS is reachable.</span>
-        <span class="c1"># Without this cast the previous `hasattr(parent, &quot;EtymologyOS&quot;)`</span>
+        <span class="c1"># Without this cast the previous `hasattr(parent, "EtymologyOS")`</span>
         <span class="c1"># silently returned False and the duplicate was orphaned.</span>
         <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Etymology has no owning entry&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Etymology has no owning entry"</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate etymology&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Duplicate etymology"</span><span class="p">):</span>
             <span class="c1"># Create new etymology using factory (auto-generates new GUID)</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexEtymologyFactory</span><span class="p">)</span>
             <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
@@ -398,15 +409,27 @@
                 <span class="c1"># Insert at end</span>
                 <span class="n">parent</span><span class="o">.</span><span class="n">EtymologyOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
 
-            <span class="c1"># Copy simple MultiString properties (AFTER adding to parent)</span>
-            <span class="n">duplicate</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Source</span><span class="p">)</span>
+            <span class="c1"># Copy simple MultiString properties (AFTER adding to parent).</span>
+            <span class="c1"># NOTE (live-reflection, 2026-08-18): ILexEtymology has NO</span>
+            <span class="c1"># "Source" field at all -- it was not merely renamed, the</span>
+            <span class="c1"># whole scalar/multi-string field is gone. The free-text</span>
+            <span class="c1"># "source language" data now lives on LanguageNotes</span>
+            <span class="c1"># (IMultiString), which Create/GetSource/SetSource/</span>
+            <span class="c1"># GetSyncableProperties/ApplySyncableProperties have all been</span>
+            <span class="c1"># repaired to use -- copy it unconditionally here too so</span>
+            <span class="c1"># Duplicate() does not silently drop it (docs/</span>
+            <span class="c1"># API_ISSUES_CATEGORIZED.md Category 8 has been corrected to</span>
+            <span class="c1"># match). The separate controlled-vocabulary reference</span>
+            <span class="c1"># sequence, LanguageRS, is left uncopied -- out of scope,</span>
+            <span class="c1"># same as GetLanguage/SetLanguage.</span>
+            <span class="n">duplicate</span><span class="o">.</span><span class="n">LanguageNotes</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">LanguageNotes</span><span class="p">)</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Form</span><span class="p">)</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Gloss</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Gloss</span><span class="p">)</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Comment</span><span class="p">)</span>
             <span class="n">duplicate</span><span class="o">.</span><span class="n">Bibliography</span><span class="o">.</span><span class="n">CopyAlternatives</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Bibliography</span><span class="p">)</span>
 
             <span class="c1"># Copy Reference Atomic (RA) properties</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;LanguageNotesRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">LanguageNotesRA</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">"LanguageNotesRA"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">LanguageNotesRA</span><span class="p">:</span>
                 <span class="n">duplicate</span><span class="o">.</span><span class="n">LanguageNotesRA</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">LanguageNotesRA</span>
 
             <span class="c1"># Note: Etymology has no owned objects (OS collections), so deep has no effect</span>
@@ -417,7 +440,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all syncable properties of an etymology for comparison.</span>
 
 <span class="sd">        Args:</span>
@@ -425,13 +448,13 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: Dictionary mapping property names to their values.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># MultiString properties</span>
         <span class="c1"># Form - the etymological form</span>
         <span class="n">form_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Form&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"Form"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
 
@@ -439,11 +462,11 @@
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">ws_tag</span> <span class="o">=</span> <span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span>
                     <span class="n">form_dict</span><span class="p">[</span><span class="n">ws_tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Form&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">form_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"Form"</span><span class="p">]</span> <span class="o">=</span> <span class="n">form_dict</span>
 
         <span class="c1"># Gloss - meaning of the etymological form</span>
         <span class="n">gloss_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Gloss&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"Gloss"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
 
@@ -451,23 +474,28 @@
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">ws_tag</span> <span class="o">=</span> <span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span>
                     <span class="n">gloss_dict</span><span class="p">[</span><span class="n">ws_tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Gloss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gloss_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"Gloss"</span><span class="p">]</span> <span class="o">=</span> <span class="n">gloss_dict</span>
 
-        <span class="c1"># Source - source language or reference</span>
+        <span class="c1"># Source - source language or reference.</span>
+        <span class="c1"># NOTE (live-reflection, 2026-08-18): ILexEtymology has no</span>
+        <span class="c1"># "Source" field at all; the "Source" key in this syncable-</span>
+        <span class="c1"># properties dict is a stable API name kept for cross-project</span>
+        <span class="c1"># sync compatibility, backed by the real LCM field LanguageNotes</span>
+        <span class="c1"># (IMultiString). ApplySyncableProperties mirrors this mapping.</span>
         <span class="n">source_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Source&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"LanguageNotes"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
 
-                <span class="n">text</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">LanguageNotes</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">ws_tag</span> <span class="o">=</span> <span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span>
                     <span class="n">source_dict</span><span class="p">[</span><span class="n">ws_tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"Source"</span><span class="p">]</span> <span class="o">=</span> <span class="n">source_dict</span>
 
         <span class="c1"># Comment - additional notes</span>
         <span class="n">comment_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Comment&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"Comment"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
 
@@ -475,11 +503,11 @@
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">ws_tag</span> <span class="o">=</span> <span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span>
                     <span class="n">comment_dict</span><span class="p">[</span><span class="n">ws_tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Comment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">comment_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"Comment"</span><span class="p">]</span> <span class="o">=</span> <span class="n">comment_dict</span>
 
         <span class="c1"># Bibliography - bibliographic reference</span>
         <span class="n">bibliography_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Bibliography&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"Bibliography"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
 
@@ -487,15 +515,15 @@
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">ws_tag</span> <span class="o">=</span> <span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span>
                     <span class="n">bibliography_dict</span><span class="p">[</span><span class="n">ws_tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Bibliography&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bibliography_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"Bibliography"</span><span class="p">]</span> <span class="o">=</span> <span class="n">bibliography_dict</span>
 
         <span class="c1"># Reference Atomic (RA) properties</span>
         <span class="c1"># LanguageRA - source language (ICmPossibility from LangProject.AnalysisWSs</span>
         <span class="c1"># or the languages list). Serialize as GUID string.</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;LanguageRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">LanguageRA</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;LanguageRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">LanguageRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"LanguageRA"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">LanguageRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"LanguageRA"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">LanguageRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;LanguageRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"LanguageRA"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># LanguageNotesRA - language notes reference (ICmPossibility). (P2)</span>
         <span class="c1"># This is an atomic reference, same serialization pattern as LanguageRA.</span>
@@ -505,16 +533,16 @@
         <span class="c1"># on ILexEtymology and that its possibility list is LangProject.AnthroListOA</span>
         <span class="c1"># or similar (not AnalysisWSs). If the field does not exist at runtime,</span>
         <span class="c1"># the hasattr guard makes this a no-op.</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;LanguageNotesRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">LanguageNotesRA</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;LanguageNotesRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">LanguageNotesRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"LanguageNotesRA"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">LanguageNotesRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"LanguageNotesRA"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">LanguageNotesRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;LanguageNotesRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"LanguageNotesRA"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Apply a syncable-properties dict onto an ILexEtymology item.</span>
 
 <span class="sd">        Extends the base implementation to handle atomic reference fields</span>
@@ -530,22 +558,31 @@
 <span class="sd">                value is empty/absent; passed through to BaseOperations.</span>
 <span class="sd">                Atomic-ref fields (LanguageRA, LanguageNotesRA) are always</span>
 <span class="sd">                applied regardless (domain has not ruled on them).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_logging</span>
         <span class="n">_log</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="n">_ra_fields</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;LanguageRA&quot;</span><span class="p">,</span> <span class="s2">&quot;LanguageNotesRA&quot;</span><span class="p">)</span>
+        <span class="n">_ra_fields</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"LanguageRA"</span><span class="p">,</span> <span class="s2">"LanguageNotesRA"</span><span class="p">)</span>
         <span class="n">remaining_props</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">ra_props</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_ra_fields</span><span class="p">:</span>
                 <span class="n">ra_props</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">"Source"</span><span class="p">:</span>
+                <span class="c1"># ILexEtymology has no "Source" field (live-reflection,</span>
+                <span class="c1"># 2026-08-18) -- "Source" is kept as the syncable-</span>
+                <span class="c1"># properties dict key for API/cross-project stability,</span>
+                <span class="c1"># but the real backing field is LanguageNotes</span>
+                <span class="c1"># (IMultiString). Rename the key so the base class's</span>
+                <span class="c1"># generic dict-shaped-value branch in _apply_props_loop</span>
+                <span class="c1"># resolves getattr(item, "LanguageNotes") correctly.</span>
+                <span class="n">remaining_props</span><span class="p">[</span><span class="s2">"LanguageNotes"</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">remaining_props</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Apply etymology properties&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Apply etymology properties"</span><span class="p">):</span>
             <span class="c1"># Apply plain / multistring fields via base class.</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">remaining_props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
 
@@ -562,14 +599,14 @@
                     <span class="nb">setattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
                     <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="s2">&quot;[WARN] ApplySyncableProperties: </span><span class="si">%s</span><span class="s2"> GUID </span><span class="si">%s</span><span class="s2"> not found &quot;</span>
-                        <span class="s2">&quot;in target project -- skipped (</span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span>
+                        <span class="s2">"[WARN] ApplySyncableProperties: </span><span class="si">%s</span><span class="s2"> GUID </span><span class="si">%s</span><span class="s2"> not found "</span>
+                        <span class="s2">"in target project -- skipped (</span><span class="si">%s</span><span class="s2">)"</span><span class="p">,</span>
                         <span class="n">field_name</span><span class="p">,</span> <span class="n">guid_str</span><span class="p">,</span> <span class="n">exc</span>
                     <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compare two etymologies and return their differences.</span>
 
 <span class="sd">        Args:</span>
@@ -580,7 +617,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: (is_different, differences_dict)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ops1</span> <span class="o">=</span> <span class="n">ops1</span> <span class="ow">or</span> <span class="bp">self</span>
         <span class="n">ops2</span> <span class="o">=</span> <span class="n">ops2</span> <span class="ow">or</span> <span class="bp">self</span>
 
@@ -600,7 +637,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Reorder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">,</span> <span class="n">etymology_list</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Reorder etymologies for a lexical entry.</span>
 
 <span class="sd">        Args:</span>
@@ -610,11 +647,11 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If the project is not opened with write enabled.</span>
 <span class="sd">            FP_NullParameterError: If entry_or_hvo or etymology_list is None.</span>
-<span class="sd">            FP_ParameterError: If etymology_list doesn&#39;t match entry&#39;s etymologies.</span>
+<span class="sd">            FP_ParameterError: If etymology_list doesn't match entry's etymologies.</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = list(etymOps.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if len(etymologies) &gt; 1:</span>
 <span class="sd">            ...     # Reverse the order</span>
@@ -631,15 +668,15 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">&quot;entry_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_list</span><span class="p">,</span> <span class="s2">&quot;etymology_list&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="s2">"entry_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_list</span><span class="p">,</span> <span class="s2">"etymology_list"</span><span class="p">)</span>
 
         <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEntryObject</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Convert to list if it&#39;s an iterator</span>
+        <span class="c1"># Convert to list if it's an iterator</span>
         <span class="n">etymology_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">etymology_list</span><span class="p">)</span>
 
         <span class="c1"># Resolve all to objects</span>
@@ -650,9 +687,9 @@
         <span class="n">new_etymologies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">etymologies</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">current_etymologies</span> <span class="o">!=</span> <span class="n">new_etymologies</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Etymology list must contain exactly the same etymologies as the entry&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Etymology list must contain exactly the same etymologies as the entry"</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Reorder etymologies&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Reorder etymologies"</span><span class="p">):</span>
             <span class="c1"># Clear and re-add in new order</span>
             <span class="n">entry</span><span class="o">.</span><span class="n">EtymologyOS</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">etymology</span> <span class="ow">in</span> <span class="n">etymologies</span><span class="p">:</span>
@@ -662,7 +699,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the source language name for an etymology.</span>
 
 <span class="sd">        Args:</span>
@@ -677,36 +714,41 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = list(etymOps.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if etymologies:</span>
 <span class="sd">            ...     source = etymOps.GetSource(etymologies[0])</span>
-<span class="sd">            ...     print(f&quot;Source language: {source}&quot;)</span>
+<span class="sd">            ...     print(f"Source language: {source}")</span>
 <span class="sd">            Source language: Greek</span>
 
 <span class="sd">            &gt;&gt;&gt; # Get in specific writing system</span>
-<span class="sd">            &gt;&gt;&gt; source_fr = etymOps.GetSource(etymologies[0], &quot;fr&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; source_fr = etymOps.GetSource(etymologies[0], "fr")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns empty string if source not set in specified writing system</span>
 <span class="sd">            - Source can be a language name, language family, or proto-language</span>
-<span class="sd">            - Examples: &quot;Latin&quot;, &quot;Proto-Indo-European&quot;, &quot;French&quot;, &quot;Unknown&quot;</span>
+<span class="sd">            - Examples: "Latin", "Proto-Indo-European", "French", "Unknown"</span>
 <span class="sd">            - Can be set in multiple writing systems for multilingual display</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetSource, GetForm, GetGloss</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
 
-        <span class="n">source</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">etymology</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
+        <span class="c1"># ILexEtymology has no "Source" field in the installed LCM</span>
+        <span class="c1"># (live-reflection, 2026-08-18); LanguageNotes is the real</span>
+        <span class="c1"># backing field for the free-text "source language" concept</span>
+        <span class="c1"># this method exposes. See docs/API_ISSUES_CATEGORIZED.md</span>
+        <span class="c1"># Category 8.</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">etymology</span><span class="o">.</span><span class="n">LanguageNotes</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetSource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the source language name for an etymology.</span>
 
 <span class="sd">        Args:</span>
@@ -720,16 +762,16 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = list(etymOps.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if etymologies:</span>
-<span class="sd">            ...     etymOps.SetSource(etymologies[0], &quot;Ancient Greek&quot;)</span>
+<span class="sd">            ...     etymOps.SetSource(etymologies[0], "Ancient Greek")</span>
 <span class="sd">            ...     print(etymOps.GetSource(etymologies[0]))</span>
 <span class="sd">            Ancient Greek</span>
 
 <span class="sd">            &gt;&gt;&gt; # Set in multiple writing systems</span>
-<span class="sd">            &gt;&gt;&gt; etymOps.SetSource(etymologies[0], &quot;Grec ancien&quot;, &quot;fr&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; etymOps.SetSource(etymologies[0], &quot;Griego antiguo&quot;, &quot;es&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; etymOps.SetSource(etymologies[0], "Grec ancien", "fr")</span>
+<span class="sd">            &gt;&gt;&gt; etymOps.SetSource(etymologies[0], "Griego antiguo", "es")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Empty string is allowed (clears the source)</span>
@@ -739,23 +781,27 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetSource, SetForm, SetGloss</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
 
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">etymology</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="c1"># See GetSource(): "Source" does not exist on ILexEtymology;</span>
+        <span class="c1"># LanguageNotes is the real backing field.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set etymology source"</span><span class="p">):</span>
+            <span class="n">etymology</span><span class="o">.</span><span class="n">LanguageNotes</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="c1"># --- Form &amp; Gloss Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the etymological form (the form in the source language).</span>
 
 <span class="sd">        Args:</span>
@@ -770,24 +816,24 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = list(etymOps.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if etymologies:</span>
 <span class="sd">            ...     form = etymOps.GetForm(etymologies[0])</span>
 <span class="sd">            ...     source = etymOps.GetSource(etymologies[0])</span>
-<span class="sd">            ...     print(f&quot;{source}: {form}&quot;)</span>
+<span class="sd">            ...     print(f"{source}: {form}")</span>
 <span class="sd">            Greek: τηλε</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns empty string if form not set in specified writing system</span>
 <span class="sd">            - Form should be in the orthography of the source language</span>
 <span class="sd">            - May include phonetic transcription, reconstruction, or native script</span>
-<span class="sd">            - For Proto-languages, use asterisk notation (e.g., &quot;*tele&quot;)</span>
+<span class="sd">            - For Proto-languages, use asterisk notation (e.g., "*tele")</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetForm, GetSource, GetGloss</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
@@ -797,7 +843,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the etymological form (the form in the source language).</span>
 
 <span class="sd">        Args:</span>
@@ -811,14 +857,14 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etym = etymOps.Create(entry)</span>
-<span class="sd">            &gt;&gt;&gt; etymOps.SetForm(etym, &quot;tele&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; etymOps.SetForm(etym, "tele")</span>
 <span class="sd">            &gt;&gt;&gt; print(etymOps.GetForm(etym))</span>
 <span class="sd">            tele</span>
 
 <span class="sd">            &gt;&gt;&gt; # Set reconstructed Proto-Indo-European form</span>
-<span class="sd">            &gt;&gt;&gt; etymOps.SetForm(etym, &quot;*tele-&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; etymOps.SetForm(etym, "*tele-")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Empty string is allowed (clears the form)</span>
@@ -828,21 +874,23 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetForm, SetSource, SetGloss</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
 
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">etymology</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set etymology form"</span><span class="p">):</span>
+            <span class="n">etymology</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetGloss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the gloss (meaning in the source language).</span>
 
 <span class="sd">        Args:</span>
@@ -857,13 +905,13 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = list(etymOps.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if etymologies:</span>
 <span class="sd">            ...     form = etymOps.GetForm(etymologies[0])</span>
 <span class="sd">            ...     gloss = etymOps.GetGloss(etymologies[0])</span>
-<span class="sd">            ...     print(f&quot;&#39;{form}&#39; means &#39;{gloss}&#39;&quot;)</span>
-<span class="sd">            &#39;tele&#39; means &#39;far, distant&#39;</span>
+<span class="sd">            ...     print(f"'{form}' means '{gloss}'")</span>
+<span class="sd">            'tele' means 'far, distant'</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns empty string if gloss not set in specified writing system</span>
@@ -873,8 +921,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetGloss, GetForm, GetSource</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
@@ -884,7 +932,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetGloss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the gloss (meaning in the source language).</span>
 
 <span class="sd">        Args:</span>
@@ -898,9 +946,9 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etym = etymOps.Create(entry)</span>
-<span class="sd">            &gt;&gt;&gt; etymOps.SetGloss(etym, &quot;far, distant&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; etymOps.SetGloss(etym, "far, distant")</span>
 <span class="sd">            &gt;&gt;&gt; print(etymOps.GetGloss(etym))</span>
 <span class="sd">            far, distant</span>
 
@@ -912,23 +960,25 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetGloss, SetForm, SetSource</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
 
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">etymology</span><span class="o">.</span><span class="n">Gloss</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set etymology gloss"</span><span class="p">):</span>
+            <span class="n">etymology</span><span class="o">.</span><span class="n">Gloss</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="c1"># --- Comment &amp; Bibliography Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetComment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the linguistic comment for an etymology.</span>
 
 <span class="sd">        Args:</span>
@@ -943,11 +993,11 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = list(etymOps.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if etymologies:</span>
 <span class="sd">            ...     comment = etymOps.GetComment(etymologies[0])</span>
-<span class="sd">            ...     print(f&quot;Note: {comment}&quot;)</span>
+<span class="sd">            ...     print(f"Note: {comment}")</span>
 <span class="sd">            Note: Calque from Greek compound; borrowed in 19th century</span>
 
 <span class="sd">        Notes:</span>
@@ -958,8 +1008,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetComment, GetBibliography</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
@@ -969,7 +1019,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetComment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the linguistic comment for an etymology.</span>
 
 <span class="sd">        Args:</span>
@@ -983,18 +1033,18 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; etym = etymOps.Create(entry, source=&quot;Greek&quot;, form=&quot;tele&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
+<span class="sd">            &gt;&gt;&gt; etym = etymOps.Create(entry, source="Greek", form="tele")</span>
 <span class="sd">            &gt;&gt;&gt; etymOps.SetComment(</span>
 <span class="sd">            ...     etym,</span>
-<span class="sd">            ...     &quot;Calque from Greek; borrowed in 1830s with invention of technology&quot;</span>
+<span class="sd">            ...     "Calque from Greek; borrowed in 1830s with invention of technology"</span>
 <span class="sd">            ... )</span>
 
 <span class="sd">            &gt;&gt;&gt; # Add comment in multiple languages</span>
 <span class="sd">            &gt;&gt;&gt; etymOps.SetComment(</span>
 <span class="sd">            ...     etym,</span>
-<span class="sd">            ...     &quot;Calque du grec; emprunté vers 1830&quot;,</span>
-<span class="sd">            ...     &quot;fr&quot;</span>
+<span class="sd">            ...     "Calque du grec; emprunté vers 1830",</span>
+<span class="sd">            ...     "fr"</span>
 <span class="sd">            ... )</span>
 
 <span class="sd">        Notes:</span>
@@ -1006,21 +1056,23 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetComment, SetBibliography</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
 
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">etymology</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set etymology comment"</span><span class="p">):</span>
+            <span class="n">etymology</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetBibliography</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the bibliographic reference for an etymology.</span>
 
 <span class="sd">        Args:</span>
@@ -1034,11 +1086,11 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = list(etymOps.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if etymologies:</span>
 <span class="sd">            ...     bib = etymOps.GetBibliography(etymologies[0])</span>
-<span class="sd">            ...     print(f&quot;Source: {bib}&quot;)</span>
+<span class="sd">            ...     print(f"Source: {bib}")</span>
 <span class="sd">            Source: Smith 2020:145; Jones 2018:234</span>
 
 <span class="sd">        Notes:</span>
@@ -1050,20 +1102,20 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetBibliography, GetComment</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Bibliography can be stored as a string property or Unicode accessor</span>
         <span class="c1"># Check both possibilities</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">etymology</span><span class="p">,</span> <span class="s2">&quot;Bibliography&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">etymology</span><span class="p">,</span> <span class="s2">"Bibliography"</span><span class="p">):</span>
             <span class="n">bib</span> <span class="o">=</span> <span class="n">etymology</span><span class="o">.</span><span class="n">Bibliography</span>
             <span class="k">if</span> <span class="n">bib</span><span class="p">:</span>
-                <span class="c1"># If it&#39;s an ITsString, extract text</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">bib</span><span class="p">,</span> <span class="s2">&quot;Text&quot;</span><span class="p">):</span>
+                <span class="c1"># If it's an ITsString, extract text</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">bib</span><span class="p">,</span> <span class="s2">"Text"</span><span class="p">):</span>
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">bib</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
-                <span class="c1"># If it&#39;s already a string</span>
+                <span class="c1"># If it's already a string</span>
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bib</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                     <span class="k">return</span> <span class="n">bib</span>
                 <span class="c1"># Try to cast to ITsString</span>
@@ -1071,13 +1123,13 @@
                     <span class="k">try</span><span class="p">:</span>
                         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeMultiString</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">bib</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">bib</span><span class="p">)</span> <span class="k">if</span> <span class="n">bib</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">bib</span><span class="p">)</span> <span class="k">if</span> <span class="n">bib</span> <span class="k">else</span> <span class="s2">""</span>
 
-        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetBibliography</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="n">bibliography_text</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the bibliographic reference for an etymology.</span>
 
 <span class="sd">        Args:</span>
@@ -1090,53 +1142,58 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; etym = etymOps.Create(entry, source=&quot;Greek&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; etymOps.SetBibliography(etym, &quot;Smith 2020:145&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
+<span class="sd">            &gt;&gt;&gt; etym = etymOps.Create(entry, source="Greek")</span>
+<span class="sd">            &gt;&gt;&gt; etymOps.SetBibliography(etym, "Smith 2020:145")</span>
 <span class="sd">            &gt;&gt;&gt; print(etymOps.GetBibliography(etym))</span>
 <span class="sd">            Smith 2020:145</span>
 
 <span class="sd">            &gt;&gt;&gt; # Multiple citations</span>
 <span class="sd">            &gt;&gt;&gt; etymOps.SetBibliography(</span>
 <span class="sd">            ...     etym,</span>
-<span class="sd">            ...     &quot;Smith 2020:145; Jones 2018:234; Brown 2015:89&quot;</span>
+<span class="sd">            ...     "Smith 2020:145; Jones 2018:234; Brown 2015:89"</span>
 <span class="sd">            ... )</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Empty string is allowed (clears the bibliography)</span>
 <span class="sd">            - Use semicolons to separate multiple citations</span>
-<span class="sd">            - Common formats: &quot;Author Year:Page&quot;, &quot;Author (Year)&quot;, etc.</span>
+<span class="sd">            - Common formats: "Author Year:Page", "Author (Year)", etc.</span>
 <span class="sd">            - Be consistent with citation style across your project</span>
 <span class="sd">            - Can reference etymological dictionaries, historical sources, etc.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetBibliography, SetComment</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bibliography_text</span><span class="p">,</span> <span class="s2">&quot;bibliography_text&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">bibliography_text</span><span class="p">,</span> <span class="s2">"bibliography_text"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
 
         <span class="c1"># Bibliography might be stored as string or ITsString</span>
-        <span class="c1"># Try to set it appropriately</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">etymology</span><span class="p">,</span> <span class="s2">&quot;Bibliography&quot;</span><span class="p">):</span>
-            <span class="c1"># Check if it&#39;s a MultiUnicodeAccessor</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">etymology</span><span class="o">.</span><span class="n">Bibliography</span><span class="p">,</span> <span class="s2">&quot;set_String&quot;</span><span class="p">):</span>
-                <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">bibliography_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-                <span class="n">etymology</span><span class="o">.</span><span class="n">Bibliography</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
-            <span class="c1"># Otherwise treat as direct string property</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">bibliography_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-                <span class="n">etymology</span><span class="o">.</span><span class="n">Bibliography</span> <span class="o">=</span> <span class="n">mkstr</span>
+        <span class="c1"># Try to set it appropriately.</span>
+        <span class="c1"># The outer capability check stays outside the bracket: an etymology</span>
+        <span class="c1"># without the field is a true no-op, not an empty named undo entry.</span>
+        <span class="c1"># The inner MultiString-vs-scalar dispatch stays INSIDE, because both</span>
+        <span class="c1"># of its branches mutate and there is no no-op path to protect (D5).</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">etymology</span><span class="p">,</span> <span class="s2">"Bibliography"</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set etymology bibliography"</span><span class="p">):</span>
+                <span class="c1"># Check if it's a MultiUnicodeAccessor</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">etymology</span><span class="o">.</span><span class="n">Bibliography</span><span class="p">,</span> <span class="s2">"set_String"</span><span class="p">):</span>
+                    <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">bibliography_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                    <span class="n">etymology</span><span class="o">.</span><span class="n">Bibliography</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+                <span class="c1"># Otherwise treat as direct string property</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">bibliography_text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                    <span class="n">etymology</span><span class="o">.</span><span class="n">Bibliography</span> <span class="o">=</span> <span class="n">mkstr</span>
 
     <span class="c1"># --- Utility Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetOwningEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the lexical entry that owns this etymology.</span>
 
 <span class="sd">        Args:</span>
@@ -1150,12 +1207,12 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = list(etymOps.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if etymologies:</span>
 <span class="sd">            ...     owner = etymOps.GetOwningEntry(etymologies[0])</span>
 <span class="sd">            ...     headword = project.LexEntry.GetHeadword(owner)</span>
-<span class="sd">            ...     print(f&quot;Entry: {headword}&quot;)</span>
+<span class="sd">            ...     print(f"Entry: {headword}")</span>
 <span class="sd">            Entry: telephone</span>
 
 <span class="sd">        Notes:</span>
@@ -1165,15 +1222,15 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ILexEntry</span><span class="p">(</span><span class="n">etymology</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the GUID (Global Unique Identifier) of an etymology.</span>
 
 <span class="sd">        Args:</span>
@@ -1187,11 +1244,11 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; etymOps = EtymologyOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;telephone&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("telephone")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = list(etymOps.GetAll(entry))</span>
 <span class="sd">            &gt;&gt;&gt; if etymologies:</span>
 <span class="sd">            ...     guid = etymOps.GetGuid(etymologies[0])</span>
-<span class="sd">            ...     print(f&quot;Etymology GUID: {guid}&quot;)</span>
+<span class="sd">            ...     print(f"Etymology GUID: {guid}")</span>
 <span class="sd">            Etymology GUID: 12345678-1234-1234-1234-123456789abc</span>
 
 <span class="sd">        Notes:</span>
@@ -1203,8 +1260,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetOwningEntry, GetAll</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">etymology</span><span class="o">.</span><span class="n">Guid</span>
@@ -1213,7 +1270,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetLanguage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the source language of an etymology.</span>
 
 <span class="sd">        Args:</span>
@@ -1223,21 +1280,21 @@
 <span class="sd">            ICmPossibility: The language possibility object, or None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;loanword&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("loanword")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = project.Etymology.GetAll(entry)</span>
 <span class="sd">            &gt;&gt;&gt; if etymologies:</span>
 <span class="sd">            ...     lang = project.Etymology.GetLanguage(etymologies[0])</span>
 <span class="sd">            ...     if lang:</span>
 <span class="sd">            ...         print(lang.Name.BestAnalysisAlternative.Text)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">etymology</span><span class="o">.</span><span class="n">LanguageRA</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetLanguage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="n">language</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the source language of an etymology.</span>
 
 <span class="sd">        Args:</span>
@@ -1249,24 +1306,26 @@
 <span class="sd">            FP_NullParameterError: If etymology_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;loanword&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("loanword")</span>
 <span class="sd">            &gt;&gt;&gt; etymologies = project.Etymology.GetAll(entry)</span>
 <span class="sd">            &gt;&gt;&gt; if etymologies:</span>
 <span class="sd">            ...     # Find language possibility (implementation depends on your project structure)</span>
 <span class="sd">            ...     # language_obj = ... (get from languages list)</span>
 <span class="sd">            ...     # project.Etymology.SetLanguage(etymologies[0], language_obj)</span>
 <span class="sd">            ...     pass</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">&quot;etymology_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="s2">"etymology_or_hvo"</span><span class="p">)</span>
 
         <span class="n">etymology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetEtymologyObject</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
-        <span class="n">etymology</span><span class="o">.</span><span class="n">LanguageRA</span> <span class="o">=</span> <span class="n">language</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set etymology language"</span><span class="p">):</span>
+            <span class="n">etymology</span><span class="o">.</span><span class="n">LanguageRA</span> <span class="o">=</span> <span class="n">language</span>
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__GetEntryObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve HVO or object to ILexEntry.</span>
 
 <span class="sd">        Args:</span>
@@ -1276,17 +1335,17 @@
 <span class="sd">            ILexEntry: The resolved entry object.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a lexical entry.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            FP_ParameterError: If HVO doesn't refer to a lexical entry.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ILexEntry</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a lexical entry&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a lexical entry"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">return</span> <span class="n">entry_or_hvo</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__GetEtymologyObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etymology_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve HVO or object to ILexEtymology.</span>
 
 <span class="sd">        Args:</span>
@@ -1296,17 +1355,17 @@
 <span class="sd">            ILexEtymology: The resolved etymology object.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to an etymology.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            FP_ParameterError: If HVO doesn't refer to an etymology.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">etymology_or_hvo</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ILexEtymology</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to an etymology&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to an etymology"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">return</span> <span class="n">etymology_or_hvo</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
 <span class="sd">        Args:</span>
@@ -1314,7 +1373,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            int: The writing system handle.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">ws</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
@@ -1356,8 +1415,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

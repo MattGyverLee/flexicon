@@ -54,7 +54,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Smart collection class for morphosyntactic analyses.</span>
 
 <span class="sd">This module provides MSACollection, a smart collection that manages</span>
@@ -86,7 +86,7 @@
 
 <span class="sd">Example::</span>
 
-<span class="sd">    from flexlibs2.code.Lexicon.msa_collection import MSACollection</span>
+<span class="sd">    from flexicon.code.Lexicon.msa_collection import MSACollection</span>
 
 <span class="sd">    # entry.MorphoSyntaxAnalysesOC already wrapped by LexEntryOperations</span>
 <span class="sd">    msas = entry_ops.GetMorphoSyntaxAnalyses(entry)</span>
@@ -110,7 +110,7 @@
 <span class="sd">    # Iterate</span>
 <span class="sd">    for msa in msas:</span>
 <span class="sd">        print(msa.class_type)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.smart_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmartCollection</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.morphosyntax_analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">MorphosyntaxAnalysis</span>
@@ -119,7 +119,7 @@
 <div class="viewcode-block" id="MSACollection">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.msa_collection.MSACollection">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MSACollection</span><span class="p">(</span><span class="n">SmartCollection</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Smart collection for morphosyntactic analyses with type-aware filtering.</span>
 
 <span class="sd">    Manages collections of morphosyntactic analysis objects (MorphosyntaxAnalysis</span>
@@ -136,10 +136,10 @@
 <span class="sd">        stem = msas.stem_msas()  # Filter to MoStemMsa</span>
 <span class="sd">        with_pos = msas.filter(pos_main=target_pos)  # POS filter</span>
 <span class="sd">        both = msas.stem_msas().filter(pos_main=target_pos)  # Chain</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize an MSACollection.</span>
 
 <span class="sd">        Args:</span>
@@ -149,13 +149,13 @@
 
 <span class="sd">            collection = MSACollection()</span>
 <span class="sd">            collection = MSACollection([msa1, msa2, msa3])</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MSACollection.filter">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.msa_collection.MSACollection.filter">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_main</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">has_pos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter the collection by common MSA properties.</span>
 
 <span class="sd">        Supports filtering by properties that work across all MSA types</span>
@@ -195,9 +195,9 @@
 <span class="sd">            - pos_main comparison uses GUID string comparison</span>
 <span class="sd">            - has_pos and pos_main filters are AND-ed together</span>
 <span class="sd">            - where() takes precedence over other criteria</span>
-<span class="sd">            - Returns new collection (doesn&#39;t modify original)</span>
+<span class="sd">            - Returns new collection (doesn't modify original)</span>
 <span class="sd">            - Use where() for complex custom filtering</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># If custom predicate provided, use it</span>
         <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">where</span><span class="p">(</span><span class="n">item</span><span class="p">)]</span>
@@ -217,7 +217,7 @@
         <span class="k">if</span> <span class="n">pos_main</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Get the GUID of the target POS for comparison</span>
             <span class="n">target_guid</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pos_main</span><span class="p">,</span> <span class="s2">&quot;Guid&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pos_main</span><span class="p">,</span> <span class="s2">"Guid"</span><span class="p">):</span>
                 <span class="n">target_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pos_main</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">target_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pos_main</span><span class="p">)</span>
@@ -230,7 +230,7 @@
 <div class="viewcode-block" id="MSACollection.where">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.msa_collection.MSACollection.where">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predicate</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter using a custom predicate function.</span>
 
 <span class="sd">        For filtering by complex criteria or properties not supported by filter().</span>
@@ -263,7 +263,7 @@
 <span class="sd">            - Predicate receives each MorphosyntaxAnalysis object</span>
 <span class="sd">            - Return True to include in result, False to exclude</span>
 <span class="sd">            - For simple filters (pos_main, has_pos), use filter() instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">msa</span> <span class="k">for</span> <span class="n">msa</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">predicate</span><span class="p">(</span><span class="n">msa</span><span class="p">)]</span>
         <span class="k">return</span> <span class="n">MSACollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
 
@@ -271,7 +271,7 @@
 <div class="viewcode-block" id="MSACollection.stem_msas">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.msa_collection.MSACollection.stem_msas">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">stem_msas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the stem (MoStemMsa) MSAs from the collection.</span>
 
 <span class="sd">        Convenience method for filtering to MoStemMsa objects only.</span>
@@ -282,23 +282,23 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            stem = msas.stem_msas()</span>
-<span class="sd">            print(f&quot;Found {len(stem)} stem MSAs&quot;)</span>
+<span class="sd">            print(f"Found {len(stem)} stem MSAs")</span>
 
 <span class="sd">            # Chain with other filters</span>
 <span class="sd">            stem_with_pos = msas.stem_msas().filter(has_pos=True)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Equivalent to by_type(&#39;MoStemMsa&#39;)</span>
+<span class="sd">            - Equivalent to by_type('MoStemMsa')</span>
 <span class="sd">            - Stem MSAs have PartOfSpeechRA for the main POS</span>
 <span class="sd">            - Use is_stem_msa on individual MSAs to check type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;MoStemMsa&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">"MoStemMsa"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MSACollection.deriv_aff_msas">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.msa_collection.MSACollection.deriv_aff_msas">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">deriv_aff_msas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the derivational affix (MoDerivAffMsa) MSAs from the collection.</span>
 
 <span class="sd">        Convenience method for filtering to MoDerivAffMsa objects only.</span>
@@ -309,23 +309,23 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            deriv = msas.deriv_aff_msas()</span>
-<span class="sd">            print(f&quot;Found {len(deriv)} derivational affix MSAs&quot;)</span>
+<span class="sd">            print(f"Found {len(deriv)} derivational affix MSAs")</span>
 
 <span class="sd">            # Chain with other filters</span>
 <span class="sd">            deriv_with_from = msas.deriv_aff_msas().filter(has_pos=True)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Equivalent to by_type(&#39;MoDerivAffMsa&#39;)</span>
+<span class="sd">            - Equivalent to by_type('MoDerivAffMsa')</span>
 <span class="sd">            - Derivational affixes have FromPartOfSpeechRA and ToPartOfSpeechRA</span>
 <span class="sd">            - Use is_deriv_aff_msa on individual MSAs to check type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;MoDerivAffMsa&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">"MoDerivAffMsa"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MSACollection.infl_aff_msas">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.msa_collection.MSACollection.infl_aff_msas">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">infl_aff_msas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the inflectional affix (MoInflAffMsa) MSAs from the collection.</span>
 
 <span class="sd">        Convenience method for filtering to MoInflAffMsa objects only.</span>
@@ -336,23 +336,23 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            infl = msas.infl_aff_msas()</span>
-<span class="sd">            print(f&quot;Found {len(infl)} inflectional affix MSAs&quot;)</span>
+<span class="sd">            print(f"Found {len(infl)} inflectional affix MSAs")</span>
 
 <span class="sd">            # Chain with other filters</span>
 <span class="sd">            infl_with_pos = msas.infl_aff_msas().filter(has_pos=True)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Equivalent to by_type(&#39;MoInflAffMsa&#39;)</span>
+<span class="sd">            - Equivalent to by_type('MoInflAffMsa')</span>
 <span class="sd">            - Inflectional affixes have PartOfSpeechRA and slot references</span>
 <span class="sd">            - Use is_infl_aff_msa on individual MSAs to check type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;MoInflAffMsa&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">"MoInflAffMsa"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MSACollection.unclassified_aff_msas">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.msa_collection.MSACollection.unclassified_aff_msas">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">unclassified_aff_msas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the unclassified affix (MoUnclassifiedAffixMsa) MSAs from the collection.</span>
 
 <span class="sd">        Convenience method for filtering to MoUnclassifiedAffixMsa objects only.</span>
@@ -363,22 +363,22 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            unclass = msas.unclassified_aff_msas()</span>
-<span class="sd">            print(f&quot;Found {len(unclass)} unclassified affix MSAs&quot;)</span>
+<span class="sd">            print(f"Found {len(unclass)} unclassified affix MSAs")</span>
 
 <span class="sd">            # Chain with other filters</span>
 <span class="sd">            unclass_with_pos = msas.unclassified_aff_msas().filter(has_pos=True)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Equivalent to by_type(&#39;MoUnclassifiedAffixMsa&#39;)</span>
+<span class="sd">            - Equivalent to by_type('MoUnclassifiedAffixMsa')</span>
 <span class="sd">            - Unclassified affixes have PartOfSpeechRA</span>
 <span class="sd">            - Use is_unclassified_aff_msa on individual MSAs to check type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;MoUnclassifiedAffixMsa&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">"MoUnclassifiedAffixMsa"</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Technical representation.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;MSACollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items)&quot;</span></div>
+<span class="w">        </span><span class="sd">"""Technical representation."""</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"MSACollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items)"</span></div>
 
 </pre></div>
 
@@ -417,8 +417,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

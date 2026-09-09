@@ -71,7 +71,7 @@
 <div class="viewcode-block" id="WritingSystemOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.WritingSystemOperations.WritingSystemOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">WritingSystemOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class provides operations for managing writing systems in a</span>
 <span class="sd">    FieldWorks project.</span>
 
@@ -82,16 +82,16 @@
 
 <span class="sd">    Usage::</span>
 
-<span class="sd">        from flexlibs2 import FLExProject</span>
+<span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
 
 <span class="sd">        # Get all writing systems</span>
 <span class="sd">        for ws in project.WritingSystems.GetAll():</span>
 <span class="sd">            name = project.WritingSystems.GetDisplayName(ws)</span>
 <span class="sd">            tag = project.WritingSystems.GetLanguageTag(ws)</span>
-<span class="sd">            print(f&quot;{name} ({tag})&quot;)</span>
+<span class="sd">            print(f"{name} ({tag})")</span>
 
 <span class="sd">        # Get vernacular and analysis writing systems</span>
 <span class="sd">        vern_wss = project.WritingSystems.GetVernacular()</span>
@@ -99,7 +99,7 @@
 
 <span class="sd">        # Configure a writing system</span>
 <span class="sd">        ws = list(vern_wss)[0]</span>
-<span class="sd">        project.WritingSystems.SetFontName(ws, &quot;Charis SIL&quot;)</span>
+<span class="sd">        project.WritingSystems.SetFontName(ws, "Charis SIL")</span>
 <span class="sd">        project.WritingSystems.SetFontSize(ws, 12)</span>
 <span class="sd">        project.WritingSystems.SetRightToLeft(ws, False)</span>
 
@@ -108,15 +108,15 @@
 <span class="sd">        default_anal = project.WritingSystems.GetDefaultAnalysis()</span>
 
 <span class="sd">        project.CloseProject()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize WritingSystemOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="c1"># --- Core CRUD Operations ---</span>
@@ -124,21 +124,21 @@
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all active writing systems in the project.</span>
 
 <span class="sd">        Returns all writing systems that are currently active (both vernacular</span>
 <span class="sd">        and analysis) in the project.</span>
 
-<span class="sd">        Yields:</span>
-<span class="sd">            IWritingSystemDefinition: Each writing system object</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EnumerableWrapper[IWritingSystemDefinition]: Each writing system object</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; for ws in project.WritingSystems.GetAll():</span>
 <span class="sd">            ...     name = project.WritingSystems.GetDisplayName(ws)</span>
 <span class="sd">            ...     tag = project.WritingSystems.GetLanguageTag(ws)</span>
 <span class="sd">            ...     font = project.WritingSystems.GetFontName(ws)</span>
-<span class="sd">            ...     print(f&quot;{name} ({tag}): {font}&quot;)</span>
+<span class="sd">            ...     print(f"{name} ({tag}): {font}")</span>
 <span class="sd">            English (en): Calibri</span>
 <span class="sd">            French (fr): Arial</span>
 <span class="sd">            Vernacular (qaa-x-kal): Charis SIL</span>
@@ -150,7 +150,7 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetVernacular, GetAnalysis, Exists</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">vern_ws_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetAllVernacularWSTags</span><span class="p">()</span>
         <span class="n">anal_ws_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetAllAnalysisWSTags</span><span class="p">()</span>
         <span class="n">active_tags</span> <span class="o">=</span> <span class="n">vern_ws_set</span> <span class="o">|</span> <span class="n">anal_ws_set</span>
@@ -159,9 +159,10 @@
             <span class="k">if</span> <span class="n">ws</span><span class="o">.</span><span class="n">Id</span> <span class="ow">in</span> <span class="n">active_tags</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">ws</span>
 
+    <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetVernacular</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all vernacular writing systems.</span>
 
 <span class="sd">        Vernacular writing systems are those used for the language(s) being</span>
@@ -174,7 +175,7 @@
 <span class="sd">            &gt;&gt;&gt; for ws in project.WritingSystems.GetVernacular():</span>
 <span class="sd">            ...     name = project.WritingSystems.GetDisplayName(ws)</span>
 <span class="sd">            ...     tag = project.WritingSystems.GetLanguageTag(ws)</span>
-<span class="sd">            ...     print(f&quot;Vernacular: {name} ({tag})&quot;)</span>
+<span class="sd">            ...     print(f"Vernacular: {name} ({tag})")</span>
 <span class="sd">            Vernacular: Kalaba (qaa-x-kal)</span>
 <span class="sd">            Vernacular: Kalaba-IPA (qaa-x-kal-fonipa)</span>
 
@@ -185,16 +186,17 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAnalysis, GetDefaultVernacular, SetDefaultVernacular</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">vern_ws_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetAllVernacularWSTags</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">AllWritingSystems</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">ws</span><span class="o">.</span><span class="n">Id</span> <span class="ow">in</span> <span class="n">vern_ws_set</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">ws</span>
 
+    <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all analysis writing systems.</span>
 
 <span class="sd">        Analysis writing systems are those used for linguistic analysis,</span>
@@ -208,7 +210,7 @@
 <span class="sd">            &gt;&gt;&gt; for ws in project.WritingSystems.GetAnalysis():</span>
 <span class="sd">            ...     name = project.WritingSystems.GetDisplayName(ws)</span>
 <span class="sd">            ...     tag = project.WritingSystems.GetLanguageTag(ws)</span>
-<span class="sd">            ...     print(f&quot;Analysis: {name} ({tag})&quot;)</span>
+<span class="sd">            ...     print(f"Analysis: {name} ({tag})")</span>
 <span class="sd">            Analysis: English (en)</span>
 <span class="sd">            Analysis: French (fr)</span>
 <span class="sd">            Analysis: Spanish (es)</span>
@@ -220,7 +222,7 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetVernacular, GetDefaultAnalysis, SetDefaultAnalysis</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">anal_ws_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetAllAnalysisWSTags</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">AllWritingSystems</span><span class="p">:</span>
@@ -229,11 +231,11 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">language_tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">is_vernacular</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new writing system in the project.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            language_tag (str): Language tag (e.g., &quot;en&quot;, &quot;fr&quot;, &quot;qaa-x-kal&quot;)</span>
+<span class="sd">            language_tag (str): Language tag (e.g., "en", "fr", "qaa-x-kal")</span>
 <span class="sd">            name (str): Display name for the writing system</span>
 <span class="sd">            is_vernacular (bool): True for vernacular, False for analysis.</span>
 <span class="sd">                Defaults to True.</span>
@@ -248,50 +250,50 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Create a vernacular writing system</span>
-<span class="sd">            &gt;&gt;&gt; ws = project.WritingSystems.Create(&quot;qaa-x-kal&quot;, &quot;Kalaba&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; ws = project.WritingSystems.Create("qaa-x-kal", "Kalaba")</span>
 <span class="sd">            &gt;&gt;&gt; print(project.WritingSystems.GetDisplayName(ws))</span>
 <span class="sd">            Kalaba</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create an analysis writing system</span>
-<span class="sd">            &gt;&gt;&gt; ws = project.WritingSystems.Create(&quot;es&quot;, &quot;Spanish&quot;, is_vernacular=False)</span>
-<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontName(ws, &quot;Arial&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; ws = project.WritingSystems.Create("es", "Spanish", is_vernacular=False)</span>
+<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontName(ws, "Arial")</span>
 <span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontSize(ws, 12)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create IPA writing system</span>
-<span class="sd">            &gt;&gt;&gt; ws = project.WritingSystems.Create(&quot;qaa-x-kal-fonipa&quot;, &quot;Kalaba IPA&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontName(ws, &quot;Charis SIL&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; ws = project.WritingSystems.Create("qaa-x-kal-fonipa", "Kalaba IPA")</span>
+<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontName(ws, "Charis SIL")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Language tags should follow BCP 47 standard</span>
-<span class="sd">            - Use &quot;qaa-x-&quot; prefix for undocumented languages</span>
+<span class="sd">            - Use "qaa-x-" prefix for undocumented languages</span>
 <span class="sd">            - The writing system is automatically added to vernacular or</span>
 <span class="sd">              analysis list based on is_vernacular parameter</span>
 <span class="sd">            - Default font settings may be inherited from system defaults</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Delete, Exists, GetAll</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">language_tag</span><span class="p">,</span> <span class="s2">&quot;language_tag&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">language_tag</span><span class="p">,</span> <span class="s2">"language_tag"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">language_tag</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">language_tag</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Language tag cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Language tag cannot be empty"</span><span class="p">)</span>
 
         <span class="c1"># Check if writing system already exists</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">language_tag</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Writing system &#39;</span><span class="si">{</span><span class="n">language_tag</span><span class="si">}</span><span class="s2">&#39; already exists&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Writing system '</span><span class="si">{</span><span class="n">language_tag</span><span class="si">}</span><span class="s2">' already exists"</span><span class="p">)</span>
 
         <span class="n">ws_manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">WritingSystemManager</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create writing system &#39;</span><span class="si">{</span><span class="n">language_tag</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Create writing system '</span><span class="si">{</span><span class="n">language_tag</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
             <span class="c1"># Create + register the WS with the manager. Set() stores it in the</span>
             <span class="c1"># repository, assigns a runtime Handle, and persists the .ldml</span>
             <span class="c1"># backing file on Save. Without Set(), Create() returns a detached</span>
             <span class="c1"># object -- adding the tag to CurXxxWss would yield an orphan</span>
             <span class="c1"># reference and the next OpenProject would hit a modal</span>
-            <span class="c1"># &quot;Unable to create writing system: &lt;tag&gt;&quot; dialog from liblcm.</span>
+            <span class="c1"># "Unable to create writing system: &lt;tag&gt;" dialog from liblcm.</span>
             <span class="n">ws</span> <span class="o">=</span> <span class="n">ws_manager</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">language_tag</span><span class="p">)</span>
             <span class="n">ws</span><span class="o">.</span><span class="n">Abbreviation</span> <span class="o">=</span> <span class="n">language_tag</span>
             <span class="k">try</span><span class="p">:</span>
@@ -313,7 +315,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws_handle_or_tag</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Remove a writing system from the project.</span>
 
 <span class="sd">        Args:</span>
@@ -328,8 +330,8 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Delete by language tag</span>
-<span class="sd">            &gt;&gt;&gt; if project.WritingSystems.Exists(&quot;qaa-x-old&quot;):</span>
-<span class="sd">            ...     project.WritingSystems.Delete(&quot;qaa-x-old&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.WritingSystems.Exists("qaa-x-old"):</span>
+<span class="sd">            ...     project.WritingSystems.Delete("qaa-x-old")</span>
 
 <span class="sd">            &gt;&gt;&gt; # Delete by handle</span>
 <span class="sd">            &gt;&gt;&gt; ws = list(project.WritingSystems.GetVernacular())[2]</span>
@@ -344,10 +346,10 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Exists</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="s2">&quot;ws_handle_or_tag&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="s2">"ws_handle_or_tag"</span><span class="p">)</span>
 
         <span class="c1"># Get the writing system object</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -361,19 +363,19 @@
                 <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws_handle_or_tag</span><span class="p">))</span>
             <span class="n">language_tag</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">Id</span>
 
-        <span class="c1"># Check if it&#39;s a default writing system</span>
+        <span class="c1"># Check if it's a default writing system</span>
         <span class="n">default_vern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DefaultVernacularWritingSystem</span>
         <span class="n">default_anal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DefaultAnalysisWritingSystem</span>
 
         <span class="k">if</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="o">==</span> <span class="n">default_vern</span><span class="o">.</span><span class="n">Handle</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Cannot delete the default vernacular writing system&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Cannot delete the default vernacular writing system"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="o">==</span> <span class="n">default_anal</span><span class="o">.</span><span class="n">Handle</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Cannot delete the default analysis writing system&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Cannot delete the default analysis writing system"</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Delete writing system &#39;</span><span class="si">{</span><span class="n">language_tag</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
-            <span class="c1"># Removal contract from IWritingSystemContainer: &quot;first remove from</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Delete writing system '</span><span class="si">{</span><span class="n">language_tag</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+            <span class="c1"># Removal contract from IWritingSystemContainer: "first remove from</span>
             <span class="c1"># AnalysisWritingSystems [the full list], then from</span>
-            <span class="c1"># CurrentAnalysisWritingSystems [the current list].&quot; Same for</span>
+            <span class="c1"># CurrentAnalysisWritingSystems [the current list]." Same for</span>
             <span class="c1"># vernacular. Going through the collections (rather than</span>
             <span class="c1"># rewriting the CurXxxWss space-delimited string) keeps the full</span>
             <span class="c1"># list and current list in sync.</span>
@@ -390,14 +392,14 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetFontName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the default font name for a writing system.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            ws: IWritingSystemDefinition object or language tag (str)</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: Font name (e.g., &quot;Charis SIL&quot;, &quot;Arial&quot;)</span>
+<span class="sd">            str: Font name (e.g., "Charis SIL", "Arial")</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If ws is None</span>
@@ -406,37 +408,37 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; ws = list(project.WritingSystems.GetVernacular())[0]</span>
 <span class="sd">            &gt;&gt;&gt; font = project.WritingSystems.GetFontName(ws)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Font: {font}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Font: {font}")</span>
 <span class="sd">            Font: Charis SIL</span>
 
 <span class="sd">            &gt;&gt;&gt; # By language tag</span>
-<span class="sd">            &gt;&gt;&gt; font = project.WritingSystems.GetFontName(&quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; font = project.WritingSystems.GetFontName("en")</span>
 <span class="sd">            &gt;&gt;&gt; print(font)</span>
 <span class="sd">            Calibri</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetFontName, GetFontSize</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ws_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ws_obj</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span>
 
         <span class="c1"># Get default font name</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">&quot;DefaultFontName&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFontName</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">"DefaultFontName"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFontName</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFontName</span>
-        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">&quot;DefaultFont&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFont</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">"DefaultFont"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFont</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFont</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetFontName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">font_name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the default font name for a writing system.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            ws: IWritingSystemDefinition object or language tag (str)</span>
-<span class="sd">            font_name (str): Font name (e.g., &quot;Charis SIL&quot;, &quot;Arial&quot;)</span>
+<span class="sd">            font_name (str): Font name (e.g., "Charis SIL", "Arial")</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
@@ -445,13 +447,13 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; ws = list(project.WritingSystems.GetVernacular())[0]</span>
-<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontName(ws, &quot;Charis SIL&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontName(ws, "Charis SIL")</span>
 
 <span class="sd">            &gt;&gt;&gt; # Set by language tag</span>
-<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontName(&quot;en&quot;, &quot;Calibri&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontName("en", "Calibri")</span>
 
 <span class="sd">            &gt;&gt;&gt; # Set IPA font</span>
-<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontName(&quot;qaa-x-kal-fonipa&quot;, &quot;Doulos SIL&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontName("qaa-x-kal-fonipa", "Doulos SIL")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Font must be installed on the system</span>
@@ -460,24 +462,28 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetFontName, SetFontSize</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">font_name</span><span class="p">,</span> <span class="s2">&quot;font_name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">font_name</span><span class="p">,</span> <span class="s2">"font_name"</span><span class="p">)</span>
 
         <span class="n">ws_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ws_obj</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span>
 
-        <span class="c1"># Set default font name</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">&quot;DefaultFontName&quot;</span><span class="p">):</span>
-            <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFontName</span> <span class="o">=</span> <span class="n">font_name</span>
-        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">&quot;DefaultFont&quot;</span><span class="p">):</span>
-            <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFont</span> <span class="o">=</span> <span class="n">font_name</span>
+        <span class="c1"># Set default font name. The hasattr dispatch stays OUTSIDE the</span>
+        <span class="c1"># brackets so the "neither property exists" fall-through remains a</span>
+        <span class="c1"># true no-op that opens no unit of work.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">"DefaultFontName"</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set writing system font '</span><span class="si">{</span><span class="n">font_name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+                <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFontName</span> <span class="o">=</span> <span class="n">font_name</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">"DefaultFont"</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set writing system font '</span><span class="si">{</span><span class="n">font_name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+                <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFont</span> <span class="o">=</span> <span class="n">font_name</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetFontSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the default font size for a writing system.</span>
 
 <span class="sd">        Args:</span>
@@ -493,25 +499,25 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; ws = list(project.WritingSystems.GetVernacular())[0]</span>
 <span class="sd">            &gt;&gt;&gt; size = project.WritingSystems.GetFontSize(ws)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Font size: {size} pt&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Font size: {size} pt")</span>
 <span class="sd">            Font size: 12.0 pt</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetFontSize, GetFontName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ws_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ws_obj</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span>
 
         <span class="c1"># Get default font size</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">&quot;DefaultFontSize&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFontSize</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">"DefaultFontSize"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFontSize</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFontSize</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="mf">12.0</span>  <span class="c1"># Default size</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetFontSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the default font size for a writing system.</span>
 
 <span class="sd">        Args:</span>
@@ -529,10 +535,10 @@
 <span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontSize(ws, 14)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Set by language tag</span>
-<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontSize(&quot;en&quot;, 12)</span>
+<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontSize("en", 12)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Larger size for better readability</span>
-<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontSize(&quot;qaa-x-kal&quot;, 16)</span>
+<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetFontSize("qaa-x-kal", 16)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Size should typically be between 8 and 72 points</span>
@@ -541,25 +547,27 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetFontSize, SetFontName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="s2">&quot;size&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="s2">"size"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Font size must be positive&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Font size must be positive"</span><span class="p">)</span>
 
         <span class="n">ws_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ws_obj</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span>
 
-        <span class="c1"># Set default font size</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">&quot;DefaultFontSize&quot;</span><span class="p">):</span>
-            <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFontSize</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="c1"># Set default font size. hasattr guard outside the bracket -- a WS</span>
+        <span class="c1"># without the property is a true no-op.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">"DefaultFontSize"</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set writing system font size to </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">"</span><span class="p">):</span>
+                <span class="n">ws_obj</span><span class="o">.</span><span class="n">DefaultFontSize</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetRightToLeft</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the right-to-left directionality setting for a writing system.</span>
 
 <span class="sd">        Args:</span>
@@ -575,13 +583,13 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; ws = list(project.WritingSystems.GetVernacular())[0]</span>
 <span class="sd">            &gt;&gt;&gt; rtl = project.WritingSystems.GetRightToLeft(ws)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;RTL: {rtl}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f"RTL: {rtl}")</span>
 <span class="sd">            RTL: False</span>
 
 <span class="sd">            &gt;&gt;&gt; # Check Arabic</span>
-<span class="sd">            &gt;&gt;&gt; if project.WritingSystems.Exists(&quot;ar&quot;):</span>
-<span class="sd">            ...     rtl = project.WritingSystems.GetRightToLeft(&quot;ar&quot;)</span>
-<span class="sd">            ...     print(f&quot;Arabic is RTL: {rtl}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.WritingSystems.Exists("ar"):</span>
+<span class="sd">            ...     rtl = project.WritingSystems.GetRightToLeft("ar")</span>
+<span class="sd">            ...     print(f"Arabic is RTL: {rtl}")</span>
 <span class="sd">            Arabic is RTL: True</span>
 
 <span class="sd">        Notes:</span>
@@ -590,22 +598,22 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetRightToLeft</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ws_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ws_obj</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span>
 
         <span class="c1"># Get RTL setting</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">&quot;RightToLeftScript&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">"RightToLeftScript"</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">ws_obj</span><span class="o">.</span><span class="n">RightToLeftScript</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">&quot;RightToLeft&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">"RightToLeft"</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">ws_obj</span><span class="o">.</span><span class="n">RightToLeft</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>  <span class="c1"># Default to LTR</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetRightToLeft</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">is_rtl</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the right-to-left directionality for a writing system.</span>
 
 <span class="sd">        Args:</span>
@@ -619,11 +627,11 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Set Arabic to RTL</span>
-<span class="sd">            &gt;&gt;&gt; if project.WritingSystems.Exists(&quot;ar&quot;):</span>
-<span class="sd">            ...     project.WritingSystems.SetRightToLeft(&quot;ar&quot;, True)</span>
+<span class="sd">            &gt;&gt;&gt; if project.WritingSystems.Exists("ar"):</span>
+<span class="sd">            ...     project.WritingSystems.SetRightToLeft("ar", True)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Set English to LTR</span>
-<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetRightToLeft(&quot;en&quot;, False)</span>
+<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetRightToLeft("en", False)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - RTL languages: Arabic, Hebrew, Persian, Urdu, etc.</span>
@@ -632,26 +640,29 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetRightToLeft</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">is_rtl</span><span class="p">,</span> <span class="s2">&quot;is_rtl&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">is_rtl</span><span class="p">,</span> <span class="s2">"is_rtl"</span><span class="p">)</span>
 
         <span class="n">ws_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ws_obj</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span>
 
-        <span class="c1"># Set RTL setting</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">&quot;RightToLeftScript&quot;</span><span class="p">):</span>
-            <span class="n">ws_obj</span><span class="o">.</span><span class="n">RightToLeftScript</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">is_rtl</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">&quot;RightToLeft&quot;</span><span class="p">):</span>
-            <span class="n">ws_obj</span><span class="o">.</span><span class="n">RightToLeft</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">is_rtl</span><span class="p">)</span>
+        <span class="c1"># Set RTL setting. The hasattr dispatch stays OUTSIDE the brackets so</span>
+        <span class="c1"># the "neither property exists" fall-through remains a true no-op.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">"RightToLeftScript"</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set writing system right-to-left flag"</span><span class="p">):</span>
+                <span class="n">ws_obj</span><span class="o">.</span><span class="n">RightToLeftScript</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">is_rtl</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ws_obj</span><span class="p">,</span> <span class="s2">"RightToLeft"</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set writing system right-to-left flag"</span><span class="p">):</span>
+                <span class="n">ws_obj</span><span class="o">.</span><span class="n">RightToLeft</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">is_rtl</span><span class="p">)</span>
 
     <span class="c1"># --- Default Settings ---</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetDefaultVernacular</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the default vernacular writing system.</span>
 
 <span class="sd">        Args:</span>
@@ -669,7 +680,7 @@
 <span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetDefaultVernacular(ws)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Set by language tag</span>
-<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetDefaultVernacular(&quot;qaa-x-kal&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetDefaultVernacular("qaa-x-kal")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - The writing system must be in the vernacular list</span>
@@ -678,24 +689,24 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDefaultVernacular, SetDefaultAnalysis</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
         <span class="n">ws_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ws_obj</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span>
 
-        <span class="c1"># Verify it&#39;s a vernacular WS</span>
+        <span class="c1"># Verify it's a vernacular WS</span>
         <span class="n">vern_tags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetAllVernacularWSTags</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">ws_obj</span><span class="o">.</span><span class="n">Id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vern_tags</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Writing system &#39;</span><span class="si">{</span><span class="n">ws_obj</span><span class="o">.</span><span class="n">Id</span><span class="si">}</span><span class="s2">&#39; is not a vernacular writing system&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Writing system '</span><span class="si">{</span><span class="n">ws_obj</span><span class="o">.</span><span class="n">Id</span><span class="si">}</span><span class="s2">' is not a vernacular writing system"</span><span class="p">)</span>
 
         <span class="c1"># Set as default</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DefaultVernacularWritingSystem</span> <span class="o">=</span> <span class="n">ws_obj</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetDefaultAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the default analysis writing system.</span>
 
 <span class="sd">        Args:</span>
@@ -713,7 +724,7 @@
 <span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetDefaultAnalysis(ws)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Set by language tag</span>
-<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetDefaultAnalysis(&quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.WritingSystems.SetDefaultAnalysis("en")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - The writing system must be in the analysis list</span>
@@ -722,24 +733,24 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDefaultAnalysis, SetDefaultVernacular</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
         <span class="n">ws_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ws_obj</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span>
 
-        <span class="c1"># Verify it&#39;s an analysis WS</span>
+        <span class="c1"># Verify it's an analysis WS</span>
         <span class="n">anal_tags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetAllAnalysisWSTags</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">ws_obj</span><span class="o">.</span><span class="n">Id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">anal_tags</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Writing system &#39;</span><span class="si">{</span><span class="n">ws_obj</span><span class="o">.</span><span class="n">Id</span><span class="si">}</span><span class="s2">&#39; is not an analysis writing system&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Writing system '</span><span class="si">{</span><span class="n">ws_obj</span><span class="o">.</span><span class="n">Id</span><span class="si">}</span><span class="s2">' is not an analysis writing system"</span><span class="p">)</span>
 
         <span class="c1"># Set as default</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DefaultAnalysisWritingSystem</span> <span class="o">=</span> <span class="n">ws_obj</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetDefaultVernacular</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the default vernacular writing system.</span>
 
 <span class="sd">        Returns:</span>
@@ -749,7 +760,7 @@
 <span class="sd">            &gt;&gt;&gt; ws = project.WritingSystems.GetDefaultVernacular()</span>
 <span class="sd">            &gt;&gt;&gt; name = project.WritingSystems.GetDisplayName(ws)</span>
 <span class="sd">            &gt;&gt;&gt; tag = project.WritingSystems.GetLanguageTag(ws)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Default vernacular: {name} ({tag})&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Default vernacular: {name} ({tag})")</span>
 <span class="sd">            Default vernacular: Kalaba (qaa-x-kal)</span>
 
 <span class="sd">        Notes:</span>
@@ -759,12 +770,12 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetDefaultVernacular, GetDefaultAnalysis</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DefaultVernacularWritingSystem</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetDefaultAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the default analysis writing system.</span>
 
 <span class="sd">        Returns:</span>
@@ -774,7 +785,7 @@
 <span class="sd">            &gt;&gt;&gt; ws = project.WritingSystems.GetDefaultAnalysis()</span>
 <span class="sd">            &gt;&gt;&gt; name = project.WritingSystems.GetDisplayName(ws)</span>
 <span class="sd">            &gt;&gt;&gt; tag = project.WritingSystems.GetLanguageTag(ws)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Default analysis: {name} ({tag})&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Default analysis: {name} ({tag})")</span>
 <span class="sd">            Default analysis: English (en)</span>
 
 <span class="sd">        Notes:</span>
@@ -784,21 +795,21 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetDefaultAnalysis, GetDefaultVernacular</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">DefaultAnalysisWritingSystem</span>
 
     <span class="c1"># --- Utility Methods ---</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetDisplayName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the display name (UI label) for a writing system.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            ws: IWritingSystemDefinition object or language tag (str)</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: Display name (e.g., &quot;English&quot;, &quot;Kalaba&quot;)</span>
+<span class="sd">            str: Display name (e.g., "English", "Kalaba")</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If ws is None</span>
@@ -811,13 +822,13 @@
 <span class="sd">            English</span>
 
 <span class="sd">            &gt;&gt;&gt; # By language tag</span>
-<span class="sd">            &gt;&gt;&gt; name = project.WritingSystems.GetDisplayName(&quot;en&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; name = project.WritingSystems.GetDisplayName("en")</span>
 <span class="sd">            &gt;&gt;&gt; print(name)</span>
 <span class="sd">            English</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetLanguageTag, GetAll</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ws_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResolveWS</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ws_obj</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_WritingSystemError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ws</span><span class="p">))</span>
@@ -826,14 +837,14 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetLanguageTag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the language tag (BCP 47 identifier) for a writing system.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            ws: IWritingSystemDefinition object</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: Language tag (e.g., &quot;en&quot;, &quot;fr&quot;, &quot;qaa-x-kal&quot;)</span>
+<span class="sd">            str: Language tag (e.g., "en", "fr", "qaa-x-kal")</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If ws is None</span>
@@ -847,22 +858,22 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns BCP 47 language tag</span>
 <span class="sd">            - Format: language[-script][-region][-variant][-extension]</span>
-<span class="sd">            - Examples: &quot;en&quot;, &quot;en-US&quot;, &quot;qaa-x-kal&quot;, &quot;zh-Hans&quot;</span>
+<span class="sd">            - Examples: "en", "en-US", "qaa-x-kal", "zh-Hans"</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDisplayName, Exists</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">&quot;ws&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">"ws"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">ws</span><span class="o">.</span><span class="n">Id</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">language_tag</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if a writing system with the given language tag exists and is active.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            language_tag (str): Language tag to check (e.g., &quot;en&quot;, &quot;qaa-x-kal&quot;)</span>
+<span class="sd">            language_tag (str): Language tag to check (e.g., "en", "qaa-x-kal")</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if writing system exists and is active, False otherwise</span>
@@ -871,29 +882,29 @@
 <span class="sd">            FP_NullParameterError: If language_tag is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; if project.WritingSystems.Exists(&quot;en&quot;):</span>
-<span class="sd">            ...     print(&quot;English writing system is active&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.WritingSystems.Exists("en"):</span>
+<span class="sd">            ...     print("English writing system is active")</span>
 <span class="sd">            English writing system is active</span>
 
-<span class="sd">            &gt;&gt;&gt; if not project.WritingSystems.Exists(&quot;ar&quot;):</span>
-<span class="sd">            ...     print(&quot;Arabic writing system not found&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if not project.WritingSystems.Exists("ar"):</span>
+<span class="sd">            ...     print("Arabic writing system not found")</span>
 <span class="sd">            Arabic writing system not found</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only checks active (vernacular or analysis) writing systems</span>
 <span class="sd">            - Comparison is case-insensitive</span>
-<span class="sd">            - Handles both &#39;-&#39; and &#39;_&#39; in tags</span>
+<span class="sd">            - Handles both '-' and '_' in tags</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, Create, Delete</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">language_tag</span><span class="p">,</span> <span class="s2">&quot;language_tag&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">language_tag</span><span class="p">,</span> <span class="s2">"language_tag"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetWSByTag</span><span class="p">(</span><span class="n">language_tag</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetBestString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string_obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Extract the best analysis or vernacular string from a MultiString or</span>
 <span class="sd">        MultiUnicode object.</span>
 
@@ -914,7 +925,7 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Get the best string from a lexeme form</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntries.GetEntry(&quot;test&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntries.GetEntry("test")</span>
 <span class="sd">            &gt;&gt;&gt; best_text = project.WritingSystems.GetBestString(entry.LexemeFormOA.Form)</span>
 <span class="sd">            &gt;&gt;&gt; print(best_text)</span>
 <span class="sd">            test</span>
@@ -927,49 +938,49 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Prefers analysis writing systems over vernacular</span>
-<span class="sd">            - Returns empty string for &quot;***&quot; (FLEx&#39;s null string marker)</span>
+<span class="sd">            - Returns empty string for "***" (FLEx's null string marker)</span>
 <span class="sd">            - Useful for extracting displayable text from multi-WS fields</span>
 <span class="sd">            - This is a convenience method for common text extraction patterns</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, GetAnalysis, GetVernacular</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">string_obj</span><span class="p">,</span> <span class="s2">&quot;string_obj&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">string_obj</span><span class="p">,</span> <span class="s2">"string_obj"</span><span class="p">)</span>
 
         <span class="c1"># Import types locally to avoid circular imports</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">IMultiUnicode</span><span class="p">,</span> <span class="n">IMultiString</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">string_obj</span><span class="p">,</span> <span class="p">(</span><span class="n">IMultiUnicode</span><span class="p">,</span> <span class="n">IMultiString</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;GetBestString: string_obj must be IMultiUnicode or IMultiString&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"GetBestString: string_obj must be IMultiUnicode or IMultiString"</span><span class="p">)</span>
 
         <span class="c1"># Get the best alternative (analysis preferred, then vernacular)</span>
         <span class="n">s</span> <span class="o">=</span> <span class="n">string_obj</span><span class="o">.</span><span class="n">BestAnalysisVernacularAlternative</span><span class="o">.</span><span class="n">Text</span>
 
-        <span class="c1"># Return empty string for FLEx&#39;s null marker &quot;***&quot;</span>
-        <span class="k">return</span> <span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;***&quot;</span> <span class="k">else</span> <span class="n">s</span>
+        <span class="c1"># Return empty string for FLEx's null marker "***"</span>
+        <span class="k">return</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">"***"</span> <span class="k">else</span> <span class="n">s</span>
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_GetAllVernacularWSTags</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get set of all vernacular writing system tags.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            set: Set of vernacular WS language tags</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">CurVernWss</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_GetAllAnalysisWSTags</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get set of all analysis writing system tags.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            set: Set of analysis WS language tags</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">CurAnalysisWss</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_NormalizeLangTag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">language_tag</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Normalize language tag for comparison (lowercase, underscores to hyphens).</span>
 
 <span class="sd">        Args:</span>
@@ -977,11 +988,11 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: Normalized tag</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">language_tag</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">language_tag</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"_"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_GetWSByTag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">language_tag</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get writing system object by language tag.</span>
 
 <span class="sd">        Args:</span>
@@ -989,7 +1000,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IWritingSystemDefinition or None: Writing system or None if not found</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">normalized_tag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NormalizeLangTag</span><span class="p">(</span><span class="n">language_tag</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">AllWritingSystems</span><span class="p">:</span>
@@ -998,7 +1009,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_GetWSByHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get writing system object by handle.</span>
 
 <span class="sd">        Args:</span>
@@ -1006,14 +1017,14 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IWritingSystemDefinition or None: Writing system or None if not found</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">AllWritingSystems</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="o">==</span> <span class="n">handle</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">ws</span>
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_ResolveWS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve a writing system parameter to a WS object.</span>
 
 <span class="sd">        Args:</span>
@@ -1021,8 +1032,8 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IWritingSystemDefinition or None: Writing system object or None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">&quot;ws&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="s2">"ws"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetWSByTag</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
@@ -1031,12 +1042,16 @@
             <span class="k">return</span> <span class="n">ws</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Duplicate operation is not applicable for writing systems.</span>
 
 <span class="sd">        Writing systems are project-level configuration objects with unique</span>
 <span class="sd">        identifiers and cannot be duplicated in the traditional sense.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            insert_after (bool): Accepted for API uniformity across Operations classes. Ignored -- this method always raises.</span>
+<span class="sd">            deep (bool): Accepted for API uniformity across Operations classes. Ignored -- this method always raises.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            NotImplementedError: Always raised - writing systems cannot be duplicated.</span>
@@ -1049,14 +1064,14 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Delete, GetAll</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Writing systems cannot be duplicated. Use Create() to create a new writing system.&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Writing systems cannot be duplicated. Use Create() to create a new writing system."</span><span class="p">)</span>
 
     <span class="c1"># ========== SYNC INTEGRATION METHODS ==========</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get syncable properties - NOT IMPLEMENTED for writing systems.</span>
 
 <span class="sd">        Writing systems are linguistic configuration unique to each project and</span>
@@ -1064,15 +1079,15 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            NotImplementedError: Writing systems are not syncable</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s2">&quot;Writing systems cannot be synced between projects. &quot;</span>
-            <span class="s2">&quot;Writing systems are linguistic configuration unique to each project.&quot;</span>
+            <span class="s2">"Writing systems cannot be synced between projects. "</span>
+            <span class="s2">"Writing systems are linguistic configuration unique to each project."</span>
         <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compare writing systems - NOT IMPLEMENTED.</span>
 
 <span class="sd">        Writing systems are linguistic configuration unique to each project and</span>
@@ -1080,10 +1095,10 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            NotImplementedError: Writing systems are not syncable</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s2">&quot;Writing systems cannot be compared for sync. &quot;</span>
-            <span class="s2">&quot;Writing systems are linguistic configuration unique to each project.&quot;</span>
+            <span class="s2">"Writing systems cannot be compared for sync. "</span>
+            <span class="s2">"Writing systems are linguistic configuration unique to each project."</span>
         <span class="p">)</span></div>
 
 </pre></div>
@@ -1123,8 +1138,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

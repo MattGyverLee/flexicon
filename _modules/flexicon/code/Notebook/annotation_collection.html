@@ -54,7 +54,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Smart collection class for annotations.</span>
 
 <span class="sd">This module provides AnnotationCollection, a smart collection that manages</span>
@@ -75,11 +75,11 @@
 <span class="sd">    - by_type() filtering to specific annotation types</span>
 <span class="sd">    - filter() for common criteria (annotation_type, author, date_created)</span>
 <span class="sd">    - Convenience methods (scripture_annotations(), translator_notes(), etc.)</span>
-<span class="sd">    - Chainable filtering: annos.scripture().filter(author=&#39;John&#39;)</span>
+<span class="sd">    - Chainable filtering: annos.scripture().filter(author='John')</span>
 
 <span class="sd">Example::</span>
 
-<span class="sd">    from flexlibs2.code.Notebook.annotation_collection import AnnotationCollection</span>
+<span class="sd">    from flexicon.code.Notebook.annotation_collection import AnnotationCollection</span>
 
 <span class="sd">    # GetAll() returns AnnotationCollection</span>
 <span class="sd">    annos = noteOps.GetAll(entry)</span>
@@ -90,11 +90,11 @@
 <span class="sd">    #   ScrScriptureNote: 3 (25%)</span>
 
 <span class="sd">    # Filter by type</span>
-<span class="sd">    todos = annos.by_type(&quot;To Do&quot;)</span>
+<span class="sd">    todos = annos.by_type("To Do")</span>
 <span class="sd">    print(len(todos))  # 5</span>
 
 <span class="sd">    # Filter by author</span>
-<span class="sd">    john_notes = annos.filter(author=&quot;John&quot;)</span>
+<span class="sd">    john_notes = annos.filter(author="John")</span>
 
 <span class="sd">    # Filter by date</span>
 <span class="sd">    from System import DateTime</span>
@@ -102,7 +102,7 @@
 <span class="sd">    recent = annos.filter(since=one_week_ago)</span>
 
 <span class="sd">    # Chain filters</span>
-<span class="sd">    john_todos = annos.by_type(&quot;To Do&quot;).filter(author=&quot;John&quot;)</span>
+<span class="sd">    john_todos = annos.by_type("To Do").filter(author="John")</span>
 
 <span class="sd">    # Use convenience methods</span>
 <span class="sd">    scripture = annos.scripture()</span>
@@ -110,8 +110,8 @@
 
 <span class="sd">    # Iterate</span>
 <span class="sd">    for anno in annos:</span>
-<span class="sd">        print(f&quot;{anno.annotation_type}: {anno.content}&quot;)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        print(f"{anno.annotation_type}: {anno.content}")</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.smart_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmartCollection</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.annotation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotation</span>
@@ -159,7 +159,7 @@
 <div class="viewcode-block" id="AnnotationCollection">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AnnotationCollection</span><span class="p">(</span><span class="n">SmartCollection</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Smart collection for annotations with type-aware filtering.</span>
 
 <span class="sd">    Manages collections of annotation (Annotation wrapper objects) with</span>
@@ -173,13 +173,13 @@
 
 <span class="sd">        annos = noteOps.GetAll(entry)  # Returns AnnotationCollection</span>
 <span class="sd">        print(annos)  # Shows type breakdown</span>
-<span class="sd">        todos = annos.by_type(&quot;To Do&quot;)  # Filter to To Do</span>
-<span class="sd">        john = annos.filter(author=&quot;John&quot;)  # Filter by author</span>
-<span class="sd">        both = annos.by_type(&quot;To Do&quot;).filter(author=&quot;John&quot;)  # Chain</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        todos = annos.by_type("To Do")  # Filter to To Do</span>
+<span class="sd">        john = annos.filter(author="John")  # Filter by author</span>
+<span class="sd">        both = annos.by_type("To Do").filter(author="John")  # Chain</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize an AnnotationCollection.</span>
 
 <span class="sd">        Args:</span>
@@ -189,13 +189,13 @@
 
 <span class="sd">            collection = AnnotationCollection()</span>
 <span class="sd">            collection = AnnotationCollection([anno1, anno2, anno3])</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 
 <div class="viewcode-block" id="AnnotationCollection.filter">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.filter">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annotation_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">author</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">since</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">until</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">content_contains</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter the collection by annotation properties.</span>
 
 <span class="sd">        Supports filtering by properties that work across all annotation types</span>
@@ -222,10 +222,10 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            # Filter by annotation type</span>
-<span class="sd">            todos = annos.filter(annotation_type=&quot;To Do&quot;)</span>
+<span class="sd">            todos = annos.filter(annotation_type="To Do")</span>
 
 <span class="sd">            # Filter by author</span>
-<span class="sd">            john_notes = annos.filter(author=&quot;John&quot;)</span>
+<span class="sd">            john_notes = annos.filter(author="John")</span>
 
 <span class="sd">            # Filter by date range</span>
 <span class="sd">            from System import DateTime</span>
@@ -234,25 +234,25 @@
 <span class="sd">            year_notes = annos.filter(since=start, until=end)</span>
 
 <span class="sd">            # Filter by content</span>
-<span class="sd">            etymology = annos.filter(content_contains=&quot;etymology&quot;)</span>
+<span class="sd">            etymology = annos.filter(content_contains="etymology")</span>
 
 <span class="sd">            # Custom filtering</span>
 <span class="sd">            recent_todos = annos.where(</span>
-<span class="sd">                lambda a: a.annotation_type == &quot;To Do&quot; and</span>
+<span class="sd">                lambda a: a.annotation_type == "To Do" and</span>
 <span class="sd">                a.date_created and</span>
 <span class="sd">                a.date_created &gt; DateTime.Now.AddDays(-7)</span>
 <span class="sd">            )</span>
 
 <span class="sd">            # Chain filters</span>
-<span class="sd">            john_todos = annos.filter(author=&quot;John&quot;).filter(annotation_type=&quot;To Do&quot;)</span>
+<span class="sd">            john_todos = annos.filter(author="John").filter(annotation_type="To Do")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - All criteria are AND-ed together if multiple provided</span>
 <span class="sd">            - String comparisons are case-sensitive</span>
 <span class="sd">            - where() takes precedence over other criteria</span>
-<span class="sd">            - Returns new collection (doesn&#39;t modify original)</span>
+<span class="sd">            - Returns new collection (doesn't modify original)</span>
 <span class="sd">            - Use where() for complex custom filtering</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># If custom predicate provided, use it</span>
         <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">where</span><span class="p">(</span><span class="n">a</span><span class="p">)]</span>
@@ -295,7 +295,7 @@
 <div class="viewcode-block" id="AnnotationCollection.by_type">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.by_type">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">by_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annotation_type</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter the collection to a specific annotation type.</span>
 
 <span class="sd">        Returns a new collection containing only annotations of the specified type.</span>
@@ -309,23 +309,23 @@
 
 <span class="sd">        Example::</span>
 
-<span class="sd">            todos = annos.by_type(&quot;To Do&quot;)</span>
+<span class="sd">            todos = annos.by_type("To Do")</span>
 <span class="sd">            print(len(todos))  # Number of To Do annotations</span>
 
-<span class="sd">            questions = annos.by_type(&quot;Question&quot;)</span>
+<span class="sd">            questions = annos.by_type("Question")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Type comparison is case-sensitive</span>
 <span class="sd">            - Returns empty collection if no matching types</span>
 <span class="sd">            - Equivalent to filter(annotation_type=type_name)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">annotation_type</span><span class="o">=</span><span class="n">annotation_type</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AnnotationCollection.by_author">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.by_author">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">by_author</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">author</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter the collection to annotations by a specific author.</span>
 
 <span class="sd">        Returns a new collection containing only annotations with the specified author.</span>
@@ -339,21 +339,21 @@
 
 <span class="sd">        Example::</span>
 
-<span class="sd">            john_notes = annos.by_author(&quot;John&quot;)</span>
+<span class="sd">            john_notes = annos.by_author("John")</span>
 <span class="sd">            print(len(john_notes))  # Number of annotations by John</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Author comparison is case-sensitive</span>
 <span class="sd">            - Returns empty collection if no matching authors</span>
 <span class="sd">            - Equivalent to filter(author=author_name)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">author</span><span class="o">=</span><span class="n">author</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AnnotationCollection.created_since">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.created_since">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">created_since</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter the collection to annotations created on or after a date.</span>
 
 <span class="sd">        Args:</span>
@@ -371,14 +371,14 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Date comparison is inclusive (&gt;= date)</span>
 <span class="sd">            - Returns annotations without DateCreated in results</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">since</span><span class="o">=</span><span class="n">date</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AnnotationCollection.created_until">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.created_until">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">created_until</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter the collection to annotations created on or before a date.</span>
 
 <span class="sd">        Args:</span>
@@ -395,7 +395,7 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Date comparison is inclusive (&lt;= date)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">until</span><span class="o">=</span><span class="n">date</span><span class="p">)</span></div>
 
 
@@ -404,11 +404,11 @@
 <div class="viewcode-block" id="AnnotationCollection.scripture">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.scripture">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">scripture</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter to Scripture annotations.</span>
 
 <span class="sd">        Returns a new collection containing only Scripture-type annotations</span>
-<span class="sd">        (types containing &#39;Scripture&#39; or &#39;Scr&#39;).</span>
+<span class="sd">        (types containing 'Scripture' or 'Scr').</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            AnnotationCollection: New collection with Scripture annotations.</span>
@@ -421,7 +421,7 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Uses the Annotation.is_scripture property</span>
 <span class="sd">            - Case-insensitive type matching</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">is_scripture</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">AnnotationCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
 
@@ -429,11 +429,11 @@
 <div class="viewcode-block" id="AnnotationCollection.translator">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.translator">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">translator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter to translator notes.</span>
 
 <span class="sd">        Returns a new collection containing only translator-type annotations</span>
-<span class="sd">        (types containing &#39;Translator&#39;).</span>
+<span class="sd">        (types containing 'Translator').</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            AnnotationCollection: New collection with translator notes.</span>
@@ -446,7 +446,7 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Uses the Annotation.is_translator property</span>
 <span class="sd">            - Case-insensitive type matching</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">is_translator</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">AnnotationCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
 
@@ -454,11 +454,11 @@
 <div class="viewcode-block" id="AnnotationCollection.consultant">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.consultant">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">consultant</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter to consultant notes.</span>
 
 <span class="sd">        Returns a new collection containing only consultant-type annotations</span>
-<span class="sd">        (types containing &#39;Consultant&#39;).</span>
+<span class="sd">        (types containing 'Consultant').</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            AnnotationCollection: New collection with consultant notes.</span>
@@ -471,7 +471,7 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Uses the Annotation.is_consultant property</span>
 <span class="sd">            - Case-insensitive type matching</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">is_consultant</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">AnnotationCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
 
@@ -479,10 +479,10 @@
 <div class="viewcode-block" id="AnnotationCollection.todos">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.todos">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">todos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Filter to &quot;To Do&quot; annotations.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Filter to "To Do" annotations.</span>
 
-<span class="sd">        Returns a new collection containing only &quot;To Do&quot; type annotations.</span>
+<span class="sd">        Returns a new collection containing only "To Do" type annotations.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            AnnotationCollection: New collection with To Do annotations.</span>
@@ -495,7 +495,7 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Uses the Annotation.is_todo property</span>
 <span class="sd">            - Case-insensitive type matching</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">is_todo</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">AnnotationCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
 
@@ -503,11 +503,11 @@
 <div class="viewcode-block" id="AnnotationCollection.questions">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.questions">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">questions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter to question annotations.</span>
 
 <span class="sd">        Returns a new collection containing only question-type annotations</span>
-<span class="sd">        (types containing &#39;Question&#39; or &#39;Query&#39;).</span>
+<span class="sd">        (types containing 'Question' or 'Query').</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            AnnotationCollection: New collection with question annotations.</span>
@@ -520,7 +520,7 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Uses the Annotation.is_question property</span>
 <span class="sd">            - Case-insensitive type matching</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">is_question</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">AnnotationCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
 
@@ -528,7 +528,7 @@
 <div class="viewcode-block" id="AnnotationCollection.with_replies">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.with_replies">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_replies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter to annotations that have replies.</span>
 
 <span class="sd">        Returns a new collection containing only annotations with at least one reply.</span>
@@ -543,7 +543,7 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Uses the Annotation.has_replies property</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">has_replies</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">AnnotationCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
 
@@ -553,7 +553,7 @@
 <div class="viewcode-block" id="AnnotationCollection.get_types">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.get_types">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_types</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all unique annotation types in the collection.</span>
 
 <span class="sd">        Returns:</span>
@@ -563,7 +563,7 @@
 
 <span class="sd">            types = annos.get_types()</span>
 <span class="sd">            for type_name in types:</span>
-<span class="sd">                print(f&quot;Type: {type_name}&quot;)</span>
+<span class="sd">                print(f"Type: {type_name}")</span>
 <span class="sd">            # Type: To Do</span>
 <span class="sd">            # Type: Question</span>
 <span class="sd">            # Type: ScrScriptureNote</span>
@@ -571,7 +571,7 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns unique type names only</span>
 <span class="sd">            - Order is based on first appearance in collection</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="n">types</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">anno</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
@@ -585,7 +585,7 @@
 <div class="viewcode-block" id="AnnotationCollection.get_authors">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation_collection.AnnotationCollection.get_authors">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_authors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all unique authors in the collection.</span>
 
 <span class="sd">        Returns:</span>
@@ -595,13 +595,13 @@
 
 <span class="sd">            authors = annos.get_authors()</span>
 <span class="sd">            for author in authors:</span>
-<span class="sd">                print(f&quot;Author: {author}&quot;)</span>
+<span class="sd">                print(f"Author: {author}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns unique author names only</span>
 <span class="sd">            - Includes empty strings if any annotations have no author set</span>
 <span class="sd">            - Order is based on first appearance in collection</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="n">authors</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">anno</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
@@ -613,7 +613,7 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        String representation showing annotation type breakdown.</span>
 
 <span class="sd">        Shows the total count and breakdown by annotation type.</span>
@@ -632,35 +632,35 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Shows percentage of each type</span>
 <span class="sd">            - Types are sorted by count (highest first)</span>
-<span class="sd">            - Empty collection shows &quot;(0 total)&quot;</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            - Empty collection shows "(0 total)"</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;AnnotationCollection (0 total)&quot;</span>
+            <span class="k">return</span> <span class="s2">"AnnotationCollection (0 total)"</span>
 
         <span class="c1"># Count by type</span>
         <span class="n">type_counts</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">anno</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
             <span class="n">anno_type</span> <span class="o">=</span> <span class="n">anno</span><span class="o">.</span><span class="n">annotation_type</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">anno_type</span><span class="p">:</span>
-                <span class="n">anno_type</span> <span class="o">=</span> <span class="s2">&quot;[Untyped]&quot;</span>
+                <span class="n">anno_type</span> <span class="o">=</span> <span class="s2">"[Untyped]"</span>
             <span class="n">type_counts</span><span class="p">[</span><span class="n">anno_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">anno_type</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
 
         <span class="c1"># Sort by count (highest first)</span>
         <span class="n">sorted_types</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">type_counts</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1"># Build display string</span>
-        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;AnnotationCollection (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> total)&quot;</span><span class="p">]</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"AnnotationCollection (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> total)"</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">anno_type</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">sorted_types</span><span class="p">:</span>
             <span class="n">percentage</span> <span class="o">=</span> <span class="p">(</span><span class="n">count</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">else</span> <span class="mi">0</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">anno_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">percentage</span><span class="si">}</span><span class="s2">%)&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">anno_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">percentage</span><span class="si">}</span><span class="s2">%)"</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Brief representation.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Brief representation."""</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;AnnotationCollection()&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;AnnotationCollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items, types: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_types</span><span class="p">()[:</span><span class="mi">3</span><span class="p">])</span><span class="si">}{</span><span class="s1">&#39;...&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_types</span><span class="p">())</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+            <span class="k">return</span> <span class="s2">"AnnotationCollection()"</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"AnnotationCollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items, types: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_types</span><span class="p">()[:</span><span class="mi">3</span><span class="p">])</span><span class="si">}{</span><span class="s1">'...'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_types</span><span class="p">())</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">)"</span></div>
 
 </pre></div>
 
@@ -699,8 +699,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

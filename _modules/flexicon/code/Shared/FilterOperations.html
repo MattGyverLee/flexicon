@@ -60,7 +60,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
 
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"System"</span><span class="p">)</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">System</span><span class="w"> </span><span class="kn">import</span> <span class="n">Guid</span>
 
@@ -101,16 +101,16 @@
 <div class="viewcode-block" id="FilterTypes">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.FilterOperations.FilterTypes">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FilterTypes</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Filter type constants for different object classes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">LEXENTRY</span> <span class="o">=</span> <span class="s2">&quot;LexEntry&quot;</span>  <span class="c1"># Lexical entry filters</span>
-    <span class="n">WORDFORM</span> <span class="o">=</span> <span class="s2">&quot;Wordform&quot;</span>  <span class="c1"># Wordform filters</span>
-    <span class="n">TEXT</span> <span class="o">=</span> <span class="s2">&quot;Text&quot;</span>  <span class="c1"># Text filters</span>
-    <span class="n">SENSE</span> <span class="o">=</span> <span class="s2">&quot;Sense&quot;</span>  <span class="c1"># Sense filters</span>
-    <span class="n">ALLOMORPH</span> <span class="o">=</span> <span class="s2">&quot;Allomorph&quot;</span>  <span class="c1"># Allomorph filters</span>
-    <span class="n">CUSTOM</span> <span class="o">=</span> <span class="s2">&quot;Custom&quot;</span>  <span class="c1"># Custom/generic filters</span></div>
+    <span class="n">LEXENTRY</span> <span class="o">=</span> <span class="s2">"LexEntry"</span>  <span class="c1"># Lexical entry filters</span>
+    <span class="n">WORDFORM</span> <span class="o">=</span> <span class="s2">"Wordform"</span>  <span class="c1"># Wordform filters</span>
+    <span class="n">TEXT</span> <span class="o">=</span> <span class="s2">"Text"</span>  <span class="c1"># Text filters</span>
+    <span class="n">SENSE</span> <span class="o">=</span> <span class="s2">"Sense"</span>  <span class="c1"># Sense filters</span>
+    <span class="n">ALLOMORPH</span> <span class="o">=</span> <span class="s2">"Allomorph"</span>  <span class="c1"># Allomorph filters</span>
+    <span class="n">CUSTOM</span> <span class="o">=</span> <span class="s2">"Custom"</span>  <span class="c1"># Custom/generic filters</span></div>
 
 
 
@@ -120,7 +120,7 @@
 <div class="viewcode-block" id="FilterOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.FilterOperations.FilterOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FilterOperations</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class provides operations for managing saved filters and queries</span>
 <span class="sd">    in a FieldWorks project.</span>
 
@@ -133,16 +133,16 @@
 
 <span class="sd">    Usage::</span>
 
-<span class="sd">        from flexlibs2 import FLExProject</span>
+<span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
 
 <span class="sd">        # Create a new filter</span>
 <span class="sd">        filter_obj = project.Filter.Create(</span>
-<span class="sd">            &quot;Verbs&quot;,</span>
+<span class="sd">            "Verbs",</span>
 <span class="sd">            FilterTypes.LEXENTRY,</span>
-<span class="sd">            {&quot;pos&quot;: &quot;verb&quot;}</span>
+<span class="sd">            {"pos": "verb"}</span>
 <span class="sd">        )</span>
 
 <span class="sd">        # Get all filters</span>
@@ -151,14 +151,14 @@
 <span class="sd">            print(name)</span>
 
 <span class="sd">        # Find a filter by name</span>
-<span class="sd">        filter_obj = project.Filter.Find(&quot;Verbs&quot;)</span>
+<span class="sd">        filter_obj = project.Filter.Find("Verbs")</span>
 
 <span class="sd">        # Apply filter to entries</span>
 <span class="sd">        entries = list(project.LexEntry.GetAll())</span>
 <span class="sd">        matching = project.Filter.ApplyFilter(filter_obj, entries)</span>
 
 <span class="sd">        # Export filter definition</span>
-<span class="sd">        project.Filter.ExportFilter(filter_obj, &quot;/path/to/filter.json&quot;)</span>
+<span class="sd">        project.Filter.ExportFilter(filter_obj, "/path/to/filter.json")</span>
 
 <span class="sd">        project.CloseProject()</span>
 
@@ -167,15 +167,15 @@
 <span class="sd">        - Filter criteria are stored as JSON-serializable dictionaries</span>
 <span class="sd">        - Different filter types support different criteria</span>
 <span class="sd">        - Filters can be exported and imported for reuse across projects</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize FilterOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">=</span> <span class="n">project</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_filter_cache</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Cache for filter objects</span>
 
@@ -184,40 +184,40 @@
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all saved filters in the project.</span>
 
 <span class="sd">        This method returns all filter objects stored in the project,</span>
 <span class="sd">        regardless of their type.</span>
 
-<span class="sd">        Yields:</span>
-<span class="sd">            dict: Each filter object with keys: guid, name, filter_type, criteria</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EnumerableWrapper[dict]: Each filter object with keys: guid, name, filter_type, criteria</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; for filter_obj in project.Filter.GetAll():</span>
-<span class="sd">            ...     name = filter_obj[&#39;name&#39;]</span>
-<span class="sd">            ...     filter_type = filter_obj[&#39;filter_type&#39;]</span>
-<span class="sd">            ...     print(f&quot;{name} ({filter_type})&quot;)</span>
+<span class="sd">            ...     name = filter_obj['name']</span>
+<span class="sd">            ...     filter_type = filter_obj['filter_type']</span>
+<span class="sd">            ...     print(f"{name} ({filter_type})")</span>
 <span class="sd">            Verbs (LexEntry)</span>
 <span class="sd">            Nouns (LexEntry)</span>
 <span class="sd">            Correct Wordforms (Wordform)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns an iterator for memory efficiency</span>
+<span class="sd">            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access</span>
 <span class="sd">            - Filters are loaded from project custom settings</span>
 <span class="sd">            - Each filter is returned as a dictionary</span>
 <span class="sd">            - Use Find() to get a specific filter by name</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Find, Create, GetFiltersByType</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">filters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_LoadFiltersFromProject</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">filter_guid</span><span class="p">,</span> <span class="n">filter_data</span> <span class="ow">in</span> <span class="n">filters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">yield</span> <span class="n">filter_data</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">,</span> <span class="n">criteria</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new saved filter in the project.</span>
 
 <span class="sd">        Args:</span>
@@ -236,23 +236,23 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Create a lexical entry filter</span>
 <span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Create(</span>
-<span class="sd">            ...     &quot;Verbs&quot;,</span>
+<span class="sd">            ...     "Verbs",</span>
 <span class="sd">            ...     FilterTypes.LEXENTRY,</span>
-<span class="sd">            ...     {&quot;pos&quot;: &quot;verb&quot;, &quot;status&quot;: &quot;approved&quot;}</span>
+<span class="sd">            ...     {"pos": "verb", "status": "approved"}</span>
 <span class="sd">            ... )</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create a wordform filter</span>
 <span class="sd">            &gt;&gt;&gt; correct_wf = project.Filter.Create(</span>
-<span class="sd">            ...     &quot;Correct Wordforms&quot;,</span>
+<span class="sd">            ...     "Correct Wordforms",</span>
 <span class="sd">            ...     FilterTypes.WORDFORM,</span>
-<span class="sd">            ...     {&quot;spelling_status&quot;: 2}  # 2 = CORRECT</span>
+<span class="sd">            ...     {"spelling_status": 2}  # 2 = CORRECT</span>
 <span class="sd">            ... )</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create a text filter</span>
 <span class="sd">            &gt;&gt;&gt; genre_filter = project.Filter.Create(</span>
-<span class="sd">            ...     &quot;Narratives&quot;,</span>
+<span class="sd">            ...     "Narratives",</span>
 <span class="sd">            ...     FilterTypes.TEXT,</span>
-<span class="sd">            ...     {&quot;genre&quot;: &quot;narrative&quot;}</span>
+<span class="sd">            ...     {"genre": "narrative"}</span>
 <span class="sd">            ... )</span>
 
 <span class="sd">        Notes:</span>
@@ -267,17 +267,17 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Delete, Find, GetCriteria, SetCriteria</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Filter name cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Filter name cannot be empty"</span><span class="p">)</span>
 
         <span class="c1"># Check if filter already exists</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Filter with name &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; already exists&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Filter with name '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' already exists"</span><span class="p">)</span>
 
         <span class="c1"># Validate filter type</span>
         <span class="n">valid_types</span> <span class="o">=</span> <span class="p">[</span>
@@ -289,17 +289,17 @@
             <span class="n">FilterTypes</span><span class="o">.</span><span class="n">CUSTOM</span><span class="p">,</span>
         <span class="p">]</span>
         <span class="k">if</span> <span class="n">filter_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_types</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid filter type: </span><span class="si">{</span><span class="n">filter_type</span><span class="si">}</span><span class="s2">. &quot;</span> <span class="sa">f</span><span class="s2">&quot;Use one of: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">valid_types</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid filter type: </span><span class="si">{</span><span class="n">filter_type</span><span class="si">}</span><span class="s2">. "</span> <span class="sa">f</span><span class="s2">"Use one of: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">valid_types</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Create filter object with unique GUID</span>
         <span class="n">filter_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Guid</span><span class="o">.</span><span class="n">NewGuid</span><span class="p">())</span>
         <span class="n">filter_obj</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;guid&quot;</span><span class="p">:</span> <span class="n">filter_guid</span><span class="p">,</span>
-            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
-            <span class="s2">&quot;filter_type&quot;</span><span class="p">:</span> <span class="n">filter_type</span><span class="p">,</span>
-            <span class="s2">&quot;criteria&quot;</span><span class="p">:</span> <span class="n">criteria</span><span class="p">,</span>
-            <span class="s2">&quot;date_created&quot;</span><span class="p">:</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">(),</span>
-            <span class="s2">&quot;date_modified&quot;</span><span class="p">:</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">(),</span>
+            <span class="s2">"guid"</span><span class="p">:</span> <span class="n">filter_guid</span><span class="p">,</span>
+            <span class="s2">"name"</span><span class="p">:</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="s2">"filter_type"</span><span class="p">:</span> <span class="n">filter_type</span><span class="p">,</span>
+            <span class="s2">"criteria"</span><span class="p">:</span> <span class="n">criteria</span><span class="p">,</span>
+            <span class="s2">"date_created"</span><span class="p">:</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">(),</span>
+            <span class="s2">"date_modified"</span><span class="p">:</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">(),</span>
         <span class="p">}</span>
 
         <span class="c1"># Save to project</span>
@@ -314,7 +314,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete a saved filter from the project.</span>
 
 <span class="sd">        Args:</span>
@@ -323,10 +323,10 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If filter_obj is None</span>
-<span class="sd">            FP_ParameterError: If filter doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If filter doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find(&quot;Old Filter&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find("Old Filter")</span>
 <span class="sd">            &gt;&gt;&gt; if filter_obj:</span>
 <span class="sd">            ...     project.Filter.Delete(filter_obj)</span>
 
@@ -342,19 +342,19 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Find</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
-        <span class="n">filter_guid</span> <span class="o">=</span> <span class="n">filter_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;guid&quot;</span><span class="p">)</span>
+        <span class="n">filter_guid</span> <span class="o">=</span> <span class="n">filter_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"guid"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">filter_guid</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object: missing GUID&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object: missing GUID"</span><span class="p">)</span>
 
         <span class="c1"># Load filters and remove</span>
         <span class="n">filters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_LoadFiltersFromProject</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">filter_guid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filters</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Filter not found in project&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Filter not found in project"</span><span class="p">)</span>
 
         <span class="k">del</span> <span class="n">filters</span><span class="p">[</span><span class="n">filter_guid</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_SaveFiltersToProject</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
@@ -365,7 +365,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find a saved filter by name.</span>
 
 <span class="sd">        Args:</span>
@@ -378,45 +378,45 @@
 <span class="sd">            FP_NullParameterError: If name is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find(&quot;Verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find("Verbs")</span>
 <span class="sd">            &gt;&gt;&gt; if verb_filter:</span>
 <span class="sd">            ...     criteria = project.Filter.GetCriteria(verb_filter)</span>
-<span class="sd">            ...     print(f&quot;Filter criteria: {criteria}&quot;)</span>
-<span class="sd">            Filter criteria: {&#39;pos&#39;: &#39;verb&#39;}</span>
+<span class="sd">            ...     print(f"Filter criteria: {criteria}")</span>
+<span class="sd">            Filter criteria: {'pos': 'verb'}</span>
 
 <span class="sd">            &gt;&gt;&gt; # Check if filter exists</span>
-<span class="sd">            &gt;&gt;&gt; if project.Filter.Find(&quot;Nouns&quot;) is None:</span>
-<span class="sd">            ...     print(&quot;Nouns filter not found&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.Filter.Find("Nouns") is None:</span>
+<span class="sd">            ...     print("Nouns filter not found")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Search is case-sensitive</span>
-<span class="sd">            - Returns None if filter not found (doesn&#39;t raise exception)</span>
+<span class="sd">            - Returns None if filter not found (doesn't raise exception)</span>
 <span class="sd">            - Returns first match if multiple filters have same name</span>
 <span class="sd">            - Filter names should be unique</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Exists, GetAll, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">None</span>
 
         <span class="c1"># NFD-normalize both sides: FLEx stores Unicode in NFD, Python</span>
-        <span class="c1"># source is typically NFC. A user looking up &quot;Verbes Compose&quot; with</span>
+        <span class="c1"># source is typically NFC. A user looking up "Verbes Compose" with</span>
         <span class="c1"># NFC e-acute against NFD-stored data would silently miss without</span>
         <span class="c1"># this. (issue #125)</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="n">filters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_LoadFiltersFromProject</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">filter_data</span> <span class="ow">in</span> <span class="n">filters</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">filter_data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">filter_data</span><span class="p">[</span><span class="s2">"name"</span><span class="p">],</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">filter_data</span>
 
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if a filter with the given name exists.</span>
 
 <span class="sd">        Args:</span>
@@ -429,11 +429,11 @@
 <span class="sd">            FP_NullParameterError: If name is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; if not project.Filter.Exists(&quot;Verbs&quot;):</span>
+<span class="sd">            &gt;&gt;&gt; if not project.Filter.Exists("Verbs"):</span>
 <span class="sd">            ...     verb_filter = project.Filter.Create(</span>
-<span class="sd">            ...         &quot;Verbs&quot;,</span>
+<span class="sd">            ...         "Verbs",</span>
 <span class="sd">            ...         FilterTypes.LEXENTRY,</span>
-<span class="sd">            ...         {&quot;pos&quot;: &quot;verb&quot;}</span>
+<span class="sd">            ...         {"pos": "verb"}</span>
 <span class="sd">            ...     )</span>
 
 <span class="sd">        Notes:</span>
@@ -443,8 +443,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Find, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">False</span>
@@ -455,7 +455,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the name of a filter.</span>
 
 <span class="sd">        Args:</span>
@@ -482,17 +482,17 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetName, Find</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;name&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"name"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object"</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the name of a filter.</span>
 
 <span class="sd">        Args:</span>
@@ -505,8 +505,8 @@
 <span class="sd">            FP_ParameterError: If name is empty or filter is invalid</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find(&quot;Verbs&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; project.Filter.SetName(filter_obj, &quot;All Verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find("Verbs")</span>
+<span class="sd">            &gt;&gt;&gt; project.Filter.SetName(filter_obj, "All Verbs")</span>
 <span class="sd">            &gt;&gt;&gt; print(project.Filter.GetName(filter_obj))</span>
 <span class="sd">            All Verbs</span>
 
@@ -518,30 +518,30 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetName, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Filter name cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Filter name cannot be empty"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;guid&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"guid"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object"</span><span class="p">)</span>
 
         <span class="c1"># Update filter</span>
-        <span class="n">filter_obj</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-        <span class="n">filter_obj</span><span class="p">[</span><span class="s2">&quot;date_modified&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">()</span>
+        <span class="n">filter_obj</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">filter_obj</span><span class="p">[</span><span class="s2">"date_modified"</span><span class="p">]</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">()</span>
 
         <span class="c1"># Save to project</span>
         <span class="n">filters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_LoadFiltersFromProject</span><span class="p">()</span>
-        <span class="n">filter_guid</span> <span class="o">=</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">&quot;guid&quot;</span><span class="p">]</span>
+        <span class="n">filter_guid</span> <span class="o">=</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">"guid"</span><span class="p">]</span>
         <span class="n">filters</span><span class="p">[</span><span class="n">filter_guid</span><span class="p">]</span> <span class="o">=</span> <span class="n">filter_obj</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_SaveFiltersToProject</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetCriteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the filter criteria definition.</span>
 
 <span class="sd">        The criteria is a dictionary that defines the filter conditions.</span>
@@ -558,14 +558,14 @@
 <span class="sd">            FP_ParameterError: If filter_obj is invalid</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find(&quot;Verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find("Verbs")</span>
 <span class="sd">            &gt;&gt;&gt; criteria = project.Filter.GetCriteria(verb_filter)</span>
 <span class="sd">            &gt;&gt;&gt; print(criteria)</span>
-<span class="sd">            {&#39;pos&#39;: &#39;verb&#39;, &#39;status&#39;: &#39;approved&#39;}</span>
+<span class="sd">            {'pos': 'verb', 'status': 'approved'}</span>
 
 <span class="sd">            &gt;&gt;&gt; # Check specific criterion</span>
-<span class="sd">            &gt;&gt;&gt; if criteria.get(&#39;pos&#39;) == &#39;verb&#39;:</span>
-<span class="sd">            ...     print(&quot;This is a verb filter&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if criteria.get('pos') == 'verb':</span>
+<span class="sd">            ...     print("This is a verb filter")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Criteria is always a dictionary</span>
@@ -576,17 +576,17 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetCriteria, GetFilterType</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;criteria&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"criteria"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object"</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">&quot;criteria&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">"criteria"</span><span class="p">]</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetCriteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">,</span> <span class="n">criteria</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the filter criteria definition.</span>
 
 <span class="sd">        Args:</span>
@@ -599,17 +599,17 @@
 <span class="sd">            FP_ParameterError: If filter_obj is invalid</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find(&quot;Verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find("Verbs")</span>
 <span class="sd">            &gt;&gt;&gt; # Update criteria to include transitivity</span>
 <span class="sd">            &gt;&gt;&gt; new_criteria = {</span>
-<span class="sd">            ...     &#39;pos&#39;: &#39;verb&#39;,</span>
-<span class="sd">            ...     &#39;status&#39;: &#39;approved&#39;,</span>
-<span class="sd">            ...     &#39;transitivity&#39;: &#39;transitive&#39;</span>
+<span class="sd">            ...     'pos': 'verb',</span>
+<span class="sd">            ...     'status': 'approved',</span>
+<span class="sd">            ...     'transitivity': 'transitive'</span>
 <span class="sd">            ... }</span>
 <span class="sd">            &gt;&gt;&gt; project.Filter.SetCriteria(verb_filter, new_criteria)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Replace criteria completely</span>
-<span class="sd">            &gt;&gt;&gt; project.Filter.SetCriteria(verb_filter, {&#39;pos&#39;: &#39;noun&#39;})</span>
+<span class="sd">            &gt;&gt;&gt; project.Filter.SetCriteria(verb_filter, {'pos': 'noun'})</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Criteria must be a JSON-serializable dictionary</span>
@@ -619,27 +619,27 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetCriteria, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;guid&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"guid"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object"</span><span class="p">)</span>
 
         <span class="c1"># Update filter</span>
-        <span class="n">filter_obj</span><span class="p">[</span><span class="s2">&quot;criteria&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">criteria</span>
-        <span class="n">filter_obj</span><span class="p">[</span><span class="s2">&quot;date_modified&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">()</span>
+        <span class="n">filter_obj</span><span class="p">[</span><span class="s2">"criteria"</span><span class="p">]</span> <span class="o">=</span> <span class="n">criteria</span>
+        <span class="n">filter_obj</span><span class="p">[</span><span class="s2">"date_modified"</span><span class="p">]</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">()</span>
 
         <span class="c1"># Save to project</span>
         <span class="n">filters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_LoadFiltersFromProject</span><span class="p">()</span>
-        <span class="n">filter_guid</span> <span class="o">=</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">&quot;guid&quot;</span><span class="p">]</span>
+        <span class="n">filter_guid</span> <span class="o">=</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">"guid"</span><span class="p">]</span>
         <span class="n">filters</span><span class="p">[</span><span class="n">filter_guid</span><span class="p">]</span> <span class="o">=</span> <span class="n">filter_obj</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_SaveFiltersToProject</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetFilterType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the filter type (entry/text/wordform/etc.).</span>
 
 <span class="sd">        Args:</span>
@@ -653,7 +653,7 @@
 <span class="sd">            FP_ParameterError: If filter_obj is invalid</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find(&quot;Verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find("Verbs")</span>
 <span class="sd">            &gt;&gt;&gt; filter_type = project.Filter.GetFilterType(filter_obj)</span>
 <span class="sd">            &gt;&gt;&gt; print(filter_type)</span>
 <span class="sd">            LexEntry</span>
@@ -671,31 +671,31 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetFiltersByType, ApplyFilter</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;filter_type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"filter_type"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object"</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">&quot;filter_type&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">"filter_type"</span><span class="p">]</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the GUID of a filter.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            filter_obj (dict): The filter object</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: The filter&#39;s GUID as a string</span>
+<span class="sd">            str: The filter's GUID as a string</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If filter_obj is None</span>
 <span class="sd">            FP_ParameterError: If filter_obj is invalid</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find(&quot;Verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find("Verbs")</span>
 <span class="sd">            &gt;&gt;&gt; guid = project.Filter.GetGuid(filter_obj)</span>
 <span class="sd">            &gt;&gt;&gt; print(guid)</span>
 <span class="sd">            a1b2c3d4-e5f6-7890-abcd-ef1234567890</span>
@@ -708,19 +708,19 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Find, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;guid&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"guid"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object"</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">&quot;guid&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">"guid"</span><span class="p">]</span>
 
     <span class="c1"># --- Filter Application ---</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ApplyFilter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">,</span> <span class="n">object_collection</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Apply a filter to a collection of objects.</span>
 
 <span class="sd">        This method evaluates each object in the collection against the</span>
@@ -739,13 +739,13 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Filter lexical entries</span>
-<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find(&quot;Verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find("Verbs")</span>
 <span class="sd">            &gt;&gt;&gt; all_entries = list(project.LexEntry.GetAll())</span>
 <span class="sd">            &gt;&gt;&gt; verbs = project.Filter.ApplyFilter(verb_filter, all_entries)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(verbs)} verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Found {len(verbs)} verbs")</span>
 
 <span class="sd">            &gt;&gt;&gt; # Filter wordforms</span>
-<span class="sd">            &gt;&gt;&gt; correct_filter = project.Filter.Find(&quot;Correct Wordforms&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; correct_filter = project.Filter.Find("Correct Wordforms")</span>
 <span class="sd">            &gt;&gt;&gt; all_wordforms = list(project.Wordforms.GetAll())</span>
 <span class="sd">            &gt;&gt;&gt; correct_wfs = project.Filter.ApplyFilter(correct_filter, all_wordforms)</span>
 
@@ -755,18 +755,18 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Filter type should match the object collection type</span>
-<span class="sd">            - Returns a new list (doesn&#39;t modify input collection)</span>
+<span class="sd">            - Returns a new list (doesn't modify input collection)</span>
 <span class="sd">            - Empty collection returns empty list</span>
-<span class="sd">            - Objects that don&#39;t match criteria are excluded</span>
+<span class="sd">            - Objects that don't match criteria are excluded</span>
 <span class="sd">            - Filtering is done in Python (not database-level)</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetMatchCount, GetCriteria, GetFilterType</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object"</span><span class="p">)</span>
 
         <span class="n">criteria</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCriteria</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">)</span>
         <span class="n">filter_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetFilterType</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">)</span>
@@ -781,7 +781,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetMatchCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">,</span> <span class="n">object_collection</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the count of objects matching a filter.</span>
 
 <span class="sd">        Args:</span>
@@ -797,10 +797,10 @@
 <span class="sd">            FP_ParameterError: If filter_obj is invalid</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find(&quot;Verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find("Verbs")</span>
 <span class="sd">            &gt;&gt;&gt; # Count all verbs in project</span>
 <span class="sd">            &gt;&gt;&gt; count = project.Filter.GetMatchCount(verb_filter)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {count} verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Found {count} verbs")</span>
 
 <span class="sd">            &gt;&gt;&gt; # Count verbs in specific collection</span>
 <span class="sd">            &gt;&gt;&gt; recent_entries = get_recent_entries()</span>
@@ -817,11 +817,11 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            ApplyFilter, GetCriteria</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object"</span><span class="p">)</span>
 
         <span class="c1"># If no collection provided, get all objects of the filter type</span>
         <span class="k">if</span> <span class="n">object_collection</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -835,7 +835,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ExportFilter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Export a filter definition to a JSON file.</span>
 
 <span class="sd">        Args:</span>
@@ -847,13 +847,13 @@
 <span class="sd">            FP_ParameterError: If filter_obj is invalid or export fails</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find(&quot;Verbs&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; project.Filter.ExportFilter(filter_obj, &quot;/path/to/verbs.json&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find("Verbs")</span>
+<span class="sd">            &gt;&gt;&gt; project.Filter.ExportFilter(filter_obj, "/path/to/verbs.json")</span>
 
 <span class="sd">            &gt;&gt;&gt; # Export all filters</span>
 <span class="sd">            &gt;&gt;&gt; for f in project.Filter.GetAll():</span>
 <span class="sd">            ...     name = project.Filter.GetName(f)</span>
-<span class="sd">            ...     file_name = f&quot;{name.replace(&#39; &#39;, &#39;_&#39;)}.json&quot;</span>
+<span class="sd">            ...     file_name = f"{name.replace(' ', '_')}.json"</span>
 <span class="sd">            ...     project.Filter.ExportFilter(f, file_name)</span>
 
 <span class="sd">        Notes:</span>
@@ -865,21 +865,21 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            ImportFilter, GetCriteria</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object"</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to export filter: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to export filter: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ImportFilter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">rename_if_exists</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Import a filter definition from a JSON file.</span>
 
 <span class="sd">        Args:</span>
@@ -893,16 +893,16 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If file_path is None</span>
-<span class="sd">            FP_ParameterError: If file doesn&#39;t exist, is invalid, or name conflicts</span>
+<span class="sd">            FP_ParameterError: If file doesn't exist, is invalid, or name conflicts</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Import a filter</span>
-<span class="sd">            &gt;&gt;&gt; imported = project.Filter.ImportFilter(&quot;/path/to/verbs.json&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Imported: {project.Filter.GetName(imported)}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; imported = project.Filter.ImportFilter("/path/to/verbs.json")</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Imported: {project.Filter.GetName(imported)}")</span>
 
 <span class="sd">            &gt;&gt;&gt; # Import with auto-rename on conflict</span>
 <span class="sd">            &gt;&gt;&gt; imported = project.Filter.ImportFilter(</span>
-<span class="sd">            ...     &quot;/path/to/filter.json&quot;,</span>
+<span class="sd">            ...     "/path/to/filter.json",</span>
 <span class="sd">            ...     rename_if_exists=True</span>
 <span class="sd">            ... )</span>
 
@@ -910,58 +910,60 @@
 <span class="sd">            - Filter file must be valid JSON</span>
 <span class="sd">            - A new GUID is assigned on import</span>
 <span class="sd">            - Import preserves name, type, and criteria</span>
-<span class="sd">            - If rename_if_exists is True, appends number to name (e.g., &quot;Verbs 2&quot;)</span>
+<span class="sd">            - If rename_if_exists is True, appends number to name (e.g., "Verbs 2")</span>
 <span class="sd">            - Import date is set to current time</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            ExportFilter, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;file_path&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">"file_path"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Filter file not found: </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Filter file not found: </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">filter_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to import filter: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to import filter: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Validate filter data</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter file: not a dictionary&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter file: not a dictionary"</span><span class="p">)</span>
 
-        <span class="n">required_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;filter_type&quot;</span><span class="p">,</span> <span class="s2">&quot;criteria&quot;</span><span class="p">]</span>
+        <span class="n">required_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"name"</span><span class="p">,</span> <span class="s2">"filter_type"</span><span class="p">,</span> <span class="s2">"criteria"</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">required_keys</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_data</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid filter file: missing &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid filter file: missing '</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
 
         <span class="c1"># Handle name conflicts</span>
-        <span class="n">original_name</span> <span class="o">=</span> <span class="n">filter_data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="n">original_name</span> <span class="o">=</span> <span class="n">filter_data</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span>
         <span class="n">import_name</span> <span class="o">=</span> <span class="n">original_name</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">import_name</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">rename_if_exists</span><span class="p">:</span>
                 <span class="c1"># Find a unique name</span>
                 <span class="n">counter</span> <span class="o">=</span> <span class="mi">2</span>
-                <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+                <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s2">"</span><span class="p">):</span>
                     <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="n">import_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">import_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s2">"</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Filter with name &#39;</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2">&#39; already exists. &quot;</span> <span class="sa">f</span><span class="s2">&quot;Use rename_if_exists=True to auto-rename.&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Filter with name '</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2">' already exists. "</span> <span class="sa">f</span><span class="s2">"Use rename_if_exists=True to auto-rename."</span>
                 <span class="p">)</span>
 
         <span class="c1"># Create the filter (this assigns new GUID and dates)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">import_name</span><span class="p">,</span> <span class="n">filter_data</span><span class="p">[</span><span class="s2">&quot;filter_type&quot;</span><span class="p">],</span> <span class="n">filter_data</span><span class="p">[</span><span class="s2">&quot;criteria&quot;</span><span class="p">])</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Import filter '</span><span class="si">{</span><span class="n">import_name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">import_name</span><span class="p">,</span> <span class="n">filter_data</span><span class="p">[</span><span class="s2">"filter_type"</span><span class="p">],</span> <span class="n">filter_data</span><span class="p">[</span><span class="s2">"criteria"</span><span class="p">])</span>
 
     <span class="c1"># --- Utility Methods ---</span>
 
+    <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetFiltersByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all filters of a specific type.</span>
 
 <span class="sd">        Args:</span>
@@ -984,25 +986,25 @@
 
 <span class="sd">            &gt;&gt;&gt; # Count wordform filters</span>
 <span class="sd">            &gt;&gt;&gt; wf_filters = list(project.Filter.GetFiltersByType(FilterTypes.WORDFORM))</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Found {len(wf_filters)} wordform filters&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Found {len(wf_filters)} wordform filters")</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns an iterator for memory efficiency</span>
+<span class="sd">            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access</span>
 <span class="sd">            - Returns empty iterator if no filters of that type exist</span>
 <span class="sd">            - Filter types are defined in FilterTypes class</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, GetFilterType, FilterTypes</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_type</span><span class="p">,</span> <span class="s2">&quot;filter_type&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_type</span><span class="p">,</span> <span class="s2">"filter_type"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">filter_obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">&quot;filter_type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">filter_type</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">filter_obj</span><span class="p">[</span><span class="s2">"filter_type"</span><span class="p">]</span> <span class="o">==</span> <span class="n">filter_type</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">filter_obj</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetDateCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the creation date of a filter.</span>
 
 <span class="sd">        Args:</span>
@@ -1016,9 +1018,9 @@
 <span class="sd">            FP_ParameterError: If filter_obj is invalid</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find(&quot;Verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find("Verbs")</span>
 <span class="sd">            &gt;&gt;&gt; created = project.Filter.GetDateCreated(filter_obj)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Created: {created}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Created: {created}")</span>
 <span class="sd">            Created: 2025-01-15 14:30:22</span>
 
 <span class="sd">        Notes:</span>
@@ -1028,17 +1030,17 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDateModified, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;date_created&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"date_created"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object"</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">filter_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;date_created&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">filter_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"date_created"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetDateModified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the last modification date of a filter.</span>
 
 <span class="sd">        Args:</span>
@@ -1052,9 +1054,9 @@
 <span class="sd">            FP_ParameterError: If filter_obj is invalid</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find(&quot;Verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; filter_obj = project.Filter.Find("Verbs")</span>
 <span class="sd">            &gt;&gt;&gt; modified = project.Filter.GetDateModified(filter_obj)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Last modified: {modified}&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Last modified: {modified}")</span>
 <span class="sd">            Last modified: 2025-01-20 09:15:43</span>
 
 <span class="sd">        Notes:</span>
@@ -1064,29 +1066,29 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDateCreated, SetName, SetCriteria</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">&quot;filter_obj&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="s2">"filter_obj"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;date_modified&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Invalid filter object&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"date_modified"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filter_obj</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Invalid filter object"</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">filter_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;date_modified&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">filter_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"date_modified"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
 
     <span class="c1"># --- Private Helper Methods ---</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_LoadFiltersFromProject</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Load all filters from project custom settings.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: Dictionary of filters keyed by GUID</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Try to load from project settings</span>
-        <span class="c1"># Since FLEx doesn&#39;t have a built-in filter storage API,</span>
+        <span class="c1"># Since FLEx doesn't have a built-in filter storage API,</span>
         <span class="c1"># we store filters as JSON in a custom project property</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s2">&quot;GetProjectProperty&quot;</span><span class="p">):</span>
-                <span class="n">filters_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetProjectProperty</span><span class="p">(</span><span class="s2">&quot;flexlibs_filters&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s2">"GetProjectProperty"</span><span class="p">):</span>
+                <span class="n">filters_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetProjectProperty</span><span class="p">(</span><span class="s2">"flexlibs_filters"</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">filters_json</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">filters_json</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -1096,24 +1098,24 @@
         <span class="k">return</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_SaveFiltersToProject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Save all filters to project custom settings.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            filters (dict): Dictionary of filters keyed by GUID</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Save to project settings as JSON</span>
         <span class="n">filters_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">filters</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s2">&quot;SetProjectProperty&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">SetProjectProperty</span><span class="p">(</span><span class="s2">&quot;flexlibs_filters&quot;</span><span class="p">,</span> <span class="n">filters_json</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s2">"SetProjectProperty"</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">SetProjectProperty</span><span class="p">(</span><span class="s2">"flexlibs_filters"</span><span class="p">,</span> <span class="n">filters_json</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Fallback: store in memory cache only</span>
             <span class="c1"># (will be lost when project closes)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Project does not support custom properties. &quot;</span> <span class="s2">&quot;Filters will only persist in memory.&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Project does not support custom properties. "</span> <span class="s2">"Filters will only persist in memory."</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_GetAllObjectsOfType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all objects of a specific type from the project.</span>
 
 <span class="sd">        Args:</span>
@@ -1121,7 +1123,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            list: All objects of that type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">filter_type</span> <span class="o">==</span> <span class="n">FilterTypes</span><span class="o">.</span><span class="n">LEXENTRY</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">LexEntry</span><span class="o">.</span><span class="n">GetAll</span><span class="p">())</span>
         <span class="k">elif</span> <span class="n">filter_type</span> <span class="o">==</span> <span class="n">FilterTypes</span><span class="o">.</span><span class="n">WORDFORM</span><span class="p">:</span>
@@ -1130,11 +1132,11 @@
             <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Texts</span><span class="o">.</span><span class="n">GetAll</span><span class="p">())</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># For other types, return empty list</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GetAllObjectsOfType not implemented for </span><span class="si">{</span><span class="n">filter_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"GetAllObjectsOfType not implemented for </span><span class="si">{</span><span class="n">filter_type</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">[]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_ObjectMatchesCriteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">criteria</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if an object matches filter criteria.</span>
 
 <span class="sd">        Args:</span>
@@ -1144,7 +1146,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if object matches all criteria, False otherwise</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">filter_type</span> <span class="o">==</span> <span class="n">FilterTypes</span><span class="o">.</span><span class="n">LEXENTRY</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MatchLexEntryCriteria</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">criteria</span><span class="p">)</span>
@@ -1156,11 +1158,11 @@
                 <span class="c1"># For custom or unknown types, always return True</span>
                 <span class="k">return</span> <span class="kc">True</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error matching criteria: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error matching criteria: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_MatchLexEntryCriteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">criteria</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if a lexical entry matches criteria.</span>
 
 <span class="sd">        Args:</span>
@@ -1169,14 +1171,14 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if matches all criteria</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Example criteria matching for lexical entries</span>
         <span class="c1"># This can be extended based on actual requirements</span>
 
         <span class="c1"># Check POS (part of speech)</span>
-        <span class="k">if</span> <span class="s2">&quot;pos&quot;</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
-            <span class="n">pos_name</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-            <span class="c1"># Get entry&#39;s POS and compare</span>
+        <span class="k">if</span> <span class="s2">"pos"</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
+            <span class="n">pos_name</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">"pos"</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="c1"># Get entry's POS and compare</span>
             <span class="c1"># Use get_pos_from_msa() to handle pythonnet interface casting</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">senses</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">)</span>
@@ -1193,8 +1195,8 @@
                 <span class="k">return</span> <span class="kc">False</span>
 
         <span class="c1"># Check morph type</span>
-        <span class="k">if</span> <span class="s2">&quot;morph_type&quot;</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
-            <span class="n">morph_type_name</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">&quot;morph_type&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s2">"morph_type"</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
+            <span class="n">morph_type_name</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">"morph_type"</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="o">.</span><span class="n">MorphTypeRA</span><span class="p">:</span>
                     <span class="n">mt</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="o">.</span><span class="n">MorphTypeRA</span>
@@ -1205,10 +1207,10 @@
                 <span class="k">return</span> <span class="kc">False</span>
 
         <span class="c1"># Check form pattern (regex)</span>
-        <span class="k">if</span> <span class="s2">&quot;form_pattern&quot;</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"form_pattern"</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
-            <span class="n">pattern</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">&quot;form_pattern&quot;</span><span class="p">]</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">"form_pattern"</span><span class="p">]</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">form</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">ITsString</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">LexemeFormOA</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">BestVernacularAlternative</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">form</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">form</span><span class="p">):</span>
@@ -1220,7 +1222,7 @@
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_MatchWordformCriteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wordform</span><span class="p">,</span> <span class="n">criteria</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if a wordform matches criteria.</span>
 
 <span class="sd">        Args:</span>
@@ -1229,18 +1231,18 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if matches all criteria</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Check spelling status</span>
-        <span class="k">if</span> <span class="s2">&quot;spelling_status&quot;</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
-            <span class="n">expected_status</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">&quot;spelling_status&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"spelling_status"</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
+            <span class="n">expected_status</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">"spelling_status"</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">wordform</span><span class="o">.</span><span class="n">SpellingStatus</span> <span class="o">!=</span> <span class="n">expected_status</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">False</span>
 
         <span class="c1"># Check form pattern (regex)</span>
-        <span class="k">if</span> <span class="s2">&quot;form_pattern&quot;</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"form_pattern"</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
-            <span class="n">pattern</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">&quot;form_pattern&quot;</span><span class="p">]</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">"form_pattern"</span><span class="p">]</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">form</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">wordform</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">BestVernacularAlternative</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span>
                 <span class="k">if</span> <span class="n">form</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">form</span><span class="p">):</span>
@@ -1251,7 +1253,7 @@
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_MatchTextCriteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">criteria</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if a text matches criteria.</span>
 
 <span class="sd">        Args:</span>
@@ -1260,10 +1262,10 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if matches all criteria</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Check genre</span>
-        <span class="k">if</span> <span class="s2">&quot;genre&quot;</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
-            <span class="n">genre_name</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">&quot;genre&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s2">"genre"</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
+            <span class="n">genre_name</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">"genre"</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">text</span><span class="o">.</span><span class="n">GenresRC</span> <span class="ow">and</span> <span class="n">text</span><span class="o">.</span><span class="n">GenresRC</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">genre</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">GenresRC</span><span class="p">:</span>
@@ -1275,10 +1277,10 @@
                 <span class="k">return</span> <span class="kc">False</span>
 
         <span class="c1"># Check title pattern (regex)</span>
-        <span class="k">if</span> <span class="s2">&quot;title_pattern&quot;</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"title_pattern"</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
-            <span class="n">pattern</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">&quot;title_pattern&quot;</span><span class="p">]</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s2">"title_pattern"</span><span class="p">]</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">title</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">Title</span><span class="o">.</span><span class="n">BestAnalysisAlternative</span><span class="p">)</span><span class="o">.</span><span class="n">Text</span>
                 <span class="k">if</span> <span class="n">title</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
@@ -1289,12 +1291,14 @@
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Duplicate a filter, creating a new copy with a new GUID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            item_or_hvo: The filter dict object to duplicate (not HVO-based).</span>
+<span class="sd">            insert_after (bool): Accepted for API uniformity across Operations classes. Filters are stored as a dict keyed by GUID with no positional ordering, so this parameter is ignored.</span>
+<span class="sd">            deep (bool): Accepted for API uniformity across Operations classes. Filter criteria are stored as a plain dict and already copied wholesale, so this parameter is ignored.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: The newly created duplicate filter with a new GUID.</span>
@@ -1304,11 +1308,11 @@
 <span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find(&quot;Verbs&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; verb_filter = project.Filter.Find("Verbs")</span>
 <span class="sd">            &gt;&gt;&gt; if verb_filter:</span>
 <span class="sd">            ...     dup = project.Filter.Duplicate(verb_filter)</span>
-<span class="sd">            ...     project.Filter.SetName(dup, &quot;Verbs Copy&quot;)</span>
-<span class="sd">            ...     print(f&quot;Duplicate: {project.Filter.GetName(dup)}&quot;)</span>
+<span class="sd">            ...     project.Filter.SetName(dup, "Verbs Copy")</span>
+<span class="sd">            ...     print(f"Duplicate: {project.Filter.GetName(dup)}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Creates a new filter with new GUID</span>
@@ -1318,13 +1322,13 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Delete, GetGuid</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">"item_or_hvo"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Filter object must be a dictionary&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Filter object must be a dictionary"</span><span class="p">)</span>
 
         <span class="c1"># Get source filter</span>
         <span class="n">source</span> <span class="o">=</span> <span class="n">item_or_hvo</span>
@@ -1335,12 +1339,12 @@
 
         <span class="n">filter_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Guid</span><span class="o">.</span><span class="n">NewGuid</span><span class="p">())</span>
         <span class="n">duplicate</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;guid&quot;</span><span class="p">:</span> <span class="n">filter_guid</span><span class="p">,</span>
-            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">source</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>  <span class="c1"># Copy name as-is</span>
-            <span class="s2">&quot;filter_type&quot;</span><span class="p">:</span> <span class="n">source</span><span class="p">[</span><span class="s2">&quot;filter_type&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;criteria&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">source</span><span class="p">[</span><span class="s2">&quot;criteria&quot;</span><span class="p">]),</span>  <span class="c1"># Deep copy criteria dict</span>
-            <span class="s2">&quot;date_created&quot;</span><span class="p">:</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">(),</span>
-            <span class="s2">&quot;date_modified&quot;</span><span class="p">:</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">(),</span>
+            <span class="s2">"guid"</span><span class="p">:</span> <span class="n">filter_guid</span><span class="p">,</span>
+            <span class="s2">"name"</span><span class="p">:</span> <span class="n">source</span><span class="p">[</span><span class="s2">"name"</span><span class="p">],</span>  <span class="c1"># Copy name as-is</span>
+            <span class="s2">"filter_type"</span><span class="p">:</span> <span class="n">source</span><span class="p">[</span><span class="s2">"filter_type"</span><span class="p">],</span>
+            <span class="s2">"criteria"</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">source</span><span class="p">[</span><span class="s2">"criteria"</span><span class="p">]),</span>  <span class="c1"># Deep copy criteria dict</span>
+            <span class="s2">"date_created"</span><span class="p">:</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">(),</span>
+            <span class="s2">"date_modified"</span><span class="p">:</span> <span class="n">System</span><span class="o">.</span><span class="n">DateTime</span><span class="o">.</span><span class="n">Now</span><span class="o">.</span><span class="n">ToString</span><span class="p">(),</span>
         <span class="p">}</span>
 
         <span class="c1"># Save to project</span>
@@ -1357,7 +1361,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all syncable properties of a filter.</span>
 
 <span class="sd">        Args:</span>
@@ -1368,34 +1372,34 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; props = project.Filter.GetSyncableProperties(filter_obj)</span>
-<span class="sd">            &gt;&gt;&gt; print(props[&#39;name&#39;])</span>
-<span class="sd">            &#39;Verbs&#39;</span>
-<span class="sd">            &gt;&gt;&gt; print(props[&#39;filter_type&#39;])</span>
-<span class="sd">            &#39;LexEntry&#39;</span>
+<span class="sd">            &gt;&gt;&gt; print(props['name'])</span>
+<span class="sd">            'Verbs'</span>
+<span class="sd">            &gt;&gt;&gt; print(props['filter_type'])</span>
+<span class="sd">            'LexEntry'</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Filters are dict-based, not LCM objects</span>
 <span class="sd">            - Returns name, filter_type, and criteria</span>
 <span class="sd">            - Does NOT include guid, date_created, date_modified (metadata)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># String properties</span>
-        <span class="k">if</span> <span class="s2">&quot;name&quot;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"name"</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="s2">&quot;filter_type&quot;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;filter_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;filter_type&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"filter_type"</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"filter_type"</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">"filter_type"</span><span class="p">]</span>
 
         <span class="c1"># Dict property</span>
-        <span class="k">if</span> <span class="s2">&quot;criteria&quot;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;criteria&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;criteria&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"criteria"</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"criteria"</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">"criteria"</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compare two filters for differences.</span>
 
 <span class="sd">        Args:</span>
@@ -1413,12 +1417,12 @@
 <span class="sd">            &gt;&gt;&gt; is_diff, diffs = ops1.CompareTo(filter1, filter2, ops1, ops2)</span>
 <span class="sd">            &gt;&gt;&gt; if is_diff:</span>
 <span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
-<span class="sd">            ...         print(f&quot;{prop}: {val1} != {val2}&quot;)</span>
+<span class="sd">            ...         print(f"{prop}: {val1} != {val2}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Compares name, filter_type, and criteria</span>
 <span class="sd">            - Empty/null values are treated as equivalent</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1437,7 +1441,7 @@
             <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
             <span class="c1"># Compare values (handle dicts specially for criteria)</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;criteria&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"criteria"</span><span class="p">:</span>
                 <span class="c1"># Deep comparison for criteria dict</span>
                 <span class="k">if</span> <span class="n">val1</span> <span class="o">!=</span> <span class="n">val2</span><span class="p">:</span>
                     <span class="n">differences</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span>
@@ -1486,8 +1490,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

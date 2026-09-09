@@ -41,7 +41,7 @@
           <div class="body" role="main">
             
   <h1>Source code for flexicon.sync.merge_ops</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">MergeOperations - Safe execution of sync operations</span>
 
 <span class="sd">This module provides safe Create/Update/Delete operations for syncing</span>
@@ -49,7 +49,7 @@
 
 <span class="sd">Author: FlexTools Development Team</span>
 <span class="sd">Date: 2025-11-26</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
@@ -61,7 +61,7 @@
 <div class="viewcode-block" id="MergeOperations">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.merge_ops.MergeOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MergeOperations</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Execute sync operations safely.</span>
 
 <span class="sd">    This class handles the actual creation, updating, and deletion of FLEx</span>
@@ -76,10 +76,10 @@
 <span class="sd">        ...     source_ops=source_project.Allomorph,</span>
 <span class="sd">        ...     parent_obj=target_entry</span>
 <span class="sd">        ... )</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize MergeOperations.</span>
 
 <span class="sd">        Args:</span>
@@ -87,27 +87,27 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            RuntimeError: If project not writable</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_project</span> <span class="o">=</span> <span class="n">target_project</span>
 
         <span class="c1"># Validate write access</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_project</span><span class="p">,</span> <span class="s2">&quot;writeEnabled&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target_project</span><span class="o">.</span><span class="n">writeEnabled</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Target project not opened with writeEnabled=True. &quot;</span> <span class="s2">&quot;Cannot perform merge operations.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_project</span><span class="p">,</span> <span class="s2">"writeEnabled"</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target_project</span><span class="o">.</span><span class="n">writeEnabled</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Target project not opened with writeEnabled=True. "</span> <span class="s2">"Cannot perform merge operations."</span><span class="p">)</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MergeOperations initialized for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_project_name</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MergeOperations initialized for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_project_name</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_project_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get project name for logging.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_project</span><span class="p">,</span> <span class="s2">&quot;ProjectName&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Get project name for logging."""</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_project</span><span class="p">,</span> <span class="s2">"ProjectName"</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_project</span><span class="o">.</span><span class="n">ProjectName</span><span class="p">()</span>
-        <span class="k">return</span> <span class="s2">&quot;unknown&quot;</span>
+        <span class="k">return</span> <span class="s2">"unknown"</span>
 
 <div class="viewcode-block" id="MergeOperations.create_object">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.merge_ops.MergeOperations.create_object">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">create_object</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">target_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">parent_obj</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">create_kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new object in target project.</span>
 
 <span class="sd">        This method creates a new object by extracting properties from the</span>
@@ -135,20 +135,20 @@
 <span class="sd">            ...     source_ops=source_project.Allomorph,</span>
 <span class="sd">            ...     parent_obj=target_entry</span>
 <span class="sd">            ... )</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="s2">&quot;Create&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_ops</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not have Create() method&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="s2">"Create"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">target_ops</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not have Create() method"</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Extract properties needed for creation</span>
             <span class="c1"># This varies by object type, so we try common patterns</span>
 
             <span class="c1"># For Allomorphs: Create(entry, form, morph_type)</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">&quot;GetForm&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">"GetForm"</span><span class="p">):</span>
                 <span class="n">form</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetForm</span><span class="p">(</span><span class="n">source_obj</span><span class="p">)</span>
-                <span class="n">morph_type</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetMorphType</span><span class="p">(</span><span class="n">source_obj</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">&quot;GetMorphType&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">morph_type</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetMorphType</span><span class="p">(</span><span class="n">source_obj</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">"GetMorphType"</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
 
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating object with form: </span><span class="si">{</span><span class="n">form</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Creating object with form: </span><span class="si">{</span><span class="n">form</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">morph_type</span> <span class="ow">and</span> <span class="n">parent_obj</span><span class="p">:</span>
                     <span class="n">created_obj</span> <span class="o">=</span> <span class="n">target_ops</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">parent_obj</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">morph_type</span><span class="p">,</span> <span class="o">**</span><span class="n">create_kwargs</span><span class="p">)</span>
@@ -158,11 +158,11 @@
                     <span class="n">created_obj</span> <span class="o">=</span> <span class="n">target_ops</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="o">**</span><span class="n">create_kwargs</span><span class="p">)</span>
 
             <span class="c1"># For LexEntry: Create(lexeme_form, morph_type)</span>
-            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">&quot;GetLexemeForm&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">"GetLexemeForm"</span><span class="p">):</span>
                 <span class="n">lexeme_form</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetLexemeForm</span><span class="p">(</span><span class="n">source_obj</span><span class="p">)</span>
-                <span class="n">morph_type</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetMorphType</span><span class="p">(</span><span class="n">source_obj</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">&quot;GetMorphType&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">morph_type</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetMorphType</span><span class="p">(</span><span class="n">source_obj</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">"GetMorphType"</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
 
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating entry with lexeme form: </span><span class="si">{</span><span class="n">lexeme_form</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Creating entry with lexeme form: </span><span class="si">{</span><span class="n">lexeme_form</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">morph_type</span><span class="p">:</span>
                     <span class="n">created_obj</span> <span class="o">=</span> <span class="n">target_ops</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">lexeme_form</span><span class="p">,</span> <span class="n">morph_type</span><span class="p">,</span> <span class="o">**</span><span class="n">create_kwargs</span><span class="p">)</span>
@@ -170,10 +170,10 @@
                     <span class="n">created_obj</span> <span class="o">=</span> <span class="n">target_ops</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">lexeme_form</span><span class="p">,</span> <span class="o">**</span><span class="n">create_kwargs</span><span class="p">)</span>
 
             <span class="c1"># For objects with name: Create(name)</span>
-            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">&quot;GetName&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">"GetName"</span><span class="p">):</span>
                 <span class="n">name</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">source_obj</span><span class="p">)</span>
 
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating object with name: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Creating object with name: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">parent_obj</span><span class="p">:</span>
                     <span class="n">created_obj</span> <span class="o">=</span> <span class="n">target_ops</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">parent_obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">create_kwargs</span><span class="p">)</span>
@@ -182,18 +182,18 @@
 
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Generic create (no parameters)</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating object with generic Create()&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Creating object with generic Create()"</span><span class="p">)</span>
                 <span class="n">created_obj</span> <span class="o">=</span> <span class="n">target_ops</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="o">**</span><span class="n">create_kwargs</span><span class="p">)</span>
 
             <span class="c1"># Copy additional properties</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">copy_properties</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">created_obj</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">,</span> <span class="n">target_ops</span><span class="p">)</span>
 
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created object: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">created_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Created object: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">created_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">created_obj</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to create object: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Object creation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to create object: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Object creation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MergeOperations.update_object">
@@ -201,7 +201,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">update_object</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Update an existing object in target project.</span>
 
 <span class="sd">        Copies properties from source object to target object. If fields is</span>
@@ -232,9 +232,9 @@
 <span class="sd">            ...     source_obj=source_allomorph,</span>
 <span class="sd">            ...     source_ops=source_project.Allomorph,</span>
 <span class="sd">            ...     target_ops=target_project.Allomorph,</span>
-<span class="sd">            ...     fields=[&quot;form&quot;]</span>
+<span class="sd">            ...     fields=["form"]</span>
 <span class="sd">            ... )</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">changed</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -246,43 +246,43 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Try to use CompareTo() if available for efficient difference detection</span>
                 <span class="c1"># This is the new sync framework integration</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">&quot;CompareTo&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">"CompareTo"</span><span class="p">):</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">is_different</span><span class="p">,</span> <span class="n">differences</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">CompareTo</span><span class="p">(</span>
                             <span class="n">source_obj</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="n">source_ops</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="n">target_ops</span>
                         <span class="p">)</span>
 
                         <span class="k">if</span> <span class="n">is_different</span><span class="p">:</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CompareTo detected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span><span class="si">}</span><span class="s2"> differences&quot;</span><span class="p">)</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CompareTo detected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">differences</span><span class="p">)</span><span class="si">}</span><span class="s2"> differences"</span><span class="p">)</span>
                             <span class="c1"># Copy all properties to apply the differences</span>
                             <span class="n">changed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_properties</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">,</span> <span class="n">target_ops</span><span class="p">)</span>
                         <span class="k">else</span><span class="p">:</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;CompareTo: No differences detected&quot;</span><span class="p">)</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"CompareTo: No differences detected"</span><span class="p">)</span>
                             <span class="n">changed</span> <span class="o">=</span> <span class="kc">False</span>
                     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                         <span class="c1"># Fall back to traditional copy if CompareTo fails</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CompareTo failed, falling back to copy_properties: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CompareTo failed, falling back to copy_properties: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                         <span class="n">changed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_properties</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">,</span> <span class="n">target_ops</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Traditional approach: Update all common properties</span>
                     <span class="n">changed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_properties</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">,</span> <span class="n">target_ops</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">changed</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updated object: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Updated object: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No changes needed for: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No changes needed for: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">changed</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to update object: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Object update failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to update object: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Object update failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MergeOperations.delete_object">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.merge_ops.MergeOperations.delete_object">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">validate_safe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete an object from target project.</span>
 
 <span class="sd">        Args:</span>
@@ -302,33 +302,33 @@
 <span class="sd">            ...     target_ops=target_project.Allomorph,</span>
 <span class="sd">            ...     target_obj=target_allomorph</span>
 <span class="sd">            ... )</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="s2">&quot;Delete&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_ops</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not have Delete() method&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="s2">"Delete"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">target_ops</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not have Delete() method"</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Optional: Validate that deletion is safe</span>
             <span class="k">if</span> <span class="n">validate_safe</span><span class="p">:</span>
                 <span class="c1"># Check if object is referenced elsewhere</span>
                 <span class="c1"># This is complex and object-type specific</span>
-                <span class="c1"># For Phase 2, we trust the user&#39;s intent</span>
+                <span class="c1"># For Phase 2, we trust the user's intent</span>
                 <span class="k">pass</span>
 
             <span class="c1"># Perform deletion</span>
             <span class="n">target_ops</span><span class="o">.</span><span class="n">Delete</span><span class="p">(</span><span class="n">target_obj</span><span class="p">)</span>
 
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleted object: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Deleted object: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">True</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to delete object: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Object deletion failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to delete object: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Object deletion failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MergeOperations.copy_properties">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.merge_ops.MergeOperations.copy_properties">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">copy_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Copy properties from source to target object.</span>
 
 <span class="sd">        This method first attempts to use the new GetSyncableProperties() method</span>
@@ -355,27 +355,27 @@
 <span class="sd">            ...     source_project.Allomorph,</span>
 <span class="sd">            ...     target_project.Allomorph</span>
 <span class="sd">            ... )</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">changed</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># NEW: Try to use GetSyncableProperties() if available (sync framework integration)</span>
         <span class="c1"># This method provides comprehensive property coverage and is the preferred approach</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">&quot;GetSyncableProperties&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="s2">"GetSyncableProperties"</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Using GetSyncableProperties() for property copying&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Using GetSyncableProperties() for property copying"</span><span class="p">)</span>
                 <span class="n">source_props</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetSyncableProperties</span><span class="p">(</span><span class="n">source_obj</span><span class="p">)</span>
 
                 <span class="c1"># Map syncable property names to their setter methods</span>
                 <span class="c1"># This mapping handles the conversion from property dict keys to operation methods</span>
                 <span class="n">property_to_setter</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="s2">&quot;Form&quot;</span><span class="p">:</span> <span class="s2">&quot;SetForm&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;SetName&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;Gloss&quot;</span><span class="p">:</span> <span class="s2">&quot;SetGloss&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;Definition&quot;</span><span class="p">:</span> <span class="s2">&quot;SetDefinition&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;Comment&quot;</span><span class="p">:</span> <span class="s2">&quot;SetComment&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;CitationForm&quot;</span><span class="p">:</span> <span class="s2">&quot;SetCitationForm&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;IsAbstract&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># Boolean properties often set directly</span>
-                    <span class="s2">&quot;MorphTypeRA&quot;</span><span class="p">:</span> <span class="s2">&quot;SetMorphType&quot;</span><span class="p">,</span>
+                    <span class="s2">"Form"</span><span class="p">:</span> <span class="s2">"SetForm"</span><span class="p">,</span>
+                    <span class="s2">"Name"</span><span class="p">:</span> <span class="s2">"SetName"</span><span class="p">,</span>
+                    <span class="s2">"Gloss"</span><span class="p">:</span> <span class="s2">"SetGloss"</span><span class="p">,</span>
+                    <span class="s2">"Definition"</span><span class="p">:</span> <span class="s2">"SetDefinition"</span><span class="p">,</span>
+                    <span class="s2">"Comment"</span><span class="p">:</span> <span class="s2">"SetComment"</span><span class="p">,</span>
+                    <span class="s2">"CitationForm"</span><span class="p">:</span> <span class="s2">"SetCitationForm"</span><span class="p">,</span>
+                    <span class="s2">"IsAbstract"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># Boolean properties often set directly</span>
+                    <span class="s2">"MorphTypeRA"</span><span class="p">:</span> <span class="s2">"SetMorphType"</span><span class="p">,</span>
                     <span class="c1"># Add more mappings as needed for other object types</span>
                 <span class="p">}</span>
 
@@ -385,7 +385,7 @@
                     <span class="k">if</span> <span class="n">setter_name</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="n">setter_name</span><span class="p">):</span>
                         <span class="k">try</span><span class="p">:</span>
                             <span class="c1"># Get current value for comparison</span>
-                            <span class="n">getter_name</span> <span class="o">=</span> <span class="n">setter_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;Set&quot;</span><span class="p">,</span> <span class="s2">&quot;Get&quot;</span><span class="p">)</span>
+                            <span class="n">getter_name</span> <span class="o">=</span> <span class="n">setter_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"Set"</span><span class="p">,</span> <span class="s2">"Get"</span><span class="p">)</span>
                             <span class="n">target_value</span> <span class="o">=</span> <span class="kc">None</span>
                             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="n">getter_name</span><span class="p">):</span>
                                 <span class="n">target_value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="n">getter_name</span><span class="p">)(</span><span class="n">target_obj</span><span class="p">)</span>
@@ -401,39 +401,39 @@
                                         <span class="c1"># This is simplified - actual implementation may need WSHandle conversion</span>
                                         <span class="nb">getattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="n">setter_name</span><span class="p">)(</span><span class="n">target_obj</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
                                         <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
-                                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updated </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">[</span><span class="si">{</span><span class="n">ws_tag</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Updated </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">[</span><span class="si">{</span><span class="n">ws_tag</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                                 <span class="k">else</span><span class="p">:</span>
                                     <span class="c1"># Simple property - just call setter</span>
                                     <span class="nb">getattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="n">setter_name</span><span class="p">)(</span><span class="n">target_obj</span><span class="p">,</span> <span class="n">prop_value</span><span class="p">)</span>
                                     <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
-                                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updated </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">target_value</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">prop_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Updated </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">target_value</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">prop_value</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                             <span class="c1"># Non-critical - some properties may not be settable</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not copy </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2"> via GetSyncableProperties: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not copy </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2"> via GetSyncableProperties: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                 <span class="c1"># If we successfully used GetSyncableProperties, return now</span>
                 <span class="k">if</span> <span class="n">changed</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">source_props</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GetSyncableProperties processed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">source_props</span><span class="p">)</span><span class="si">}</span><span class="s2"> properties&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"GetSyncableProperties processed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">source_props</span><span class="p">)</span><span class="si">}</span><span class="s2"> properties"</span><span class="p">)</span>
                     <span class="k">return</span> <span class="n">changed</span>
 
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="c1"># Fall through to traditional approach if GetSyncableProperties fails</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GetSyncableProperties failed, falling back to pattern matching: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"GetSyncableProperties failed, falling back to pattern matching: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># FALLBACK: Traditional property pattern matching for backwards compatibility</span>
-        <span class="c1"># This works with older operation classes that don&#39;t have GetSyncableProperties()</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Using traditional Get*/Set* pattern matching for property copying&quot;</span><span class="p">)</span>
+        <span class="c1"># This works with older operation classes that don't have GetSyncableProperties()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Using traditional Get*/Set* pattern matching for property copying"</span><span class="p">)</span>
 
         <span class="c1"># Common property patterns to check</span>
         <span class="c1"># Each tuple: (getter_name, setter_name, property_name)</span>
         <span class="n">property_patterns</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">(</span><span class="s2">&quot;GetForm&quot;</span><span class="p">,</span> <span class="s2">&quot;SetForm&quot;</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s2">&quot;GetName&quot;</span><span class="p">,</span> <span class="s2">&quot;SetName&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s2">&quot;GetGloss&quot;</span><span class="p">,</span> <span class="s2">&quot;SetGloss&quot;</span><span class="p">,</span> <span class="s2">&quot;gloss&quot;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s2">&quot;GetDefinition&quot;</span><span class="p">,</span> <span class="s2">&quot;SetDefinition&quot;</span><span class="p">,</span> <span class="s2">&quot;definition&quot;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s2">&quot;GetComment&quot;</span><span class="p">,</span> <span class="s2">&quot;SetComment&quot;</span><span class="p">,</span> <span class="s2">&quot;comment&quot;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s2">&quot;GetCitationForm&quot;</span><span class="p">,</span> <span class="s2">&quot;SetCitationForm&quot;</span><span class="p">,</span> <span class="s2">&quot;citation_form&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"GetForm"</span><span class="p">,</span> <span class="s2">"SetForm"</span><span class="p">,</span> <span class="s2">"form"</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"GetName"</span><span class="p">,</span> <span class="s2">"SetName"</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"GetGloss"</span><span class="p">,</span> <span class="s2">"SetGloss"</span><span class="p">,</span> <span class="s2">"gloss"</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"GetDefinition"</span><span class="p">,</span> <span class="s2">"SetDefinition"</span><span class="p">,</span> <span class="s2">"definition"</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"GetComment"</span><span class="p">,</span> <span class="s2">"SetComment"</span><span class="p">,</span> <span class="s2">"comment"</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"GetCitationForm"</span><span class="p">,</span> <span class="s2">"SetCitationForm"</span><span class="p">,</span> <span class="s2">"citation_form"</span><span class="p">),</span>
         <span class="p">]</span>
 
         <span class="k">for</span> <span class="n">getter</span><span class="p">,</span> <span class="n">setter</span><span class="p">,</span> <span class="n">prop_name</span> <span class="ow">in</span> <span class="n">property_patterns</span><span class="p">:</span>
@@ -446,11 +446,11 @@
                     <span class="k">if</span> <span class="n">source_value</span> <span class="o">!=</span> <span class="n">target_value</span><span class="p">:</span>
                         <span class="nb">getattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="n">setter</span><span class="p">)(</span><span class="n">target_obj</span><span class="p">,</span> <span class="n">source_value</span><span class="p">)</span>
                         <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updated </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">target_value</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">source_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Updated </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">target_value</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">source_value</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="c1"># Non-critical - some properties may not apply to all objects</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not copy </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not copy </span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">changed</span></div>
 
@@ -458,25 +458,25 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_field</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">target_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">source_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update a single field.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Update a single field."""</span>
         <span class="c1"># Map field name to getter/setter methods</span>
         <span class="n">field_map</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;form&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;GetForm&quot;</span><span class="p">,</span> <span class="s2">&quot;SetForm&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;GetName&quot;</span><span class="p">,</span> <span class="s2">&quot;SetName&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;gloss&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;GetGloss&quot;</span><span class="p">,</span> <span class="s2">&quot;SetGloss&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;definition&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;GetDefinition&quot;</span><span class="p">,</span> <span class="s2">&quot;SetDefinition&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;GetComment&quot;</span><span class="p">,</span> <span class="s2">&quot;SetComment&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;citation_form&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;GetCitationForm&quot;</span><span class="p">,</span> <span class="s2">&quot;SetCitationForm&quot;</span><span class="p">),</span>
+            <span class="s2">"form"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"GetForm"</span><span class="p">,</span> <span class="s2">"SetForm"</span><span class="p">),</span>
+            <span class="s2">"name"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"GetName"</span><span class="p">,</span> <span class="s2">"SetName"</span><span class="p">),</span>
+            <span class="s2">"gloss"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"GetGloss"</span><span class="p">,</span> <span class="s2">"SetGloss"</span><span class="p">),</span>
+            <span class="s2">"definition"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"GetDefinition"</span><span class="p">,</span> <span class="s2">"SetDefinition"</span><span class="p">),</span>
+            <span class="s2">"comment"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"GetComment"</span><span class="p">,</span> <span class="s2">"SetComment"</span><span class="p">),</span>
+            <span class="s2">"citation_form"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"GetCitationForm"</span><span class="p">,</span> <span class="s2">"SetCitationForm"</span><span class="p">),</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="n">field_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">field_map</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown field: </span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown field: </span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
 
         <span class="n">getter</span><span class="p">,</span> <span class="n">setter</span> <span class="o">=</span> <span class="n">field_map</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_ops</span><span class="p">,</span> <span class="n">getter</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="n">setter</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Field </span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2"> not available for this object type&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Field </span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2"> not available for this object type"</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -485,13 +485,13 @@
 
             <span class="k">if</span> <span class="n">source_value</span> <span class="o">!=</span> <span class="n">target_value</span><span class="p">:</span>
                 <span class="nb">getattr</span><span class="p">(</span><span class="n">target_ops</span><span class="p">,</span> <span class="n">setter</span><span class="p">)(</span><span class="n">target_obj</span><span class="p">,</span> <span class="n">source_value</span><span class="p">)</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updated </span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">target_value</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">source_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Updated </span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">target_value</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">source_value</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">return</span> <span class="kc">True</span>
 
             <span class="k">return</span> <span class="kc">False</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not update </span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not update </span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span></div>
 
 
@@ -499,45 +499,45 @@
 <div class="viewcode-block" id="SyncChange">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.merge_ops.SyncChange">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SyncChange</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Record of a single change made during sync.</span>
 
 <span class="sd">    Used for undo/audit tracking.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">operation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>  <span class="c1"># &#39;create&#39;, &#39;update&#39;, &#39;delete&#39;</span>
+        <span class="n">operation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>  <span class="c1"># 'create', 'update', 'delete'</span>
         <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">object_guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize sync change record.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Initialize sync change record."""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">operation</span> <span class="o">=</span> <span class="n">operation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">object_type</span> <span class="o">=</span> <span class="n">object_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">object_guid</span> <span class="o">=</span> <span class="n">object_guid</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">details</span> <span class="o">=</span> <span class="n">details</span> <span class="ow">or</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;SyncChange(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">operation</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_guid</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">...)&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"SyncChange(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">operation</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">object_guid</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">...)"</span></div>
 
 
 
 <div class="viewcode-block" id="SyncError">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.merge_ops.SyncError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SyncError</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Record of an error during sync.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_guid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">error_message</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize sync error record.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Initialize sync error record."""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">operation</span> <span class="o">=</span> <span class="n">operation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">object_guid</span> <span class="o">=</span> <span class="n">object_guid</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">error_message</span> <span class="o">=</span> <span class="n">error_message</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;SyncError(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">operation</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">error_message</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"SyncError(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">operation</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">error_message</span><span class="si">}</span><span class="s2">)"</span></div>
 
 </pre></div>
 
@@ -576,8 +576,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

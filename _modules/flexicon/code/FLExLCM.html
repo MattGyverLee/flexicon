@@ -46,11 +46,11 @@
 <span class="c1">#</span>
 <span class="c1">#   Module:     Project access functions for FieldWorks Language Explorer</span>
 <span class="c1">#               via SIL Language and Culture Model (LCM).</span>
-<span class="c1">#               (Prior to FW 9 this was known as &quot;FDO&quot; -- &quot;FieldWorks</span>
-<span class="c1">#               Data Objects&quot;)</span>
+<span class="c1">#               (Prior to FW 9 this was known as "FDO" -- "FieldWorks</span>
+<span class="c1">#               Data Objects")</span>
 <span class="c1">#</span>
 <span class="c1">#   Platform: Python.NET</span>
-<span class="c1">#             (ITsString doesn&#39;t work in IRONPython)</span>
+<span class="c1">#             (ITsString doesn't work in IRONPython)</span>
 <span class="c1">#             FieldWorks Version 9</span>
 <span class="c1">#</span>
 <span class="c1">#   Copyright Craig Farrow, 2008 - 2022</span>
@@ -60,18 +60,18 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
 
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"System"</span><span class="p">)</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
 
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FwUtils&quot;</span><span class="p">)</span>
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FieldWorks&quot;</span><span class="p">)</span>
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FwCoreDlgs&quot;</span><span class="p">)</span>
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FwControls&quot;</span><span class="p">)</span>
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FdoUi&quot;</span><span class="p">)</span>
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;SIL.Core&quot;</span><span class="p">)</span>
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;SIL.Core.Desktop&quot;</span><span class="p">)</span>
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;SIL.LCModel&quot;</span><span class="p">)</span>
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;SIL.LCModel.Core&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"FwUtils"</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"FieldWorks"</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"FwCoreDlgs"</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"FwControls"</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"FdoUi"</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"SIL.Core"</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"SIL.Core.Desktop"</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"SIL.LCModel"</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"SIL.LCModel.Core"</span><span class="p">)</span>
 
 <span class="c1"># Classes needed for loading the Cache</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">LcmCache</span><span class="p">,</span> <span class="n">LcmSettings</span><span class="p">,</span> <span class="n">LcmFileHelper</span>
@@ -87,6 +87,7 @@
 
 <span class="c1"># Import Python mirror of CellarPropertyType constants</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.Shared.lcm_constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellarPropertyType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.headless_ui</span><span class="w"> </span><span class="kn">import</span> <span class="n">HeadlessLcmUI</span>
 
 <span class="c1"># --- Globals --------------------------------------------------------</span>
 
@@ -120,21 +121,34 @@
 
 <div class="viewcode-block" id="OpenProject">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.FLExLCM.OpenProject">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">OpenProject</span><span class="p">(</span><span class="n">projectName</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">OpenProject</span><span class="p">(</span><span class="n">projectName</span><span class="p">,</span> <span class="n">ui</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Open a FieldWorks project.</span>
 
 <span class="sd">    projectName:</span>
-<span class="sd">        - Either the full path including &quot;.fwdata&quot; suffix, or</span>
+<span class="sd">        - Either the full path including ".fwdata" suffix, or</span>
 <span class="sd">        - The name only, opened from the default project location.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="sd">    ui:</span>
+<span class="sd">        - Optional ILcmUI implementation. When None (the default, since</span>
+<span class="sd">          issue #285) a bare `HeadlessLcmUI()` is used: it never blocks and</span>
+<span class="sd">          never silently discards a conflicting save, instead raising</span>
+<span class="sd">          `FP_ConflictingSaveError` so the condition surfaces to the caller.</span>
+<span class="sd">        - Interactive, FLEx-hosted callers that genuinely want the WinForms</span>
+<span class="sd">          dialogs should pass `ui=FwLcmUI(None, ThreadHelper())` explicitly.</span>
+<span class="sd">          `FwLcmUI` opens modal dialogs and marshals through</span>
+<span class="sd">          `Control.Invoke`, which in a process with no message pump blocks</span>
+<span class="sd">          the commit thread and, on a conflicting save, silently discards</span>
+<span class="sd">          this session's unsaved writes. See issues #238 and #285.</span>
+<span class="sd">    """</span>
 
     <span class="n">projectFileName</span> <span class="o">=</span> <span class="n">LcmFileHelper</span><span class="o">.</span><span class="n">GetXmlDataFileName</span><span class="p">(</span><span class="n">projectName</span><span class="p">)</span>
 
     <span class="n">projId</span> <span class="o">=</span> <span class="n">ProjectId</span><span class="p">(</span><span class="n">projectFileName</span><span class="p">)</span>
 
     <span class="n">th</span> <span class="o">=</span> <span class="n">ThreadHelper</span><span class="p">()</span>
-    <span class="n">ui</span> <span class="o">=</span> <span class="n">FwLcmUI</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">th</span><span class="p">)</span>  <span class="c1"># IHelpTopicProvider, ISynchronizeInvoke</span>
+    <span class="k">if</span> <span class="n">ui</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ui</span> <span class="o">=</span> <span class="n">HeadlessLcmUI</span><span class="p">()</span>
     <span class="n">dirs</span> <span class="o">=</span> <span class="n">FwDirectoryFinder</span><span class="o">.</span><span class="n">LcmDirectories</span>
     <span class="n">settings</span> <span class="o">=</span> <span class="n">LcmSettings</span><span class="p">()</span>
     <span class="c1"># Migration should be done within FieldWorks</span>
@@ -150,7 +164,7 @@
     <span class="c1">#    ILcmDirectories dirs,</span>
     <span class="c1">#    LcmSettings settings,</span>
     <span class="c1">#    IThreadedProgress progressDlg)</span>
-    <span class="k">return</span> <span class="n">LcmCache</span><span class="o">.</span><span class="n">CreateCacheFromExistingData</span><span class="p">(</span><span class="n">projId</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">,</span> <span class="n">ui</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">settings</span><span class="p">,</span> <span class="n">dlg</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">LcmCache</span><span class="o">.</span><span class="n">CreateCacheFromExistingData</span><span class="p">(</span><span class="n">projId</span><span class="p">,</span> <span class="s2">"en"</span><span class="p">,</span> <span class="n">ui</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">settings</span><span class="p">,</span> <span class="n">dlg</span><span class="p">)</span></div>
 
 </pre></div>
 
@@ -189,8 +203,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

@@ -77,7 +77,7 @@
 <div class="viewcode-block" id="SemanticDomainOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.SemanticDomainOperations.SemanticDomainOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SemanticDomainOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">,</span> <span class="n">_LCMNativeCatalogImportMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class provides operations for managing semantic domains in a</span>
 <span class="sd">    FieldWorks project.</span>
 
@@ -89,49 +89,49 @@
 
 <span class="sd">    Usage::</span>
 
-<span class="sd">        from flexlibs2 import FLExProject</span>
+<span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
 
 <span class="sd">        # Get all semantic domains (flat list)</span>
 <span class="sd">        for domain in project.SemanticDomains.GetAll():</span>
 <span class="sd">            number = project.SemanticDomains.GetNumber(domain)</span>
 <span class="sd">            name = project.SemanticDomains.GetName(domain)</span>
-<span class="sd">            print(f&quot;{number} - {name}&quot;)</span>
+<span class="sd">            print(f"{number} - {name}")</span>
 
 <span class="sd">        # Find a specific domain by number</span>
-<span class="sd">        domain = project.SemanticDomains.Find(&quot;7.2.1&quot;)</span>
+<span class="sd">        domain = project.SemanticDomains.Find("7.2.1")</span>
 <span class="sd">        if domain:</span>
 <span class="sd">            name = project.SemanticDomains.GetName(domain)</span>
 <span class="sd">            desc = project.SemanticDomains.GetDescription(domain)</span>
-<span class="sd">            print(f&quot;{name}: {desc}&quot;)</span>
+<span class="sd">            print(f"{name}: {desc}")</span>
 
 <span class="sd">        # Get all senses in a domain</span>
 <span class="sd">        senses = project.SemanticDomains.GetSensesInDomain(domain)</span>
-<span class="sd">        print(f&quot;Found {len(senses)} senses in this domain&quot;)</span>
+<span class="sd">        print(f"Found {len(senses)} senses in this domain")</span>
 
 <span class="sd">        project.CloseProject()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># ---- _LCMNativeCatalogImportMixin configuration -------------------</span>
     <span class="c1"># SemDom ships as LCM-native XML in &lt;FWCodeDir&gt;/Templates/SemDom.xml;</span>
-    <span class="c1"># ImportCatalog delegates to XmlList.ImportList via the mixin&#39;s</span>
+    <span class="c1"># ImportCatalog delegates to XmlList.ImportList via the mixin's</span>
     <span class="c1"># _import_lcm_native_catalog helper. See catalog_backed.py.</span>
-    <span class="n">CATALOG_FILE</span> <span class="o">=</span> <span class="s2">&quot;SemDom.xml&quot;</span>
-    <span class="n">CATALOG_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;Templates&quot;</span>
-    <span class="n">LCM_FIELD_NAME</span> <span class="o">=</span> <span class="s2">&quot;SemanticDomainList&quot;</span>
-    <span class="n">LANG_PROJECT_LIST_ATTR</span> <span class="o">=</span> <span class="s2">&quot;SemanticDomainListOA&quot;</span>
-    <span class="n">DOMAIN_ITEM_LABEL_SINGULAR</span> <span class="o">=</span> <span class="s2">&quot;domain&quot;</span>
-    <span class="n">DOMAIN_ITEM_LABEL_PLURAL</span> <span class="o">=</span> <span class="s2">&quot;domains&quot;</span>
+    <span class="n">CATALOG_FILE</span> <span class="o">=</span> <span class="s2">"SemDom.xml"</span>
+    <span class="n">CATALOG_SUBDIR</span> <span class="o">=</span> <span class="s2">"Templates"</span>
+    <span class="n">LCM_FIELD_NAME</span> <span class="o">=</span> <span class="s2">"SemanticDomainList"</span>
+    <span class="n">LANG_PROJECT_LIST_ATTR</span> <span class="o">=</span> <span class="s2">"SemanticDomainListOA"</span>
+    <span class="n">DOMAIN_ITEM_LABEL_SINGULAR</span> <span class="o">=</span> <span class="s2">"domain"</span>
+    <span class="n">DOMAIN_ITEM_LABEL_PLURAL</span> <span class="o">=</span> <span class="s2">"domains"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize SemanticDomainOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="c1"># --- Core Read Operations ---</span>
@@ -139,7 +139,7 @@
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all semantic domains in the project.</span>
 
 <span class="sd">        Args:</span>
@@ -149,7 +149,7 @@
 <span class="sd">                via GetSubdomains.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            list: List of ICmSemanticDomain objects.</span>
+<span class="sd">            list[ICmSemanticDomain]: All semantic domains.</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; for domain in project.SemanticDomains.GetAll():</span>
@@ -166,9 +166,9 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Find, FindByName, GetSubdomains</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_RejectLegacyKwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span>
-            <span class="s2">&quot;flat&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recursive&quot;</span><span class="p">,</span> <span class="s2">&quot;semantics inverted: flat=True is now recursive=True&quot;</span><span class="p">),</span>
+            <span class="s2">"flat"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"recursive"</span><span class="p">,</span> <span class="s2">"semantics inverted: flat=True is now recursive=True"</span><span class="p">),</span>
         <span class="p">})</span>
         <span class="n">domain_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">SemanticDomainListOA</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">domain_list</span><span class="p">:</span>
@@ -179,11 +179,11 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find a semantic domain by its number.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            number (str): The domain number to search for (e.g., &quot;3.5.1.1&quot;).</span>
+<span class="sd">            number (str): The domain number to search for (e.g., "3.5.1.1").</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            ICmSemanticDomain or None: The domain object if found, None otherwise.</span>
@@ -193,28 +193,28 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Find a specific domain</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find(&quot;7.2.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find("7.2.1")</span>
 <span class="sd">            &gt;&gt;&gt; if domain:</span>
 <span class="sd">            ...     name = project.SemanticDomains.GetName(domain)</span>
-<span class="sd">            ...     print(f&quot;Found: {name}&quot;)</span>
+<span class="sd">            ...     print(f"Found: {name}")</span>
 <span class="sd">            Found: Walk</span>
 
 <span class="sd">            &gt;&gt;&gt; # Try to find non-existent domain</span>
-<span class="sd">            &gt;&gt;&gt; missing = project.SemanticDomains.Find(&quot;999.999&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; missing = project.SemanticDomains.Find("999.999")</span>
 <span class="sd">            &gt;&gt;&gt; print(missing)</span>
 <span class="sd">            None</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Number format is hierarchical (e.g., &quot;1.2.3.4&quot;)</span>
+<span class="sd">            - Number format is hierarchical (e.g., "1.2.3.4")</span>
 <span class="sd">            - Search is exact match on the abbreviation field</span>
 <span class="sd">            - Returns first match only (should be unique)</span>
-<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+<span class="sd">            - Returns None if not found (doesn't raise exception)</span>
 <span class="sd">            - Number comparison is string-based, not numeric</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            FindByName, Exists, GetNumber</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="s2">&quot;number&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="s2">"number"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">number</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">number</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -232,7 +232,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">FindByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find a semantic domain by its name.</span>
 
 <span class="sd">        Args:</span>
@@ -246,14 +246,14 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Find by English name</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.FindByName(&quot;Walk&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.FindByName("Walk")</span>
 <span class="sd">            &gt;&gt;&gt; if domain:</span>
 <span class="sd">            ...     number = project.SemanticDomains.GetNumber(domain)</span>
-<span class="sd">            ...     print(f&quot;Domain number: {number}&quot;)</span>
+<span class="sd">            ...     print(f"Domain number: {number}")</span>
 <span class="sd">            Domain number: 7.2.1</span>
 
 <span class="sd">            &gt;&gt;&gt; # Case-insensitive search</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.FindByName(&quot;walk&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.FindByName("walk")</span>
 <span class="sd">            &gt;&gt;&gt; print(domain is not None)</span>
 <span class="sd">            True</span>
 
@@ -261,35 +261,35 @@
 <span class="sd">            - Search is case-insensitive</span>
 <span class="sd">            - Searches in default analysis writing system</span>
 <span class="sd">            - Returns first match only</span>
-<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+<span class="sd">            - Returns None if not found (doesn't raise exception)</span>
 <span class="sd">            - For multilingual searches, iterate GetAll() manually</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Find, Exists, GetName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
 
         <span class="c1"># Search through all domains</span>
         <span class="k">for</span> <span class="n">domain</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
             <span class="n">domain_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">domain_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">domain_name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">domain</span>
 
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if a semantic domain with the given number exists.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            number (str): The domain number to check (e.g., &quot;3.5.1.1&quot;).</span>
+<span class="sd">            number (str): The domain number to check (e.g., "3.5.1.1").</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if domain exists, False otherwise.</span>
@@ -298,12 +298,12 @@
 <span class="sd">            Exception: If number is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; if project.SemanticDomains.Exists(&quot;7.2.1&quot;):</span>
-<span class="sd">            ...     print(&quot;Walk domain exists&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if project.SemanticDomains.Exists("7.2.1"):</span>
+<span class="sd">            ...     print("Walk domain exists")</span>
 <span class="sd">            Walk domain exists</span>
 
-<span class="sd">            &gt;&gt;&gt; if not project.SemanticDomains.Exists(&quot;999.999&quot;):</span>
-<span class="sd">            ...     print(&quot;Custom domain 999.999 does not exist&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; if not project.SemanticDomains.Exists("999.999"):</span>
+<span class="sd">            ...     print("Custom domain 999.999 does not exist")</span>
 <span class="sd">            Custom domain 999.999 does not exist</span>
 
 <span class="sd">        Notes:</span>
@@ -313,8 +313,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Find, FindByName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="s2">&quot;number&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="s2">"number"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">number</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
@@ -322,7 +322,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the name of a semantic domain.</span>
 
 <span class="sd">        Args:</span>
@@ -336,14 +336,14 @@
 <span class="sd">            Exception: If domain_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find(&quot;7.2.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find("7.2.1")</span>
 <span class="sd">            &gt;&gt;&gt; name = project.SemanticDomains.GetName(domain)</span>
 <span class="sd">            &gt;&gt;&gt; print(name)</span>
 <span class="sd">            Walk</span>
 
 <span class="sd">            &gt;&gt;&gt; # Get name in a specific writing system</span>
 <span class="sd">            &gt;&gt;&gt; name_fr = project.SemanticDomains.GetName(domain,</span>
-<span class="sd">            ...                                            project.WSHandle(&#39;fr&#39;))</span>
+<span class="sd">            ...                                            project.WSHandle('fr'))</span>
 <span class="sd">            &gt;&gt;&gt; print(name_fr)</span>
 <span class="sd">            Marcher</span>
 
@@ -354,18 +354,18 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetName, GetDescription, GetAbbreviation</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the name of a semantic domain.</span>
 
 <span class="sd">        Args:</span>
@@ -378,8 +378,8 @@
 <span class="sd">            FP_NullParameterError: If domain_or_hvo or name is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find(&quot;900.1&quot;)  # custom domain</span>
-<span class="sd">            &gt;&gt;&gt; project.SemanticDomains.SetName(domain, &quot;Custom Category&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find("900.1")  # custom domain</span>
+<span class="sd">            &gt;&gt;&gt; project.SemanticDomains.SetName(domain, "Custom Category")</span>
 <span class="sd">            &gt;&gt;&gt; print(project.SemanticDomains.GetName(domain))</span>
 <span class="sd">            Custom Category</span>
 
@@ -390,20 +390,22 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetName, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">domain</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set semantic domain name '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+            <span class="n">domain</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the description of a semantic domain.</span>
 
 <span class="sd">        Args:</span>
@@ -417,7 +419,7 @@
 <span class="sd">            FP_NullParameterError: If domain_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find(&quot;7.2.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find("7.2.1")</span>
 <span class="sd">            &gt;&gt;&gt; desc = project.SemanticDomains.GetDescription(domain)</span>
 <span class="sd">            &gt;&gt;&gt; print(desc)</span>
 <span class="sd">            Use this domain for words related to walking.</span>
@@ -430,19 +432,19 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetDescription, GetName, GetQuestions</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="c1"># Description is a MultiString</span>
         <span class="n">desc</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the description of a semantic domain.</span>
 
 <span class="sd">        Args:</span>
@@ -455,26 +457,27 @@
 <span class="sd">            FP_NullParameterError: If domain_or_hvo or description is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find(&quot;900.1&quot;)  # custom domain</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find("900.1")  # custom domain</span>
 <span class="sd">            &gt;&gt;&gt; project.SemanticDomains.SetDescription(domain,</span>
-<span class="sd">            ...     &quot;Use this domain for words related to modern technology.&quot;)</span>
+<span class="sd">            ...     "Use this domain for words related to modern technology.")</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDescription, SetName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">"description"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="c1"># Description is a MultiString</span>
-        <span class="n">domain</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set semantic domain description"</span><span class="p">):</span>
+            <span class="n">domain</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the abbreviation of a semantic domain.</span>
 
 <span class="sd">        The abbreviation typically contains the domain number.</span>
@@ -490,7 +493,7 @@
 <span class="sd">            FP_NullParameterError: If domain_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find(&quot;7.2.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find("7.2.1")</span>
 <span class="sd">            &gt;&gt;&gt; abbr = project.SemanticDomains.GetAbbreviation(domain)</span>
 <span class="sd">            &gt;&gt;&gt; print(abbr)</span>
 <span class="sd">            7.2.1</span>
@@ -502,37 +505,37 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetNumber, GetName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="n">abbr</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the domain number of a semantic domain.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            domain_or_hvo: The ICmSemanticDomain object or HVO.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: The domain number (e.g., &quot;7.2.1&quot;), or empty string if not set.</span>
+<span class="sd">            str: The domain number (e.g., "7.2.1"), or empty string if not set.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If domain_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.FindByName(&quot;Walk&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.FindByName("Walk")</span>
 <span class="sd">            &gt;&gt;&gt; number = project.SemanticDomains.GetNumber(domain)</span>
 <span class="sd">            &gt;&gt;&gt; print(number)</span>
 <span class="sd">            7.2.1</span>
 
 <span class="sd">            &gt;&gt;&gt; # Use number to navigate hierarchy</span>
-<span class="sd">            &gt;&gt;&gt; parent_num = &quot;.&quot;.join(number.split(&quot;.&quot;)[:-1])</span>
+<span class="sd">            &gt;&gt;&gt; parent_num = ".".join(number.split(".")[:-1])</span>
 <span class="sd">            &gt;&gt;&gt; parent = project.SemanticDomains.Find(parent_num)</span>
 <span class="sd">            &gt;&gt;&gt; print(project.SemanticDomains.GetName(parent))</span>
 <span class="sd">            Move</span>
@@ -542,14 +545,14 @@
 <span class="sd">            - Numbers are hierarchical (e.g., 1.2.3.4)</span>
 <span class="sd">            - Resolves via BestAnalysisAlternative so canonical-catalog</span>
 <span class="sd">              numbers (only populated in English by SemDom.xml) are</span>
-<span class="sd">              still found when the project&#39;s default analysis WS is a</span>
+<span class="sd">              still found when the project's default analysis WS is a</span>
 <span class="sd">              language without translated abbreviations.</span>
 <span class="sd">            - Returns empty string if domain has no number</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAbbreviation, Find, GetDepth</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
 
@@ -558,11 +561,11 @@
         <span class="c1"># is required for projects whose default analysis WS is not</span>
         <span class="c1"># English (e.g., Sena 3, where DefaultAnalWs is Portuguese).</span>
         <span class="n">number</span> <span class="o">=</span> <span class="n">best_analysis_text</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">Abbreviation</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">number</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">number</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetQuestions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get elicitation questions for a semantic domain.</span>
 
 <span class="sd">        Args:</span>
@@ -576,7 +579,7 @@
 <span class="sd">            FP_NullParameterError: If domain_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find(&quot;7.2.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find("7.2.1")</span>
 <span class="sd">            &gt;&gt;&gt; questions = project.SemanticDomains.GetQuestions(domain)</span>
 <span class="sd">            &gt;&gt;&gt; print(questions)</span>
 <span class="sd">            (1) What words refer to walking?</span>
@@ -593,8 +596,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDescription, GetName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
@@ -602,17 +605,17 @@
         <span class="c1"># Questions is an owning sequence of CmDomainQ objects (QuestionsOS)</span>
         <span class="c1"># Each CmDomainQ has a Question property (MultiUnicode)</span>
         <span class="n">questions_list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="s2">&quot;QuestionsOS&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="s2">"QuestionsOS"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">domain_q</span> <span class="ow">in</span> <span class="n">domain</span><span class="o">.</span><span class="n">QuestionsOS</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">domain_q</span><span class="p">,</span> <span class="s2">&quot;Question&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">domain_q</span><span class="p">,</span> <span class="s2">"Question"</span><span class="p">):</span>
                     <span class="n">q_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">domain_q</span><span class="o">.</span><span class="n">Question</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
                     <span class="k">if</span> <span class="n">q_text</span><span class="p">:</span>
                         <span class="n">questions_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q_text</span><span class="p">)</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">questions_list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">questions_list</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetOcmCodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get OCM (Outline of Cultural Materials) codes for a semantic domain.</span>
 
 <span class="sd">        Args:</span>
@@ -625,7 +628,7 @@
 <span class="sd">            FP_NullParameterError: If domain_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find(&quot;7.2.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find("7.2.1")</span>
 <span class="sd">            &gt;&gt;&gt; ocm = project.SemanticDomains.GetOcmCodes(domain)</span>
 <span class="sd">            &gt;&gt;&gt; print(ocm)</span>
 <span class="sd">            484</span>
@@ -639,21 +642,21 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetNumber, GetDescription</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
 
         <span class="c1"># OcmCodes is a MultiUnicode</span>
         <span class="n">ocm</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">OcmCodes</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">ocm</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ocm</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="c1"># --- Hierarchy Operations ---</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSubdomains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the subdomains of a semantic domain.</span>
 
 <span class="sd">        Args:</span>
@@ -669,7 +672,7 @@
 <span class="sd">            FP_NullParameterError: If domain_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; top = project.SemanticDomains.Find(&quot;1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; top = project.SemanticDomains.Find("1")</span>
 <span class="sd">            &gt;&gt;&gt; for sub in project.SemanticDomains.GetSubdomains(top):</span>
 <span class="sd">            ...     print(project.SemanticDomains.GetNumber(sub))   # All descendants</span>
 
@@ -679,11 +682,11 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetParent, GetAll, GetDepth</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_RejectLegacyKwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span>
-            <span class="s2">&quot;flat&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recursive&quot;</span><span class="p">,</span> <span class="s2">&quot;semantics inverted: flat=True is now recursive=True&quot;</span><span class="p">),</span>
+            <span class="s2">"flat"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"recursive"</span><span class="p">,</span> <span class="s2">"semantics inverted: flat=True is now recursive=True"</span><span class="p">),</span>
         <span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
 
@@ -702,7 +705,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetParent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the parent domain of a semantic domain.</span>
 
 <span class="sd">        Args:</span>
@@ -715,17 +718,17 @@
 <span class="sd">            FP_NullParameterError: If domain_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; # Get parent of &quot;Walk&quot; (7.2.1)</span>
-<span class="sd">            &gt;&gt;&gt; walk = project.SemanticDomains.Find(&quot;7.2.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Get parent of "Walk" (7.2.1)</span>
+<span class="sd">            &gt;&gt;&gt; walk = project.SemanticDomains.Find("7.2.1")</span>
 <span class="sd">            &gt;&gt;&gt; parent = project.SemanticDomains.GetParent(walk)</span>
 <span class="sd">            &gt;&gt;&gt; if parent:</span>
 <span class="sd">            ...     number = project.SemanticDomains.GetNumber(parent)</span>
 <span class="sd">            ...     name = project.SemanticDomains.GetName(parent)</span>
-<span class="sd">            ...     print(f&quot;Parent: {number} - {name}&quot;)</span>
+<span class="sd">            ...     print(f"Parent: {number} - {name}")</span>
 <span class="sd">            Parent: 7.2 - Move</span>
 
 <span class="sd">            &gt;&gt;&gt; # Top-level domains have no parent</span>
-<span class="sd">            &gt;&gt;&gt; top = project.SemanticDomains.Find(&quot;1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; top = project.SemanticDomains.Find("1")</span>
 <span class="sd">            &gt;&gt;&gt; parent = project.SemanticDomains.GetParent(top)</span>
 <span class="sd">            &gt;&gt;&gt; print(parent)</span>
 <span class="sd">            None</span>
@@ -738,15 +741,15 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetSubdomains, GetDepth, GetNumber</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
         <span class="n">owner</span> <span class="o">=</span> <span class="n">domain</span><span class="o">.</span><span class="n">Owner</span>
 
         <span class="c1"># Check if owner is a semantic domain (subdomain) or the list (top-level)</span>
-        <span class="k">if</span> <span class="n">owner</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">owner</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;CmSemanticDomain&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">owner</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">owner</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">"CmSemanticDomain"</span><span class="p">:</span>
                 <span class="c1"># Cast to typed interface; raw owner is ICmObject in LCM.</span>
                 <span class="k">return</span> <span class="n">ICmSemanticDomain</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
 
@@ -754,7 +757,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetDepth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the depth of a semantic domain in the hierarchy.</span>
 
 <span class="sd">        Args:</span>
@@ -768,13 +771,13 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Top-level domain</span>
-<span class="sd">            &gt;&gt;&gt; universe = project.SemanticDomains.Find(&quot;1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; universe = project.SemanticDomains.Find("1")</span>
 <span class="sd">            &gt;&gt;&gt; depth = project.SemanticDomains.GetDepth(universe)</span>
 <span class="sd">            &gt;&gt;&gt; print(depth)</span>
 <span class="sd">            0</span>
 
 <span class="sd">            &gt;&gt;&gt; # Third-level domain</span>
-<span class="sd">            &gt;&gt;&gt; walk = project.SemanticDomains.Find(&quot;7.2.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; walk = project.SemanticDomains.Find("7.2.1")</span>
 <span class="sd">            &gt;&gt;&gt; depth = project.SemanticDomains.GetDepth(walk)</span>
 <span class="sd">            &gt;&gt;&gt; print(depth)</span>
 <span class="sd">            2</span>
@@ -787,8 +790,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetParent, GetNumber, GetSubdomains</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
 
@@ -808,7 +811,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSensesInDomain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all lexical senses that belong to this semantic domain.</span>
 
 <span class="sd">        Args:</span>
@@ -821,13 +824,13 @@
 <span class="sd">            FP_NullParameterError: If domain_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find(&quot;7.2.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find("7.2.1")</span>
 <span class="sd">            &gt;&gt;&gt; senses = project.SemanticDomains.GetSensesInDomain(domain)</span>
 <span class="sd">            &gt;&gt;&gt; for sense in senses:</span>
 <span class="sd">            ...     entry = sense.Entry</span>
 <span class="sd">            ...     headword = project.LexiconGetHeadword(entry)</span>
 <span class="sd">            ...     gloss = project.LexiconGetSenseGloss(sense)</span>
-<span class="sd">            ...     print(f&quot;{headword}: {gloss}&quot;)</span>
+<span class="sd">            ...     print(f"{headword}: {gloss}")</span>
 <span class="sd">            walk: to move on foot</span>
 <span class="sd">            stroll: to walk leisurely</span>
 <span class="sd">            march: to walk in formation</span>
@@ -842,8 +845,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetSenseCount, GetSubdomains</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
         <span class="n">domain_hvo</span> <span class="o">=</span> <span class="n">domain</span><span class="o">.</span><span class="n">Hvo</span>
@@ -861,19 +864,19 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSenseCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the count of lexical senses that belong to this semantic domain.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            domain_or_hvo: The ICmSemanticDomain object or HVO.</span>
 <span class="sd">            recursive (bool): If False (default), counts only senses</span>
-<span class="sd">                tagged with this domain exactly -- matches what FLEx&#39;s UI</span>
+<span class="sd">                tagged with this domain exactly -- matches what FLEx's UI</span>
 <span class="sd">                shows in the Semantic Domain browse view (every count</span>
 <span class="sd">                column in FLEx is direct-only, same convention as</span>
 <span class="sd">                POSOperations.GetEntryCount). If True, rolls up senses</span>
 <span class="sd">                tagged with this domain OR any descendant domain</span>
-<span class="sd">                (e.g. counting &quot;1&quot; rolls up everything under</span>
-<span class="sd">                &quot;1.1&quot;, &quot;1.1.1&quot;, ...).</span>
+<span class="sd">                (e.g. counting "1" rolls up everything under</span>
+<span class="sd">                "1.1", "1.1.1", ...).</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            int: The count of senses using this domain (direct-only by</span>
@@ -883,9 +886,9 @@
 <span class="sd">            FP_NullParameterError: If domain_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find(&quot;7.2.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find("7.2.1")</span>
 <span class="sd">            &gt;&gt;&gt; count = project.SemanticDomains.GetSenseCount(domain)</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Domain 7.2.1 (Walk) has {count} senses (direct)&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Domain 7.2.1 (Walk) has {count} senses (direct)")</span>
 <span class="sd">            Domain 7.2.1 (Walk) has 15 senses (direct)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Roll up: include 7.2.1.x sub-domains</span>
@@ -897,7 +900,7 @@
 <span class="sd">            ...     if count == 0:</span>
 <span class="sd">            ...         number = project.SemanticDomains.GetNumber(domain)</span>
 <span class="sd">            ...         name = project.SemanticDomains.GetName(domain)</span>
-<span class="sd">            ...         print(f&quot;Empty: {number} - {name}&quot;)</span>
+<span class="sd">            ...         print(f"Empty: {number} - {name}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - More efficient than len(GetSensesInDomain())</span>
@@ -911,14 +914,14 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetSensesInDomain, GetSubdomains</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Build the set of domain HVOs to match. With recursive=True</span>
         <span class="c1"># this expands to include every descendant domain so callers</span>
-        <span class="c1"># don&#39;t miss senses tagged with a sub-domain of the requested</span>
+        <span class="c1"># don't miss senses tagged with a sub-domain of the requested</span>
         <span class="c1"># one. (issue #106 part 1)</span>
         <span class="n">match_hvos</span> <span class="o">=</span> <span class="p">{</span><span class="n">domain</span><span class="o">.</span><span class="n">Hvo</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
@@ -941,12 +944,12 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new custom semantic domain.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): The name of the new domain.</span>
-<span class="sd">            number (str): The domain number (e.g., &quot;900.1&quot;).</span>
+<span class="sd">            number (str): The domain number (e.g., "900.1").</span>
 <span class="sd">            parent: Optional parent ICmSemanticDomain object or HVO. If None,</span>
 <span class="sd">                creates a top-level domain.</span>
 <span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
@@ -962,13 +965,13 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Create a top-level custom domain</span>
-<span class="sd">            &gt;&gt;&gt; custom = project.SemanticDomains.Create(&quot;Technology&quot;, &quot;900&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; custom = project.SemanticDomains.Create("Technology", "900")</span>
 <span class="sd">            &gt;&gt;&gt; print(project.SemanticDomains.GetName(custom))</span>
 <span class="sd">            Technology</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create a subdomain</span>
 <span class="sd">            &gt;&gt;&gt; computers = project.SemanticDomains.Create(</span>
-<span class="sd">            ...     &quot;Computers&quot;, &quot;900.1&quot;, parent=custom)</span>
+<span class="sd">            ...     "Computers", "900.1", parent=custom)</span>
 <span class="sd">            &gt;&gt;&gt; print(project.SemanticDomains.GetNumber(computers))</span>
 <span class="sd">            900.1</span>
 
@@ -979,30 +982,30 @@
 <span class="sd">            - Creating many custom domains may impact performance</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Domain is added to parent&#39;s subdomains or to top level</span>
+<span class="sd">            - Domain is added to parent's subdomains or to top level</span>
 <span class="sd">            - Number must be unique across all domains</span>
 <span class="sd">            - Name is set in specified writing system</span>
 <span class="sd">            - Use SetDescription() and GetQuestions() to add more details</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Delete, SetName, SetDescription, GetSubdomains</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="s2">&quot;number&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="s2">"number"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Name cannot be empty"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">number</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">number</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Number cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Number cannot be empty"</span><span class="p">)</span>
 
         <span class="c1"># Check if domain number already exists</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">number</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Semantic domain &#39;</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">&#39; already exists&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Semantic domain '</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">' already exists"</span><span class="p">)</span>
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create semantic domain </span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Create semantic domain </span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span><span class="p">):</span>
             <span class="c1"># Create the new domain using the factory</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmSemanticDomainFactory</span><span class="p">)</span>
             <span class="n">new_domain</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
@@ -1027,7 +1030,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete a semantic domain.</span>
 
 <span class="sd">        Args:</span>
@@ -1039,7 +1042,7 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Delete a custom domain</span>
-<span class="sd">            &gt;&gt;&gt; custom = project.SemanticDomains.Find(&quot;900.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; custom = project.SemanticDomains.Find("900.1")</span>
 <span class="sd">            &gt;&gt;&gt; if custom:</span>
 <span class="sd">            ...     project.SemanticDomains.Delete(custom)</span>
 
@@ -1058,32 +1061,36 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetSensesInDomain</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">&quot;domain_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="s2">"domain_or_hvo"</span><span class="p">)</span>
 
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Get the parent or top-level list</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetParent</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
 
+        <span class="c1"># One bracket per branch inside the parent/top-level dispatch, so the</span>
+        <span class="c1"># transaction opens only around the branch that actually mutates (D5).</span>
         <span class="k">if</span> <span class="n">parent</span><span class="p">:</span>
-            <span class="c1"># Remove from parent&#39;s subdomains</span>
-            <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+            <span class="c1"># Remove from parent's subdomains</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete semantic domain"</span><span class="p">):</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Remove from top-level list</span>
             <span class="n">domain_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">SemanticDomainListOA</span>
-            <span class="n">domain_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete semantic domain"</span><span class="p">):</span>
+                <span class="n">domain_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Duplicate a semantic domain, creating a new copy with a new GUID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            item_or_hvo: The ICmSemanticDomain object or HVO to duplicate.</span>
 <span class="sd">            insert_after (bool): If True (default), insert after the source domain.</span>
-<span class="sd">                                If False, insert at end of parent&#39;s subdomain list.</span>
+<span class="sd">                                If False, insert at end of parent's subdomain list.</span>
 <span class="sd">            deep (bool): If True (default), also duplicate owned objects (subdomains, examples).</span>
 <span class="sd">                        If False, only copy simple properties.</span>
 
@@ -1096,13 +1103,13 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Deep duplicate (default: includes all subdomains)</span>
-<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find(&quot;900.1&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; domain = project.SemanticDomains.Find("900.1")</span>
 <span class="sd">            &gt;&gt;&gt; if domain:</span>
 <span class="sd">            ...     dup = project.SemanticDomains.Duplicate(domain)  # deep=True by default</span>
-<span class="sd">            ...     print(f&quot;Original: {project.SemanticDomains.GetNumber(domain)}&quot;)</span>
-<span class="sd">            ...     print(f&quot;Duplicate: {project.SemanticDomains.GetNumber(dup)}&quot;)</span>
+<span class="sd">            ...     print(f"Original: {project.SemanticDomains.GetNumber(domain)}")</span>
+<span class="sd">            ...     print(f"Duplicate: {project.SemanticDomains.GetNumber(dup)}")</span>
 <span class="sd">            ...     subdomains = project.SemanticDomains.GetSubdomains(dup)</span>
-<span class="sd">            ...     print(f&quot;Subdomains: {len(subdomains)}&quot;)</span>
+<span class="sd">            ...     print(f"Subdomains: {len(subdomains)}")</span>
 <span class="sd">            ...     # Note: Duplicate number - must be set manually</span>
 <span class="sd">            ...</span>
 <span class="sd">            ...     # Shallow duplicate (no subdomains)</span>
@@ -1110,7 +1117,7 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Factory.Create() automatically generates a new GUID</span>
-<span class="sd">            - insert_after=True preserves the original domain&#39;s position</span>
+<span class="sd">            - insert_after=True preserves the original domain's position</span>
 <span class="sd">            - Simple properties copied: Name, Description, Abbreviation, Questions, OcmCodes</span>
 <span class="sd">            - Owned objects (deep=True): SubPossibilitiesOS (subdomains), OccurrencesRS</span>
 <span class="sd">            - Abbreviation (domain number) is copied but should typically be changed</span>
@@ -1123,22 +1130,22 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Delete, GetNumber</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">"item_or_hvo"</span><span class="p">)</span>
 
         <span class="c1"># Get source domain and parent</span>
         <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetParent</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate semantic domain&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Duplicate semantic domain"</span><span class="p">):</span>
             <span class="c1"># Create new domain using factory (auto-generates new GUID)</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmSemanticDomainFactory</span><span class="p">)</span>
             <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
             <span class="c1"># Determine insertion position - ADD TO PARENT FIRST</span>
             <span class="k">if</span> <span class="n">parent</span><span class="p">:</span>
-                <span class="c1"># Has a parent - add to parent&#39;s subdomains</span>
+                <span class="c1"># Has a parent - add to parent's subdomains</span>
                 <span class="k">if</span> <span class="n">insert_after</span><span class="p">:</span>
                     <span class="n">source_index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
                     <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span><span class="o">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">source_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">duplicate</span><span class="p">)</span>
@@ -1181,7 +1188,7 @@
     <span class="c1">#     &lt;FWCodeDir&gt;/Templates/SemDom.xml</span>
     <span class="c1">#</span>
     <span class="c1"># i.e. &lt;LangProject&gt;&lt;SemanticDomainList&gt;&lt;CmPossibilityList&gt;... with</span>
-    <span class="c1"># &lt;CmSemanticDomain guid=&quot;...&quot;&gt; items. That shape is what</span>
+    <span class="c1"># &lt;CmSemanticDomain guid="..."&gt; items. That shape is what</span>
     <span class="c1"># SIL.LCModel.Application.ApplicationServices.XmlList.ImportList</span>
     <span class="c1"># consumes natively, so we delegate to it directly rather than</span>
     <span class="c1"># reimplementing the parser. Items whose canonical GUIDs already</span>
@@ -1191,16 +1198,16 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ImportCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Import the full SemDom semantic-domain catalog into this project.</span>
 
-<span class="sd">        Loads SIL&#39;s standard semantic-domain hierarchy (~1700 domains)</span>
-<span class="sd">        from ``&lt;FWCodeDir&gt;/Templates/SemDom.xml`` via LCM&#39;s native</span>
+<span class="sd">        Loads SIL's standard semantic-domain hierarchy (~1700 domains)</span>
+<span class="sd">        from ``&lt;FWCodeDir&gt;/Templates/SemDom.xml`` via LCM's native</span>
 <span class="sd">        ``XmlList.ImportList``. The catalog supplies localized Name /</span>
 <span class="sd">        Abbreviation / Description, OcmCodes, LouwNidaCodes, Questions</span>
 <span class="sd">        and the full nested SubPossibilities hierarchy.</span>
 
-<span class="sd">        **Idempotency guard**: LCM&#39;s underlying ``XmlList.ImportList``</span>
+<span class="sd">        **Idempotency guard**: LCM's underlying ``XmlList.ImportList``</span>
 <span class="sd">        APPENDS items into ``SemanticDomainListOA.PossibilitiesOS``</span>
 <span class="sd">        without checking for canonical-GUID duplicates -- each call</span>
 <span class="sd">        adds another full set of top-level domains. To prevent</span>
@@ -1242,7 +1249,7 @@
 <span class="sd">                                  the FieldWorks install.</span>
 <span class="sd">            FP_ParameterError: If ``SemanticDomainListOA`` already has</span>
 <span class="sd">                               domains and ``force`` is False.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Body extracted to _LCMNativeCatalogImportMixin in Phase Q-3a;</span>
         <span class="c1"># this thin wrapper preserves the @OperationsMethod descriptor</span>
         <span class="c1"># on the class itself (tests introspect via __dict__).</span>
@@ -1252,7 +1259,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all syncable properties of a semantic domain for comparison.</span>
 
 <span class="sd">        Args:</span>
@@ -1260,54 +1267,54 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: Dictionary mapping property names to their values.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># MultiString properties</span>
         <span class="c1"># Name - domain name</span>
         <span class="n">name_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"Name"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">name_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">name_dict</span>
 
         <span class="c1"># Description - domain description</span>
         <span class="n">description_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"Description"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">description_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">description_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"Description"</span><span class="p">]</span> <span class="o">=</span> <span class="n">description_dict</span>
 
         <span class="c1"># Abbreviation - domain number</span>
         <span class="n">abbreviation_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Abbreviation&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"Abbreviation"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">abbreviation_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Abbreviation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">abbreviation_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"Abbreviation"</span><span class="p">]</span> <span class="o">=</span> <span class="n">abbreviation_dict</span>
 
         <span class="c1"># Questions - elicitation questions</span>
         <span class="n">questions_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Questions&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"Questions"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Questions</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">questions_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Questions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">questions_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"Questions"</span><span class="p">]</span> <span class="o">=</span> <span class="n">questions_dict</span>
 
         <span class="c1"># OcmCodes - OCM codes</span>
         <span class="n">ocm_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;OcmCodes&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"OcmCodes"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="n">text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">OcmCodes</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Handle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">ocm_dict</span><span class="p">[</span><span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;OcmCodes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ocm_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"OcmCodes"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ocm_dict</span>
 
         <span class="c1"># Note: SubPossibilitiesOS is an Owning Sequence (OS) - not included</span>
         <span class="c1"># Note: OccurrencesRS is a Reference Sequence (complex) - not included</span>
@@ -1316,7 +1323,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compare two semantic domains and return their differences.</span>
 
 <span class="sd">        Args:</span>
@@ -1327,7 +1334,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: (is_different, differences_dict)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ops1</span> <span class="o">=</span> <span class="n">ops1</span> <span class="ow">or</span> <span class="bp">self</span>
         <span class="n">ops2</span> <span class="o">=</span> <span class="n">ops2</span> <span class="ow">or</span> <span class="bp">self</span>
 
@@ -1348,7 +1355,7 @@
     <span class="c1"># --- Private Helper Methods ---</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve HVO or object to ICmSemanticDomain.</span>
 
 <span class="sd">        Args:</span>
@@ -1358,17 +1365,17 @@
 <span class="sd">            ICmSemanticDomain: The resolved domain object.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a semantic domain.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            FP_ParameterError: If HVO doesn't refer to a semantic domain.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">domain_or_hvo</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ICmSemanticDomain</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a semantic domain&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a semantic domain"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">return</span> <span class="n">domain_or_hvo</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
 <span class="sd">        Args:</span>
@@ -1376,7 +1383,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            int: The writing system handle.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
@@ -1418,8 +1425,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

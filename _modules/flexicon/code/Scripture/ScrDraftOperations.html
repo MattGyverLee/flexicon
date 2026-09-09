@@ -76,7 +76,7 @@
 <div class="viewcode-block" id="ScrDraftOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Scripture.html#flexicon.code.Scripture.ScrDraftOperations.ScrDraftOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ScrDraftOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class provides operations for managing Scripture drafts/versions in a</span>
 <span class="sd">    FieldWorks project.</span>
 
@@ -87,35 +87,35 @@
 
 <span class="sd">    Usage::</span>
 
-<span class="sd">        from flexlibs2 import FLExProject</span>
+<span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
 
 <span class="sd">        # Get all drafts</span>
 <span class="sd">        for draft in project.ScrDrafts.GetAll():</span>
 <span class="sd">            desc = project.ScrDrafts.GetDescription(draft)</span>
-<span class="sd">            print(f&quot;Draft: {desc}&quot;)</span>
+<span class="sd">            print(f"Draft: {desc}")</span>
 
 <span class="sd">        # Create a new draft</span>
-<span class="sd">        draft = project.ScrDrafts.Create(&quot;First Draft - January 2025&quot;, &quot;saved_version&quot;)</span>
+<span class="sd">        draft = project.ScrDrafts.Create("First Draft - January 2025", "saved_version")</span>
 
 <span class="sd">        # Find draft by description</span>
-<span class="sd">        draft = project.ScrDrafts.Find(&quot;First Draft&quot;)</span>
+<span class="sd">        draft = project.ScrDrafts.Find("First Draft")</span>
 
 <span class="sd">        # Get books in draft</span>
 <span class="sd">        books = project.ScrDrafts.GetBooks(draft)</span>
 
 <span class="sd">        project.CloseProject()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize ScrDraftOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="c1"># --- Core CRUD Operations ---</span>
@@ -123,31 +123,31 @@
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all Scripture drafts in the project.</span>
 
-<span class="sd">        This method returns an iterator over all IScrDraft objects in the</span>
+<span class="sd">        This method returns an EnumerableWrapper (subscriptable, len()-able, lazily materialized) over all IScrDraft objects in the</span>
 <span class="sd">        project, allowing iteration over all saved Scripture versions.</span>
 
-<span class="sd">        Yields:</span>
-<span class="sd">            IScrDraft: Each Scripture draft object in the project</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EnumerableWrapper[IScrDraft]: Each Scripture draft object in the project</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; for draft in project.ScrDrafts.GetAll():</span>
 <span class="sd">            ...     desc = project.ScrDrafts.GetDescription(draft)</span>
-<span class="sd">            ...     print(f&quot;Draft: {desc}&quot;)</span>
+<span class="sd">            ...     print(f"Draft: {desc}")</span>
 <span class="sd">            Draft: First Draft - January 2025</span>
 <span class="sd">            Draft: Consultant Check - February 2025</span>
 <span class="sd">            Draft: Final Version - March 2025</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns an iterator for memory efficiency</span>
+<span class="sd">            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access</span>
 <span class="sd">            - Drafts are returned in database order</span>
 <span class="sd">            - Use GetDescription() to get the draft description</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Find, Create, GetDescription</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">scripture</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetScripture</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">scripture</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">iter</span><span class="p">([])</span>
@@ -155,14 +155,14 @@
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">scripture</span><span class="o">.</span><span class="n">ArchivedDraftsOC</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;saved_version&quot;</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"saved_version"</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new Scripture draft/version.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            description (str): Description of the draft (e.g., &quot;First Draft - Jan 2025&quot;)</span>
-<span class="sd">            type (str, optional): Draft type. Defaults to &quot;saved_version&quot;.</span>
-<span class="sd">                Types: &quot;saved_version&quot;, &quot;consultant_check&quot;, &quot;back_translation&quot;</span>
+<span class="sd">            description (str): Description of the draft (e.g., "First Draft - Jan 2025")</span>
+<span class="sd">            type (str, optional): Draft type. Defaults to "saved_version".</span>
+<span class="sd">                Types: "saved_version", "consultant_check", "back_translation"</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IScrDraft: The newly created draft object</span>
@@ -174,12 +174,12 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Create a saved version</span>
-<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Create(&quot;First Draft - January 2025&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Create("First Draft - January 2025")</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create a consultant check draft</span>
 <span class="sd">            &gt;&gt;&gt; check = project.ScrDrafts.Create(</span>
-<span class="sd">            ...     &quot;Consultant Review - February 2025&quot;,</span>
-<span class="sd">            ...     &quot;consultant_check&quot;</span>
+<span class="sd">            ...     "Consultant Review - February 2025",</span>
+<span class="sd">            ...     "consultant_check"</span>
 <span class="sd">            ... )</span>
 
 <span class="sd">        Notes:</span>
@@ -190,24 +190,24 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Delete, Find, GetDescription</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">"description"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">description</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">description</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Description cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Description cannot be empty"</span><span class="p">)</span>
 
         <span class="n">scripture</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetScripture</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">scripture</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Project does not have Scripture enabled&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Project does not have Scripture enabled"</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create draft&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create draft"</span><span class="p">):</span>
             <span class="c1"># Create the new draft using the factory</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IScrDraftFactory</span><span class="p">)</span>
             <span class="n">new_draft</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="c1"># Add to Scripture&#39;s archived drafts</span>
+            <span class="c1"># Add to Scripture's archived drafts</span>
             <span class="n">scripture</span><span class="o">.</span><span class="n">ArchivedDraftsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_draft</span><span class="p">)</span>
 
             <span class="c1"># Set description</span>
@@ -216,7 +216,7 @@
             <span class="n">new_draft</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
             <span class="c1"># Set type (stored as a string property for reference)</span>
-            <span class="c1"># Note: IScrDraft doesn&#39;t have a Type property in the schema,</span>
+            <span class="c1"># Note: IScrDraft doesn't have a Type property in the schema,</span>
             <span class="c1"># so this is stored in the description or as metadata</span>
             <span class="c1"># For now, we just use description</span>
 
@@ -224,7 +224,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draft_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete a Scripture draft from the FLEx project.</span>
 
 <span class="sd">        Args:</span>
@@ -233,10 +233,10 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If draft_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If draft doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If draft doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find(&quot;Old Draft&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find("Old Draft")</span>
 <span class="sd">            &gt;&gt;&gt; if draft:</span>
 <span class="sd">            ...     project.ScrDrafts.Delete(draft)</span>
 
@@ -254,20 +254,21 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">,</span> <span class="s2">&quot;draft_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">,</span> <span class="s2">"draft_or_hvo"</span><span class="p">)</span>
 
         <span class="c1"># Resolve to draft object</span>
         <span class="n">draft</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Delete the draft (LCM handles removal from repository)</span>
-        <span class="n">draft</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete scripture draft"</span><span class="p">):</span>
+            <span class="c1"># Delete the draft (LCM handles removal from repository)</span>
+            <span class="n">draft</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">description</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find a Scripture draft by its description.</span>
 
 <span class="sd">        Args:</span>
@@ -280,14 +281,14 @@
 <span class="sd">            FP_NullParameterError: If description is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find(&quot;First Draft&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find("First Draft")</span>
 <span class="sd">            &gt;&gt;&gt; if draft:</span>
 <span class="sd">            ...     desc = project.ScrDrafts.GetDescription(draft)</span>
-<span class="sd">            ...     print(f&quot;Found: {desc}&quot;)</span>
+<span class="sd">            ...     print(f"Found: {desc}")</span>
 <span class="sd">            Found: First Draft - January 2025</span>
 
 <span class="sd">            &gt;&gt;&gt; # Case-insensitive search</span>
-<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find(&quot;first draft&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find("first draft")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Search is case-insensitive</span>
@@ -297,8 +298,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, GetDescription</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="s2">"description"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">description</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">description</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -322,7 +323,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draft_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the description of a Scripture draft.</span>
 
 <span class="sd">        Args:</span>
@@ -335,7 +336,7 @@
 <span class="sd">            FP_NullParameterError: If draft_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find(&quot;First Draft&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find("First Draft")</span>
 <span class="sd">            &gt;&gt;&gt; desc = project.ScrDrafts.GetDescription(draft)</span>
 <span class="sd">            &gt;&gt;&gt; print(desc)</span>
 <span class="sd">            First Draft - January 2025</span>
@@ -346,18 +347,18 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetDescription, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">,</span> <span class="s2">&quot;draft_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">,</span> <span class="s2">"draft_or_hvo"</span><span class="p">)</span>
 
         <span class="n">draft</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
 
         <span class="n">desc</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">draft</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">desc</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draft_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the description of a Scripture draft.</span>
 
 <span class="sd">        Args:</span>
@@ -369,10 +370,10 @@
 <span class="sd">            FP_NullParameterError: If draft_or_hvo or text is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find(&quot;First Draft&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find("First Draft")</span>
 <span class="sd">            &gt;&gt;&gt; project.ScrDrafts.SetDescription(</span>
 <span class="sd">            ...     draft,</span>
-<span class="sd">            ...     &quot;First Draft - Revised January 2025&quot;</span>
+<span class="sd">            ...     "First Draft - Revised January 2025"</span>
 <span class="sd">            ... )</span>
 
 <span class="sd">        Notes:</span>
@@ -381,21 +382,22 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDescription, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">,</span> <span class="s2">&quot;draft_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">,</span> <span class="s2">"draft_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">)</span>
 
         <span class="n">draft</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
 
-        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">draft</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Set draft description"</span><span class="p">):</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">draft</span><span class="o">.</span><span class="n">Description</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetBooks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draft_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all books in a Scripture draft.</span>
 
 <span class="sd">        Args:</span>
@@ -408,11 +410,11 @@
 <span class="sd">            FP_NullParameterError: If draft_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find(&quot;First Draft&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; draft = project.ScrDrafts.Find("First Draft")</span>
 <span class="sd">            &gt;&gt;&gt; books = project.ScrDrafts.GetBooks(draft)</span>
 <span class="sd">            &gt;&gt;&gt; for book in books:</span>
 <span class="sd">            ...     title = project.ScrBooks.GetTitle(book)</span>
-<span class="sd">            ...     print(f&quot;Book: {title}&quot;)</span>
+<span class="sd">            ...     print(f"Book: {title}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns empty list if draft has no books</span>
@@ -421,8 +423,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetDescription</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">,</span> <span class="s2">&quot;draft_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">,</span> <span class="s2">"draft_or_hvo"</span><span class="p">)</span>
 
         <span class="n">draft</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveObject</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">draft</span><span class="o">.</span><span class="n">BooksOS</span><span class="p">)</span>
@@ -430,7 +432,7 @@
     <span class="c1"># --- Private Helper Methods ---</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draft_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve HVO or object to IScrDraft.</span>
 
 <span class="sd">        Args:</span>
@@ -440,23 +442,23 @@
 <span class="sd">            IScrDraft: The resolved draft object</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a Scripture draft</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            FP_ParameterError: If HVO doesn't refer to a Scripture draft</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">draft_or_hvo</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IScrDraft</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a Scripture draft&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a Scripture draft"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">return</span> <span class="n">draft_or_hvo</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__GetScripture</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the Scripture object from the project.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IScripture or None: The Scripture object if available</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s2">&quot;lp&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s2">"lp"</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">TranslatedScriptureOA</span></div>
@@ -498,8 +500,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

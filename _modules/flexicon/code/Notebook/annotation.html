@@ -54,7 +54,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Wrapper class for annotation objects with definition-based polymorphism.</span>
 
 <span class="sd">This module provides Annotation, a wrapper class that transparently handles</span>
@@ -80,28 +80,28 @@
 
 <span class="sd">Example::</span>
 
-<span class="sd">    from flexlibs2.code.Notebook.annotation import Annotation</span>
+<span class="sd">    from flexicon.code.Notebook.annotation import Annotation</span>
 
 <span class="sd">    # Wrap an annotation from GetAll()</span>
 <span class="sd">    anno = noteOps.GetAll(entry)[0]  # Typed as ICmBaseAnnotation</span>
 <span class="sd">    wrapped = Annotation(anno)</span>
 
 <span class="sd">    # Access annotation type</span>
-<span class="sd">    print(f&quot;Type: {wrapped.annotation_type}&quot;)</span>
+<span class="sd">    print(f"Type: {wrapped.annotation_type}")</span>
 
 <span class="sd">    # Access metadata</span>
-<span class="sd">    print(f&quot;Author: {wrapped.author}&quot;)</span>
-<span class="sd">    print(f&quot;Content: {wrapped.content}&quot;)</span>
-<span class="sd">    print(f&quot;Created: {wrapped.date_created}&quot;)</span>
+<span class="sd">    print(f"Author: {wrapped.author}")</span>
+<span class="sd">    print(f"Content: {wrapped.content}")</span>
+<span class="sd">    print(f"Created: {wrapped.date_created}")</span>
 
 <span class="sd">    # Type checking (works for any project-defined type)</span>
-<span class="sd">    if wrapped.annotation_type == &quot;To Do&quot;:</span>
-<span class="sd">        print(&quot;This is a to-do annotation&quot;)</span>
+<span class="sd">    if wrapped.annotation_type == "To Do":</span>
+<span class="sd">        print("This is a to-do annotation")</span>
 
 <span class="sd">    # Convenience checks for common types</span>
 <span class="sd">    if wrapped.is_scripture:</span>
-<span class="sd">        print(&quot;This is a Scripture annotation&quot;)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        print("This is a Scripture annotation")</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.wrapper_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LCMObjectWrapper</span>
 
@@ -110,14 +110,14 @@
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="c1"># Mock for testing</span>
     <span class="k">class</span><span class="w"> </span><span class="nc">ITsString</span><span class="p">:</span>
-        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">""</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Text</span> <span class="o">=</span> <span class="n">text</span>
 
 
 <div class="viewcode-block" id="Annotation">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Notebook.html#flexicon.code.Notebook.annotation.Annotation">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Annotation</span><span class="p">(</span><span class="n">LCMObjectWrapper</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Wrapper for annotation objects providing unified interface access.</span>
 
 <span class="sd">    Handles ICmBaseAnnotation objects with definition-based type detection.</span>
@@ -136,11 +136,11 @@
 <span class="sd">        print(wrapped.annotation_type)</span>
 <span class="sd">        print(wrapped.author)</span>
 <span class="sd">        if wrapped.is_scripture:</span>
-<span class="sd">            print(&quot;Scripture annotation&quot;)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">            print("Scripture annotation")</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lcm_annotation</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize Annotation wrapper with an annotation object.</span>
 
 <span class="sd">        Args:</span>
@@ -151,14 +151,14 @@
 
 <span class="sd">            anno = noteOps.GetAll(entry)[0]</span>
 <span class="sd">            wrapped = Annotation(anno)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lcm_annotation</span><span class="p">)</span>
 
     <span class="c1"># ========== Type Detection (Definition-Based) ==========</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">annotation_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the annotation type as a string.</span>
 
 <span class="sd">        Returns the name of the AnnotationDefn. This is the primary way to</span>
@@ -166,38 +166,38 @@
 <span class="sd">        not by the C# class.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: The annotation type name (e.g., &quot;To Do&quot;, &quot;Question&quot;, &quot;Resolved&quot;,</span>
-<span class="sd">                &quot;ScrScriptureNote&quot;, &quot;ConsultantNote&quot;), or empty string if no type set.</span>
+<span class="sd">            str: The annotation type name (e.g., "To Do", "Question", "Resolved",</span>
+<span class="sd">                "ScrScriptureNote", "ConsultantNote"), or empty string if no type set.</span>
 
 <span class="sd">        Example::</span>
 
-<span class="sd">            print(f&quot;Type: {wrapped.annotation_type}&quot;)</span>
+<span class="sd">            print(f"Type: {wrapped.annotation_type}")</span>
 <span class="sd">            # Type: To Do</span>
 
-<span class="sd">            if wrapped.annotation_type == &quot;Question&quot;:</span>
-<span class="sd">                print(&quot;This is a question annotation&quot;)</span>
+<span class="sd">            if wrapped.annotation_type == "Question":</span>
+<span class="sd">                print("This is a question annotation")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Type is determined by AnnotationDefn.Name, not ClassName</span>
 <span class="sd">            - Custom types can be added by projects</span>
 <span class="sd">            - Empty if no AnnotationDefn is set</span>
 <span class="sd">            - Use for type-based filtering and categorization</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;AnnotationTypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">AnnotationTypeRA</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"AnnotationTypeRA"</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">AnnotationTypeRA</span><span class="p">:</span>
                 <span class="n">anno_defn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">AnnotationTypeRA</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_defn</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">anno_defn</span><span class="p">,</span> <span class="s2">"Name"</span><span class="p">):</span>
                     <span class="n">default_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_default_ws</span><span class="p">()</span>
                     <span class="n">name_multistring</span> <span class="o">=</span> <span class="n">anno_defn</span><span class="o">.</span><span class="n">Name</span>
                     <span class="n">name_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">name_multistring</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">default_ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-                    <span class="k">return</span> <span class="n">name_text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+                    <span class="k">return</span> <span class="n">name_text</span> <span class="ow">or</span> <span class="s2">""</span>
+            <span class="k">return</span> <span class="s2">""</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="s2">""</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">annotation_defn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the annotation definition (type definition) object.</span>
 
 <span class="sd">        Returns the AnnotationDefn object that defines the type of this annotation.</span>
@@ -217,9 +217,9 @@
 <span class="sd">            - For most use cases, use annotation_type property instead</span>
 <span class="sd">            - AnnotationDefn contains metadata about the type</span>
 <span class="sd">            - Returns None if no AnnotationTypeRA is set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;AnnotationTypeRA&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"AnnotationTypeRA"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">AnnotationTypeRA</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -229,10 +229,10 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_scripture</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is a Scripture annotation.</span>
 
-<span class="sd">        Returns True if the annotation type name contains &#39;Scripture&#39; or &#39;Scr&#39;.</span>
+<span class="sd">        Returns True if the annotation type name contains 'Scripture' or 'Scr'.</span>
 <span class="sd">        This is a convenience check for common Scripture annotation types.</span>
 
 <span class="sd">        Returns:</span>
@@ -241,22 +241,22 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_scripture:</span>
-<span class="sd">                print(&quot;Scripture annotation&quot;)</span>
+<span class="sd">                print("Scripture annotation")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Case-insensitive check of annotation type name</span>
-<span class="sd">            - Returns True for types like &quot;ScrScriptureNote&quot;, &quot;Scripture Comment&quot;, etc.</span>
+<span class="sd">            - Returns True for types like "ScrScriptureNote", "Scripture Comment", etc.</span>
 <span class="sd">            - Use for quick type filtering</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">anno_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-        <span class="k">return</span> <span class="s2">&quot;scripture&quot;</span> <span class="ow">in</span> <span class="n">anno_type</span> <span class="ow">or</span> <span class="s2">&quot;scr&quot;</span> <span class="ow">in</span> <span class="n">anno_type</span>
+        <span class="k">return</span> <span class="s2">"scripture"</span> <span class="ow">in</span> <span class="n">anno_type</span> <span class="ow">or</span> <span class="s2">"scr"</span> <span class="ow">in</span> <span class="n">anno_type</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_translator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is a translator note.</span>
 
-<span class="sd">        Returns True if the annotation type name contains &#39;Translator&#39; or &#39;Translator Note&#39;.</span>
+<span class="sd">        Returns True if the annotation type name contains 'Translator' or 'Translator Note'.</span>
 <span class="sd">        This is a convenience check for translator annotations.</span>
 
 <span class="sd">        Returns:</span>
@@ -265,21 +265,21 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_translator:</span>
-<span class="sd">                print(&quot;Translator note&quot;)</span>
+<span class="sd">                print("Translator note")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Case-insensitive check of annotation type name</span>
-<span class="sd">            - Returns True for types like &quot;TranslatorNote&quot;, &quot;Translator Comment&quot;, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            - Returns True for types like "TranslatorNote", "Translator Comment", etc.</span>
+<span class="sd">        """</span>
         <span class="n">anno_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-        <span class="k">return</span> <span class="s2">&quot;translator&quot;</span> <span class="ow">in</span> <span class="n">anno_type</span>
+        <span class="k">return</span> <span class="s2">"translator"</span> <span class="ow">in</span> <span class="n">anno_type</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_consultant</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is a consultant note.</span>
 
-<span class="sd">        Returns True if the annotation type name contains &#39;Consultant&#39; or &#39;Consultant Note&#39;.</span>
+<span class="sd">        Returns True if the annotation type name contains 'Consultant' or 'Consultant Note'.</span>
 <span class="sd">        This is a convenience check for consultant annotations.</span>
 
 <span class="sd">        Returns:</span>
@@ -288,21 +288,21 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_consultant:</span>
-<span class="sd">                print(&quot;Consultant note&quot;)</span>
+<span class="sd">                print("Consultant note")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Case-insensitive check of annotation type name</span>
-<span class="sd">            - Returns True for types like &quot;ConsultantNote&quot;, &quot;Consultant Comment&quot;, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            - Returns True for types like "ConsultantNote", "Consultant Comment", etc.</span>
+<span class="sd">        """</span>
         <span class="n">anno_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-        <span class="k">return</span> <span class="s2">&quot;consultant&quot;</span> <span class="ow">in</span> <span class="n">anno_type</span>
+        <span class="k">return</span> <span class="s2">"consultant"</span> <span class="ow">in</span> <span class="n">anno_type</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_todo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Check if this is a &quot;To Do&quot; annotation.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Check if this is a "To Do" annotation.</span>
 
-<span class="sd">        Returns True if the annotation type is &quot;To Do&quot; (case-insensitive).</span>
+<span class="sd">        Returns True if the annotation type is "To Do" (case-insensitive).</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if this is a to-do annotation.</span>
@@ -310,21 +310,21 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_todo:</span>
-<span class="sd">                print(&quot;This needs to be done&quot;)</span>
+<span class="sd">                print("This needs to be done")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Case-insensitive check</span>
-<span class="sd">            - Exact match (modulo case) of &quot;To Do&quot;</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            - Exact match (modulo case) of "To Do"</span>
+<span class="sd">        """</span>
         <span class="n">anno_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">anno_type</span> <span class="o">==</span> <span class="s2">&quot;to do&quot;</span>
+        <span class="k">return</span> <span class="n">anno_type</span> <span class="o">==</span> <span class="s2">"to do"</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_question</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is a question annotation.</span>
 
-<span class="sd">        Returns True if the annotation type name contains &#39;Question&#39; or &#39;Query&#39;.</span>
+<span class="sd">        Returns True if the annotation type name contains 'Question' or 'Query'.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if this appears to be a question annotation.</span>
@@ -332,20 +332,20 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_question:</span>
-<span class="sd">                print(&quot;This needs clarification&quot;)</span>
+<span class="sd">                print("This needs clarification")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Case-insensitive check</span>
-<span class="sd">            - Returns True for types like &quot;Question&quot;, &quot;Query&quot;, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            - Returns True for types like "Question", "Query", etc.</span>
+<span class="sd">        """</span>
         <span class="n">anno_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-        <span class="k">return</span> <span class="s2">&quot;question&quot;</span> <span class="ow">in</span> <span class="n">anno_type</span> <span class="ow">or</span> <span class="s2">&quot;query&quot;</span> <span class="ow">in</span> <span class="n">anno_type</span>
+        <span class="k">return</span> <span class="s2">"question"</span> <span class="ow">in</span> <span class="n">anno_type</span> <span class="ow">or</span> <span class="s2">"query"</span> <span class="ow">in</span> <span class="n">anno_type</span>
 
     <span class="c1"># ========== Content Properties ==========</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the text content of the annotation.</span>
 
 <span class="sd">        Returns the Comment property text from the annotation.</span>
@@ -355,26 +355,26 @@
 
 <span class="sd">        Example::</span>
 
-<span class="sd">            print(f&quot;Content: {wrapped.content}&quot;)</span>
+<span class="sd">            print(f"Content: {wrapped.content}")</span>
 <span class="sd">            # Content: Check etymology source</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Content is stored in Comment property</span>
 <span class="sd">            - Returns in default analysis writing system</span>
 <span class="sd">            - Empty string if no content set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;Comment&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"Comment"</span><span class="p">):</span>
                 <span class="n">default_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_default_ws</span><span class="p">()</span>
                 <span class="n">comment_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Comment</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">default_ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-                <span class="k">return</span> <span class="n">comment_text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">return</span> <span class="n">comment_text</span> <span class="ow">or</span> <span class="s2">""</span>
+            <span class="k">return</span> <span class="s2">""</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="s2">""</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">author</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the author of the annotation.</span>
 
 <span class="sd">        Returns the Source property text, which typically contains the author name.</span>
@@ -384,28 +384,28 @@
 
 <span class="sd">        Example::</span>
 
-<span class="sd">            print(f&quot;Author: {wrapped.author}&quot;)</span>
+<span class="sd">            print(f"Author: {wrapped.author}")</span>
 <span class="sd">            # Author: John Smith</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Author is stored in Source property</span>
 <span class="sd">            - Returns in default analysis writing system</span>
 <span class="sd">            - Empty string if no author set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;Source&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"Source"</span><span class="p">):</span>
                 <span class="n">default_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_default_ws</span><span class="p">()</span>
                 <span class="n">source_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Source</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">default_ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-                <span class="k">return</span> <span class="n">source_text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">return</span> <span class="n">source_text</span> <span class="ow">or</span> <span class="s2">""</span>
+            <span class="k">return</span> <span class="s2">""</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="s2">""</span>
 
     <span class="c1"># ========== Metadata Properties ==========</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">date_created</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the creation date of the annotation.</span>
 
 <span class="sd">        Returns:</span>
@@ -414,16 +414,16 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.date_created:</span>
-<span class="sd">                print(f&quot;Created: {wrapped.date_created}&quot;)</span>
+<span class="sd">                print(f"Created: {wrapped.date_created}")</span>
 <span class="sd">            # Created: 11/23/2025 10:30:45 AM</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - DateCreated is set automatically when annotation is created</span>
 <span class="sd">            - Returns System.DateTime object</span>
 <span class="sd">            - May be None for annotations without creation date</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;DateCreated&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"DateCreated"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">DateCreated</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -431,7 +431,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">date_modified</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the last modification date of the annotation.</span>
 
 <span class="sd">        Returns:</span>
@@ -440,16 +440,16 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.date_modified:</span>
-<span class="sd">                print(f&quot;Modified: {wrapped.date_modified}&quot;)</span>
+<span class="sd">                print(f"Modified: {wrapped.date_modified}")</span>
 <span class="sd">            # Modified: 11/23/2025 2:15:30 PM</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - DateModified is updated when annotation is edited</span>
 <span class="sd">            - Returns System.DateTime object</span>
 <span class="sd">            - May be None for annotations never modified</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"DateModified"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">DateModified</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -459,7 +459,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">owner</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the owner object that this annotation is attached to.</span>
 
 <span class="sd">        Returns the object that owns this annotation (ILexEntry, ILexSense, etc.).</span>
@@ -470,17 +470,22 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.owner:</span>
-<span class="sd">                print(f&quot;Owner type: {wrapped.owner.ClassName}&quot;)</span>
+<span class="sd">                print(f"Owner type: {wrapped.owner.ClassName}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - For top-level annotations, returns the annotated object</span>
 <span class="sd">            - For reply annotations, returns the parent annotation</span>
 <span class="sd">            - Use BeginObjectRA for the original annotated object</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;Owner&quot;</span><span class="p">):</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Owner</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;BeginObjectRA&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"Owner"</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Cast to the concrete interface: a raw .Owner is a bare</span>
+                <span class="c1"># ICmObject, so none of the owner's typed properties are</span>
+                <span class="c1"># reachable and it fails isinstance against its own</span>
+                <span class="c1"># interface (Pattern A sweep gap, issue #270).</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
+                <span class="k">return</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"BeginObjectRA"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">BeginObjectRA</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -488,7 +493,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">guid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the GUID of the annotation.</span>
 
 <span class="sd">        Returns:</span>
@@ -497,16 +502,16 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            guid = wrapped.guid</span>
-<span class="sd">            print(f&quot;GUID: {guid}&quot;)</span>
+<span class="sd">            print(f"GUID: {guid}")</span>
 <span class="sd">            # GUID: 12345678-1234-1234-1234-123456789abc</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - GUIDs are globally unique identifiers</span>
 <span class="sd">            - Persistent across project versions</span>
 <span class="sd">            - Use for external references and tracking</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;Guid&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"Guid"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Guid</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -516,7 +521,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">replies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all reply annotations (threaded discussion) for this annotation.</span>
 
 <span class="sd">        Returns:</span>
@@ -527,15 +532,15 @@
 <span class="sd">            if wrapped.replies:</span>
 <span class="sd">                for reply in wrapped.replies:</span>
 <span class="sd">                    reply_wrapper = Annotation(reply)</span>
-<span class="sd">                    print(f&quot;Reply: {reply_wrapper.content}&quot;)</span>
+<span class="sd">                    print(f"Reply: {reply_wrapper.content}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Replies are child annotations of this annotation</span>
 <span class="sd">            - Returns empty list if no replies</span>
 <span class="sd">            - Replies can themselves have replies (nested threading)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"RepliesOS"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">RepliesOS</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">[]</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -543,7 +548,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">has_replies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this annotation has any replies.</span>
 
 <span class="sd">        Returns:</span>
@@ -552,14 +557,14 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.has_replies:</span>
-<span class="sd">                print(f&quot;Has {len(wrapped.replies)} replies&quot;)</span>
+<span class="sd">                print(f"Has {len(wrapped.replies)} replies")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Convenience check for checking if RepliesOS is non-empty</span>
 <span class="sd">            - Returns False if no RepliesOS property or no replies</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;RepliesOS&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">"RepliesOS"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">RepliesOS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&gt;</span> <span class="mi">0</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -568,7 +573,7 @@
     <span class="c1"># ========== Private Helper Methods ==========</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_default_ws</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the default analysis writing system handle.</span>
 
 <span class="sd">        Returns:</span>
@@ -577,7 +582,7 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - Used internally for text property access</span>
 <span class="sd">            - Reads from LcmCache.DefaultAnalWs (the authoritative WS handle)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># self._obj.Cache is the LcmCache; Cache.DefaultAnalWs is the</span>
         <span class="c1"># established accessor (same pattern used in phonological_rule.py,</span>
         <span class="c1"># affix_template.py, compound_rule.py after d2a20fa).</span>
@@ -587,16 +592,16 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Cache</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation showing annotation type and content preview.&quot;&quot;&quot;</span>
-        <span class="n">anno_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_type</span> <span class="ow">or</span> <span class="s2">&quot;Untyped&quot;</span>
-        <span class="n">content_preview</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">[:</span><span class="mi">30</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="k">else</span> <span class="s2">&quot;[empty]&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Annotation(</span><span class="si">{</span><span class="n">anno_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">content_preview</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="w">        </span><span class="sd">"""String representation showing annotation type and content preview."""</span>
+        <span class="n">anno_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_type</span> <span class="ow">or</span> <span class="s2">"Untyped"</span>
+        <span class="n">content_preview</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">[:</span><span class="mi">30</span><span class="p">]</span> <span class="o">+</span> <span class="s2">"..."</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="k">else</span> <span class="s2">"[empty]"</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"Annotation(</span><span class="si">{</span><span class="n">anno_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">content_preview</span><span class="si">}</span><span class="s2">)"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Human-readable description.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Human-readable description."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_type</span><span class="p">:</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Annotation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">&quot;</span></div>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"Annotation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">"</span></div>
 
 </pre></div>
 
@@ -635,8 +640,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

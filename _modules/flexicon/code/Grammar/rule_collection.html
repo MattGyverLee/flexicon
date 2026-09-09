@@ -54,7 +54,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Smart collection class for phonological rules.</span>
 
 <span class="sd">This module provides RuleCollection, a smart collection that manages</span>
@@ -78,11 +78,11 @@
 <span class="sd">    - by_type() filtering to specific concrete types</span>
 <span class="sd">    - filter() for common criteria (name_contains, direction, stratum)</span>
 <span class="sd">    - Convenience methods (regular_rules(), metathesis_rules(), redup_rules())</span>
-<span class="sd">    - Chainable filtering: rules.regular_rules().filter(name_contains=&#39;voicing&#39;)</span>
+<span class="sd">    - Chainable filtering: rules.regular_rules().filter(name_contains='voicing')</span>
 
 <span class="sd">Example::</span>
 
-<span class="sd">    from flexlibs2.code.Grammar.rule_collection import RuleCollection</span>
+<span class="sd">    from flexicon.code.Grammar.rule_collection import RuleCollection</span>
 
 <span class="sd">    # GetAll() now returns RuleCollection</span>
 <span class="sd">    rules = phonRuleOps.GetAll()</span>
@@ -97,15 +97,15 @@
 <span class="sd">    print(len(regular_only))  # 7</span>
 
 <span class="sd">    # Filter by name</span>
-<span class="sd">    voicing_rules = rules.filter(name_contains=&#39;voicing&#39;)</span>
+<span class="sd">    voicing_rules = rules.filter(name_contains='voicing')</span>
 
 <span class="sd">    # Chain filters</span>
-<span class="sd">    voicing_regular = rules.regular_rules().filter(name_contains=&#39;voicing&#39;)</span>
+<span class="sd">    voicing_regular = rules.regular_rules().filter(name_contains='voicing')</span>
 
 <span class="sd">    # Iterate</span>
 <span class="sd">    for rule in rules:</span>
 <span class="sd">        print(rule.name)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.smart_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmartCollection</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.phonological_rule</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhonologicalRule</span>
@@ -114,7 +114,7 @@
 <div class="viewcode-block" id="RuleCollection">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.rule_collection.RuleCollection">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RuleCollection</span><span class="p">(</span><span class="n">SmartCollection</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Smart collection for phonological rules with type-aware filtering.</span>
 
 <span class="sd">    Manages collections of phonological rules (PhonologicalRule wrapper objects)</span>
@@ -129,12 +129,12 @@
 <span class="sd">        rules = phonRuleOps.GetAll()  # Returns RuleCollection</span>
 <span class="sd">        print(rules)  # Shows type breakdown</span>
 <span class="sd">        regular = rules.regular_rules()  # Filter to PhRegularRule</span>
-<span class="sd">        voicing = rules.filter(name_contains=&#39;voicing&#39;)  # Name filter</span>
-<span class="sd">        both = rules.regular_rules().filter(name_contains=&#39;voicing&#39;)  # Chain</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        voicing = rules.filter(name_contains='voicing')  # Name filter</span>
+<span class="sd">        both = rules.regular_rules().filter(name_contains='voicing')  # Chain</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize a RuleCollection.</span>
 
 <span class="sd">        Args:</span>
@@ -144,13 +144,13 @@
 
 <span class="sd">            collection = RuleCollection()</span>
 <span class="sd">            collection = RuleCollection([rule1, rule2, rule3])</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 
 <div class="viewcode-block" id="RuleCollection.filter">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.rule_collection.RuleCollection.filter">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name_contains</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stratum</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter the collection by common rule properties.</span>
 
 <span class="sd">        Supports filtering by properties that work across all rule types</span>
@@ -171,7 +171,7 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            # Filter by name</span>
-<span class="sd">            voicing_rules = rules.filter(name_contains=&#39;voicing&#39;)</span>
+<span class="sd">            voicing_rules = rules.filter(name_contains='voicing')</span>
 
 <span class="sd">            # Filter by direction</span>
 <span class="sd">            ltr_rules = rules.filter(direction=0)</span>
@@ -184,15 +184,15 @@
 <span class="sd">            high_rules = rules.where(lambda r: r.Direction == 0)</span>
 
 <span class="sd">            # Chain filters</span>
-<span class="sd">            voicing_ltr = rules.filter(name_contains=&#39;voicing&#39;).filter(direction=0)</span>
+<span class="sd">            voicing_ltr = rules.filter(name_contains='voicing').filter(direction=0)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - name_contains is case-sensitive</span>
 <span class="sd">            - All criteria are AND-ed together unless only one is provided</span>
 <span class="sd">            - where() takes precedence over other criteria</span>
-<span class="sd">            - Returns new collection (doesn&#39;t modify original)</span>
+<span class="sd">            - Returns new collection (doesn't modify original)</span>
 <span class="sd">            - Use where() for complex custom filtering</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># If custom predicate provided, use it</span>
         <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">where</span><span class="p">(</span><span class="n">item</span><span class="p">)]</span>
@@ -202,7 +202,7 @@
         <span class="n">filtered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span>
 
         <span class="k">if</span> <span class="n">name_contains</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">rule</span> <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">filtered</span> <span class="k">if</span> <span class="n">name_contains</span> <span class="ow">in</span> <span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)]</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">rule</span> <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">filtered</span> <span class="k">if</span> <span class="n">name_contains</span> <span class="ow">in</span> <span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)]</span>
 
         <span class="k">if</span> <span class="n">direction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">rule</span> <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">filtered</span> <span class="k">if</span> <span class="n">rule</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="n">direction</span><span class="p">]</span>
@@ -211,7 +211,7 @@
             <span class="c1"># Handle both object and GUID comparisons</span>
             <span class="n">stratum_guid</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="n">stratum</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">stratum</span><span class="p">,</span> <span class="s2">&quot;Guid&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">stratum</span><span class="p">,</span> <span class="s2">"Guid"</span><span class="p">):</span>
                     <span class="n">stratum_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">stratum</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">stratum_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">stratum</span><span class="p">)</span>
@@ -228,7 +228,7 @@
 <div class="viewcode-block" id="RuleCollection.where">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.rule_collection.RuleCollection.where">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predicate</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter using a custom predicate function.</span>
 
 <span class="sd">        For filtering by complex criteria or properties not supported by filter().</span>
@@ -251,13 +251,13 @@
 <span class="sd">            )</span>
 
 <span class="sd">            # Type checking combined with other criteria</span>
-<span class="sd">            non_regular = rules.where(lambda r: r.class_type != &#39;PhRegularRule&#39;)</span>
+<span class="sd">            non_regular = rules.where(lambda r: r.class_type != 'PhRegularRule')</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Predicate receives each PhonologicalRule object</span>
 <span class="sd">            - Return True to include in result, False to exclude</span>
 <span class="sd">            - For simple filters (name, direction), use filter() instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">rule</span> <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">predicate</span><span class="p">(</span><span class="n">rule</span><span class="p">)]</span>
         <span class="k">return</span> <span class="n">RuleCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
 
@@ -265,7 +265,7 @@
 <div class="viewcode-block" id="RuleCollection.regular_rules">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.rule_collection.RuleCollection.regular_rules">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">regular_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the regular (PhRegularRule) rules from the collection.</span>
 
 <span class="sd">        Convenience method for filtering to PhRegularRule objects only.</span>
@@ -276,23 +276,23 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            regular = rules.regular_rules()</span>
-<span class="sd">            print(f&quot;Found {len(regular)} regular rules&quot;)</span>
+<span class="sd">            print(f"Found {len(regular)} regular rules")</span>
 
 <span class="sd">            # Chain with other filters</span>
-<span class="sd">            voicing_regular = rules.regular_rules().filter(name_contains=&#39;voicing&#39;)</span>
+<span class="sd">            voicing_regular = rules.regular_rules().filter(name_contains='voicing')</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Equivalent to by_type(&#39;PhRegularRule&#39;)</span>
+<span class="sd">            - Equivalent to by_type('PhRegularRule')</span>
 <span class="sd">            - Regular rules have RightHandSidesOS (output specifications)</span>
 <span class="sd">            - Use has_output_specs on individual rules to check type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;PhRegularRule&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">"PhRegularRule"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RuleCollection.metathesis_rules">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.rule_collection.RuleCollection.metathesis_rules">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">metathesis_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the metathesis (PhMetathesisRule) rules from the collection.</span>
 
 <span class="sd">        Convenience method for filtering to PhMetathesisRule objects only.</span>
@@ -303,23 +303,23 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            metathesis = rules.metathesis_rules()</span>
-<span class="sd">            print(f&quot;Found {len(metathesis)} metathesis rules&quot;)</span>
+<span class="sd">            print(f"Found {len(metathesis)} metathesis rules")</span>
 
 <span class="sd">            # Chain with other filters</span>
-<span class="sd">            initial_metathesis = rules.metathesis_rules().filter(name_contains=&#39;initial&#39;)</span>
+<span class="sd">            initial_metathesis = rules.metathesis_rules().filter(name_contains='initial')</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Equivalent to by_type(&#39;PhMetathesisRule&#39;)</span>
+<span class="sd">            - Equivalent to by_type('PhMetathesisRule')</span>
 <span class="sd">            - Metathesis rules swap segments (left &lt;-&gt; right)</span>
 <span class="sd">            - Use has_metathesis_parts on individual rules to check type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;PhMetathesisRule&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">"PhMetathesisRule"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RuleCollection.redup_rules">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.rule_collection.RuleCollection.redup_rules">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">redup_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the reduplication (PhReduplicationRule) rules from the collection.</span>
 
 <span class="sd">        Convenience method for filtering to PhReduplicationRule objects only.</span>
@@ -330,22 +330,22 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            redup = rules.redup_rules()</span>
-<span class="sd">            print(f&quot;Found {len(redup)} reduplication rules&quot;)</span>
+<span class="sd">            print(f"Found {len(redup)} reduplication rules")</span>
 
 <span class="sd">            # Chain with other filters</span>
-<span class="sd">            prefix_redup = rules.redup_rules().filter(name_contains=&#39;prefix&#39;)</span>
+<span class="sd">            prefix_redup = rules.redup_rules().filter(name_contains='prefix')</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Equivalent to by_type(&#39;PhReduplicationRule&#39;)</span>
+<span class="sd">            - Equivalent to by_type('PhReduplicationRule')</span>
 <span class="sd">            - Reduplication rules repeat segments</span>
 <span class="sd">            - Use has_redup_parts on individual rules to check type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">&quot;PhReduplicationRule&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="s2">"PhReduplicationRule"</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Technical representation.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;RuleCollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> rules)&quot;</span></div>
+<span class="w">        </span><span class="sd">"""Technical representation."""</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"RuleCollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> rules)"</span></div>
 
 </pre></div>
 
@@ -384,8 +384,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

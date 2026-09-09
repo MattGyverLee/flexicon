@@ -41,15 +41,15 @@
           <div class="body" role="main">
             
   <h1>Source code for flexicon.sync.selective_import</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Selective Import Operations</span>
 
 <span class="sd">One-way import of specific objects from source to target project.</span>
-<span class="sd">Matches the actual linguistic workflow: &quot;import new allomorphs to stable project&quot;.</span>
+<span class="sd">Matches the actual linguistic workflow: "import new allomorphs to stable project".</span>
 
 <span class="sd">Author: FlexTools Development Team</span>
 <span class="sd">Date: 2025-11-27</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span>
@@ -64,29 +64,29 @@
 <div class="viewcode-block" id="SelectiveImport">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.selective_import.SelectiveImport">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SelectiveImport</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    One-way selective import from source to target project.</span>
 
-<span class="sd">    This matches the linguist&#39;s actual workflow:</span>
+<span class="sd">    This matches the linguist's actual workflow:</span>
 <span class="sd">    1. Copy project for testing</span>
 <span class="sd">    2. Make changes in test project</span>
 <span class="sd">    3. Import ONLY new/modified items back to stable project</span>
-<span class="sd">    4. NEVER overwrite stable project&#39;s existing data</span>
+<span class="sd">    4. NEVER overwrite stable project's existing data</span>
 
 <span class="sd">    Usage:</span>
 <span class="sd">        &gt;&gt;&gt; importer = SelectiveImport(source_project, target_project)</span>
 <span class="sd">        &gt;&gt;&gt; result = importer.import_new_objects(</span>
-<span class="sd">        ...     object_type=&quot;Allomorph&quot;,</span>
+<span class="sd">        ...     object_type="Allomorph",</span>
 <span class="sd">        ...     created_after=backup_timestamp,</span>
 <span class="sd">        ...     validate_references=True</span>
 <span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; print(result.summary())</span>
 
 <span class="sd">    This is SAFER than bidirectional sync for linguistic data.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize selective importer.</span>
 
 <span class="sd">        Args:</span>
@@ -95,19 +95,19 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            RuntimeError: If target not write-enabled</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_project</span> <span class="o">=</span> <span class="n">source_project</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_project</span> <span class="o">=</span> <span class="n">target_project</span>
 
         <span class="c1"># Validate write access</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_project</span><span class="p">,</span> <span class="s2">&quot;writeEnabled&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target_project</span><span class="o">.</span><span class="n">writeEnabled</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Target project not opened with writeEnabled=True. &quot;</span> <span class="s2">&quot;Cannot perform import operations.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_project</span><span class="p">,</span> <span class="s2">"writeEnabled"</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target_project</span><span class="o">.</span><span class="n">writeEnabled</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Target project not opened with writeEnabled=True. "</span> <span class="s2">"Cannot perform import operations."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">validator</span> <span class="o">=</span> <span class="n">LinguisticValidator</span><span class="p">(</span><span class="n">target_project</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">merger</span> <span class="o">=</span> <span class="n">MergeOperations</span><span class="p">(</span><span class="n">target_project</span><span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;SelectiveImport initialized: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_project_name</span><span class="p">(</span><span class="n">source_project</span><span class="p">)</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_project_name</span><span class="p">(</span><span class="n">target_project</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"SelectiveImport initialized: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_project_name</span><span class="p">(</span><span class="n">source_project</span><span class="p">)</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_project_name</span><span class="p">(</span><span class="n">target_project</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
 <div class="viewcode-block" id="SelectiveImport.import_new_objects">
@@ -122,7 +122,7 @@
         <span class="n">progress_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SyncResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Import objects created/modified after specified date.</span>
 
 <span class="sd">        This is the PRIMARY method for linguistic workflows:</span>
@@ -132,7 +132,7 @@
 <span class="sd">        - One-way operation (source → target only)</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            object_type: Type to import (e.g., &quot;Allomorph&quot;, &quot;LexEntry&quot;)</span>
+<span class="sd">            object_type: Type to import (e.g., "Allomorph", "LexEntry")</span>
 <span class="sd">            created_after: Only import objects created after this time</span>
 <span class="sd">            modified_after: Only import objects modified after this time</span>
 <span class="sd">            validate_references: Check for missing references before import</span>
@@ -148,12 +148,12 @@
 <span class="sd">            &gt;&gt;&gt; backup_time = datetime(2025, 11, 1)</span>
 <span class="sd">            &gt;&gt;&gt; # ... work in test project ...</span>
 <span class="sd">            &gt;&gt;&gt; result = importer.import_new_objects(</span>
-<span class="sd">            ...     object_type=&quot;Allomorph&quot;,</span>
+<span class="sd">            ...     object_type="Allomorph",</span>
 <span class="sd">            ...     created_after=backup_time,</span>
 <span class="sd">            ...     validate_references=True</span>
 <span class="sd">            ... )</span>
-<span class="sd">            &gt;&gt;&gt; print(f&quot;Imported {result.num_created} new allomorphs&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            &gt;&gt;&gt; print(f"Imported {result.num_created} new allomorphs")</span>
+<span class="sd">        """</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">SyncResult</span><span class="p">(</span><span class="n">object_type</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -162,7 +162,7 @@
             <span class="n">target_ops</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_operations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_project</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
-                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Scanning </span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2"> objects in source...&quot;</span><span class="p">)</span>
+                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Scanning </span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2"> objects in source..."</span><span class="p">)</span>
 
             <span class="c1"># Get all objects from source</span>
             <span class="n">source_objects</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()</span>
@@ -176,24 +176,24 @@
                     <span class="k">continue</span>  <span class="c1"># Skip existing - NEVER overwrite</span>
 
                 <span class="c1"># Check creation date</span>
-                <span class="k">if</span> <span class="n">created_after</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;DateCreated&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">created_after</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"DateCreated"</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">DateCreated</span> <span class="o">&lt;</span> <span class="n">created_after</span><span class="p">:</span>
                         <span class="k">continue</span>
 
                 <span class="c1"># Check modification date</span>
-                <span class="k">if</span> <span class="n">modified_after</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;DateModified&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">modified_after</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"DateModified"</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">DateModified</span> <span class="o">&lt;</span> <span class="n">modified_after</span><span class="p">:</span>
                         <span class="k">continue</span>
 
                 <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
-                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span><span class="si">}</span><span class="s2"> new objects to import&quot;</span><span class="p">)</span>
+                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span><span class="si">}</span><span class="s2"> new objects to import"</span><span class="p">)</span>
 
             <span class="c1"># Validate candidates</span>
             <span class="k">if</span> <span class="n">validate_references</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
-                    <span class="n">progress_callback</span><span class="p">(</span><span class="s2">&quot;Validating references...&quot;</span><span class="p">)</span>
+                    <span class="n">progress_callback</span><span class="p">(</span><span class="s2">"Validating references..."</span><span class="p">)</span>
 
                 <span class="n">validation_issues</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
@@ -205,14 +205,14 @@
                     <span class="c1"># Log all issues</span>
                     <span class="k">for</span> <span class="n">obj</span><span class="p">,</span> <span class="n">validation</span> <span class="ow">in</span> <span class="n">validation_issues</span><span class="p">:</span>
                         <span class="n">guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation failed for </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Validation failed for </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
                         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">validation</span><span class="o">.</span><span class="n">detailed_report</span><span class="p">())</span>
 
                         <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span>
                             <span class="n">SyncError</span><span class="p">(</span>
-                                <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;validate&quot;</span><span class="p">,</span>
+                                <span class="n">operation</span><span class="o">=</span><span class="s2">"validate"</span><span class="p">,</span>
                                 <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
-                                <span class="n">error_message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Validation failed: </span><span class="si">{</span><span class="n">validation</span><span class="o">.</span><span class="n">num_critical</span><span class="si">}</span><span class="s2"> critical issues&quot;</span><span class="p">,</span>
+                                <span class="n">error_message</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Validation failed: </span><span class="si">{</span><span class="n">validation</span><span class="o">.</span><span class="n">num_critical</span><span class="si">}</span><span class="s2"> critical issues"</span><span class="p">,</span>
                             <span class="p">)</span>
                         <span class="p">)</span>
 
@@ -237,15 +237,15 @@
                         <span class="p">)</span>
 
                         <span class="k">if</span> <span class="n">created_obj</span><span class="p">:</span>
-                            <span class="n">result</span><span class="o">.</span><span class="n">add_change</span><span class="p">(</span><span class="n">SyncChange</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="p">,</span> <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">))</span>
+                            <span class="n">result</span><span class="o">.</span><span class="n">add_change</span><span class="p">(</span><span class="n">SyncChange</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">"create"</span><span class="p">,</span> <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">))</span>
                             <span class="n">imported</span> <span class="o">+=</span> <span class="mi">1</span>
 
                             <span class="k">if</span> <span class="n">progress_callback</span> <span class="ow">and</span> <span class="n">imported</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Imported </span><span class="si">{</span><span class="n">imported</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Imported </span><span class="si">{</span><span class="n">imported</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span>
                                 <span class="n">SyncError</span><span class="p">(</span>
-                                    <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="s2">&quot;create_object returned None&quot;</span>
+                                    <span class="n">operation</span><span class="o">=</span><span class="s2">"create"</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="s2">"create_object returned None"</span>
                                 <span class="p">)</span>
                             <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
@@ -253,21 +253,21 @@
                         <span class="n">result</span><span class="o">.</span><span class="n">skip</span><span class="p">()</span>
 
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to import </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to import </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">"create"</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
 
             <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
-                    <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dry run: Would import </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects&quot;</span><span class="p">)</span>
+                    <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dry run: Would import </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects"</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Import complete: </span><span class="si">{</span><span class="n">imported</span><span class="si">}</span><span class="s2"> objects created&quot;</span><span class="p">)</span>
+                    <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Import complete: </span><span class="si">{</span><span class="n">imported</span><span class="si">}</span><span class="s2"> objects created"</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
             <span class="c1"># Re-raise validation errors - they should propagate</span>
             <span class="k">raise</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Import failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;import&quot;</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Import failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">"import"</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
 
@@ -282,7 +282,7 @@
         <span class="n">progress_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SyncResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Import objects matching custom filter function.</span>
 
 <span class="sd">        Args:</span>
@@ -298,12 +298,12 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Import only verified allomorphs</span>
 <span class="sd">            &gt;&gt;&gt; def is_verified(obj):</span>
-<span class="sd">            ...     return hasattr(obj, &#39;Status&#39;) and obj.Status == &#39;Verified&#39;</span>
+<span class="sd">            ...     return hasattr(obj, 'Status') and obj.Status == 'Verified'</span>
 <span class="sd">            &gt;&gt;&gt; result = importer.import_by_filter(</span>
-<span class="sd">            ...     object_type=&quot;Allomorph&quot;,</span>
+<span class="sd">            ...     object_type="Allomorph",</span>
 <span class="sd">            ...     filter_fn=is_verified</span>
 <span class="sd">            ... )</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">SyncResult</span><span class="p">(</span><span class="n">object_type</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -311,7 +311,7 @@
             <span class="n">target_ops</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_operations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_project</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
-                <span class="n">progress_callback</span><span class="p">(</span><span class="s2">&quot;Scanning source objects...&quot;</span><span class="p">)</span>
+                <span class="n">progress_callback</span><span class="p">(</span><span class="s2">"Scanning source objects..."</span><span class="p">)</span>
 
             <span class="c1"># Get all source objects</span>
             <span class="n">source_objects</span> <span class="o">=</span> <span class="n">source_ops</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()</span>
@@ -329,10 +329,10 @@
                     <span class="k">if</span> <span class="n">filter_fn</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
                         <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Filter function failed for </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Filter function failed for </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">progress_callback</span><span class="p">:</span>
-                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects matching filter&quot;</span><span class="p">)</span>
+                <span class="n">progress_callback</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span><span class="si">}</span><span class="s2"> objects matching filter"</span><span class="p">)</span>
 
             <span class="c1"># Use same import logic as import_new_objects</span>
             <span class="c1"># (validation and creation)</span>
@@ -345,9 +345,9 @@
                         <span class="k">if</span> <span class="n">validation</span><span class="o">.</span><span class="n">has_critical</span><span class="p">:</span>
                             <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span>
                                 <span class="n">SyncError</span><span class="p">(</span>
-                                    <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;validate&quot;</span><span class="p">,</span>
+                                    <span class="n">operation</span><span class="o">=</span><span class="s2">"validate"</span><span class="p">,</span>
                                     <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span>
-                                    <span class="n">error_message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">validation</span><span class="o">.</span><span class="n">num_critical</span><span class="si">}</span><span class="s2"> validation errors&quot;</span><span class="p">,</span>
+                                    <span class="n">error_message</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">validation</span><span class="o">.</span><span class="n">num_critical</span><span class="si">}</span><span class="s2"> validation errors"</span><span class="p">,</span>
                                 <span class="p">)</span>
                             <span class="p">)</span>
                             <span class="k">continue</span>
@@ -358,49 +358,58 @@
                         <span class="p">)</span>
 
                         <span class="k">if</span> <span class="n">created_obj</span><span class="p">:</span>
-                            <span class="n">result</span><span class="o">.</span><span class="n">add_change</span><span class="p">(</span><span class="n">SyncChange</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="p">,</span> <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">))</span>
+                            <span class="n">result</span><span class="o">.</span><span class="n">add_change</span><span class="p">(</span><span class="n">SyncChange</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">"create"</span><span class="p">,</span> <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">))</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span>
-                                <span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="s2">&quot;Creation failed&quot;</span><span class="p">)</span>
+                                <span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">"create"</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="s2">"Creation failed"</span><span class="p">)</span>
                             <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">result</span><span class="o">.</span><span class="n">skip</span><span class="p">()</span>
 
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to import </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to import </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">"create"</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="n">guid</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
 
         <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
             <span class="c1"># Re-raise validation errors - they should propagate</span>
             <span class="k">raise</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Import failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;import&quot;</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Import failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="n">SyncError</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">"import"</span><span class="p">,</span> <span class="n">object_guid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_operations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get operations class for object type.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get operations class for object type."""</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">object_type</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Project does not have operations class for &#39;</span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2">&#39;. &quot;</span> <span class="sa">f</span><span class="s2">&quot;Available: </span><span class="si">{</span><span class="nb">dir</span><span class="p">(</span><span class="n">project</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Project does not have operations class for '</span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2">'. "</span> <span class="sa">f</span><span class="s2">"Available: </span><span class="si">{</span><span class="nb">dir</span><span class="p">(</span><span class="n">project</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_exists_in_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if object exists in target project.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Check if object exists in target project."""</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># Object() lookups go through pythonnet into the live LCM, which</span>
+            <span class="c1"># can raise a variety of exception types beyond AttributeError/</span>
+            <span class="c1"># KeyError (malformed GUID, backend errors, etc.). This is a</span>
+            <span class="c1"># simple existence check -- any lookup failure means we could</span>
+            <span class="c1"># not confirm the object exists, so treat it as "not found"</span>
+            <span class="c1"># rather than letting an unexpected exception type propagate</span>
+            <span class="c1"># and abort the caller's import/candidate scan. Matches the</span>
+            <span class="c1"># broad catch-and-log convention used elsewhere in this file.</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Existence check failed for </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_project_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get project name for logging.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="s2">&quot;ProjectName&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Get project name for logging."""</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="s2">"ProjectName"</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">project</span><span class="o">.</span><span class="n">ProjectName</span><span class="p">()</span>
-        <span class="k">return</span> <span class="s2">&quot;unknown&quot;</span></div>
+        <span class="k">return</span> <span class="s2">"unknown"</span></div>
 
 </pre></div>
 
@@ -439,8 +448,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

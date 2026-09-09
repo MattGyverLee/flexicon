@@ -54,7 +54,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Wrapper class for phonological context objects with unified interface.</span>
 
 <span class="sd">This module provides PhonologicalContext, a wrapper class that transparently</span>
@@ -89,9 +89,9 @@
 
 <span class="sd">Example::</span>
 
-<span class="sd">    from flexlibs2.code.System.phonological_context import PhonologicalContext</span>
+<span class="sd">    from flexicon.code.System.phonological_context import PhonologicalContext</span>
 
-<span class="sd">    # Wrap a context from a rule&#39;s input contexts</span>
+<span class="sd">    # Wrap a context from a rule's input contexts</span>
 <span class="sd">    context = rule.input_contexts[0]  # Typed as IPhPhonContext</span>
 <span class="sd">    wrapped = PhonologicalContext(context)</span>
 
@@ -100,16 +100,16 @@
 
 <span class="sd">    # Check capabilities</span>
 <span class="sd">    if wrapped.is_simple_context_seg:</span>
-<span class="sd">        print(&quot;This is a simple segment context&quot;)</span>
+<span class="sd">        print("This is a simple segment context")</span>
 
 <span class="sd">    if wrapped.is_boundary_context:</span>
-<span class="sd">        print(&quot;This is a boundary context&quot;)</span>
+<span class="sd">        print("This is a boundary context")</span>
 
 <span class="sd">    # Optional: Advanced users can access concrete types</span>
 <span class="sd">    if wrapped.as_simple_context_seg():</span>
 <span class="sd">        concrete = wrapped.as_simple_context_seg()</span>
 <span class="sd">        # Use concrete interface for advanced operations</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.wrapper_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LCMObjectWrapper</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
@@ -118,7 +118,7 @@
 <div class="viewcode-block" id="PhonologicalContext">
 <a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.phonological_context.PhonologicalContext">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PhonologicalContext</span><span class="p">(</span><span class="n">LCMObjectWrapper</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Wrapper for phonological context objects providing unified interface access.</span>
 
 <span class="sd">    Handles the multiple concrete types of phonological contexts transparently,</span>
@@ -136,74 +136,74 @@
 <span class="sd">        wrapped = PhonologicalContext(context)</span>
 <span class="sd">        print(wrapped.context_name)</span>
 <span class="sd">        if wrapped.is_simple_context_seg:</span>
-<span class="sd">            print(&quot;Simple segment context&quot;)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">            print("Simple segment context")</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lcm_context</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize PhonologicalContext wrapper with a context object.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            lcm_context: An IPhPhonContext object (or derived type).</span>
-<span class="sd">                        Typically from a phonological rule&#39;s input_contexts.</span>
+<span class="sd">                        Typically from a phonological rule's input_contexts.</span>
 
 <span class="sd">        Example::</span>
 
 <span class="sd">            context = rule.input_contexts[0]</span>
 <span class="sd">            wrapped = PhonologicalContext(context)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lcm_context</span><span class="p">)</span>
 
     <span class="c1"># ========== Common Properties (work across all context types) ==========</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">context_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get the context&#39;s name or identifier.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Get the context's name or identifier.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: The context name/identifier, or empty string if not set.</span>
 
 <span class="sd">        Example::</span>
 
-<span class="sd">            print(f&quot;Context: {wrapped.context_name}&quot;)</span>
+<span class="sd">            print(f"Context: {wrapped.context_name}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - For simple contexts, this may be the segment or natural class name</span>
 <span class="sd">            - For boundary contexts, this identifies the boundary type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Many contexts have a Name property</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">):</span>
-                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Name</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"Name"</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Name</span> <span class="k">else</span> <span class="s2">""</span>
+            <span class="k">return</span> <span class="s2">""</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="s2">""</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">description</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get the context&#39;s description if available.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Get the context's description if available.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: The description, or empty string if not set.</span>
 
 <span class="sd">        Example::</span>
 
-<span class="sd">            print(f&quot;Context: {wrapped.description}&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            print(f"Context: {wrapped.description}")</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">):</span>
-                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Description</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"Description"</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Description</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Description</span> <span class="k">else</span> <span class="s2">""</span>
+            <span class="k">return</span> <span class="s2">""</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="s2">""</span>
 
     <span class="c1"># ========== Capability Checks (for type-specific properties) ==========</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_simple_context_seg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is a simple segment context.</span>
 
 <span class="sd">        Returns:</span>
@@ -212,20 +212,20 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_simple_context_seg:</span>
-<span class="sd">                print(&quot;Simple segment context&quot;)</span>
+<span class="sd">                print("Simple segment context")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Simple segment contexts represent a single segment</span>
 <span class="sd">            - Use segment property to access the actual segment</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhSimpleContextSeg&quot;</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhSimpleContextSeg"</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_simple_context_nc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is a simple natural class context.</span>
 
 <span class="sd">        Returns:</span>
@@ -234,20 +234,20 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_simple_context_nc:</span>
-<span class="sd">                print(&quot;Simple natural class context&quot;)</span>
+<span class="sd">                print("Simple natural class context")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Simple natural class contexts represent a natural class</span>
 <span class="sd">            - Use natural_class property to access the actual natural class</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhSimpleContextNC&quot;</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhSimpleContextNC"</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_simple_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is any simple context (segment or natural class).</span>
 
 <span class="sd">        Returns:</span>
@@ -256,17 +256,17 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_simple_context:</span>
-<span class="sd">                print(&quot;This is a simple context&quot;)</span>
+<span class="sd">                print("This is a simple context")</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Convenience property for checking if context is &quot;simple&quot;</span>
+<span class="sd">            - Convenience property for checking if context is "simple"</span>
 <span class="sd">            - Use is_simple_context_seg or is_simple_context_nc for type specificity</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_simple_context_seg</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_simple_context_nc</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_complex_context_seg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is a complex segment context.</span>
 
 <span class="sd">        Returns:</span>
@@ -275,19 +275,19 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_complex_context_seg:</span>
-<span class="sd">                print(&quot;Complex segment context&quot;)</span>
+<span class="sd">                print("Complex segment context")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Complex segment contexts have multiple segment specifications</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhComplexContextSeg&quot;</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhComplexContextSeg"</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_complex_context_nc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is a complex natural class context.</span>
 
 <span class="sd">        Returns:</span>
@@ -296,19 +296,19 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_complex_context_nc:</span>
-<span class="sd">                print(&quot;Complex natural class context&quot;)</span>
+<span class="sd">                print("Complex natural class context")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Complex natural class contexts have multiple natural class specifications</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhComplexContextNC&quot;</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhComplexContextNC"</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_complex_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is any complex context (segment or natural class).</span>
 
 <span class="sd">        Returns:</span>
@@ -317,17 +317,17 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_complex_context:</span>
-<span class="sd">                print(&quot;This is a complex context&quot;)</span>
+<span class="sd">                print("This is a complex context")</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Convenience property for checking if context is &quot;complex&quot;</span>
+<span class="sd">            - Convenience property for checking if context is "complex"</span>
 <span class="sd">            - Use is_complex_context_seg or is_complex_context_nc for type specificity</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_complex_context_seg</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_complex_context_nc</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_boundary_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this is a boundary context.</span>
 
 <span class="sd">        Returns:</span>
@@ -336,22 +336,22 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.is_boundary_context:</span>
-<span class="sd">                print(&quot;Word/morpheme boundary context&quot;)</span>
+<span class="sd">                print("Word/morpheme boundary context")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Boundary contexts represent word or morpheme boundaries</span>
 <span class="sd">            - Different from other context types in purpose and properties</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhBoundaryContext&quot;</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhBoundaryContext"</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="c1"># ========== Type-Specific Property Access (via capability checks) ==========</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">segment</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Optional[object]&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">segment</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Optional[object]"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the segment from a simple segment context.</span>
 
 <span class="sd">        Returns:</span>
@@ -362,25 +362,25 @@
 <span class="sd">            if wrapped.is_simple_context_seg:</span>
 <span class="sd">                seg = wrapped.segment</span>
 <span class="sd">                if seg:</span>
-<span class="sd">                    print(f&quot;Segment: {seg.Name}&quot;)</span>
+<span class="sd">                    print(f"Segment: {seg.Name}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only meaningful for PhSimpleContextSeg</span>
 <span class="sd">            - Returns None for other context types</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_simple_context_seg</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;SegmentRA&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"SegmentRA"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">SegmentRA</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">natural_class</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Optional[object]&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">natural_class</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Optional[object]"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the natural class from a simple natural class context.</span>
 
 <span class="sd">        Returns:</span>
@@ -391,17 +391,17 @@
 <span class="sd">            if wrapped.is_simple_context_nc:</span>
 <span class="sd">                nc = wrapped.natural_class</span>
 <span class="sd">                if nc:</span>
-<span class="sd">                    print(f&quot;Natural Class: {nc.Name}&quot;)</span>
+<span class="sd">                    print(f"Natural Class: {nc.Name}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only meaningful for PhSimpleContextNC</span>
 <span class="sd">            - Returns None for other context types</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_simple_context_nc</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;NaturalClassRA&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"NaturalClassRA"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">NaturalClassRA</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -409,7 +409,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">boundary_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the boundary type from a boundary context.</span>
 
 <span class="sd">        Returns:</span>
@@ -419,17 +419,17 @@
 
 <span class="sd">            if wrapped.is_boundary_context:</span>
 <span class="sd">                btype = wrapped.boundary_type</span>
-<span class="sd">                print(f&quot;Boundary type: {btype}&quot;)</span>
+<span class="sd">                print(f"Boundary type: {btype}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only meaningful for PhBoundaryContext</span>
 <span class="sd">            - Different boundary types have different values</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_boundary_context</span><span class="p">:</span>
             <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"Type"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Type</span>
             <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -440,7 +440,7 @@
 <div class="viewcode-block" id="PhonologicalContext.as_simple_context_seg">
 <a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.phonological_context.PhonologicalContext.as_simple_context_seg">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_simple_context_seg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cast to IPhSimpleContextSeg if this is a simple segment context.</span>
 
 <span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
@@ -462,8 +462,8 @@
 <span class="sd">            - For users who know C# interfaces and want advanced control</span>
 <span class="sd">            - Most users should use properties like is_simple_context_seg and</span>
 <span class="sd">              segment instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhSimpleContextSeg&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhSimpleContextSeg"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
@@ -471,7 +471,7 @@
 <div class="viewcode-block" id="PhonologicalContext.as_simple_context_nc">
 <a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.phonological_context.PhonologicalContext.as_simple_context_nc">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_simple_context_nc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cast to IPhSimpleContextNC if this is a simple natural class context.</span>
 
 <span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
@@ -491,8 +491,8 @@
 <span class="sd">            - For users who know C# interfaces and want advanced control</span>
 <span class="sd">            - Most users should use properties like is_simple_context_nc and</span>
 <span class="sd">              natural_class instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhSimpleContextNC&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhSimpleContextNC"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
@@ -500,7 +500,7 @@
 <div class="viewcode-block" id="PhonologicalContext.as_complex_context_seg">
 <a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.phonological_context.PhonologicalContext.as_complex_context_seg">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_complex_context_seg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cast to IPhComplexContextSeg if this is a complex segment context.</span>
 
 <span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
@@ -518,8 +518,8 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - For users who know C# interfaces and want advanced control</span>
 <span class="sd">            - Most users should use properties like is_complex_context_seg instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhComplexContextSeg&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhComplexContextSeg"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
@@ -527,7 +527,7 @@
 <div class="viewcode-block" id="PhonologicalContext.as_complex_context_nc">
 <a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.phonological_context.PhonologicalContext.as_complex_context_nc">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_complex_context_nc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cast to IPhComplexContextNC if this is a complex natural class context.</span>
 
 <span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
@@ -545,8 +545,8 @@
 <span class="sd">        Notes:</span>
 <span class="sd">            - For users who know C# interfaces and want advanced control</span>
 <span class="sd">            - Most users should use properties like is_complex_context_nc instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhComplexContextNC&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhComplexContextNC"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
@@ -554,7 +554,7 @@
 <div class="viewcode-block" id="PhonologicalContext.as_boundary_context">
 <a class="viewcode-back" href="../../../../api/flexicon.code.System.html#flexicon.code.System.phonological_context.PhonologicalContext.as_boundary_context">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_boundary_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cast to IPhBoundaryContext if this is a boundary context.</span>
 
 <span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
@@ -574,15 +574,15 @@
 <span class="sd">            - For users who know C# interfaces and want advanced control</span>
 <span class="sd">            - Most users should use properties like is_boundary_context and</span>
 <span class="sd">              boundary_type instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhBoundaryContext&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhBoundaryContext"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">concrete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the raw concrete interface object.</span>
 
 <span class="sd">        For advanced users who need to access the underlying C# interface</span>
@@ -591,7 +591,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            The concrete interface object (IPhSimpleContextSeg, IPhSimpleContextNC,</span>
 <span class="sd">            IPhComplexContextSeg, IPhComplexContextNC, IPhBoundaryContext, etc.,</span>
-<span class="sd">            depending on the context&#39;s actual type).</span>
+<span class="sd">            depending on the context's actual type).</span>
 
 <span class="sd">        Example::</span>
 
@@ -601,20 +601,20 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - For power users only</span>
-<span class="sd">            - Bypasses the wrapper&#39;s abstraction</span>
+<span class="sd">            - Bypasses the wrapper's abstraction</span>
 <span class="sd">            - Normal users should prefer wrapper properties like</span>
 <span class="sd">              is_simple_context_seg, segment, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation showing context type.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;PhonologicalContext(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="w">        </span><span class="sd">"""String representation showing context type."""</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"PhonologicalContext(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Human-readable description.&quot;&quot;&quot;</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_name</span> <span class="ow">or</span> <span class="s2">&quot;Unnamed&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Context &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+<span class="w">        </span><span class="sd">"""Human-readable description."""</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_name</span> <span class="ow">or</span> <span class="s2">"Unnamed"</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"Context '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)"</span></div>
 
 </pre></div>
 
@@ -653,8 +653,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

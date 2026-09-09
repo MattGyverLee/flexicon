@@ -53,7 +53,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">LCM Object Casting Utilities for pythonnet.</span>
 <span class="sd">import logging</span>
 
@@ -76,7 +76,7 @@
 <span class="sd">        # This WILL work - cast to concrete type first</span>
 <span class="sd">        for msa in entry.MorphoSyntaxAnalysesOC:</span>
 <span class="sd">            concrete_msa = cast_to_concrete(msa)</span>
-<span class="sd">            if hasattr(concrete_msa, &#39;PartOfSpeechRA&#39;):</span>
+<span class="sd">            if hasattr(concrete_msa, 'PartOfSpeechRA'):</span>
 <span class="sd">                pos = concrete_msa.PartOfSpeechRA  # Works!</span>
 
 <span class="sd">Why This Happens:</span>
@@ -87,18 +87,18 @@
 
 <span class="sd">Usage::</span>
 
-<span class="sd">    from flexlibs2.code.lcm_casting import cast_to_concrete, get_pos_from_msa</span>
+<span class="sd">    from flexicon.code.lcm_casting import cast_to_concrete, get_pos_from_msa</span>
 
 <span class="sd">    # Cast any LCM object to its concrete interface</span>
 <span class="sd">    for msa in entry.MorphoSyntaxAnalysesOC:</span>
 <span class="sd">        concrete = cast_to_concrete(msa)</span>
-<span class="sd">        print(f&quot;Class: {msa.ClassName}, Type: {type(concrete)}&quot;)</span>
+<span class="sd">        print(f"Class: {msa.ClassName}, Type: {type(concrete)}")</span>
 
 <span class="sd">    # Convenience function for the common POS lookup pattern</span>
 <span class="sd">    for msa in entry.MorphoSyntaxAnalysesOC:</span>
 <span class="sd">        pos = get_pos_from_msa(msa)</span>
 <span class="sd">        if pos:</span>
-<span class="sd">            print(f&quot;Part of Speech: {pos.Name.BestAnalysisAlternative.Text}&quot;)</span>
+<span class="sd">            print(f"Part of Speech: {pos.Name.BestAnalysisAlternative.Text}")</span>
 
 <span class="sd">Supported Types:</span>
 <span class="sd">    - MSA types: MoStemMsa, MoDerivAffMsa, MoInflAffMsa, MoUnclassifiedAffixMsa</span>
@@ -114,7 +114,7 @@
 <span class="sd">    The interface cache is lazy-loaded on first use to avoid import issues</span>
 <span class="sd">    at module load time. This is important because SIL.LCModel may not be</span>
 <span class="sd">    available until after FLExInit has run.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="c1"># Interface cache - populated on first use</span>
 <span class="n">_interface_cache</span> <span class="o">=</span> <span class="p">{}</span>
@@ -122,7 +122,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_ensure_interfaces</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Load and cache LCM interface types from SIL.LCModel.</span>
 
 <span class="sd">    This function is called automatically on first use of cast_to_concrete().</span>
@@ -142,7 +142,7 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        ImportError: If SIL.LCModel cannot be imported. This typically means</span>
 <span class="sd">            FLExInit has not been run, or the FieldWorks DLLs are not available.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">global</span> <span class="n">_interface_cache</span><span class="p">,</span> <span class="n">_interfaces_loaded</span>
 
     <span class="k">if</span> <span class="n">_interfaces_loaded</span><span class="p">:</span>
@@ -160,7 +160,7 @@
         <span class="n">IMoAffixForm</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="c1"># Phonological rule interfaces - try to import, but don&#39;t fail if unavailable</span>
+    <span class="c1"># Phonological rule interfaces - try to import, but don't fail if unavailable</span>
     <span class="c1"># LCM defines two concrete subclasses of PhSegmentRule:</span>
     <span class="c1">#   - PhRegularRule: Standard phonological rules (most common)</span>
     <span class="c1">#   - PhMetathesisRule: Metathesis rules (swapping segments)</span>
@@ -180,7 +180,7 @@
         <span class="n">IPhSimpleContextSeg</span> <span class="o">=</span> <span class="n">IPhSimpleContextNC</span> <span class="o">=</span> <span class="n">IPhSegRuleRHS</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">IPhReduplicationRule</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="c1"># Compound rule interfaces - try to import, but don&#39;t fail if unavailable</span>
+    <span class="c1"># Compound rule interfaces - try to import, but don't fail if unavailable</span>
     <span class="c1"># These are the two main compound rule types:</span>
     <span class="c1"># - MoEndoCompound: Head is internal to the compound</span>
     <span class="c1"># - MoExoCompound: Head is external to the compound</span>
@@ -193,7 +193,7 @@
         <span class="n">IMoEndoCompound</span> <span class="o">=</span> <span class="n">IMoExoCompound</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># Morphosyntactic prohibition interfaces - LCM names diverge from the</span>
-    <span class="c1"># POS-flavored shorthand flexlibs2 historically used:</span>
+    <span class="c1"># POS-flavored shorthand flexicon historically used:</span>
     <span class="c1">#   - MoAdhocProhibGr   : Grammatical feature prohibitions       (class 110)</span>
     <span class="c1">#   - MoMorphAdhocProhib: Morpheme co-occurrence prohibitions    (class 102)</span>
     <span class="c1">#   - MoAlloAdhocProhib : Allomorph co-occurrence prohibitions   (class 101)</span>
@@ -214,7 +214,7 @@
         <span class="n">IMoAdhocProhibGr</span> <span class="o">=</span> <span class="n">IMoMorphAdhocProhib</span> <span class="o">=</span> <span class="n">IMoAlloAdhocProhib</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">IMoAdhocProhibMorph</span> <span class="o">=</span> <span class="n">IMoAdhocProhibAllomorph</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="c1"># Affix template interface - try to import, but don&#39;t fail if unavailable</span>
+    <span class="c1"># Affix template interface - try to import, but don't fail if unavailable</span>
     <span class="c1"># - MoInflAffixTemplate: Inflectional affix template patterns</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -244,86 +244,269 @@
             <span class="n">IStText</span><span class="p">,</span>
             <span class="n">IStTxtPara</span><span class="p">,</span>
             <span class="n">IWfiAnalysis</span><span class="p">,</span>
+            <span class="n">ILangProject</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
         <span class="n">ILexEntry</span> <span class="o">=</span> <span class="n">ILexSense</span> <span class="o">=</span> <span class="n">ILexRefType</span> <span class="o">=</span> <span class="n">IRnGenericRec</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">ICmPossibility</span> <span class="o">=</span> <span class="n">ICmAnthroItem</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">IDsConstChart</span> <span class="o">=</span> <span class="n">IText</span> <span class="o">=</span> <span class="n">IStText</span> <span class="o">=</span> <span class="n">IStTxtPara</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">IWfiAnalysis</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">ILangProject</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Feature-structure owner interfaces (phonology) - spec</span>
+    <span class="c1"># feature-structure-sync-gap, decision D3. IPhNCFeatures and</span>
+    <span class="c1"># IPhPhoneme both declare FeaturesOA directly; IPhNCSegments does</span>
+    <span class="c1"># not (it uses SegmentsRC instead) but is imported alongside them</span>
+    <span class="c1"># because all three are queried through the same PhNC/Phoneme</span>
+    <span class="c1"># ClassName-discrimination path.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">IPhNCFeatures</span><span class="p">,</span>
+            <span class="n">IPhNCSegments</span><span class="p">,</span>
+            <span class="n">IPhPhoneme</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="n">IPhNCFeatures</span> <span class="o">=</span> <span class="n">IPhNCSegments</span> <span class="o">=</span> <span class="n">IPhPhoneme</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Part-of-speech interface - confirmed real and already imported</span>
+    <span class="c1"># unconditionally elsewhere in this repo (e.g. POSOperations.py),</span>
+    <span class="c1"># so failure here would indicate a genuine environment problem, not</span>
+    <span class="c1"># an absent/renamed type. Kept in its own guarded block regardless,</span>
+    <span class="c1"># per this module's established per-interface isolation convention.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">IPartOfSpeech</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="n">IPartOfSpeech</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># IPosFeatures - CONFIRMED ABSENT from this LCM version by live</span>
+    <span class="c1"># introspection (2026-09-07, via `pytest tests/contract/</span>
+    <span class="c1"># test_lcm_contract.py::TestLiveContractVerification -m requires_liblcm`,</span>
+    <span class="c1"># `liblcm_snapshot["missing_types"] == ["IPosFeatures"]`). Only a</span>
+    <span class="c1"># descriptive comment at InflectionFeatureOperations.py:486</span>
+    <span class="c1"># ("IPosFeatures.FeaturesOA") ever referenced this name; no snapshot,</span>
+    <span class="c1"># probe, or existing import confirms it. Per this module's own</span>
+    <span class="c1"># precedent for a name that plainly does not exist in LCM</span>
+    <span class="c1"># (IPhReduplicationRule below), this is a hardcoded None with NO</span>
+    <span class="c1"># `from SIL.LCModel import IPosFeatures` attempt -- a real import</span>
+    <span class="c1"># statement would (a) always raise ImportError on every environment,</span>
+    <span class="c1"># and (b) get picked up by tests/contract/test_lcm_contract.py's</span>
+    <span class="c1"># static AST extractor as an "expected" type, permanently failing</span>
+    <span class="c1"># TestLiveContractVerification.test_all_types_found. The D3 registry</span>
+    <span class="c1"># slot is kept (see the registration block below) so a future</span>
+    <span class="c1"># LCM version that does add this class only needs this line changed.</span>
+    <span class="n">IPosFeatures</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Feature-structure interfaces themselves (IFsFeatStruc and its</span>
+    <span class="c1"># nested members). IFsComplexFeature, IFsFeatStruc, and</span>
+    <span class="c1"># IFsClosedValue are already imported unconditionally elsewhere</span>
+    <span class="c1"># (InflectionFeatureOperations.py); IFsComplexValue is confirmed by</span>
+    <span class="c1"># the live probe (evidence/live-cycle1-probe.md item "Create(Guid)")</span>
+    <span class="c1"># even though it is absent from tests/contract/snapshots/</span>
+    <span class="c1"># liblcm_baseline.json (a documented P2 snapshot gap, spec section 7).</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">IFsComplexFeature</span><span class="p">,</span>
+            <span class="n">IFsFeatStruc</span><span class="p">,</span>
+            <span class="n">IFsComplexValue</span><span class="p">,</span>
+            <span class="n">IFsClosedValue</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="n">IFsComplexFeature</span> <span class="o">=</span> <span class="n">IFsFeatStruc</span> <span class="o">=</span> <span class="n">IFsComplexValue</span> <span class="o">=</span> <span class="n">IFsClosedValue</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="n">_interface_cache</span> <span class="o">=</span> <span class="p">{</span>
         <span class="c1"># MSA types - used for grammatical category assignment</span>
-        <span class="s2">&quot;MoStemMsa&quot;</span><span class="p">:</span> <span class="n">IMoStemMsa</span><span class="p">,</span>
-        <span class="s2">&quot;MoDerivAffMsa&quot;</span><span class="p">:</span> <span class="n">IMoDerivAffMsa</span><span class="p">,</span>
-        <span class="s2">&quot;MoInflAffMsa&quot;</span><span class="p">:</span> <span class="n">IMoInflAffMsa</span><span class="p">,</span>
-        <span class="s2">&quot;MoUnclassifiedAffixMsa&quot;</span><span class="p">:</span> <span class="n">IMoUnclassifiedAffixMsa</span><span class="p">,</span>
+        <span class="s2">"MoStemMsa"</span><span class="p">:</span> <span class="n">IMoStemMsa</span><span class="p">,</span>
+        <span class="s2">"MoDerivAffMsa"</span><span class="p">:</span> <span class="n">IMoDerivAffMsa</span><span class="p">,</span>
+        <span class="s2">"MoInflAffMsa"</span><span class="p">:</span> <span class="n">IMoInflAffMsa</span><span class="p">,</span>
+        <span class="s2">"MoUnclassifiedAffixMsa"</span><span class="p">:</span> <span class="n">IMoUnclassifiedAffixMsa</span><span class="p">,</span>
         <span class="c1"># Allomorph types - used for morpheme form variants</span>
-        <span class="s2">&quot;MoStemAllomorph&quot;</span><span class="p">:</span> <span class="n">IMoStemAllomorph</span><span class="p">,</span>
-        <span class="s2">&quot;MoAffixAllomorph&quot;</span><span class="p">:</span> <span class="n">IMoAffixAllomorph</span><span class="p">,</span>
-        <span class="s2">&quot;MoAffixForm&quot;</span><span class="p">:</span> <span class="n">IMoAffixForm</span><span class="p">,</span>
+        <span class="s2">"MoStemAllomorph"</span><span class="p">:</span> <span class="n">IMoStemAllomorph</span><span class="p">,</span>
+        <span class="s2">"MoAffixAllomorph"</span><span class="p">:</span> <span class="n">IMoAffixAllomorph</span><span class="p">,</span>
+        <span class="s2">"MoAffixForm"</span><span class="p">:</span> <span class="n">IMoAffixForm</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="c1"># Add phonological rule types if imports succeeded</span>
     <span class="c1"># The 3 main rule types in FLEx phonology:</span>
     <span class="k">if</span> <span class="n">IPhRegularRule</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;PhRegularRule&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhRegularRule</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"PhRegularRule"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhRegularRule</span>
     <span class="k">if</span> <span class="n">IPhMetathesisRule</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;PhMetathesisRule&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhMetathesisRule</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"PhMetathesisRule"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhMetathesisRule</span>
     <span class="k">if</span> <span class="n">IPhReduplicationRule</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;PhReduplicationRule&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhReduplicationRule</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"PhReduplicationRule"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhReduplicationRule</span>
 
     <span class="c1"># Context and RHS types used within rules:</span>
     <span class="k">if</span> <span class="n">IPhSimpleContextSeg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;PhSimpleContextSeg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhSimpleContextSeg</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"PhSimpleContextSeg"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhSimpleContextSeg</span>
     <span class="k">if</span> <span class="n">IPhSimpleContextNC</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;PhSimpleContextNC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhSimpleContextNC</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"PhSimpleContextNC"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhSimpleContextNC</span>
     <span class="k">if</span> <span class="n">IPhSegRuleRHS</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;PhSegRuleRHS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhSegRuleRHS</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"PhSegRuleRHS"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhSegRuleRHS</span>
 
     <span class="c1"># Add compound rule types if imports succeeded</span>
     <span class="c1"># The 2 main compound rule types in FLEx morphology:</span>
     <span class="k">if</span> <span class="n">IMoEndoCompound</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;MoEndoCompound&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoEndoCompound</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"MoEndoCompound"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoEndoCompound</span>
     <span class="k">if</span> <span class="n">IMoExoCompound</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;MoExoCompound&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoExoCompound</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"MoExoCompound"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoExoCompound</span>
 
     <span class="c1"># Add morphosyntactic prohibition types if imports succeeded</span>
     <span class="c1"># The 3 main ad hoc prohibition types in FLEx morphology:</span>
     <span class="k">if</span> <span class="n">IMoAdhocProhibGr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;MoAdhocProhibGr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoAdhocProhibGr</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"MoAdhocProhibGr"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoAdhocProhibGr</span>
     <span class="k">if</span> <span class="n">IMoAdhocProhibMorph</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;MoAdhocProhibMorph&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoAdhocProhibMorph</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"MoAdhocProhibMorph"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoAdhocProhibMorph</span>
     <span class="k">if</span> <span class="n">IMoAdhocProhibAllomorph</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;MoAdhocProhibAllomorph&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoAdhocProhibAllomorph</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"MoAdhocProhibAllomorph"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoAdhocProhibAllomorph</span>
 
     <span class="c1"># Add affix template type if import succeeded</span>
     <span class="k">if</span> <span class="n">IMoInflAffixTemplate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;MoInflAffixTemplate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoInflAffixTemplate</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"MoInflAffixTemplate"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMoInflAffixTemplate</span>
 
     <span class="c1"># Add owner / container types if imports succeeded. Used by .Owner</span>
     <span class="c1"># casting paths in Lexicon, Notebook, and Discourse operations.</span>
     <span class="k">if</span> <span class="n">ILexEntry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;LexEntry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ILexEntry</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"LexEntry"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ILexEntry</span>
     <span class="k">if</span> <span class="n">ILexSense</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;LexSense&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ILexSense</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"LexSense"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ILexSense</span>
     <span class="k">if</span> <span class="n">ILexRefType</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;LexRefType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ILexRefType</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"LexRefType"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ILexRefType</span>
     <span class="k">if</span> <span class="n">IRnGenericRec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;RnGenericRec&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IRnGenericRec</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"RnGenericRec"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IRnGenericRec</span>
     <span class="k">if</span> <span class="n">ICmPossibility</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;CmPossibility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ICmPossibility</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"CmPossibility"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ICmPossibility</span>
     <span class="k">if</span> <span class="n">ICmAnthroItem</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;CmAnthroItem&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ICmAnthroItem</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"CmAnthroItem"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ICmAnthroItem</span>
     <span class="k">if</span> <span class="n">IDsConstChart</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;DsConstChart&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IDsConstChart</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"DsConstChart"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IDsConstChart</span>
     <span class="k">if</span> <span class="n">IText</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IText</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"Text"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IText</span>
     <span class="k">if</span> <span class="n">IStText</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;StText&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IStText</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"StText"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IStText</span>
     <span class="k">if</span> <span class="n">IStTxtPara</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;StTxtPara&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IStTxtPara</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"StTxtPara"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IStTxtPara</span>
     <span class="k">if</span> <span class="n">IWfiAnalysis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">&quot;WfiAnalysis&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IWfiAnalysis</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"WfiAnalysis"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IWfiAnalysis</span>
+    <span class="k">if</span> <span class="n">ILangProject</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># LangProject is the sole owner of AnnotationsOC in this LCM</span>
+        <span class="c1"># version -- no domain object (ILexEntry, ILexSense, IText, ...)</span>
+        <span class="c1"># exposes AnnotationsOC itself. Notes/annotations reference their</span>
+        <span class="c1"># subject via BeginObjectRA rather than being owned by it, so</span>
+        <span class="c1"># note.Owner resolves to the project root; without this mapping</span>
+        <span class="c1"># _GetTypedOwner() returned it unchanged (a bare ICmObject),</span>
+        <span class="c1"># silently no-opping NoteOperations.Delete/Duplicate's</span>
+        <span class="c1"># `hasattr(parent, "AnnotationsOC")` checks.</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"LangProject"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ILangProject</span>
+
+    <span class="c1"># Feature-structure owner types (spec feature-structure-sync-gap,</span>
+    <span class="c1"># decision D3; issues #251/#252/#256, and the #133 completion at</span>
+    <span class="c1"># InflectionFeatureOperations.py:492-493). `IFsFeatStruc` is owned</span>
+    <span class="c1"># under a DIFFERENTLY NAMED atomic property on almost every owner</span>
+    <span class="c1"># (MsFeaturesOA, InflFeatsOA, From/ToMsFeaturesOA, DefaultFeaturesOA,</span>
+    <span class="c1"># InherFeatValOA, MsEnvFeaturesOA, FeaturesOA) and this cache had NO</span>
+    <span class="c1"># entry at all for any feature-structure owner except the four</span>
+    <span class="c1"># MSA/allomorph classes already registered above</span>
+    <span class="c1"># (MoStemMsa/MoInflAffMsa/MoDerivAffMsa/MoAffixAllomorph).</span>
+    <span class="c1"># `_GetTypedOwner()` (BaseOperations.py:1564) therefore returned</span>
+    <span class="c1"># these owners unchanged as a bare ICmObject, which is why the #133</span>
+    <span class="c1"># fix's `hasattr(parent, "FeaturesOA")` guard at</span>
+    <span class="c1"># InflectionFeatureOperations.py:493 silently did nothing for</span>
+    <span class="c1"># exactly the owner types its own comment at :485-486 names</span>
+    <span class="c1"># (IPosFeatures.FeaturesOA, IFsComplexFeature.FeaturesOA) -- and the</span>
+    <span class="c1"># same reasoning applies to IPhNCFeatures/IPhPhoneme/IPartOfSpeech.</span>
+    <span class="c1"># Registering them here is the prerequisite for the shared</span>
+    <span class="c1"># owner-property resolver (T2) and does not by itself resolve the</span>
+    <span class="c1"># #251/#252/#256 family -- see this task's cycle2 report for the</span>
+    <span class="c1"># caller-by-caller behavioural delta this addition causes.</span>
+    <span class="c1"># FsFeatStruc/FsComplexValue/FsClosedValue are needed the other</span>
+    <span class="c1"># direction: once a feature structure (or one of its FeatureSpecsOC</span>
+    <span class="c1"># members / a nested ValueOA) is reached via an HVO/GUID or a</span>
+    <span class="c1"># `.Owner` walk, it too arrives as a bare ICmObject and must be cast</span>
+    <span class="c1"># to expose FeatureSpecsOC / ValueOA / FeatureRA-ValueRA.</span>
+    <span class="c1"># PhNCSegments has NO FeaturesOA (it uses SegmentsRC instead) and is</span>
+    <span class="c1"># inert for this feature; it is registered here only to unblock</span>
+    <span class="c1"># spec 233-basetype-cast-sweep's SegmentsRC cast sweep, which shares</span>
+    <span class="c1"># this same cache.</span>
+    <span class="k">if</span> <span class="n">IPhNCFeatures</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"PhNCFeatures"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhNCFeatures</span>
+    <span class="k">if</span> <span class="n">IPhNCSegments</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"PhNCSegments"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhNCSegments</span>
+    <span class="k">if</span> <span class="n">IPhPhoneme</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"PhPhoneme"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPhPhoneme</span>
+    <span class="k">if</span> <span class="n">IPartOfSpeech</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"PartOfSpeech"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPartOfSpeech</span>
+    <span class="k">if</span> <span class="n">IPosFeatures</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"PosFeatures"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IPosFeatures</span>
+    <span class="k">if</span> <span class="n">IFsComplexFeature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"FsComplexFeature"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IFsComplexFeature</span>
+    <span class="k">if</span> <span class="n">IFsFeatStruc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"FsFeatStruc"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IFsFeatStruc</span>
+    <span class="k">if</span> <span class="n">IFsComplexValue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"FsComplexValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IFsComplexValue</span>
+    <span class="k">if</span> <span class="n">IFsClosedValue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_interface_cache</span><span class="p">[</span><span class="s2">"FsClosedValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">IFsClosedValue</span>
+
+    <span class="c1"># Possibility subtypes and discourse cell-part subtypes (issue #270).</span>
+    <span class="c1">#</span>
+    <span class="c1"># These are the element types of collections whose DECLARED element</span>
+    <span class="c1"># type is a base interface, so pythonnet hands the elements back as</span>
+    <span class="c1"># that base and every subtype-only property is invisible:</span>
+    <span class="c1">#</span>
+    <span class="c1">#   ICmPossibilityList.PossibilitiesOS  -&gt; ICmPossibility  (55 props)</span>
+    <span class="c1">#   ICmPossibility.SubPossibilitiesOS   -&gt; ICmPossibility</span>
+    <span class="c1">#   IConstChartRow.CellsOS              -&gt; IConstituentChartCellPart</span>
+    <span class="c1">#</span>
+    <span class="c1"># The possibility subtypes registered here really do add surface over</span>
+    <span class="c1"># ICmPossibility (per tests/contract/snapshots/liblcm_baseline.json:</span>
+    <span class="c1"># IPartOfSpeech 74 props, ICmPerson 64, IMoMorphType 64,</span>
+    <span class="c1"># ICmAnnotationDefn 67, ICmSemanticDomain 60, ILexEntryType 57,</span>
+    <span class="c1"># ICmLocation 56), so a getter over a generic possibility list has to</span>
+    <span class="c1"># cast or those properties are unreachable. The four cell-part</span>
+    <span class="c1"># subtypes are what makes an `isinstance(cell, IConstChartTag)` filter</span>
+    <span class="c1"># over CellsOS work at all -- uncast it matches nothing and the filter</span>
+    <span class="c1"># silently yields an empty list.</span>
+    <span class="c1">#</span>
+    <span class="c1"># IPartOfSpeech / ICmAnthroItem / ICmPossibility are already</span>
+    <span class="c1"># registered above. ILexEntryInflType, ICmCustomItem, IChkTerm and</span>
+    <span class="c1"># IConstituentChartCellPart are deliberately NOT registered: they are</span>
+    <span class="c1"># absent from tests/contract/snapshots/expected_contract.json, so</span>
+    <span class="c1"># importing them here would trip</span>
+    <span class="c1"># test_no_new_type_dependencies without a baseline regeneration and a</span>
+    <span class="c1"># live contract re-verification.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">ICmSemanticDomain</span><span class="p">,</span>
+            <span class="n">ICmLocation</span><span class="p">,</span>
+            <span class="n">ICmPerson</span><span class="p">,</span>
+            <span class="n">IMoMorphType</span><span class="p">,</span>
+            <span class="n">ICmAnnotationDefn</span><span class="p">,</span>
+            <span class="n">ILexEntryType</span><span class="p">,</span>
+            <span class="n">IConstChartRow</span><span class="p">,</span>
+            <span class="n">IConstChartTag</span><span class="p">,</span>
+            <span class="n">IConstChartWordGroup</span><span class="p">,</span>
+            <span class="n">IConstChartMovedTextMarker</span><span class="p">,</span>
+            <span class="n">IConstChartClauseMarker</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="n">ICmSemanticDomain</span> <span class="o">=</span> <span class="n">ICmLocation</span> <span class="o">=</span> <span class="n">ICmPerson</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">IMoMorphType</span> <span class="o">=</span> <span class="n">ICmAnnotationDefn</span> <span class="o">=</span> <span class="n">ILexEntryType</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">IConstChartRow</span> <span class="o">=</span> <span class="n">IConstChartTag</span> <span class="o">=</span> <span class="n">IConstChartWordGroup</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">IConstChartMovedTextMarker</span> <span class="o">=</span> <span class="n">IConstChartClauseMarker</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">_class_name</span><span class="p">,</span> <span class="n">_iface</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="p">(</span><span class="s2">"CmSemanticDomain"</span><span class="p">,</span> <span class="n">ICmSemanticDomain</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"CmLocation"</span><span class="p">,</span> <span class="n">ICmLocation</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"CmPerson"</span><span class="p">,</span> <span class="n">ICmPerson</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"MoMorphType"</span><span class="p">,</span> <span class="n">IMoMorphType</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"CmAnnotationDefn"</span><span class="p">,</span> <span class="n">ICmAnnotationDefn</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"LexEntryType"</span><span class="p">,</span> <span class="n">ILexEntryType</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"ConstChartRow"</span><span class="p">,</span> <span class="n">IConstChartRow</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"ConstChartTag"</span><span class="p">,</span> <span class="n">IConstChartTag</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"ConstChartWordGroup"</span><span class="p">,</span> <span class="n">IConstChartWordGroup</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"ConstChartMovedTextMarker"</span><span class="p">,</span> <span class="n">IConstChartMovedTextMarker</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"ConstChartClauseMarker"</span><span class="p">,</span> <span class="n">IConstChartClauseMarker</span><span class="p">),</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">_iface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_interface_cache</span><span class="p">[</span><span class="n">_class_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_iface</span>
 
     <span class="n">_interfaces_loaded</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -331,16 +514,51 @@
 <div class="viewcode-block" id="cast_to_concrete">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.cast_to_concrete">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">cast_to_concrete</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Cast an LCM object to its concrete interface type based on ClassName.</span>
 
-<span class="sd">    This function examines the object&#39;s ClassName property and casts it to</span>
-<span class="sd">    the appropriate derived interface type. If the ClassName is not in the</span>
-<span class="sd">    known mappings, the original object is returned unchanged.</span>
+<span class="sd">    **Public API.** Import it as::</span>
+
+<span class="sd">        from flexicon import cast_to_concrete</span>
+
+<span class="sd">    This is the supported remedy for the whole</span>
+<span class="sd">    ``'ICmObject' object has no attribute 'X'`` failure class. pythonnet</span>
+<span class="sd">    respects .NET interface typing strictly, so an element pulled out of a</span>
+<span class="sd">    collection typed as ``IEnumerable&lt;ICmObject&gt;`` (or any base interface)</span>
+<span class="sd">    exposes only the base interface's members, even when the underlying</span>
+<span class="sd">    object is a ``LexEntry`` with a ``HeadWord``. ``cast_to_concrete`` looks</span>
+<span class="sd">    up ``obj.ClassName`` and hands back a view typed as the concrete</span>
+<span class="sd">    interface, from which the derived members are reachable.</span>
+
+<span class="sd">    flexicon's own Operations classes cast internally, so most callers never</span>
+<span class="sd">    need this. It is exported as the **escape hatch** for two cases that stay</span>
+<span class="sd">    outside that coverage:</span>
+
+<span class="sd">    1. Direct-LCM work -- when you have reached past the wrapper API and are</span>
+<span class="sd">       holding raw LCM objects yourself.</span>
+<span class="sd">    2. Collections that are legitimately polymorphic, such as</span>
+<span class="sd">       ``ILexEntry.ComponentLexemesRS`` or ``ILexReference.TargetsRS``, whose</span>
+<span class="sd">       elements may each be either an ``ILexEntry`` or an ``ILexSense``.</span>
+
+<span class="sd">    Totality guarantee</span>
+<span class="sd">        This function is **total**: it never raises for an input it does not</span>
+<span class="sd">        recognise. An object whose ``ClassName`` is not in the mapping, an</span>
+<span class="sd">        object with no ``ClassName`` at all, and a cast that fails inside the</span>
+<span class="sd">        CLR all yield *the original object, unchanged*. That is precisely why</span>
+<span class="sd">        it is preferable to the hand-rolled ``ILexEntry(x)`` workaround, which</span>
+<span class="sd">        throws when ``x`` is legitimately an ``ILexSense`` -- exactly the case</span>
+<span class="sd">        a polymorphic collection guarantees you will hit. Because the result</span>
+<span class="sd">        may be the uncast original, guard derived-member access with</span>
+<span class="sd">        ``hasattr`` (or ``getattr(..., None)``) rather than assuming the cast</span>
+<span class="sd">        landed.</span>
+
+<span class="sd">        The corollary is that ``cast_to_concrete`` is not a validator: a</span>
+<span class="sd">        return value is never evidence that the object was of any particular</span>
+<span class="sd">        type. Check ``obj.ClassName`` if you need to know.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        obj: An LCM object with a ClassName property (e.g., IMoMorphSynAnalysis,</span>
-<span class="sd">            IMoForm, or any ICmObject).</span>
+<span class="sd">            IMoForm, or any ICmObject). Any other object is returned as-is.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The object cast to its concrete interface type, or the original object</span>
@@ -348,37 +566,49 @@
 
 <span class="sd">    Example::</span>
 
+<span class="sd">        from flexicon import cast_to_concrete</span>
+
+<span class="sd">        # A polymorphic collection: elements may be entries OR senses.</span>
+<span class="sd">        for component in entry.EntryRefsOS[0].ComponentLexemesRS:</span>
+<span class="sd">            concrete = cast_to_concrete(component)</span>
+<span class="sd">            headword = getattr(concrete, "HeadWord", None)   # entries only</span>
+<span class="sd">            if headword is not None:</span>
+<span class="sd">                print(headword.Text)</span>
+
 <span class="sd">        # Iterate MSAs and access derived properties</span>
 <span class="sd">        for msa in entry.MorphoSyntaxAnalysesOC:</span>
 <span class="sd">            concrete_msa = cast_to_concrete(msa)</span>
 
 <span class="sd">            # Now we can check for and access derived properties</span>
-<span class="sd">            if hasattr(concrete_msa, &#39;PartOfSpeechRA&#39;):</span>
+<span class="sd">            if hasattr(concrete_msa, 'PartOfSpeechRA'):</span>
 <span class="sd">                pos = concrete_msa.PartOfSpeechRA</span>
 <span class="sd">                if pos:</span>
-<span class="sd">                    print(f&quot;POS: {pos.Name.BestAnalysisAlternative.Text}&quot;)</span>
+<span class="sd">                    print(f"POS: {pos.Name.BestAnalysisAlternative.Text}")</span>
 
 <span class="sd">        # Cast allomorphs to access type-specific properties</span>
 <span class="sd">        for allo in entry.AlternateFormsOS:</span>
 <span class="sd">            concrete_allo = cast_to_concrete(allo)</span>
 
-<span class="sd">            if hasattr(concrete_allo, &#39;StemName&#39;):</span>
+<span class="sd">            if hasattr(concrete_allo, 'StemName'):</span>
 <span class="sd">                # This is a stem allomorph</span>
 <span class="sd">                stem_name = concrete_allo.StemName</span>
-<span class="sd">            elif hasattr(concrete_allo, &#39;InflectionClasses&#39;):</span>
+<span class="sd">            elif hasattr(concrete_allo, 'InflectionClasses'):</span>
 <span class="sd">                # This is an affix allomorph</span>
 <span class="sd">                infl_classes = concrete_allo.InflectionClasses</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        - Returns the original object if ClassName is not in the mapping</span>
+<span class="sd">        - Returns the original object if it has no ClassName attribute at all</span>
 <span class="sd">        - Returns the original object if casting fails for any reason</span>
 <span class="sd">        - Thread-safe for the interface loading (uses lazy initialization)</span>
-<span class="sd">        - The interface cache is loaded on first call</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        - The interface cache is loaded on first call, which is also the</span>
+<span class="sd">          first point at which SIL.LCModel is imported -- importing this</span>
+<span class="sd">          module (or ``flexicon`` itself) needs no FieldWorks install</span>
+<span class="sd">    """</span>
     <span class="n">_ensure_interfaces</span><span class="p">()</span>
 
     <span class="c1"># Get the class name from the object</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">obj</span>
 
     <span class="n">class_name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span>
@@ -397,10 +627,76 @@
 
 
 
+<div class="viewcode-block" id="cast_all">
+<a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.cast_all">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cast_all</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Materialise `collection` as a list with every element cast to its</span>
+<span class="sd">    concrete LCM interface.</span>
+
+<span class="sd">    This is the collection-level counterpart to `cast_to_concrete()`, added</span>
+<span class="sd">    for issue #270: the Pattern A sweep cast `.Owner` return sites but left</span>
+<span class="sd">    every *collection* getter handing back raw base-interface elements, so</span>
+<span class="sd">    collection elements could not be round-tripped back into flexicon</span>
+<span class="sd">    methods (`isinstance(comp, ILexEntry)` was False for every element of</span>
+<span class="sd">    `GetComplexFormComponents()`, and `hasattr(item, "SubPossibilitiesOS")`</span>
+<span class="sd">    was False for elements of a possibility list).</span>
+
+<span class="sd">    Prefer `BaseOperations._GetTypedElements()` from inside an Operations</span>
+<span class="sd">    class -- it delegates here and saves each class importing this module.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        collection: Any iterable of LCM objects (an `ILcmOwningSequence`,</span>
+<span class="sd">            `ILcmReferenceSequence`, a generator, or a plain list). None is</span>
+<span class="sd">            accepted and yields an empty list.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: A new list of the same length and order, each element passed</span>
+<span class="sd">            through `cast_to_concrete()`. Elements whose ClassName is not</span>
+<span class="sd">            registered come back unchanged, so the call is total and safe</span>
+<span class="sd">            over heterogeneous or non-LCM contents.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - Deliberately NOT applied blanket-wise inside</span>
+<span class="sd">          `EnumerableWrapper._ensure_list()`. See issue #270 for the</span>
+<span class="sd">          reasoning: (1) most affected getters return plain Python lists</span>
+<span class="sd">          which `_needs_enumerable_wrap()` intentionally does not wrap, so</span>
+<span class="sd">          a wrapper-level cast would miss them; (2) it would add a</span>
+<span class="sd">          per-element ClassName lookup to every large `GetAll*` in the</span>
+<span class="sd">          library; and (3) it would silently change element identity for</span>
+<span class="sd">          `EnumerableWrapper.__contains__`/`==` callers that pass in an</span>
+<span class="sd">          uncast object.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">collection</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">]</span></div>
+
+
+
+<span class="c1"># MSA ClassName -&gt; the property that holds its Part-of-Speech reference.</span>
+<span class="c1"># This is the single source of truth for which MSA subtypes are</span>
+<span class="c1"># POS-bearing and which property to read; get_pos_from_msa() below</span>
+<span class="c1"># dispatches through it, and other Operations classes (e.g.</span>
+<span class="c1"># LexSenseOperations.GetPartOfSpeechObject) that need to know "is this</span>
+<span class="c1"># MSA subtype POS-bearing at all" should import POS_BEARING_MSA_CLASSES</span>
+<span class="c1"># rather than re-literalizing the class-name list (issue #232 P1 followup).</span>
+<span class="n">_MSA_POS_PROPERTY</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"MoStemMsa"</span><span class="p">:</span> <span class="s2">"PartOfSpeechRA"</span><span class="p">,</span>
+    <span class="s2">"MoDerivAffMsa"</span><span class="p">:</span> <span class="s2">"ToPartOfSpeechRA"</span><span class="p">,</span>  <span class="c1"># output POS of derivation (see #87)</span>
+    <span class="s2">"MoInflAffMsa"</span><span class="p">:</span> <span class="s2">"PartOfSpeechRA"</span><span class="p">,</span>
+    <span class="s2">"MoUnclassifiedAffixMsa"</span><span class="p">:</span> <span class="s2">"PartOfSpeechRA"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Public: exported for use by other modules that need to check whether an</span>
+<span class="c1"># MSA ClassName is one of the recognized POS-bearing subtypes without</span>
+<span class="c1"># duplicating the literal list (see LexSenseOperations.GetPartOfSpeechObject).</span>
+<span class="n">POS_BEARING_MSA_CLASSES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">_MSA_POS_PROPERTY</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="get_pos_from_msa">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.get_pos_from_msa">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_pos_from_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get the Part of Speech from any MSA type.</span>
 
 <span class="sd">    This is a convenience function for the common pattern of extracting</span>
@@ -419,7 +715,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        IPartOfSpeech: The Part of Speech reference, or None if:</span>
-<span class="sd">            - The MSA type doesn&#39;t have a POS property</span>
+<span class="sd">            - The MSA type doesn't have a POS property</span>
 <span class="sd">            - The POS property is not set (null reference)</span>
 <span class="sd">            - The object cannot be cast to a known MSA type</span>
 
@@ -431,7 +727,7 @@
 <span class="sd">            if pos:</span>
 <span class="sd">                pos_name = pos.Name.BestAnalysisAlternative.Text</span>
 <span class="sd">                pos_abbr = pos.Abbreviation.BestAnalysisAlternative.Text</span>
-<span class="sd">                print(f&quot;{pos_name} ({pos_abbr})&quot;)</span>
+<span class="sd">                print(f"{pos_name} ({pos_abbr})")</span>
 
 <span class="sd">        # Check if entry has a specific POS</span>
 <span class="sd">        target_pos_guid = some_guid</span>
@@ -447,39 +743,26 @@
 <span class="sd">          directly if you need to access FromPartOfSpeechRA.</span>
 <span class="sd">        - Returns None rather than raising exceptions for robustness</span>
 <span class="sd">        - Handles all common MSA types found in typical FLEx projects</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">_ensure_interfaces</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="n">class_name</span> <span class="o">=</span> <span class="n">msa</span><span class="o">.</span><span class="n">ClassName</span>
 
+    <span class="n">pos_property</span> <span class="o">=</span> <span class="n">_MSA_POS_PROPERTY</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pos_property</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Unknown ClassName -- silently return None (no logging here;</span>
+        <span class="c1"># callers that want to distinguish "unrecognized subtype" from</span>
+        <span class="c1"># "no MSA" check POS_BEARING_MSA_CLASSES themselves, per #232).</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoStemMsa&quot;</span><span class="p">:</span>
-            <span class="n">interface_type</span> <span class="o">=</span> <span class="n">_interface_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;MoStemMsa&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">interface_type</span><span class="p">:</span>
-                <span class="n">concrete</span> <span class="o">=</span> <span class="n">interface_type</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">concrete</span><span class="o">.</span><span class="n">PartOfSpeechRA</span>
-
-        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoDerivAffMsa&quot;</span><span class="p">:</span>
-            <span class="n">interface_type</span> <span class="o">=</span> <span class="n">_interface_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;MoDerivAffMsa&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">interface_type</span><span class="p">:</span>
-                <span class="n">concrete</span> <span class="o">=</span> <span class="n">interface_type</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
-                <span class="c1"># Return the &quot;to&quot; POS (output of derivation)</span>
-                <span class="k">return</span> <span class="n">concrete</span><span class="o">.</span><span class="n">ToPartOfSpeechRA</span>
-
-        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoInflAffMsa&quot;</span><span class="p">:</span>
-            <span class="n">interface_type</span> <span class="o">=</span> <span class="n">_interface_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;MoInflAffMsa&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">interface_type</span><span class="p">:</span>
-                <span class="n">concrete</span> <span class="o">=</span> <span class="n">interface_type</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">concrete</span><span class="o">.</span><span class="n">PartOfSpeechRA</span>
-
-        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">&quot;MoUnclassifiedAffixMsa&quot;</span><span class="p">:</span>
-            <span class="n">interface_type</span> <span class="o">=</span> <span class="n">_interface_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;MoUnclassifiedAffixMsa&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">interface_type</span><span class="p">:</span>
-                <span class="n">concrete</span> <span class="o">=</span> <span class="n">interface_type</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">concrete</span><span class="o">.</span><span class="n">PartOfSpeechRA</span>
+        <span class="n">interface_type</span> <span class="o">=</span> <span class="n">_interface_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">interface_type</span><span class="p">:</span>
+            <span class="n">concrete</span> <span class="o">=</span> <span class="n">interface_type</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">concrete</span><span class="p">,</span> <span class="n">pos_property</span><span class="p">)</span>
 
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
         <span class="c1"># If anything fails, return None rather than crashing</span>
@@ -492,7 +775,7 @@
 <div class="viewcode-block" id="clone_properties">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.clone_properties">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">clone_properties</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">dest_obj</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Deep clone all properties from source object to destination object.</span>
 
 <span class="sd">    This is a Python equivalent of ICloneableCmObject.SetCloneProperties() from C#.</span>
@@ -506,14 +789,14 @@
 <span class="sd">        source_obj: The source LCM object to clone from.</span>
 <span class="sd">        dest_obj: The destination LCM object to clone to.</span>
 <span class="sd">        project: Optional FLExProject instance for factory access. If not provided,</span>
-<span class="sd">                 extracted from the destination object&#39;s owner.</span>
+<span class="sd">                 extracted from the destination object's owner.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        None. The destination object is modified in place.</span>
 
 <span class="sd">    Example::</span>
 
-<span class="sd">        from flexlibs2.code.lcm_casting import clone_properties</span>
+<span class="sd">        from flexicon.code.lcm_casting import clone_properties</span>
 
 <span class="sd">        # Clone a rule</span>
 <span class="sd">        source_rule = phonRuleOps.GetAll()[0]</span>
@@ -522,11 +805,11 @@
 
 <span class="sd">    Notes:</span>
 <span class="sd">        - Recursively clones owned objects</span>
-<span class="sd">        - Shares reference objects (doesn&#39;t create copies of referenced objects)</span>
+<span class="sd">        - Shares reference objects (doesn't create copies of referenced objects)</span>
 <span class="sd">        - Handles collections by adding cloned items to the destination collection</span>
 <span class="sd">        - Silently skips any properties that cannot be cloned</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dest_obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dest_obj</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">):</span>
         <span class="k">return</span>
 
     <span class="c1"># Cast both to concrete types for full property access</span>
@@ -534,7 +817,7 @@
     <span class="n">dest</span> <span class="o">=</span> <span class="n">cast_to_concrete</span><span class="p">(</span><span class="n">dest_obj</span><span class="p">)</span>
 
     <span class="c1"># If project not provided, resolve via Cache.LanguageProject (canonical accessor)</span>
-    <span class="k">if</span> <span class="n">project</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="s2">&quot;Cache&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">project</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="s2">"Cache"</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">project</span> <span class="o">=</span> <span class="n">dest</span><span class="o">.</span><span class="n">Cache</span><span class="o">.</span><span class="n">LanguageProject</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -543,27 +826,27 @@
     <span class="c1"># Get all properties from the source object</span>
     <span class="k">for</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
         <span class="c1"># Skip private, special, and known method attributes</span>
-        <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Clone&quot;</span><span class="p">,</span> <span class="s2">&quot;PostClone&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"Clone"</span><span class="p">,</span> <span class="s2">"PostClone"</span><span class="p">]:</span>
             <span class="k">continue</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">attr_value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
             <span class="c1"># Skip methods and special attributes</span>
-            <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr_value</span><span class="p">)</span> <span class="ow">or</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Hvo&quot;</span><span class="p">,</span> <span class="s2">&quot;ClassID&quot;</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="s2">&quot;Guid&quot;</span><span class="p">,</span> <span class="s2">&quot;Owner&quot;</span><span class="p">,</span> <span class="s2">&quot;OwningFlid&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr_value</span><span class="p">)</span> <span class="ow">or</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"Hvo"</span><span class="p">,</span> <span class="s2">"ClassID"</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">,</span> <span class="s2">"Guid"</span><span class="p">,</span> <span class="s2">"Owner"</span><span class="p">,</span> <span class="s2">"OwningFlid"</span><span class="p">]:</span>
                 <span class="k">continue</span>
 
             <span class="c1"># Try to set the property on destination</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">):</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="c1"># Check if it&#39;s a collection (OS/OC) - these need special handling</span>
-                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">attr_value</span><span class="p">,</span> <span class="s2">&quot;Count&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">attr_value</span><span class="p">,</span> <span class="s2">&quot;Add&quot;</span><span class="p">):</span>
+                    <span class="c1"># Check if it's a collection (OS/OC) - these need special handling</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">attr_value</span><span class="p">,</span> <span class="s2">"Count"</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">attr_value</span><span class="p">,</span> <span class="s2">"Add"</span><span class="p">):</span>
                         <span class="c1"># This is a collection - clone each item</span>
                         <span class="n">dest_collection</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">)</span>
                         <span class="k">try</span><span class="p">:</span>
                             <span class="n">dest_collection</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
                         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to clear collection: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to clear collection: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                         <span class="c1"># Add cloned items</span>
                         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">attr_value</span><span class="p">:</span>
@@ -576,31 +859,31 @@
                                         <span class="n">dest_collection</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">cloned_item</span><span class="p">)</span>
                                         <span class="n">clone_properties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">cloned_item</span><span class="p">,</span> <span class="n">project</span><span class="p">)</span>
                             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                                <span class="c1"># If we can&#39;t clone an item, just skip it</span>
-                                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to clone item: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                                <span class="c1"># If we can't clone an item, just skip it</span>
+                                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to clone item: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c1"># Simple property or reference - copy directly</span>
                         <span class="nb">setattr</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_value</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="c1"># If we can&#39;t set a property, skip it silently</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to set property </span><span class="si">{</span><span class="n">attr_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="c1"># If we can't set a property, skip it silently</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to set property </span><span class="si">{</span><span class="n">attr_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="c1"># If we can&#39;t read a property, skip it</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to read property: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="c1"># If we can't read a property, skip it</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to read property: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_get_factory_for_class</span><span class="p">(</span><span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">project</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Optional[object]&quot;</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_factory_for_class</span><span class="p">(</span><span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">project</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Optional[object]"</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get the factory for creating an object of the given class.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        class_name: String like &#39;PhRegularRule&#39;, &#39;PhSegRuleRHS&#39;, etc.</span>
+<span class="sd">        class_name: String like 'PhRegularRule', 'PhSegRuleRHS', etc.</span>
 <span class="sd">        project: The FLExProject instance.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The factory object, or None if not found.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">IPhRegularRuleFactory</span><span class="p">,</span>
@@ -616,19 +899,19 @@
         <span class="c1"># fall through to None.</span>
         <span class="n">factory_map</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># The 2 concrete PhSegmentRule subclasses</span>
-            <span class="s2">&quot;PhRegularRule&quot;</span><span class="p">:</span> <span class="n">IPhRegularRuleFactory</span><span class="p">,</span>
-            <span class="s2">&quot;PhMetathesisRule&quot;</span><span class="p">:</span> <span class="n">IPhMetathesisRuleFactory</span><span class="p">,</span>
+            <span class="s2">"PhRegularRule"</span><span class="p">:</span> <span class="n">IPhRegularRuleFactory</span><span class="p">,</span>
+            <span class="s2">"PhMetathesisRule"</span><span class="p">:</span> <span class="n">IPhMetathesisRuleFactory</span><span class="p">,</span>
             <span class="c1"># Context and RHS types</span>
-            <span class="s2">&quot;PhSegRuleRHS&quot;</span><span class="p">:</span> <span class="n">IPhSegRuleRHSFactory</span><span class="p">,</span>
-            <span class="s2">&quot;PhSimpleContextSeg&quot;</span><span class="p">:</span> <span class="n">IPhSimpleContextSegFactory</span><span class="p">,</span>
-            <span class="s2">&quot;PhSimpleContextNC&quot;</span><span class="p">:</span> <span class="n">IPhSimpleContextNCFactory</span><span class="p">,</span>
+            <span class="s2">"PhSegRuleRHS"</span><span class="p">:</span> <span class="n">IPhSegRuleRHSFactory</span><span class="p">,</span>
+            <span class="s2">"PhSimpleContextSeg"</span><span class="p">:</span> <span class="n">IPhSimpleContextSegFactory</span><span class="p">,</span>
+            <span class="s2">"PhSimpleContextNC"</span><span class="p">:</span> <span class="n">IPhSimpleContextNCFactory</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="n">factory_type</span> <span class="o">=</span> <span class="n">factory_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">factory_type</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">factory_type</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to get factory for class </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to get factory for class </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="kc">None</span>
 
@@ -636,7 +919,7 @@
 <div class="viewcode-block" id="cast_phonological_rule">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.cast_phonological_rule">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">cast_phonological_rule</span><span class="p">(</span><span class="n">rule_obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Cast a phonological rule to its concrete interface type.</span>
 
 <span class="sd">    Phonological rules come back from GetAll() typed as IPhSegmentRule (base interface).</span>
@@ -653,19 +936,19 @@
 
 <span class="sd">    Example::</span>
 
-<span class="sd">        from flexlibs2.code.lcm_casting import cast_phonological_rule</span>
+<span class="sd">        from flexicon.code.lcm_casting import cast_phonological_rule</span>
 
 <span class="sd">        # Get rules and cast them</span>
 <span class="sd">        for rule in phonRuleOps.GetAll():</span>
 <span class="sd">            concrete_rule = cast_phonological_rule(rule)</span>
 
 <span class="sd">            # Now can access type-specific properties</span>
-<span class="sd">            if concrete_rule.ClassName == &#39;PhRegularRule&#39;:</span>
+<span class="sd">            if concrete_rule.ClassName == 'PhRegularRule':</span>
 <span class="sd">                rhs_count = concrete_rule.RightHandSidesOS.Count</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">_ensure_interfaces</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule_obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rule_obj</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">rule_obj</span>
 
     <span class="n">class_name</span> <span class="o">=</span> <span class="n">rule_obj</span><span class="o">.</span><span class="n">ClassName</span>
@@ -687,7 +970,7 @@
 <div class="viewcode-block" id="validate_merge_compatibility">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.validate_merge_compatibility">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_merge_compatibility</span><span class="p">(</span><span class="n">survivor_obj</span><span class="p">,</span> <span class="n">victim_obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Validate that two objects can be safely merged.</span>
 
 <span class="sd">    Checks that both objects are of the same class and, for objects with multiple</span>
@@ -700,12 +983,12 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        tuple: (is_compatible, error_message)</span>
-<span class="sd">            - (True, &quot;&quot;) if merge is safe</span>
+<span class="sd">            - (True, "") if merge is safe</span>
 <span class="sd">            - (False, error_message) if merge should be blocked</span>
 
 <span class="sd">    Example::</span>
 
-<span class="sd">        from flexlibs2.code.lcm_casting import validate_merge_compatibility</span>
+<span class="sd">        from flexicon.code.lcm_casting import validate_merge_compatibility</span>
 
 <span class="sd">        # Validate before merging</span>
 <span class="sd">        is_ok, msg = validate_merge_compatibility(entry1, entry2)</span>
@@ -722,13 +1005,13 @@
 <span class="sd">          both must have the same ClassName (e.g., both PhRegularRule)</span>
 <span class="sd">        - For other types, same ClassName is sufficient</span>
 <span class="sd">        - Prevents data corruption from merging incompatible object types</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Check that both objects exist and have ClassName</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">survivor_obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;Survivor object has no ClassName attribute&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">survivor_obj</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"Survivor object has no ClassName attribute"</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">victim_obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;Victim object has no ClassName attribute&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">victim_obj</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"Victim object has no ClassName attribute"</span>
 
     <span class="n">survivor_class</span> <span class="o">=</span> <span class="n">survivor_obj</span><span class="o">.</span><span class="n">ClassName</span>
     <span class="n">victim_class</span> <span class="o">=</span> <span class="n">victim_obj</span><span class="o">.</span><span class="n">ClassName</span>
@@ -736,21 +1019,21 @@
     <span class="c1"># Classes must match exactly</span>
     <span class="k">if</span> <span class="n">survivor_class</span> <span class="o">!=</span> <span class="n">victim_class</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Cannot merge different classes: </span><span class="si">{</span><span class="n">victim_class</span><span class="si">}</span><span class="s2"> into </span><span class="si">{</span><span class="n">survivor_class</span><span class="si">}</span><span class="s2">. &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Objects must be of the same type.&quot;</span>
+            <span class="sa">f</span><span class="s2">"Cannot merge different classes: </span><span class="si">{</span><span class="n">victim_class</span><span class="si">}</span><span class="s2"> into </span><span class="si">{</span><span class="n">survivor_class</span><span class="si">}</span><span class="s2">. "</span>
+            <span class="sa">f</span><span class="s2">"Objects must be of the same type."</span>
         <span class="p">)</span>
 
     <span class="c1"># For types with multiple concrete implementations, additional checks</span>
     <span class="c1"># could be added here. Currently, ClassName uniquely identifies the concrete type.</span>
 
-    <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;&quot;</span></div>
+    <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">""</span></div>
 
 
 
 <div class="viewcode-block" id="get_from_pos_from_msa">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.get_from_pos_from_msa">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_from_pos_from_msa</span><span class="p">(</span><span class="n">msa</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get the source Part of Speech from a derivational MSA.</span>
 
 <span class="sd">    Only IMoDerivAffMsa has a FromPartOfSpeechRA property indicating</span>
@@ -772,24 +1055,24 @@
 <span class="sd">            if from_pos and to_pos:</span>
 <span class="sd">                from_name = from_pos.Name.BestAnalysisAlternative.Text</span>
 <span class="sd">                to_name = to_pos.Name.BestAnalysisAlternative.Text</span>
-<span class="sd">                print(f&quot;Derives: {from_name} -&gt; {to_name}&quot;)</span>
+<span class="sd">                print(f"Derives: {from_name} -&gt; {to_name}")</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        - Only meaningful for MoDerivAffMsa objects</span>
 <span class="sd">        - Returns None for MoStemMsa, MoInflAffMsa, MoUnclassifiedAffixMsa</span>
 <span class="sd">        - Use in combination with get_pos_from_msa() to get both ends</span>
 <span class="sd">          of a derivational relationship</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">_ensure_interfaces</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">if</span> <span class="n">msa</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">!=</span> <span class="s2">&quot;MoDerivAffMsa&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">msa</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">!=</span> <span class="s2">"MoDerivAffMsa"</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">interface_type</span> <span class="o">=</span> <span class="n">_interface_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;MoDerivAffMsa&quot;</span><span class="p">)</span>
+        <span class="n">interface_type</span> <span class="o">=</span> <span class="n">_interface_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"MoDerivAffMsa"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">interface_type</span><span class="p">:</span>
             <span class="n">concrete</span> <span class="o">=</span> <span class="n">interface_type</span><span class="p">(</span><span class="n">msa</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">concrete</span><span class="o">.</span><span class="n">FromPartOfSpeechRA</span>
@@ -803,7 +1086,7 @@
 <div class="viewcode-block" id="get_common_properties">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.get_common_properties">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_common_properties</span><span class="p">(</span><span class="n">objects</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Find properties that are available on ALL objects in a list.</span>
 
 <span class="sd">    When working with collections of objects that may have different concrete</span>
@@ -822,12 +1105,12 @@
 
 <span class="sd">    Example::</span>
 
-<span class="sd">        from flexlibs2.code.lcm_casting import get_common_properties</span>
+<span class="sd">        from flexicon.code.lcm_casting import get_common_properties</span>
 
 <span class="sd">        # Find properties available on all rule types</span>
 <span class="sd">        rules = phonRuleOps.GetAll()</span>
 <span class="sd">        common = get_common_properties(rules)</span>
-<span class="sd">        print(common)  # {&#39;Name&#39;, &#39;Direction&#39;, &#39;StrucDescOS&#39;, ...}</span>
+<span class="sd">        print(common)  # {'Name', 'Direction', 'StrucDescOS', ...}</span>
 
 <span class="sd">        # These properties can be accessed safely on any rule</span>
 <span class="sd">        for rule in rules:</span>
@@ -835,12 +1118,12 @@
 <span class="sd">            direction = rule.Direction</span>
 
 <span class="sd">    Notes:</span>
-<span class="sd">        - Properties starting with &#39;_&#39; are excluded</span>
+<span class="sd">        - Properties starting with '_' are excluded</span>
 <span class="sd">        - Callable attributes (methods) are excluded</span>
 <span class="sd">        - Returns intersection of properties across all objects</span>
 <span class="sd">        - Empty list returns empty set (no intersection with all)</span>
 <span class="sd">        - Useful before implementing collection-wide filters</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">objects</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
 
@@ -858,7 +1141,7 @@
 
     <span class="k">for</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">first_obj</span><span class="p">):</span>
         <span class="c1"># Skip private attributes and methods</span>
-        <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_"</span><span class="p">):</span>
             <span class="k">continue</span>
 
         <span class="c1"># Check if this attribute exists on all other objects</span>
@@ -882,8 +1165,8 @@
 <div class="viewcode-block" id="get_concrete_type_properties">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.lcm_casting.get_concrete_type_properties">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_concrete_type_properties</span><span class="p">(</span><span class="n">lcm_obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get properties that are unique to an object&#39;s concrete type.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Get properties that are unique to an object's concrete type.</span>
 
 <span class="sd">    When you have an LCM object typed as a base interface (e.g., IPhSegmentRule),</span>
 <span class="sd">    this function identifies which properties are specific to its concrete type</span>
@@ -897,23 +1180,23 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        dict: Mapping of property names to their values, containing only</span>
-<span class="sd">        properties on the concrete type that don&#39;t exist on a simple</span>
+<span class="sd">        properties on the concrete type that don't exist on a simple</span>
 <span class="sd">        interface comparison. Empty dict if no unique properties.</span>
 
 <span class="sd">    Example::</span>
 
-<span class="sd">        from flexlibs2.code.lcm_casting import get_concrete_type_properties</span>
+<span class="sd">        from flexicon.code.lcm_casting import get_concrete_type_properties</span>
 
 <span class="sd">        # Get type-specific properties for a rule</span>
 <span class="sd">        rule = phonRuleOps.GetAll()[0]</span>
 <span class="sd">        unique_props = get_concrete_type_properties(rule)</span>
 
-<span class="sd">        if rule.ClassName == &#39;PhRegularRule&#39;:</span>
-<span class="sd">            print(&#39;RightHandSidesOS&#39; in unique_props)  # True</span>
-<span class="sd">            print(unique_props[&#39;RightHandSidesOS&#39;])  # The actual RHS collection</span>
+<span class="sd">        if rule.ClassName == 'PhRegularRule':</span>
+<span class="sd">            print('RightHandSidesOS' in unique_props)  # True</span>
+<span class="sd">            print(unique_props['RightHandSidesOS'])  # The actual RHS collection</span>
 
-<span class="sd">        if rule.ClassName == &#39;PhMetathesisRule&#39;:</span>
-<span class="sd">            print(&#39;LeftPartOfMetathesisOS&#39; in unique_props)  # True</span>
+<span class="sd">        if rule.ClassName == 'PhMetathesisRule':</span>
+<span class="sd">            print('LeftPartOfMetathesisOS' in unique_props)  # True</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        - Returns empty dict if object has no ClassName attribute</span>
@@ -921,8 +1204,8 @@
 <span class="sd">        - Private attributes (starting with _) are excluded</span>
 <span class="sd">        - Callable attributes (methods) are excluded</span>
 <span class="sd">        - Use with get_common_properties() to understand type diversity</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">lcm_obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">lcm_obj</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{}</span>
 
     <span class="c1"># Get the concrete type</span>
@@ -932,11 +1215,11 @@
     <span class="c1"># Get all public, non-callable attributes from concrete type</span>
     <span class="k">for</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">concrete</span><span class="p">):</span>
         <span class="c1"># Skip private attributes</span>
-        <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_"</span><span class="p">):</span>
             <span class="k">continue</span>
 
         <span class="c1"># Skip known system attributes</span>
-        <span class="k">if</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="s2">&quot;Guid&quot;</span><span class="p">,</span> <span class="s2">&quot;Hvo&quot;</span><span class="p">,</span> <span class="s2">&quot;ClassID&quot;</span><span class="p">,</span> <span class="s2">&quot;Owner&quot;</span><span class="p">,</span> <span class="s2">&quot;OwningFlid&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"ClassName"</span><span class="p">,</span> <span class="s2">"Guid"</span><span class="p">,</span> <span class="s2">"Hvo"</span><span class="p">,</span> <span class="s2">"ClassID"</span><span class="p">,</span> <span class="s2">"Owner"</span><span class="p">,</span> <span class="s2">"OwningFlid"</span><span class="p">]:</span>
             <span class="k">continue</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -991,8 +1274,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

@@ -72,24 +72,25 @@
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">version</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;flexlibs version: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">version</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"flexlibs version: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">version</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="c1"># Version module not yet available during initialization</span>
     <span class="n">version</span> <span class="o">=</span> <span class="kc">None</span>
 
-<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Python version: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Python version: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">System</span>
 
 <span class="c1"># Configure the path for accessing the FW DLLs</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLExGlobals</span>
 
 <span class="n">FLExGlobals</span><span class="o">.</span><span class="n">InitialiseFWGlobals</span><span class="p">()</span>
 
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;FwUtils&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"FwUtils"</span><span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.FieldWorks.Common.FwUtils</span><span class="w"> </span><span class="kn">import</span> <span class="n">FwRegistryHelper</span><span class="p">,</span> <span class="n">FwUtils</span>
 
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;SIL.WritingSystems&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"SIL.WritingSystems"</span><span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.WritingSystems</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sldr</span>
 
 <span class="c1"># -------------------------------------------------------------------</span>
@@ -98,35 +99,73 @@
 <div class="viewcode-block" id="FLExInitialize">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.FLExInit.FLExInitialize">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">FLExInitialize</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initialize the Fieldworks libraries. An application should call</span>
 <span class="sd">    this as the first thing it does.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># [FW9] These 3 inits copied from LCMBrowser::Main()</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calling RegistryHelper.Initialize()&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Calling RegistryHelper.Initialize()"</span><span class="p">)</span>
     <span class="n">FwRegistryHelper</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calling InitializeIcu()&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Calling InitializeIcu()"</span><span class="p">)</span>
     <span class="n">FwUtils</span><span class="o">.</span><span class="n">InitializeIcu</span><span class="p">()</span>
     <span class="c1"># No need to access the online SLDR: Offline mode = True</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calling Sldr.Initialize()&quot;</span><span class="p">)</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">Sldr</span><span class="o">.</span><span class="n">Initialize</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="c1"># SLDR may already be initialized in some test/startup scenarios</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sldr.Initialize failed (already initialized?): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="c1"># Sldr.Initialize() can fail silently. If it doesn&#39;t return,</span>
+    <span class="c1">#</span>
+    <span class="c1"># [#249] Sldr.Initialize() must NOT be wrapped in a bare `except</span>
+    <span class="c1"># Exception`. If it fails for a real reason the SLDR stays down for the</span>
+    <span class="c1"># whole process; every subsequent LDML read inside</span>
+    <span class="c1"># CoreLdmlInFolderWritingSystemRepository then throws "The SLDR has not</span>
+    <span class="c1"># been initialized", and liblcm responds by renaming the project's</span>
+    <span class="c1"># .ldml files to .ldml.bad and re-synthesizing the writing systems from</span>
+    <span class="c1"># defaults. That cycle repeats on every open and never terminates, so a</span>
+    <span class="c1"># genuine failure has to reach the caller instead of being downgraded to</span>
+    <span class="c1"># a warning that misattributes it as "already initialized?".</span>
+    <span class="c1">#</span>
+    <span class="c1"># Sldr exposes a public static IsInitialized probe (verified by live</span>
+    <span class="c1"># reflection against SIL.WritingSystems 18.0.0.0 / FieldWorks 9.3.10),</span>
+    <span class="c1"># which is safe to read before any init and mirrors the guard that</span>
+    <span class="c1"># Initialize() itself uses. Probing it means the benign</span>
+    <span class="c1"># already-initialized case never raises at all, which keeps repeated</span>
+    <span class="c1"># FLExInitialize() calls a no-op -- examples and per-test setUp rely on</span>
+    <span class="c1"># that.</span>
+    <span class="k">if</span> <span class="n">Sldr</span><span class="o">.</span><span class="n">IsInitialized</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Sldr already initialized; skipping Sldr.Initialize()"</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Calling Sldr.Initialize()"</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">Sldr</span><span class="o">.</span><span class="n">Initialize</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># offlineTestMode=True</span>
+        <span class="k">except</span> <span class="n">System</span><span class="o">.</span><span class="n">InvalidOperationException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># Retained only as a backstop for the check-then-act race:</span>
+            <span class="c1"># Initialize()/Cleanup() serialize on a private lock, so another</span>
+            <span class="c1"># thread can win between the probe and the call. Anything that is</span>
+            <span class="c1"># not that exact benign message is a real failure and must</span>
+            <span class="c1"># propagate.</span>
+            <span class="k">if</span> <span class="s2">"already been initialized"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">e</span><span class="o">.</span><span class="n">Message</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">"Sldr was initialized concurrently by another caller; continuing"</span>
+            <span class="p">)</span>
+    <span class="c1"># Sldr.Initialize() can fail silently. If it doesn't return,</span>
     <span class="c1"># then it is likely a dll issue.</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FLExInit.Initialize complete&quot;</span><span class="p">)</span></div>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"FLExInit.Initialize complete"</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="FLExCleanup">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.FLExInit.FLExCleanup">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">FLExCleanup</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Close up the Fieldworks libraries. An application should call this</span>
 <span class="sd">    before exiting.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
+    <span class="c1"># [#249] Sldr.Cleanup() throws System.InvalidOperationException("The SLDR</span>
+    <span class="c1"># has not been initialized.") when the SLDR is down -- so an unguarded</span>
+    <span class="c1"># call made FLExCleanup() raise whenever FLExInitialize() was never run or</span>
+    <span class="c1"># cleanup ran twice (several shipped examples call it twice by design).</span>
+    <span class="c1"># Cleanup is a teardown step and must be tolerant of already being done.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">Sldr</span><span class="o">.</span><span class="n">IsInitialized</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Sldr not initialized; skipping Sldr.Cleanup()"</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Calling Sldr.Cleanup()"</span><span class="p">)</span>
     <span class="n">Sldr</span><span class="o">.</span><span class="n">Cleanup</span><span class="p">()</span></div>
 
 </pre></div>
@@ -166,8 +205,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

@@ -54,7 +54,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Smart collection class for affix templates.</span>
 
 <span class="sd">This module provides AffixTemplateCollection, a smart collection that manages</span>
@@ -72,12 +72,12 @@
 <span class="sd">    - __str__() showing template summary</span>
 <span class="sd">    - filter() for common criteria (name_contains, stratum)</span>
 <span class="sd">    - Convenience methods (with_prefix_slots, with_suffix_slots, etc.)</span>
-<span class="sd">    - Chainable filtering: templates.with_prefix_slots().filter(name_contains=&#39;Verb&#39;)</span>
+<span class="sd">    - Chainable filtering: templates.with_prefix_slots().filter(name_contains='Verb')</span>
 <span class="sd">    - where() for custom predicates</span>
 
 <span class="sd">Example::</span>
 
-<span class="sd">    from flexlibs2.code.Grammar.affix_template_collection import AffixTemplateCollection</span>
+<span class="sd">    from flexicon.code.Grammar.affix_template_collection import AffixTemplateCollection</span>
 
 <span class="sd">    # GetAll() now returns AffixTemplateCollection</span>
 <span class="sd">    templates = morphRuleOps.GetAllAffixTemplates()</span>
@@ -85,18 +85,18 @@
 
 <span class="sd">    # Filter by slots</span>
 <span class="sd">    prefix_templates = templates.with_prefix_slots()</span>
-<span class="sd">    print(f&quot;Templates with prefix slots: {len(prefix_templates)}&quot;)</span>
+<span class="sd">    print(f"Templates with prefix slots: {len(prefix_templates)}")</span>
 
 <span class="sd">    # Filter by name</span>
-<span class="sd">    verb_templates = templates.filter(name_contains=&#39;Verb&#39;)</span>
+<span class="sd">    verb_templates = templates.filter(name_contains='Verb')</span>
 
 <span class="sd">    # Chain filters</span>
-<span class="sd">    verb_prefix = templates.with_prefix_slots().filter(name_contains=&#39;Verb&#39;)</span>
+<span class="sd">    verb_prefix = templates.with_prefix_slots().filter(name_contains='Verb')</span>
 
 <span class="sd">    # Iterate</span>
 <span class="sd">    for template in templates:</span>
 <span class="sd">        print(template.name)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.smart_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmartCollection</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.affix_template</span><span class="w"> </span><span class="kn">import</span> <span class="n">AffixTemplate</span>
@@ -105,7 +105,7 @@
 <div class="viewcode-block" id="AffixTemplateCollection">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template_collection.AffixTemplateCollection">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AffixTemplateCollection</span><span class="p">(</span><span class="n">SmartCollection</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Smart collection for affix templates with filtering capabilities.</span>
 
 <span class="sd">    Manages collections of affix templates (AffixTemplate wrapper objects)</span>
@@ -120,12 +120,12 @@
 <span class="sd">        templates = morphRuleOps.GetAllAffixTemplates()</span>
 <span class="sd">        print(templates)  # Shows collection summary</span>
 <span class="sd">        prefix = templates.with_prefix_slots()  # Filter to templates with prefixes</span>
-<span class="sd">        verb = templates.filter(name_contains=&#39;Verb&#39;)  # Name filter</span>
-<span class="sd">        both = templates.with_prefix_slots().filter(name_contains=&#39;Verb&#39;)  # Chain</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        verb = templates.filter(name_contains='Verb')  # Name filter</span>
+<span class="sd">        both = templates.with_prefix_slots().filter(name_contains='Verb')  # Chain</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize an AffixTemplateCollection.</span>
 
 <span class="sd">        Args:</span>
@@ -135,13 +135,13 @@
 
 <span class="sd">            collection = AffixTemplateCollection()</span>
 <span class="sd">            collection = AffixTemplateCollection([template1, template2, template3])</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 
 <div class="viewcode-block" id="AffixTemplateCollection.filter">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template_collection.AffixTemplateCollection.filter">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name_contains</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stratum</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter the collection by common template properties.</span>
 
 <span class="sd">        Supports filtering by properties that work across all templates</span>
@@ -160,24 +160,24 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            # Filter by name</span>
-<span class="sd">            verb_templates = templates.filter(name_contains=&#39;Verb&#39;)</span>
+<span class="sd">            verb_templates = templates.filter(name_contains='Verb')</span>
 
 <span class="sd">            # Filter by stratum</span>
-<span class="sd">            stratum1 = templates.filter(stratum=&#39;Stratum1&#39;)</span>
+<span class="sd">            stratum1 = templates.filter(stratum='Stratum1')</span>
 
 <span class="sd">            # Custom filtering</span>
 <span class="sd">            with_slots = templates.where(lambda t: t.has_any_slots)</span>
 
 <span class="sd">            # Chain filters</span>
-<span class="sd">            verb_stratum = templates.filter(name_contains=&#39;Verb&#39;).filter(stratum=&#39;Stratum1&#39;)</span>
+<span class="sd">            verb_stratum = templates.filter(name_contains='Verb').filter(stratum='Stratum1')</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - name_contains is case-sensitive</span>
 <span class="sd">            - All criteria are AND-ed together unless only one is provided</span>
 <span class="sd">            - where() takes precedence over other criteria</span>
-<span class="sd">            - Returns new collection (doesn&#39;t modify original)</span>
+<span class="sd">            - Returns new collection (doesn't modify original)</span>
 <span class="sd">            - Use where() for complex custom filtering</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># If custom predicate provided, use it</span>
         <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">where</span><span class="p">(</span><span class="n">item</span><span class="p">)]</span>
@@ -187,14 +187,14 @@
         <span class="n">filtered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span>
 
         <span class="k">if</span> <span class="n">name_contains</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">template</span> <span class="k">for</span> <span class="n">template</span> <span class="ow">in</span> <span class="n">filtered</span> <span class="k">if</span> <span class="n">name_contains</span> <span class="ow">in</span> <span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)]</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">template</span> <span class="k">for</span> <span class="n">template</span> <span class="ow">in</span> <span class="n">filtered</span> <span class="k">if</span> <span class="n">name_contains</span> <span class="ow">in</span> <span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)]</span>
 
         <span class="k">if</span> <span class="n">stratum</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">template</span>
                 <span class="k">for</span> <span class="n">template</span> <span class="ow">in</span> <span class="n">filtered</span>
                 <span class="k">if</span> <span class="n">template</span><span class="o">.</span><span class="n">stratum</span>
-                <span class="ow">and</span> <span class="p">(</span><span class="n">stratum</span> <span class="ow">in</span> <span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">stratum</span><span class="o">.</span><span class="n">Name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">stratum</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">stratum</span><span class="p">))</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="n">stratum</span> <span class="ow">in</span> <span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">stratum</span><span class="o">.</span><span class="n">Name</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">stratum</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">stratum</span><span class="p">))</span>
             <span class="p">]</span>
 
         <span class="k">return</span> <span class="n">AffixTemplateCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
@@ -203,7 +203,7 @@
 <div class="viewcode-block" id="AffixTemplateCollection.where">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template_collection.AffixTemplateCollection.where">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predicate</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter using a custom predicate function.</span>
 
 <span class="sd">        For filtering by complex criteria or properties not supported by filter().</span>
@@ -224,7 +224,7 @@
 
 <span class="sd">            # Combining conditions</span>
 <span class="sd">            complex_filter = templates.where(</span>
-<span class="sd">                lambda t: t.has_any_slots and (t.name or &quot;&quot;).startswith(&#39;Verb&#39;)</span>
+<span class="sd">                lambda t: t.has_any_slots and (t.name or "").startswith('Verb')</span>
 <span class="sd">            )</span>
 
 <span class="sd">            # Capability checking</span>
@@ -234,7 +234,7 @@
 <span class="sd">            - Predicate receives each AffixTemplate object</span>
 <span class="sd">            - Return True to include in result, False to exclude</span>
 <span class="sd">            - For simple filters (name, stratum), use filter() instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">template</span> <span class="k">for</span> <span class="n">template</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="n">predicate</span><span class="p">(</span><span class="n">template</span><span class="p">)]</span>
         <span class="k">return</span> <span class="n">AffixTemplateCollection</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
 
@@ -242,7 +242,7 @@
 <div class="viewcode-block" id="AffixTemplateCollection.with_prefix_slots">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template_collection.AffixTemplateCollection.with_prefix_slots">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_prefix_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the templates that have prefix slots.</span>
 
 <span class="sd">        Convenience method for filtering to templates with prefix slots.</span>
@@ -253,22 +253,22 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            prefix_templates = templates.with_prefix_slots()</span>
-<span class="sd">            print(f&quot;Found {len(prefix_templates)} templates with prefix slots&quot;)</span>
+<span class="sd">            print(f"Found {len(prefix_templates)} templates with prefix slots")</span>
 
 <span class="sd">            # Chain with other filters</span>
-<span class="sd">            verb_prefix = templates.with_prefix_slots().filter(name_contains=&#39;Verb&#39;)</span>
+<span class="sd">            verb_prefix = templates.with_prefix_slots().filter(name_contains='Verb')</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Equivalent to where(lambda t: t.has_prefix_slots)</span>
 <span class="sd">            - Use has_prefix_slots on individual templates to check</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">has_prefix_slots</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AffixTemplateCollection.with_suffix_slots">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template_collection.AffixTemplateCollection.with_suffix_slots">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_suffix_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the templates that have suffix slots.</span>
 
 <span class="sd">        Convenience method for filtering to templates with suffix slots.</span>
@@ -279,22 +279,22 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            suffix_templates = templates.with_suffix_slots()</span>
-<span class="sd">            print(f&quot;Found {len(suffix_templates)} templates with suffix slots&quot;)</span>
+<span class="sd">            print(f"Found {len(suffix_templates)} templates with suffix slots")</span>
 
 <span class="sd">            # Chain with other filters</span>
-<span class="sd">            verb_suffix = templates.with_suffix_slots().filter(name_contains=&#39;Verb&#39;)</span>
+<span class="sd">            verb_suffix = templates.with_suffix_slots().filter(name_contains='Verb')</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Equivalent to where(lambda t: t.has_suffix_slots)</span>
 <span class="sd">            - Use has_suffix_slots on individual templates to check</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">has_suffix_slots</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AffixTemplateCollection.with_proclitic_slots">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template_collection.AffixTemplateCollection.with_proclitic_slots">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_proclitic_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the templates that have proclitic slots.</span>
 
 <span class="sd">        Convenience method for filtering to templates with proclitic slots.</span>
@@ -305,19 +305,19 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            proclitic_templates = templates.with_proclitic_slots()</span>
-<span class="sd">            print(f&quot;Found {len(proclitic_templates)} templates with proclitic slots&quot;)</span>
+<span class="sd">            print(f"Found {len(proclitic_templates)} templates with proclitic slots")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Equivalent to where(lambda t: t.has_proclitic_slots)</span>
 <span class="sd">            - Use has_proclitic_slots on individual templates to check</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">has_proclitic_slots</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AffixTemplateCollection.with_enclitic_slots">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template_collection.AffixTemplateCollection.with_enclitic_slots">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_enclitic_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the templates that have enclitic slots.</span>
 
 <span class="sd">        Convenience method for filtering to templates with enclitic slots.</span>
@@ -328,26 +328,26 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            enclitic_templates = templates.with_enclitic_slots()</span>
-<span class="sd">            print(f&quot;Found {len(enclitic_templates)} templates with enclitic slots&quot;)</span>
+<span class="sd">            print(f"Found {len(enclitic_templates)} templates with enclitic slots")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Equivalent to where(lambda t: t.has_enclitic_slots)</span>
 <span class="sd">            - Use has_enclitic_slots on individual templates to check</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">has_enclitic_slots</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AffixTemplateCollection.with_slots">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template_collection.AffixTemplateCollection.with_slots">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_type</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the templates that have slots of a specific type.</span>
 
 <span class="sd">        Convenience method for filtering to specific slot types.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            slot_type (str): Type of slots to filter by:</span>
-<span class="sd">                &#39;prefix&#39;, &#39;suffix&#39;, &#39;proclitic&#39;, or &#39;enclitic&#39;.</span>
+<span class="sd">                'prefix', 'suffix', 'proclitic', or 'enclitic'.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            AffixTemplateCollection: New collection with templates that have the specified slots.</span>
@@ -355,26 +355,26 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            # Get templates with prefix slots</span>
-<span class="sd">            prefix_templates = templates.with_slots(&#39;prefix&#39;)</span>
+<span class="sd">            prefix_templates = templates.with_slots('prefix')</span>
 
 <span class="sd">            # Get templates with suffix slots</span>
-<span class="sd">            suffix_templates = templates.with_slots(&#39;suffix&#39;)</span>
+<span class="sd">            suffix_templates = templates.with_slots('suffix')</span>
 
 <span class="sd">            # Get templates with proclitic slots</span>
-<span class="sd">            proclitic_templates = templates.with_slots(&#39;proclitic&#39;)</span>
+<span class="sd">            proclitic_templates = templates.with_slots('proclitic')</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - slot_type must be one of: &#39;prefix&#39;, &#39;suffix&#39;, &#39;proclitic&#39;, &#39;enclitic&#39;</span>
+<span class="sd">            - slot_type must be one of: 'prefix', 'suffix', 'proclitic', 'enclitic'</span>
 <span class="sd">            - Returns empty collection if slot_type is not recognized</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">slot_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">slot_type</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">slot_type</span> <span class="o">==</span> <span class="s2">&quot;prefix&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="n">slot_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">slot_type</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">slot_type</span> <span class="o">==</span> <span class="s2">"prefix"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_prefix_slots</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="n">slot_type</span> <span class="o">==</span> <span class="s2">&quot;suffix&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">slot_type</span> <span class="o">==</span> <span class="s2">"suffix"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_suffix_slots</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="n">slot_type</span> <span class="o">==</span> <span class="s2">&quot;proclitic&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">slot_type</span> <span class="o">==</span> <span class="s2">"proclitic"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_proclitic_slots</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="n">slot_type</span> <span class="o">==</span> <span class="s2">&quot;enclitic&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">slot_type</span> <span class="o">==</span> <span class="s2">"enclitic"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_enclitic_slots</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Unrecognized slot type, return empty collection</span>
@@ -384,7 +384,7 @@
 <div class="viewcode-block" id="AffixTemplateCollection.with_any_slots">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template_collection.AffixTemplateCollection.with_any_slots">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_any_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the templates that have any slots.</span>
 
 <span class="sd">        Convenience method for filtering to templates with at least one slot.</span>
@@ -395,18 +395,18 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            templates_with_slots = templates.with_any_slots()</span>
-<span class="sd">            print(f&quot;Found {len(templates_with_slots)} templates with slots&quot;)</span>
+<span class="sd">            print(f"Found {len(templates_with_slots)} templates with slots")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Equivalent to where(lambda t: t.has_any_slots)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">has_any_slots</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AffixTemplateCollection.full_templates">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template_collection.AffixTemplateCollection.full_templates">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">full_templates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the templates that have all four slot types.</span>
 
 <span class="sd">        Convenience method for filtering to templates with prefix, suffix,</span>
@@ -418,7 +418,7 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            full_templates = templates.full_templates()</span>
-<span class="sd">            print(f&quot;Found {len(full_templates)} templates with all slot types&quot;)</span>
+<span class="sd">            print(f"Found {len(full_templates)} templates with all slot types")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Equivalent to::</span>
@@ -429,7 +429,7 @@
 <span class="sd">                    t.has_proclitic_slots,</span>
 <span class="sd">                    t.has_enclitic_slots</span>
 <span class="sd">                ]))</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
             <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">has_prefix_slots</span> <span class="ow">and</span> <span class="n">t</span><span class="o">.</span><span class="n">has_suffix_slots</span> <span class="ow">and</span> <span class="n">t</span><span class="o">.</span><span class="n">has_proclitic_slots</span> <span class="ow">and</span> <span class="n">t</span><span class="o">.</span><span class="n">has_enclitic_slots</span><span class="p">)</span>
         <span class="p">)</span></div>
@@ -438,7 +438,7 @@
 <div class="viewcode-block" id="AffixTemplateCollection.for_pos">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.affix_template_collection.AffixTemplateCollection.for_pos">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">for_pos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_name_or_object</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get only the templates for a specific part of speech.</span>
 
 <span class="sd">        Convenience method for filtering templates by their owner POS.</span>
@@ -452,27 +452,27 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            # Filter by POS name</span>
-<span class="sd">            verb_templates = templates.for_pos(&#39;Verb&#39;)</span>
+<span class="sd">            verb_templates = templates.for_pos('Verb')</span>
 
 <span class="sd">            # Filter by POS object</span>
-<span class="sd">            verb_pos = posOps.Find(&#39;Verb&#39;)</span>
+<span class="sd">            verb_pos = posOps.Find('Verb')</span>
 <span class="sd">            verb_templates = templates.for_pos(verb_pos)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - If pos_name_or_object is a string, looks for POS names containing the string</span>
 <span class="sd">            - Returns empty collection if no templates found for the POS</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pos_name_or_object</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">pos_name</span> <span class="o">=</span> <span class="n">pos_name_or_object</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">owner_pos</span> <span class="ow">and</span> <span class="n">pos_name</span> <span class="ow">in</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">owner_pos</span><span class="o">.</span><span class="n">Name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">owner_pos</span> <span class="ow">and</span> <span class="n">pos_name</span> <span class="ow">in</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">owner_pos</span><span class="o">.</span><span class="n">Name</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">pos_obj</span> <span class="o">=</span> <span class="n">pos_name_or_object</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">owner_pos</span> <span class="ow">and</span> <span class="n">t</span><span class="o">.</span><span class="n">owner_pos</span> <span class="o">==</span> <span class="n">pos_obj</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Technical representation.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;AffixTemplateCollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> templates)&quot;</span></div>
+<span class="w">        </span><span class="sd">"""Technical representation."""</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"AffixTemplateCollection(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> templates)"</span></div>
 
 </pre></div>
 
@@ -511,8 +511,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

@@ -56,7 +56,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">clr</span>
 
-<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System&quot;</span><span class="p">)</span>
+<span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">"System"</span><span class="p">)</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IWfiGloss</span><span class="p">,</span>
@@ -79,7 +79,7 @@
 <div class="viewcode-block" id="WfiGlossOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.TextsWords.html#flexicon.code.TextsWords.WfiGlossOperations.WfiGlossOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">WfiGlossOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Provides operations for managing wordform glosses (WfiGloss) in a FLEx project.</span>
 
 <span class="sd">    WfiGloss objects represent glosses (meanings/translations) for wordform analyses.</span>
@@ -90,34 +90,34 @@
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; project = FLExProject()</span>
-<span class="sd">        &gt;&gt;&gt; project.OpenProject(&quot;MyProject&quot;, writeEnabled=True)</span>
+<span class="sd">        &gt;&gt;&gt; project.OpenProject("MyProject", writeEnabled=True)</span>
 <span class="sd">        &gt;&gt;&gt; # Get a wordform and its first analysis</span>
-<span class="sd">        &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">        &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">        &gt;&gt;&gt; if analyses:</span>
 <span class="sd">        ...     analysis = analyses[0]</span>
 <span class="sd">        ...     # Get all glosses for the analysis</span>
 <span class="sd">        ...     for gloss in project.WfiGlosses.GetAll(analysis):</span>
 <span class="sd">        ...         form = project.WfiGlosses.GetForm(gloss)</span>
-<span class="sd">        ...         print(f&quot;Gloss: {form}&quot;)</span>
+<span class="sd">        ...         print(f"Gloss: {form}")</span>
 <span class="sd">        ...     # Create a new gloss</span>
-<span class="sd">        ...     new_gloss = project.WfiGlosses.Create(analysis, &quot;running&quot;, &quot;en&quot;)</span>
+<span class="sd">        ...     new_gloss = project.WfiGlosses.Create(analysis, "running", "en")</span>
 <span class="sd">        ...     # Update gloss form</span>
-<span class="sd">        ...     project.WfiGlosses.SetForm(new_gloss, &quot;to run&quot;, &quot;en&quot;)</span>
+<span class="sd">        ...     project.WfiGlosses.SetForm(new_gloss, "to run", "en")</span>
 <span class="sd">        &gt;&gt;&gt; project.CloseProject()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize WfiGlossOperations.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: FLExProject instance</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Internal helper to resolve writing system handle.</span>
 
 <span class="sd">        Args:</span>
@@ -125,34 +125,81 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            int: Resolved writing system handle</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveGloss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gloss_or_hvo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Resolve an HVO or object to a concrete IWfiGloss proxy.</span>
+
+<span class="sd">        Segment analyses (SegmentOperations.GetAnalyses) come back as</span>
+<span class="sd">        polymorphic IAnalysis references. Reading ``.Form`` off an</span>
+<span class="sd">        IAnalysis-typed proxy silently yields '' even when the underlying</span>
+<span class="sd">        object *is* a gloss -- the classic issue #212 trap. Casting with</span>
+<span class="sd">        ``IWfiGloss(obj)`` surfaces the real Form regardless of the proxy's</span>
+<span class="sd">        static type. A genuinely non-gloss token raises a clear, actionable</span>
+<span class="sd">        error instead of silently returning ''.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            gloss_or_hvo: An IWfiGloss / IAnalysis object, or an HVO (int).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            IWfiGloss: The object cast to the concrete gloss interface.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If the object is not an IWfiGloss.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gloss</span> <span class="o">=</span> <span class="n">gloss_or_hvo</span>
+
+        <span class="c1"># pythonnet isinstance() against the concrete IWfiGloss interface</span>
+        <span class="c1"># returns False for a base IAnalysis-typed reference even when the</span>
+        <span class="c1"># object IS a gloss -- exactly what SegmentOperations.GetAnalyses hands</span>
+        <span class="c1"># back. Dispatch on ClassName (the cast_to_concrete idiom) instead of</span>
+        <span class="c1"># isinstance so the guard fires only on genuinely non-gloss tokens.</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">"WfiGloss"</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="s2">"Expected an IWfiGloss but got </span><span class="si">{0}</span><span class="s2">. Segment analyses are "</span>
+                <span class="s2">"polymorphic IAnalysis objects; only IWfiGloss tokens carry a "</span>
+                <span class="s2">"gloss form, and reading .Form off another subtype silently "</span>
+                <span class="s2">"returns ''. Cast with IWfiGloss(obj) or use "</span>
+                <span class="s2">"SegmentOperations.GetGloss(analysis, ws)."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">gloss</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Explicit cast so pythonnet surfaces IWfiGloss.Form even when the</span>
+        <span class="c1"># caller passed an IAnalysis-typed reference (issue #212).</span>
+        <span class="k">return</span> <span class="n">IWfiGloss</span><span class="p">(</span><span class="n">gloss</span><span class="p">)</span>
 
     <span class="c1"># --- Core CRUD Operations ---</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Retrieve all glosses for a wordform analysis.</span>
 
-<span class="sd">        This method returns an iterator over all IWfiGloss objects associated with</span>
-<span class="sd">        the specified analysis, allowing iteration over all meaning glosses.</span>
+<span class="sd">        This method returns an EnumerableWrapper (subscriptable, len()-able,</span>
+<span class="sd">        lazily materialized) over all IWfiGloss objects associated with the</span>
+<span class="sd">        specified analysis, allowing iteration over all meaning glosses.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
 
-<span class="sd">        Yields:</span>
-<span class="sd">            IWfiGloss: Each gloss object for the analysis</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EnumerableWrapper[IWfiGloss]: Each gloss object for the analysis</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If analysis doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
 <span class="sd">            ...     for gloss in project.WfiGlosses.GetAll(analyses[0]):</span>
@@ -160,21 +207,21 @@
 <span class="sd">            ...         print(form)</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns an iterator for memory efficiency</span>
+<span class="sd">            - Returns an EnumerableWrapper (subscriptable, len()-able) for memory efficiency; the underlying LCM enumerator is only materialized into a list on first len()/index/iteration access</span>
 <span class="sd">            - Glosses are returned in the order they were added</span>
 <span class="sd">            - Returns empty iterator if analysis has no glosses</span>
 <span class="sd">            - Each gloss can have forms in multiple writing systems</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Find, GetForm</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">"analysis_or_hvo"</span><span class="p">)</span>
 
         <span class="c1"># Resolve to analysis object</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="n">IWfiAnalysis</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform analysis&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a wordform analysis"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">analysis</span> <span class="o">=</span> <span class="n">analysis_or_hvo</span>
 
@@ -183,14 +230,18 @@
             <span class="k">yield</span> <span class="n">gloss</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new gloss for a wordform analysis.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            analysis_or_hvo: Either an IWfiAnalysis object or its HVO</span>
 <span class="sd">            form: The gloss text (meaning/translation)</span>
 <span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
+<span class="sd">            guid (optional): GUID to assign to the new gloss, as a</span>
+<span class="sd">                ``System.Guid`` or string. Use this when REPRODUCING a</span>
+<span class="sd">                gloss from another project so it keeps its original</span>
+<span class="sd">                identity. None (the default) mints a fresh GUID.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IWfiGloss: The newly created gloss object</span>
@@ -198,51 +249,51 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If analysis_or_hvo or form is None</span>
-<span class="sd">            FP_ParameterError: If form is empty or analysis doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If form is empty or analysis doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
-<span class="sd">            ...     gloss = project.WfiGlosses.Create(analyses[0], &quot;to run&quot;)</span>
+<span class="sd">            ...     gloss = project.WfiGlosses.Create(analyses[0], "to run")</span>
 <span class="sd">            ...     print(project.WfiGlosses.GetForm(gloss))</span>
 <span class="sd">            to run</span>
 <span class="sd">            &gt;&gt;&gt; # Create with specific writing system</span>
-<span class="sd">            &gt;&gt;&gt; gloss_fr = project.WfiGlosses.Create(analyses[0], &quot;courir&quot;, &quot;fr&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; gloss_fr = project.WfiGlosses.Create(analyses[0], "courir", "fr")</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - New gloss is added to the analysis&#39;s Meanings collection</span>
+<span class="sd">            - New gloss is added to the analysis's Meanings collection</span>
 <span class="sd">            - The form is stored in the specified writing system</span>
 <span class="sd">            - Duplicate glosses are allowed (no uniqueness check)</span>
 <span class="sd">            - Gloss is added at the end of the collection</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Delete, SetForm, GetAll</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">"analysis_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">"form"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">form</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">form</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Gloss form cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Gloss form cannot be empty"</span><span class="p">)</span>
 
         <span class="c1"># Resolve to analysis object</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="n">IWfiAnalysis</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform analysis&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a wordform analysis"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">analysis</span> <span class="o">=</span> <span class="n">analysis_or_hvo</span>
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create gloss&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create gloss"</span><span class="p">):</span>
             <span class="c1"># Get the factory and create the gloss</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiGlossFactory</span><span class="p">)</span>
-            <span class="n">new_gloss</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
+            <span class="n">new_gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CreateWithGuid</span><span class="p">(</span><span class="n">factory</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="s2">"IWfiGloss"</span><span class="p">)</span>
 
-            <span class="c1"># Add to analysis&#39;s Meanings collection (must be done before setting properties)</span>
+            <span class="c1"># Add to analysis's Meanings collection (must be done before setting properties)</span>
             <span class="n">analysis</span><span class="o">.</span><span class="n">MeaningsOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_gloss</span><span class="p">)</span>
 
             <span class="c1"># Set the form</span>
@@ -255,7 +306,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all syncable properties of a wordform gloss.</span>
 
 <span class="sd">        Args:</span>
@@ -266,24 +317,24 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; props = project.WfiGlosses.GetSyncableProperties(gloss)</span>
-<span class="sd">            &gt;&gt;&gt; print(props[&#39;Form&#39;])</span>
-<span class="sd">            {&#39;en&#39;: &#39;running&#39;, &#39;es&#39;: &#39;corriendo&#39;}</span>
+<span class="sd">            &gt;&gt;&gt; print(props['Form'])</span>
+<span class="sd">            {'en': 'running', 'es': 'corriendo'}</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - MultiString property: Form</span>
 <span class="sd">            - Form contains gloss text in multiple writing systems</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># MultiString property - Form</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Form&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">Form</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Form&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Form</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"Form"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">Form</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"Form"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">GetMultiStringDict</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">Form</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compare two wordform glosses for differences.</span>
 
 <span class="sd">        Args:</span>
@@ -301,12 +352,12 @@
 <span class="sd">            &gt;&gt;&gt; is_diff, diffs = ops1.CompareTo(gloss1, gloss2, ops1, ops2)</span>
 <span class="sd">            &gt;&gt;&gt; if is_diff:</span>
 <span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
-<span class="sd">            ...         print(f&quot;{prop}: {val1} != {val2}&quot;)</span>
+<span class="sd">            ...         print(f"{prop}: {val1} != {val2}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Compares Form MultiString across all writing systems</span>
 <span class="sd">            - Empty/null values are treated as equivalent</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -334,7 +385,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gloss_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete a gloss from its owning analysis.</span>
 
 <span class="sd">        Args:</span>
@@ -343,10 +394,10 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If gloss_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If gloss doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If gloss doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
 <span class="sd">            ...     glosses = list(project.WfiGlosses.GetAll(analyses[0]))</span>
@@ -362,29 +413,26 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetAll</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">&quot;gloss_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">"gloss_or_hvo"</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to gloss object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="n">IWfiGloss</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform gloss&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="n">gloss_or_hvo</span>
+        <span class="c1"># Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises</span>
+        <span class="c1"># on non-gloss subtypes instead of silently returning '' -- issue #212)</span>
+        <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveGloss</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Get the owning analysis; MeaningsOC is declared on IWfiAnalysis so</span>
         <span class="c1"># cast unconditionally to surface the typed collection accessor.</span>
         <span class="n">analysis</span> <span class="o">=</span> <span class="n">IWfiAnalysis</span><span class="p">(</span><span class="n">gloss</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
 
-        <span class="c1"># Remove from analysis&#39;s Meanings collection</span>
-        <span class="n">analysis</span><span class="o">.</span><span class="n">MeaningsOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">gloss</span><span class="p">)</span>
+        <span class="c1"># Remove from analysis's Meanings collection</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete gloss"</span><span class="p">):</span>
+            <span class="n">analysis</span><span class="o">.</span><span class="n">MeaningsOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">gloss</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Duplicate a wordform gloss, creating a new copy with a new GUID.</span>
 
 <span class="sd">        Args:</span>
@@ -392,6 +440,7 @@
 <span class="sd">            insert_after (bool): Ignored. MeaningsOC is an unordered</span>
 <span class="sd">                ILcmOwningCollection with no Insert() method and no concept of</span>
 <span class="sd">                positional ordering. The duplicate is always appended via Add().</span>
+<span class="sd">            deep (bool): Accepted for API uniformity across Operations classes. WfiGloss has no owned objects, so this parameter is ignored.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IWfiGloss: The newly created duplicate gloss with a new GUID.</span>
@@ -401,20 +450,20 @@
 <span class="sd">            FP_NullParameterError: If item_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
 <span class="sd">            ...     glosses = list(project.WfiGlosses.GetAll(analyses[0]))</span>
 <span class="sd">            ...     if glosses:</span>
 <span class="sd">            ...         # Duplicate gloss</span>
 <span class="sd">            ...         dup = project.WfiGlosses.Duplicate(glosses[0])</span>
-<span class="sd">            ...         print(f&quot;Original: {project.WfiGlosses.GetGuid(glosses[0])}&quot;)</span>
-<span class="sd">            ...         print(f&quot;Duplicate: {project.WfiGlosses.GetGuid(dup)}&quot;)</span>
+<span class="sd">            ...         print(f"Original: {project.WfiGlosses.GetGuid(glosses[0])}")</span>
+<span class="sd">            ...         print(f"Duplicate: {project.WfiGlosses.GetGuid(dup)}")</span>
 <span class="sd">            Original: 12345678-1234-1234-1234-123456789abc</span>
 <span class="sd">            Duplicate: 87654321-4321-4321-4321-cba987654321</span>
 <span class="sd">            ...</span>
 <span class="sd">            ...         # Verify content was copied</span>
-<span class="sd">            ...         print(f&quot;Form: {project.WfiGlosses.GetForm(dup)}&quot;)</span>
+<span class="sd">            ...         print(f"Form: {project.WfiGlosses.GetForm(dup)}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Factory.Create() automatically generates a new GUID</span>
@@ -425,22 +474,21 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, Delete, GetGuid</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">"item_or_hvo"</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to gloss object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">IWfiGloss</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform gloss&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">source</span> <span class="o">=</span> <span class="n">item_or_hvo</span>
+        <span class="c1"># Resolve to a concrete IWfiGloss (issue #212)</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveGloss</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
 
-        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetObject</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Owner</span><span class="o">.</span><span class="n">Hvo</span><span class="p">)</span>
+        <span class="c1"># MeaningsOC is declared on IWfiAnalysis; the untyped _GetObject()</span>
+        <span class="c1"># round-trip previously returned a bare ICmObject here, silently</span>
+        <span class="c1"># failing on `.MeaningsOC`. Cast directly like Delete() already</span>
+        <span class="c1"># does above (same fix pattern, sibling site).</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="n">IWfiAnalysis</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate gloss&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Duplicate gloss"</span><span class="p">):</span>
             <span class="c1"># Create new gloss using factory (auto-generates new GUID)</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiGlossFactory</span><span class="p">)</span>
             <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
@@ -459,7 +507,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the gloss text form.</span>
 
 <span class="sd">        Args:</span>
@@ -471,10 +519,10 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If gloss_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If gloss doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If gloss doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
 <span class="sd">            ...     for gloss in project.WfiGlosses.GetAll(analyses[0]):</span>
@@ -488,26 +536,22 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetForm, GetAllForms</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">&quot;gloss_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">"gloss_or_hvo"</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to gloss object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="n">IWfiGloss</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform gloss&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="n">gloss_or_hvo</span>
+        <span class="c1"># Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises</span>
+        <span class="c1"># on non-gloss subtypes instead of silently returning '' -- issue #212)</span>
+        <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveGloss</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="c1"># Get the form string</span>
         <span class="n">form</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">gloss</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">form</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">form</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the gloss text form.</span>
 
 <span class="sd">        Args:</span>
@@ -518,20 +562,20 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If gloss_or_hvo or text is None</span>
-<span class="sd">            FP_ParameterError: If gloss doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If gloss doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
 <span class="sd">            ...     glosses = list(project.WfiGlosses.GetAll(analyses[0]))</span>
 <span class="sd">            ...     if glosses:</span>
-<span class="sd">            ...         project.WfiGlosses.SetForm(glosses[0], &quot;to run quickly&quot;)</span>
+<span class="sd">            ...         project.WfiGlosses.SetForm(glosses[0], "to run quickly")</span>
 <span class="sd">            ...         print(project.WfiGlosses.GetForm(glosses[0]))</span>
 <span class="sd">            to run quickly</span>
 <span class="sd">            &gt;&gt;&gt; # Set form in multiple writing systems</span>
-<span class="sd">            &gt;&gt;&gt; project.WfiGlosses.SetForm(glosses[0], &quot;courir&quot;, &quot;fr&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; project.WfiGlosses.SetForm(glosses[0], &quot;correr&quot;, &quot;es&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.WfiGlosses.SetForm(glosses[0], "courir", "fr")</span>
+<span class="sd">            &gt;&gt;&gt; project.WfiGlosses.SetForm(glosses[0], "correr", "es")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Empty string is allowed (clears the gloss in that writing system)</span>
@@ -540,29 +584,26 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetForm, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">&quot;gloss_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">"gloss_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to gloss object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="n">IWfiGloss</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform gloss&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="n">gloss_or_hvo</span>
+        <span class="c1"># Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises</span>
+        <span class="c1"># on non-gloss subtypes instead of silently returning '' -- issue #212)</span>
+        <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveGloss</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="c1"># Set the form string</span>
-        <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">gloss</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set gloss form '</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+            <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+            <span class="n">gloss</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAllForms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gloss_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all available forms for a gloss across all writing systems.</span>
 
 <span class="sd">        Args:</span>
@@ -573,17 +614,17 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If gloss_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If gloss doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If gloss doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
 <span class="sd">            ...     glosses = list(project.WfiGlosses.GetAll(analyses[0]))</span>
 <span class="sd">            ...     if glosses:</span>
 <span class="sd">            ...         forms = project.WfiGlosses.GetAllForms(glosses[0])</span>
 <span class="sd">            ...         for ws_handle, form in forms.items():</span>
-<span class="sd">            ...             print(f&quot;WS {ws_handle}: {form}&quot;)</span>
+<span class="sd">            ...             print(f"WS {ws_handle}: {form}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns only writing systems where form is set</span>
@@ -593,16 +634,12 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetForm, SetForm</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">&quot;gloss_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">"gloss_or_hvo"</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to gloss object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="n">IWfiGloss</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform gloss&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="n">gloss_or_hvo</span>
+        <span class="c1"># Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises</span>
+        <span class="c1"># on non-gloss subtypes instead of silently returning '' -- issue #212)</span>
+        <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveGloss</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
 
         <span class="n">forms</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="c1"># Iterate through available writing systems</span>
@@ -617,7 +654,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetOwningAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gloss_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the wordform analysis that owns this gloss.</span>
 
 <span class="sd">        Args:</span>
@@ -628,17 +665,17 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If gloss_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If gloss doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If gloss doesn't exist</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Find a gloss and get its owning analysis</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
 <span class="sd">            ...     glosses = list(project.WfiGlosses.GetAll(analyses[0]))</span>
 <span class="sd">            ...     if glosses:</span>
 <span class="sd">            ...         analysis = project.WfiGlosses.GetOwningAnalysis(glosses[0])</span>
-<span class="sd">            ...         print(f&quot;Analysis HVO: {analysis.Hvo}&quot;)</span>
+<span class="sd">            ...         print(f"Analysis HVO: {analysis.Hvo}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Gloss is owned by exactly one analysis</span>
@@ -647,16 +684,12 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, GetGuid</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">&quot;gloss_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">"gloss_or_hvo"</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to gloss object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="n">IWfiGloss</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform gloss&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="n">gloss_or_hvo</span>
+        <span class="c1"># Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises</span>
+        <span class="c1"># on non-gloss subtypes instead of silently returning '' -- issue #212)</span>
+        <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveGloss</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Cast to declared return type IWfiAnalysis. Raw gloss.Owner is typed</span>
         <span class="c1"># as ICmObject in LCM; pythonnet only surfaces IWfiAnalysis properties</span>
@@ -665,7 +698,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetGuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gloss_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the GUID (Global Unique Identifier) for a gloss.</span>
 
 <span class="sd">        Args:</span>
@@ -676,16 +709,16 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If gloss_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If gloss doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If gloss doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
 <span class="sd">            ...     glosses = list(project.WfiGlosses.GetAll(analyses[0]))</span>
 <span class="sd">            ...     if glosses:</span>
 <span class="sd">            ...         guid = project.WfiGlosses.GetGuid(glosses[0])</span>
-<span class="sd">            ...         print(f&quot;Gloss GUID: {guid}&quot;)</span>
+<span class="sd">            ...         print(f"Gloss GUID: {guid}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - GUID is unique across all projects</span>
@@ -695,22 +728,18 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetOwningAnalysis, Find</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">&quot;gloss_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">"gloss_or_hvo"</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to gloss object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="n">IWfiGloss</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform gloss&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="n">gloss_or_hvo</span>
+        <span class="c1"># Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises</span>
+        <span class="c1"># on non-gloss subtypes instead of silently returning '' -- issue #212)</span>
+        <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveGloss</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">gloss</span><span class="o">.</span><span class="n">Guid</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find and return a gloss by its form text.</span>
 
 <span class="sd">        Args:</span>
@@ -723,30 +752,30 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If analysis_or_hvo or form is None</span>
-<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If analysis doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
-<span class="sd">            ...     gloss = project.WfiGlosses.Find(analyses[0], &quot;to run&quot;)</span>
+<span class="sd">            ...     gloss = project.WfiGlosses.Find(analyses[0], "to run")</span>
 <span class="sd">            ...     if gloss:</span>
-<span class="sd">            ...         print(f&quot;Found gloss: {gloss.Hvo}&quot;)</span>
+<span class="sd">            ...         print(f"Found gloss: {gloss.Hvo}")</span>
 <span class="sd">            ...     else:</span>
-<span class="sd">            ...         print(&quot;Gloss not found&quot;)</span>
+<span class="sd">            ...         print("Gloss not found")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Search is case-sensitive</span>
 <span class="sd">            - Search is writing-system specific</span>
-<span class="sd">            - Returns None if gloss doesn&#39;t exist</span>
+<span class="sd">            - Returns None if gloss doesn't exist</span>
 <span class="sd">            - Returns first match if multiple glosses have same form</span>
 <span class="sd">            - Use Exists() for simple existence check</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Exists, GetAll, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">"analysis_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">"form"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">form</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">form</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -755,7 +784,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="n">IWfiAnalysis</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform analysis&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a wordform analysis"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">analysis</span> <span class="o">=</span> <span class="n">analysis_or_hvo</span>
 
@@ -772,7 +801,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if a gloss with the specified form exists for an analysis.</span>
 
 <span class="sd">        Args:</span>
@@ -785,16 +814,16 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If analysis_or_hvo or form is None</span>
-<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If analysis doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
-<span class="sd">            ...     if project.WfiGlosses.Exists(analyses[0], &quot;to run&quot;):</span>
-<span class="sd">            ...         gloss = project.WfiGlosses.Find(analyses[0], &quot;to run&quot;)</span>
+<span class="sd">            ...     if project.WfiGlosses.Exists(analyses[0], "to run"):</span>
+<span class="sd">            ...         gloss = project.WfiGlosses.Find(analyses[0], "to run")</span>
 <span class="sd">            ...     else:</span>
-<span class="sd">            ...         gloss = project.WfiGlosses.Create(analyses[0], &quot;to run&quot;)</span>
+<span class="sd">            ...         gloss = project.WfiGlosses.Create(analyses[0], "to run")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Search is case-sensitive</span>
@@ -804,9 +833,9 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Find, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">"analysis_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="s2">"form"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">form</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">form</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">False</span>
@@ -815,7 +844,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the count of glosses for a wordform analysis.</span>
 
 <span class="sd">        Args:</span>
@@ -826,14 +855,14 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If analysis_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If analysis doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If analysis doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
 <span class="sd">            ...     count = project.WfiGlosses.GetCount(analyses[0])</span>
-<span class="sd">            ...     print(f&quot;This analysis has {count} glosses&quot;)</span>
+<span class="sd">            ...     print(f"This analysis has {count} glosses")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - More efficient than len(list(GetAll())) for counting</span>
@@ -842,14 +871,14 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;analysis_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="s2">"analysis_or_hvo"</span><span class="p">)</span>
 
         <span class="c1"># Resolve to analysis object</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">analysis_or_hvo</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">analysis</span><span class="p">,</span> <span class="n">IWfiAnalysis</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform analysis&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a wordform analysis"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">analysis</span> <span class="o">=</span> <span class="n">analysis_or_hvo</span>
 
@@ -857,7 +886,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetBestForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gloss_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the best available form for a gloss.</span>
 
 <span class="sd">        This method attempts to find a suitable gloss form by checking writing</span>
@@ -871,15 +900,15 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If gloss_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If gloss doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If gloss doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
 <span class="sd">            ...     for gloss in project.WfiGlosses.GetAll(analyses[0]):</span>
 <span class="sd">            ...         best = project.WfiGlosses.GetBestForm(gloss)</span>
-<span class="sd">            ...         print(f&quot;Best form: {best}&quot;)</span>
+<span class="sd">            ...         print(f"Best form: {best}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Tries default analysis WS first</span>
@@ -889,16 +918,12 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetForm, GetAllForms</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">&quot;gloss_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">"gloss_or_hvo"</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to gloss object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss</span><span class="p">,</span> <span class="n">IWfiGloss</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform gloss&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">gloss</span> <span class="o">=</span> <span class="n">gloss_or_hvo</span>
+        <span class="c1"># Resolve to a concrete IWfiGloss (casts IAnalysis-typed refs; raises</span>
+        <span class="c1"># on non-gloss subtypes instead of silently returning '' -- issue #212)</span>
+        <span class="n">gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveGloss</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Try default analysis WS first</span>
         <span class="n">default_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
@@ -912,11 +937,11 @@
             <span class="k">if</span> <span class="n">form_text</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">form_text</span>
 
-        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">CopyGloss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="n">target_analysis_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Copy a gloss to another analysis.</span>
 
 <span class="sd">        Creates a new gloss in the target analysis with all forms from the source gloss.</span>
@@ -931,17 +956,17 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If gloss_or_hvo or target_analysis_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If gloss or analysis doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If gloss or analysis doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if len(analyses) &gt; 1:</span>
 <span class="sd">            ...     glosses = list(project.WfiGlosses.GetAll(analyses[0]))</span>
 <span class="sd">            ...     if glosses:</span>
 <span class="sd">            ...         # Copy first gloss from first analysis to second</span>
 <span class="sd">            ...         new_gloss = project.WfiGlosses.CopyGloss(glosses[0], analyses[1])</span>
-<span class="sd">            ...         print(f&quot;Copied gloss: {project.WfiGlosses.GetForm(new_gloss)}&quot;)</span>
+<span class="sd">            ...         print(f"Copied gloss: {project.WfiGlosses.GetForm(new_gloss)}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Copies all writing system forms from source to target</span>
@@ -950,29 +975,24 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetAllForms</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">&quot;gloss_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">target_analysis_or_hvo</span><span class="p">,</span> <span class="s2">&quot;target_analysis_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">"gloss_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">target_analysis_or_hvo</span><span class="p">,</span> <span class="s2">"target_analysis_or_hvo"</span><span class="p">)</span>
 
-        <span class="c1"># Resolve to gloss object</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">source_gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source_gloss</span><span class="p">,</span> <span class="n">IWfiGloss</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform gloss&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">source_gloss</span> <span class="o">=</span> <span class="n">gloss_or_hvo</span>
+        <span class="c1"># Resolve to a concrete IWfiGloss (issue #212)</span>
+        <span class="n">source_gloss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveGloss</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Resolve to target analysis object</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_analysis_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">target_analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">target_analysis_or_hvo</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_analysis</span><span class="p">,</span> <span class="n">IWfiAnalysis</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a wordform analysis&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a wordform analysis"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">target_analysis</span> <span class="o">=</span> <span class="n">target_analysis_or_hvo</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Copy gloss&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Copy gloss"</span><span class="p">):</span>
             <span class="c1"># Create new gloss</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IWfiGlossFactory</span><span class="p">)</span>
             <span class="n">new_gloss</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
@@ -991,7 +1011,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ClearForm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Clear the form for a gloss in a specific writing system.</span>
 
 <span class="sd">        Args:</span>
@@ -1001,31 +1021,31 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If gloss_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If gloss doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If gloss doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find(&quot;running&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; wf = project.Wordforms.Find("running")</span>
 <span class="sd">            &gt;&gt;&gt; analyses = project.Wordforms.GetAnalyses(wf)</span>
 <span class="sd">            &gt;&gt;&gt; if analyses:</span>
 <span class="sd">            ...     glosses = list(project.WfiGlosses.GetAll(analyses[0]))</span>
 <span class="sd">            ...     if glosses:</span>
 <span class="sd">            ...         # Clear the English form</span>
-<span class="sd">            ...         project.WfiGlosses.ClearForm(glosses[0], &quot;en&quot;)</span>
+<span class="sd">            ...         project.WfiGlosses.ClearForm(glosses[0], "en")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only clears the form in the specified writing system</span>
 <span class="sd">            - Forms in other writing systems are not affected</span>
-<span class="sd">            - Equivalent to SetForm(gloss, &quot;&quot;, ws)</span>
+<span class="sd">            - Equivalent to SetForm(gloss, "", ws)</span>
 <span class="sd">            - Gloss object itself is not deleted</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetForm, Delete</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">&quot;gloss_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">"gloss_or_hvo"</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">SetForm</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetForm</span><span class="p">(</span><span class="n">gloss_or_hvo</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span></div>
 
 </pre></div>
 
@@ -1064,8 +1084,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

@@ -54,7 +54,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Base class for smart collections with type-aware display and filtering.</span>
 
 <span class="sd">This module provides SmartCollection, a base class for creating collection</span>
@@ -78,35 +78,35 @@
 
 <span class="sd">Example::</span>
 
-<span class="sd">    from flexlibs2.code.Shared.smart_collection import SmartCollection</span>
+<span class="sd">    from flexicon.code.Shared.smart_collection import SmartCollection</span>
 
 <span class="sd">    class RuleCollection(SmartCollection):</span>
 <span class="sd">        def filter(self, **criteria):</span>
-<span class="sd">            &#39;&#39;&#39;Filter rules by name, direction, etc.&#39;&#39;&#39;</span>
+<span class="sd">            '''Filter rules by name, direction, etc.'''</span>
 <span class="sd">            filtered = [r for r in self._items if self._matches(r, criteria)]</span>
 <span class="sd">            return RuleCollection(filtered)</span>
 
 <span class="sd">    # Usage</span>
 <span class="sd">    rules = phonRuleOps.GetAll()  # Returns RuleCollection with 12 rules</span>
 <span class="sd">    print(rules)  # Shows type breakdown</span>
-<span class="sd">    # &quot;Phonological Rules (12 total)&quot;</span>
-<span class="sd">    # &quot;  PhRegularRule: 7 (58%)&quot;</span>
-<span class="sd">    # &quot;  PhMetathesisRule: 3 (25%)&quot;</span>
-<span class="sd">    # &quot;  PhReduplicationRule: 2 (17%)&quot;</span>
+<span class="sd">    # "Phonological Rules (12 total)"</span>
+<span class="sd">    # "  PhRegularRule: 7 (58%)"</span>
+<span class="sd">    # "  PhMetathesisRule: 3 (25%)"</span>
+<span class="sd">    # "  PhReduplicationRule: 2 (17%)"</span>
 
 <span class="sd">    # Filter to specific type</span>
-<span class="sd">    regular_rules = rules.by_type(&#39;PhRegularRule&#39;)</span>
+<span class="sd">    regular_rules = rules.by_type('PhRegularRule')</span>
 <span class="sd">    print(len(regular_rules))  # 7</span>
 
 <span class="sd">    # Use custom filter</span>
-<span class="sd">    voicing_rules = rules.filter(name_contains=&#39;voicing&#39;)</span>
+<span class="sd">    voicing_rules = rules.filter(name_contains='voicing')</span>
 
 <span class="sd">Usage Notes:</span>
 <span class="sd">    - Subclasses must override filter() to provide filtering logic</span>
 <span class="sd">    - Collections are iterable and support len()</span>
 <span class="sd">    - Type breakdown is shown on str() for transparency</span>
 <span class="sd">    - by_type() is implemented in base class</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
 
@@ -114,7 +114,7 @@
 <div class="viewcode-block" id="SmartCollection">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.smart_collection.SmartCollection">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SmartCollection</span><span class="p">(</span><span class="n">Iterable</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Base class for smart collections with type awareness and unified filtering.</span>
 
 <span class="sd">    Provides standard collection operations (__iter__, __len__, __str__)</span>
@@ -124,10 +124,10 @@
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        _items: The list of wrapped LCM objects in the collection</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize a smart collection with items.</span>
 
 <span class="sd">        Args:</span>
@@ -137,14 +137,14 @@
 
 <span class="sd">            collection = SmartCollection()</span>
 <span class="sd">            collection = SmartCollection([item1, item2, item3])</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">items</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Iterate over items in the collection.</span>
 
 <span class="sd">        Supports natural iteration and unpacking:</span>
@@ -155,11 +155,11 @@
 <span class="sd">                print(rule.Name)</span>
 
 <span class="sd">            first, second, *rest = rules</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the number of items in the collection.</span>
 
 <span class="sd">        Returns:</span>
@@ -168,12 +168,12 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            rules = phonRuleOps.GetAll()</span>
-<span class="sd">            print(f&quot;Collection has {len(rules)} rules&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            print(f"Collection has {len(rules)} rules")</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get an item by index (supports indexing and slicing).</span>
 
 <span class="sd">        Args:</span>
@@ -186,15 +186,15 @@
 
 <span class="sd">            first_rule = rules[0]</span>
 <span class="sd">            first_three = rules[0:3]  # Returns new SmartCollection</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-        <span class="c1"># If it&#39;s a slice, wrap in new collection</span>
+        <span class="c1"># If it's a slice, wrap in new collection</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="n">result</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Display the collection with type breakdown.</span>
 
 <span class="sd">        Shows the total count and a breakdown of items by ClassName,</span>
@@ -202,49 +202,49 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: Human-readable summary like:</span>
-<span class="sd">                &quot;Phonological Rules (12 total)&quot;</span>
-<span class="sd">                &quot;  PhRegularRule: 7 (58%)&quot;</span>
-<span class="sd">                &quot;  PhMetathesisRule: 3 (25%)&quot;</span>
-<span class="sd">                &quot;  PhReduplicationRule: 2 (17%)&quot;</span>
+<span class="sd">                "Phonological Rules (12 total)"</span>
+<span class="sd">                "  PhRegularRule: 7 (58%)"</span>
+<span class="sd">                "  PhMetathesisRule: 3 (25%)"</span>
+<span class="sd">                "  PhReduplicationRule: 2 (17%)"</span>
 
 <span class="sd">        Example::</span>
 
 <span class="sd">            rules = phonRuleOps.GetAll()</span>
 <span class="sd">            print(rules)  # Shows type breakdown</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (empty)&quot;</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (empty)"</span>
 
         <span class="c1"># Count items by ClassName</span>
         <span class="n">type_counts</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
-            <span class="n">class_type</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;class_type&quot;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">))</span>
+            <span class="n">class_type</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"class_type"</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">,</span> <span class="s2">"Unknown"</span><span class="p">))</span>
             <span class="n">type_counts</span><span class="p">[</span><span class="n">class_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_type</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
 
         <span class="c1"># Build summary</span>
         <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span>
-        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2"> total)&quot;</span><span class="p">]</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2"> total)"</span><span class="p">]</span>
 
         <span class="c1"># Add breakdown by type (sorted by count descending)</span>
         <span class="k">for</span> <span class="n">class_type</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">type_counts</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
             <span class="n">percentage</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">count</span> <span class="o">*</span> <span class="mi">100</span> <span class="o">/</span> <span class="n">total</span><span class="p">)</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">class_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">percentage</span><span class="si">}</span><span class="s2">%)&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">class_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">percentage</span><span class="si">}</span><span class="s2">%)"</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Technical representation of the collection.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: Representation like &quot;SmartCollection(12 items)&quot;</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items)&quot;</span>
+<span class="sd">            str: Representation like "SmartCollection(12 items)"</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items)"</span>
 
 <div class="viewcode-block" id="SmartCollection.by_type">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.smart_collection.SmartCollection.by_type">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">by_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter the collection to items of a specific concrete type.</span>
 
 <span class="sd">        Returns a new collection containing only items whose ClassName</span>
@@ -252,7 +252,7 @@
 <span class="sd">        specific concrete type (e.g., just PhRegularRule, not all rules).</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            class_name: The ClassName to filter by (e.g., &#39;PhRegularRule&#39;).</span>
+<span class="sd">            class_name: The ClassName to filter by (e.g., 'PhRegularRule').</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            SmartCollection: New collection with filtered items.</span>
@@ -260,19 +260,19 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            all_rules = phonRuleOps.GetAll()</span>
-<span class="sd">            regular_rules = all_rules.by_type(&#39;PhRegularRule&#39;)</span>
-<span class="sd">            print(f&quot;Found {len(regular_rules)} regular rules&quot;)</span>
+<span class="sd">            regular_rules = all_rules.by_type('PhRegularRule')</span>
+<span class="sd">            print(f"Found {len(regular_rules)} regular rules")</span>
 
 <span class="sd">            # Chain with custom filtering</span>
-<span class="sd">            voicing_regular = regular_rules.filter(name_contains=&#39;voicing&#39;)</span>
+<span class="sd">            voicing_regular = regular_rules.filter(name_contains='voicing')</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns a new collection (doesn&#39;t modify original)</span>
+<span class="sd">            - Returns a new collection (doesn't modify original)</span>
 <span class="sd">            - Returns empty collection if no items match</span>
-<span class="sd">            - Use ClassName strings like &#39;PhRegularRule&#39;, &#39;MoStemMsa&#39;, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            - Use ClassName strings like 'PhRegularRule', 'MoStemMsa', etc.</span>
+<span class="sd">        """</span>
         <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;class_type&quot;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span> <span class="o">==</span> <span class="n">class_name</span>
+            <span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"class_type"</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span> <span class="o">==</span> <span class="n">class_name</span>
         <span class="p">]</span>
         <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="n">filtered</span><span class="p">)</span></div>
 
@@ -280,13 +280,13 @@
 <div class="viewcode-block" id="SmartCollection.filter">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.smart_collection.SmartCollection.filter">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">criteria</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Filter the collection using domain-specific criteria.</span>
 
 <span class="sd">        This is an abstract method that subclasses override to provide</span>
 <span class="sd">        filtering logic specific to their domain. For example:</span>
-<span class="sd">        - RuleCollection.filter(name_contains=&#39;voicing&#39;, direction=&#39;LTR&#39;)</span>
-<span class="sd">        - EntryCollection.filter(gloss_contains=&#39;to run&#39;, pos=&#39;verb&#39;)</span>
+<span class="sd">        - RuleCollection.filter(name_contains='voicing', direction='LTR')</span>
+<span class="sd">        - EntryCollection.filter(gloss_contains='to run', pos='verb')</span>
 
 <span class="sd">        Subclasses should return a new collection of the same type with</span>
 <span class="sd">        items matching all criteria.</span>
@@ -298,7 +298,7 @@
 <span class="sd">            SmartCollection: New collection with filtered items.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            NotImplementedError: Base class doesn&#39;t implement filtering.</span>
+<span class="sd">            NotImplementedError: Base class doesn't implement filtering.</span>
 <span class="sd">                Subclasses must override this method.</span>
 
 <span class="sd">        Example::</span>
@@ -320,18 +320,18 @@
 <span class="sd">                    return RuleCollection(filtered)</span>
 
 <span class="sd">            # Usage</span>
-<span class="sd">            voicing_rules = rules.filter(name_contains=&#39;voicing&#39;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            voicing_rules = rules.filter(name_contains='voicing')</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not implement filter(). &quot;</span>
-            <span class="s2">&quot;Subclasses must override this method to provide filtering logic.&quot;</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not implement filter(). "</span>
+            <span class="s2">"Subclasses must override this method to provide filtering logic."</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SmartCollection.append">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.smart_collection.SmartCollection.append">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add an item to the collection.</span>
 
 <span class="sd">        Args:</span>
@@ -341,14 +341,14 @@
 
 <span class="sd">            rules = SmartCollection()</span>
 <span class="sd">            rules.append(new_rule)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SmartCollection.extend">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.smart_collection.SmartCollection.extend">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add multiple items to the collection.</span>
 
 <span class="sd">        Args:</span>
@@ -357,21 +357,21 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            rules.extend([rule1, rule2, rule3])</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">items</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SmartCollection.clear">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.smart_collection.SmartCollection.clear">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Remove all items from the collection.</span>
 
 <span class="sd">        Example::</span>
 
 <span class="sd">            rules.clear()</span>
 <span class="sd">            assert len(rules) == 0</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
 </div>
 
@@ -412,8 +412,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

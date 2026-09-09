@@ -46,7 +46,7 @@
 <span class="c1">#</span>
 <span class="c1">#   Class: PythonicWrapper</span>
 <span class="c1">#          Wraps LibLCM objects to provide suffix-free property access.</span>
-<span class="c1">#          Translates pythonic names like &#39;Senses&#39; to LibLCM names like &#39;SensesOS&#39;.</span>
+<span class="c1">#          Translates pythonic names like 'Senses' to LibLCM names like 'SensesOS'.</span>
 <span class="c1">#</span>
 <span class="c1">#   Platform: Python.NET</span>
 <span class="c1">#             FieldWorks Version 9+</span>
@@ -54,7 +54,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Pythonic Wrapper for LibLCM Objects</span>
 
 <span class="sd">LibLCM uses 2-character suffixes to indicate relationship types:</span>
@@ -72,7 +72,7 @@
 
 <span class="sd">Usage::</span>
 
-<span class="sd">    from flexlibs2.code.PythonicWrapper import wrap, unwrap</span>
+<span class="sd">    from flexicon.code.PythonicWrapper import wrap, unwrap</span>
 
 <span class="sd">    # Wrap an LCM object</span>
 <span class="sd">    entry = wrap(raw_entry)</span>
@@ -85,10 +85,10 @@
 <span class="sd">    raw = unwrap(entry)</span>
 
 <span class="sd">    # Or use the p() shorthand</span>
-<span class="sd">    from flexlibs2.code.PythonicWrapper import p</span>
+<span class="sd">    from flexicon.code.PythonicWrapper import p</span>
 <span class="sd">    for sense in p(entry).Senses:</span>
 <span class="sd">        print(p(sense).Gloss)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.Shared.lcm_constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">SUFFIXES</span>
 
@@ -96,33 +96,33 @@
 <div class="viewcode-block" id="PythonicWrapper">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.PythonicWrapper.PythonicWrapper">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PythonicWrapper</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Wrapper that provides suffix-free property access to LibLCM objects.</span>
 
 <span class="sd">    Uses __getattr__ to intercept attribute access and try suffixed variants</span>
-<span class="sd">    when the base name isn&#39;t found.</span>
+<span class="sd">    when the base name isn't found.</span>
 
 <span class="sd">    Example::</span>
 
 <span class="sd">        wrapped = PythonicWrapper(entry)</span>
 <span class="sd">        for sense in wrapped.Senses:  # Tries SensesOS, SensesOC, etc.</span>
 <span class="sd">            text = wrapped.Gloss      # Returns Gloss directly if it exists</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;_obj&quot;</span><span class="p">,</span> <span class="s2">&quot;_cache&quot;</span><span class="p">)</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"_obj"</span><span class="p">,</span> <span class="s2">"_cache"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize wrapper with an LCM object.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            obj: The LibLCM object to wrap (ILexEntry, ILexSense, etc.)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
-        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_cache&quot;</span><span class="p">,</span> <span class="p">{})</span>
+<span class="sd">        """</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_cache"</span><span class="p">,</span> <span class="p">{})</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get attribute, trying suffixed variants if base name not found.</span>
 
 <span class="sd">        Resolution order:</span>
@@ -130,13 +130,13 @@
 <span class="sd">        2. Try the exact name on the wrapped object</span>
 <span class="sd">        3. Try each suffix variant (OS, OC, OA, RS, RC, RA)</span>
 <span class="sd">        4. Raise AttributeError if nothing found</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Check cache first</span>
-        <span class="n">cache</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_cache&quot;</span><span class="p">)</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_cache"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">),</span> <span class="n">cache</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">),</span> <span class="n">cache</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
 
-        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
 
         <span class="c1"># Try exact name first</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
@@ -152,20 +152,20 @@
 
         <span class="c1"># Not found</span>
         <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&#39; object has no attribute &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;(also tried: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">SUFFIXES</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">' object has no attribute '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' "</span>
+            <span class="sa">f</span><span class="s2">"(also tried: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">SUFFIXES</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set attribute, trying suffixed variants if base name not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;_obj&quot;</span><span class="p">,</span> <span class="s2">&quot;_cache&quot;</span><span class="p">):</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"_obj"</span><span class="p">,</span> <span class="s2">"_cache"</span><span class="p">):</span>
             <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
             <span class="k">return</span>
 
-        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
-        <span class="n">cache</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_cache&quot;</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_cache"</span><span class="p">)</span>
 
         <span class="c1"># Check cache first</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">:</span>
@@ -190,60 +190,60 @@
         <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;PythonicWrapper(</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"PythonicWrapper(</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">PythonicWrapper</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">obj</span> <span class="o">==</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span> <span class="o">==</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">obj</span> <span class="o">==</span> <span class="n">other</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Allow iteration if wrapped object is iterable.&quot;&quot;&quot;</span>
-        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">"""Allow iteration if wrapped object is iterable."""</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return length if wrapped object has Count or __len__.&quot;&quot;&quot;</span>
-        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Count&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return length if wrapped object has Count or __len__."""</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"Count"</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">Count</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Allow indexing if wrapped object supports it.&quot;&quot;&quot;</span>
-        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">"""Allow indexing if wrapped object supports it."""</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">obj</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Support &#39;in&#39; operator.&quot;&quot;&quot;</span>
-        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">"""Support 'in' operator."""</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">PythonicWrapper</span><span class="p">):</span>
-            <span class="n">item</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Contains&quot;</span><span class="p">):</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"Contains"</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">obj</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_unwrap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the underlying LCM object.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span></div>
+<span class="w">        </span><span class="sd">"""Get the underlying LCM object."""</span>
+        <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="wrap">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.PythonicWrapper.wrap">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">wrap</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Wrap an LCM object for pythonic property access.</span>
 
 <span class="sd">    Args:</span>
@@ -257,7 +257,7 @@
 <span class="sd">        entry = wrap(raw_entry)</span>
 <span class="sd">        for sense in entry.Senses:  # Uses SensesOS internally</span>
 <span class="sd">            print(sense)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">PythonicWrapper</span><span class="p">):</span>
@@ -269,7 +269,7 @@
 <div class="viewcode-block" id="unwrap">
 <a class="viewcode-back" href="../../../api/flexicon.code.html#flexicon.code.PythonicWrapper.unwrap">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">unwrap</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get the underlying LCM object from a wrapper.</span>
 
 <span class="sd">    Args:</span>
@@ -281,9 +281,9 @@
 <span class="sd">    Example::</span>
 
 <span class="sd">        raw = unwrap(wrapped_entry)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">PythonicWrapper</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;_obj&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"_obj"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">obj</span></div>
 
 
@@ -327,8 +327,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

@@ -57,7 +57,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Pattern-element types for the PhonologicalRuleOperations.WireRule composer.</span>
 
 <span class="sd">These are inert dataclasses used to describe rule contexts at the wrapper</span>
@@ -65,16 +65,16 @@
 
 <span class="sd">Usage::</span>
 
-<span class="sd">    from flexlibs2 import Seg, NC, Boundary</span>
+<span class="sd">    from flexicon import Seg, NC, Boundary</span>
 
 <span class="sd">    # Build context elements</span>
 <span class="sd">    seg_t = Seg(phoneme_t)</span>
 <span class="sd">    vowels_back = NC(vowel_class, plus=[alpha_back])</span>
-<span class="sd">    word_bdry = Boundary(&quot;#&quot;)</span>
+<span class="sd">    word_bdry = Boundary("#")</span>
 
 <span class="sd">Greek-variable identity is preserved by re-using the SAME</span>
 <span class="sd">IPhFeatureConstraint object across multiple NC pattern elements.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 
@@ -83,14 +83,14 @@
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.rule_patterns.Seg">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Seg</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A single-phoneme pattern element.</span>
+<span class="w">    </span><span class="sd">"""A single-phoneme pattern element.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        phoneme: An IPhPhoneme, HVO (int), or wrapper representing a</span>
 <span class="sd">            single phoneme.</span>
 
 <span class="sd">    Notes:</span>
-<span class="sd">        Seg carries no alpha-feature constraints: LCM&#39;s</span>
+<span class="sd">        Seg carries no alpha-feature constraints: LCM's</span>
 <span class="sd">        ``IPhSimpleContextSeg`` has no ``PlusConstrRS`` / ``MinusConstrRS``</span>
 <span class="sd">        slots -- only ``IPhSimpleContextNC`` does. To express alpha-feature</span>
 <span class="sd">        constraints on a single phoneme, wrap it in a singleton</span>
@@ -98,7 +98,7 @@
 <span class="sd">        instead. A singleton NC can be reused across rules that target</span>
 <span class="sd">        the same phoneme. (Linguistic context: e.g. Bantu N-place</span>
 <span class="sd">        assimilation -- see issue #23.)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">phoneme</span><span class="p">:</span> <span class="nb">object</span></div>
 
 
@@ -107,7 +107,7 @@
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.rule_patterns.NC">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">NC</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A natural-class pattern element, optionally with alpha-feature constraints.</span>
+<span class="w">    </span><span class="sd">"""A natural-class pattern element, optionally with alpha-feature constraints.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        natural_class: An IPhNaturalClass, HVO (int), or wrapper.</span>
@@ -119,7 +119,7 @@
 <span class="sd">    Notes:</span>
 <span class="sd">        Re-use the SAME IPhFeatureConstraint object across multiple</span>
 <span class="sd">        positions to express alpha/beta/gamma agreement.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">natural_class</span><span class="p">:</span> <span class="nb">object</span>
     <span class="n">plus</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">()</span>
     <span class="n">minus</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">()</span></div>
@@ -130,24 +130,24 @@
 <a class="viewcode-back" href="../../../../api/flexicon.code.Shared.html#flexicon.code.Shared.rule_patterns.Boundary">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Boundary</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A boundary marker pattern element, identified by its FW-shipped name.</span>
+<span class="w">    </span><span class="sd">"""A boundary marker pattern element, identified by its FW-shipped name.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        marker: One of FieldWorks&#39; standard boundary marker names. The</span>
-<span class="sd">            default project ships with ``&quot;#&quot;`` (word boundary), ``&quot;+&quot;``</span>
-<span class="sd">            (morpheme boundary), and ``&quot;.&quot;`` (syllable boundary).</span>
+<span class="sd">        marker: One of FieldWorks' standard boundary marker names. The</span>
+<span class="sd">            default project ships with ``"#"`` (word boundary), ``"+"``</span>
+<span class="sd">            (morpheme boundary), and ``"."`` (syllable boundary).</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        Boundary elements appear only in left/right contexts (never in</span>
 <span class="sd">        the structural change). The composer looks the marker up by</span>
 <span class="sd">        name from ``PhonemeSetsOS[0].BoundaryMarkersOC`` rather than</span>
 <span class="sd">        creating new markers.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">marker</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#&quot;</span></div>
+<span class="sd">    """</span>
+    <span class="n">marker</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#"</span></div>
 
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Seg&quot;</span><span class="p">,</span> <span class="s2">&quot;NC&quot;</span><span class="p">,</span> <span class="s2">&quot;Boundary&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Seg"</span><span class="p">,</span> <span class="s2">"NC"</span><span class="p">,</span> <span class="s2">"Boundary"</span><span class="p">]</span>
 </pre></div>
 
             <div class="clearer"></div>
@@ -185,8 +185,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

@@ -83,7 +83,7 @@
 <div class="viewcode-block" id="LexRefMappingTypes">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.LexReferenceOperations.LexRefMappingTypes">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LexRefMappingTypes</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Lexical reference mapping type constants.</span>
 
 <span class="sd">    These correspond to the LexRefTypeTags.MappingTypes enum in FLEx.</span>
@@ -100,7 +100,7 @@
 
 <span class="sd">    - SEQUENCE: Ordered sequence relations (A → B → C)</span>
 <span class="sd">      Example: temporal sequences, procedural steps</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">SYMMETRIC</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># krtSym - Symmetric (A ↔ B)</span>
     <span class="n">ASYMMETRIC</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># krtAsym - Asymmetric with forward/reverse (A → B, B ← A)</span>
@@ -112,7 +112,7 @@
 <div class="viewcode-block" id="LexReferenceOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Lexicon.html#flexicon.code.Lexicon.LexReferenceOperations.LexReferenceOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LexReferenceOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class provides operations for managing lexical references and</span>
 <span class="sd">    cross-references in a FieldWorks project.</span>
 
@@ -131,27 +131,27 @@
 
 <span class="sd">    Usage::</span>
 
-<span class="sd">        from flexlibs2 import FLExProject</span>
+<span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
 
 <span class="sd">        # Get all relation types</span>
 <span class="sd">        for ref_type in project.LexReferences.GetAllTypes():</span>
 <span class="sd">            name = project.LexReferences.GetTypeName(ref_type)</span>
 <span class="sd">            mapping = project.LexReferences.GetMappingType(ref_type)</span>
-<span class="sd">            print(f&quot;{name}: {mapping}&quot;)</span>
+<span class="sd">            print(f"{name}: {mapping}")</span>
 
 <span class="sd">        # Create a new relation type</span>
 <span class="sd">        synonym_type = project.LexReferences.CreateType(</span>
-<span class="sd">            &quot;Synonym&quot;,</span>
-<span class="sd">            &quot;Symmetric&quot;,</span>
+<span class="sd">            "Synonym",</span>
+<span class="sd">            "Symmetric",</span>
 <span class="sd">            reverse_name=None</span>
 <span class="sd">        )</span>
 
 <span class="sd">        # Create a reference between two senses</span>
-<span class="sd">        entry1 = project.LexEntry.Find(&quot;run&quot;)</span>
-<span class="sd">        entry2 = project.LexEntry.Find(&quot;jog&quot;)</span>
+<span class="sd">        entry1 = project.LexEntry.Find("run")</span>
+<span class="sd">        entry2 = project.LexEntry.Find("jog")</span>
 <span class="sd">        if entry1 and entry2:</span>
 <span class="sd">            sense1 = list(project.Senses.GetAll(entry1))[0]</span>
 <span class="sd">            sense2 = list(project.Senses.GetAll(entry2))[0]</span>
@@ -161,42 +161,44 @@
 <span class="sd">        for ref in project.LexReferences.GetAll(sense1):</span>
 <span class="sd">            targets = project.LexReferences.GetTargets(ref)</span>
 <span class="sd">            for target in targets:</span>
-<span class="sd">                if target.ClassName == &quot;LexSense&quot;:</span>
+<span class="sd">                if target.ClassName == "LexSense":</span>
 <span class="sd">                    gloss = project.Senses.GetGloss(target)</span>
-<span class="sd">                    print(f&quot;Related sense: {gloss}&quot;)</span>
+<span class="sd">                    print(f"Related sense: {gloss}")</span>
 
 <span class="sd">        project.CloseProject()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize LexReferenceOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="c1"># --- Reference Type Management ---</span>
 
+    <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAllTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all lexical relation types in the project.</span>
 
-<span class="sd">        This method returns an iterator over all ILexRefType objects that</span>
-<span class="sd">        define the types of lexical relations available in the project, such</span>
-<span class="sd">        as Synonym, Antonym, Part-Whole, etc.</span>
+<span class="sd">        This method returns an EnumerableWrapper (subscriptable, len()-able,</span>
+<span class="sd">        lazily materialized) over all ILexRefType objects that define the</span>
+<span class="sd">        types of lexical relations available in the project, such as</span>
+<span class="sd">        Synonym, Antonym, Part-Whole, etc.</span>
 
-<span class="sd">        Yields:</span>
-<span class="sd">            ILexRefType: Each lexical reference type object in the project</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EnumerableWrapper[ILexRefType]: Each lexical reference type object in the project</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; for ref_type in project.LexReferences.GetAllTypes():</span>
 <span class="sd">            ...     name = project.LexReferences.GetTypeName(ref_type)</span>
 <span class="sd">            ...     mapping = project.LexReferences.GetMappingType(ref_type)</span>
 <span class="sd">            ...     count = len(list(ref_type.MembersOC))</span>
-<span class="sd">            ...     print(f&quot;{name} ({mapping}): {count} references&quot;)</span>
+<span class="sd">            ...     print(f"{name} ({mapping}): {count} references")</span>
 <span class="sd">            Synonym (Symmetric): 15 references</span>
 <span class="sd">            Antonym (Symmetric): 8 references</span>
 <span class="sd">            Part-Whole (Tree): 22 references</span>
@@ -209,23 +211,23 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            FindType, CreateType, GetTypeName, GetMappingType</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ObjectsIn</span><span class="p">(</span><span class="n">ILexRefTypeRepository</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">CreateType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mapping_type</span><span class="p">,</span> <span class="n">reverse_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new lexical relation type.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            name (str): The name of the relation type (e.g., &quot;Synonym&quot;)</span>
+<span class="sd">            name (str): The name of the relation type (e.g., "Synonym")</span>
 <span class="sd">            mapping_type (str): The mapping type - one of:</span>
-<span class="sd">                - &quot;Symmetric&quot; - bidirectional equal relations (synonym, antonym)</span>
-<span class="sd">                - &quot;Asymmetric&quot; - directional relations (hypernym/hyponym)</span>
-<span class="sd">                - &quot;Tree&quot; - hierarchical part-whole relations</span>
-<span class="sd">                - &quot;Sequence&quot; - ordered sequence relations</span>
+<span class="sd">                - "Symmetric" - bidirectional equal relations (synonym, antonym)</span>
+<span class="sd">                - "Asymmetric" - directional relations (hypernym/hyponym)</span>
+<span class="sd">                - "Tree" - hierarchical part-whole relations</span>
+<span class="sd">                - "Sequence" - ordered sequence relations</span>
 <span class="sd">            reverse_name (str, optional): The reverse name for asymmetric</span>
-<span class="sd">                relations (e.g., &quot;Hyponym&quot; when name is &quot;Hypernym&quot;)</span>
+<span class="sd">                relations (e.g., "Hyponym" when name is "Hypernym")</span>
 <span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
 
 <span class="sd">        Returns:</span>
@@ -238,39 +240,39 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Create symmetric relation (synonym)</span>
-<span class="sd">            &gt;&gt;&gt; syn_type = project.LexReferences.CreateType(&quot;Synonym&quot;, &quot;Symmetric&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; syn_type = project.LexReferences.CreateType("Synonym", "Symmetric")</span>
 <span class="sd">            &gt;&gt;&gt; print(project.LexReferences.GetTypeName(syn_type))</span>
 <span class="sd">            Synonym</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create asymmetric relation (hypernym/hyponym)</span>
 <span class="sd">            &gt;&gt;&gt; hyper_type = project.LexReferences.CreateType(</span>
-<span class="sd">            ...     &quot;Hypernym&quot;,</span>
-<span class="sd">            ...     &quot;Asymmetric&quot;,</span>
-<span class="sd">            ...     reverse_name=&quot;Hyponym&quot;</span>
+<span class="sd">            ...     "Hypernym",</span>
+<span class="sd">            ...     "Asymmetric",</span>
+<span class="sd">            ...     reverse_name="Hyponym"</span>
 <span class="sd">            ... )</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create tree relation (part-whole)</span>
 <span class="sd">            &gt;&gt;&gt; part_type = project.LexReferences.CreateType(</span>
-<span class="sd">            ...     &quot;Part-Whole&quot;,</span>
-<span class="sd">            ...     &quot;Tree&quot;</span>
+<span class="sd">            ...     "Part-Whole",</span>
+<span class="sd">            ...     "Tree"</span>
 <span class="sd">            ... )</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Symmetric relations don&#39;t need reverse_name</span>
+<span class="sd">            - Symmetric relations don't need reverse_name</span>
 <span class="sd">            - Asymmetric relations should provide reverse_name</span>
 <span class="sd">            - Tree relations create hierarchical structures</span>
 <span class="sd">            - Sequence relations maintain order of targets</span>
-<span class="sd">            - Type is added to project&#39;s lexical relation types list</span>
+<span class="sd">            - Type is added to project's lexical relation types list</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            DeleteType, FindType, GetAllTypes, SetTypeName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">mapping_type</span><span class="p">,</span> <span class="s2">&quot;mapping_type&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">mapping_type</span><span class="p">,</span> <span class="s2">"mapping_type"</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateStringNotEmpty</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateStringNotEmpty</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="c1"># Validate mapping type</span>
         <span class="n">mapping_type_upper</span> <span class="o">=</span> <span class="n">mapping_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
@@ -278,27 +280,27 @@
 
         <span class="c1"># Map string to LcmReferenceType enumeration value</span>
         <span class="c1"># Using the integer values from the FLEx API</span>
-        <span class="k">if</span> <span class="n">mapping_type_upper</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;SYMMETRIC&quot;</span><span class="p">,</span> <span class="s2">&quot;SYM&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">mapping_type_upper</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"SYMMETRIC"</span><span class="p">,</span> <span class="s2">"SYM"</span><span class="p">):</span>
             <span class="n">mapping_value</span> <span class="o">=</span> <span class="n">LexRefMappingTypes</span><span class="o">.</span><span class="n">SYMMETRIC</span>
-        <span class="k">elif</span> <span class="n">mapping_type_upper</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;ASYMMETRIC&quot;</span><span class="p">,</span> <span class="s2">&quot;ASYM&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">mapping_type_upper</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"ASYMMETRIC"</span><span class="p">,</span> <span class="s2">"ASYM"</span><span class="p">):</span>
             <span class="n">mapping_value</span> <span class="o">=</span> <span class="n">LexRefMappingTypes</span><span class="o">.</span><span class="n">ASYMMETRIC</span>
-        <span class="k">elif</span> <span class="n">mapping_type_upper</span> <span class="o">==</span> <span class="s2">&quot;TREE&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">mapping_type_upper</span> <span class="o">==</span> <span class="s2">"TREE"</span><span class="p">:</span>
             <span class="n">mapping_value</span> <span class="o">=</span> <span class="n">LexRefMappingTypes</span><span class="o">.</span><span class="n">TREE</span>
-        <span class="k">elif</span> <span class="n">mapping_type_upper</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;SEQUENCE&quot;</span><span class="p">,</span> <span class="s2">&quot;SEQ&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">mapping_type_upper</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"SEQUENCE"</span><span class="p">,</span> <span class="s2">"SEQ"</span><span class="p">):</span>
             <span class="n">mapping_value</span> <span class="o">=</span> <span class="n">LexRefMappingTypes</span><span class="o">.</span><span class="n">SEQUENCE</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Invalid mapping type &#39;</span><span class="si">{</span><span class="n">mapping_type</span><span class="si">}</span><span class="s2">&#39;. &quot;</span> <span class="sa">f</span><span class="s2">&quot;Must be one of: Symmetric, Asymmetric, Tree, Sequence&quot;</span>
+                <span class="sa">f</span><span class="s2">"Invalid mapping type '</span><span class="si">{</span><span class="n">mapping_type</span><span class="si">}</span><span class="s2">'. "</span> <span class="sa">f</span><span class="s2">"Must be one of: Symmetric, Asymmetric, Tree, Sequence"</span>
             <span class="p">)</span>
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Create reference type &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Create reference type '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
             <span class="c1"># Create the new reference type using the factory</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexRefTypeFactory</span><span class="p">)</span>
             <span class="n">new_ref_type</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="c1"># Add to project&#39;s lexical relation types (must be done before setting properties)</span>
+            <span class="c1"># Add to project's lexical relation types (must be done before setting properties)</span>
             <span class="n">ref_types_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lexDB</span><span class="o">.</span><span class="n">ReferencesOA</span>
             <span class="k">if</span> <span class="n">ref_types_list</span><span class="p">:</span>
                 <span class="n">ref_types_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_ref_type</span><span class="p">)</span>
@@ -315,7 +317,7 @@
                 <span class="n">rev_mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">reverse_name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
                 <span class="n">new_ref_type</span><span class="o">.</span><span class="n">ReverseName</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">rev_mkstr</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Create the reference list if it doesn&#39;t exist</span>
+                <span class="c1"># Create the reference list if it doesn't exist</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel</span><span class="w"> </span><span class="kn">import</span> <span class="n">ICmPossibilityListFactory</span>
 
                 <span class="n">list_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ICmPossibilityListFactory</span><span class="p">)</span>
@@ -327,7 +329,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">DeleteType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_type_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete a lexical relation type.</span>
 
 <span class="sd">        Args:</span>
@@ -336,10 +338,10 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If ref_type_or_hvo is None</span>
-<span class="sd">            FP_ParameterError: If type doesn&#39;t exist</span>
+<span class="sd">            FP_ParameterError: If type doesn't exist</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; ref_type = project.LexReferences.FindType(&quot;Obsolete Relation&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; ref_type = project.LexReferences.FindType("Obsolete Relation")</span>
 <span class="sd">            &gt;&gt;&gt; if ref_type:</span>
 <span class="sd">            ...     project.LexReferences.DeleteType(ref_type)</span>
 
@@ -355,21 +357,22 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            CreateType, FindType</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;ref_type_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">"ref_type_or_hvo"</span><span class="p">)</span>
 
         <span class="n">ref_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRefType</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Remove from the references list</span>
         <span class="n">ref_types_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lexDB</span><span class="o">.</span><span class="n">ReferencesOA</span>
         <span class="k">if</span> <span class="n">ref_types_list</span><span class="p">:</span>
-            <span class="n">ref_types_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">ref_type</span><span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete lexical reference type"</span><span class="p">):</span>
+                <span class="n">ref_types_list</span><span class="o">.</span><span class="n">PossibilitiesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">ref_type</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">FindType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find a lexical relation type by name.</span>
 
 <span class="sd">        Args:</span>
@@ -383,29 +386,29 @@
 <span class="sd">            FP_NullParameterError: If name is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; syn_type = project.LexReferences.FindType(&quot;Synonym&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; syn_type = project.LexReferences.FindType("Synonym")</span>
 <span class="sd">            &gt;&gt;&gt; if syn_type:</span>
 <span class="sd">            ...     mapping = project.LexReferences.GetMappingType(syn_type)</span>
-<span class="sd">            ...     print(f&quot;Found: {mapping}&quot;)</span>
+<span class="sd">            ...     print(f"Found: {mapping}")</span>
 <span class="sd">            Found: Symmetric</span>
 
 <span class="sd">            &gt;&gt;&gt; # Search with specific writing system</span>
 <span class="sd">            &gt;&gt;&gt; type_fr = project.LexReferences.FindType(</span>
-<span class="sd">            ...     &quot;Synonyme&quot;,</span>
-<span class="sd">            ...     project.WSHandle(&#39;fr&#39;)</span>
+<span class="sd">            ...     "Synonyme",</span>
+<span class="sd">            ...     project.WSHandle('fr')</span>
 <span class="sd">            ... )</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Search is case-sensitive</span>
 <span class="sd">            - Search is writing-system specific</span>
 <span class="sd">            - Returns first match only</span>
-<span class="sd">            - Returns None if not found (doesn&#39;t raise exception)</span>
+<span class="sd">            - Returns None if not found (doesn't raise exception)</span>
 <span class="sd">            - Searches top-level types only (not subtypes)</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAllTypes, CreateType, GetTypeName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -426,7 +429,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetTypeName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the name of a lexical relation type.</span>
 
 <span class="sd">        Args:</span>
@@ -442,7 +445,7 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; for ref_type in project.LexReferences.GetAllTypes():</span>
 <span class="sd">            ...     name = project.LexReferences.GetTypeName(ref_type)</span>
-<span class="sd">            ...     print(f&quot;Relation type: {name}&quot;)</span>
+<span class="sd">            ...     print(f"Relation type: {name}")</span>
 <span class="sd">            Relation type: Synonym</span>
 <span class="sd">            Relation type: Antonym</span>
 <span class="sd">            Relation type: Part-Whole</span>
@@ -454,18 +457,18 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetTypeName, GetTypeReverseName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;ref_type_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">"ref_type_or_hvo"</span><span class="p">)</span>
 
         <span class="n">ref_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRefType</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">ref_type</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetTypeName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the name of a lexical relation type.</span>
 
 <span class="sd">        Args:</span>
@@ -478,39 +481,41 @@
 <span class="sd">            FP_NullParameterError: If ref_type_or_hvo or name is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; ref_type = project.LexReferences.FindType(&quot;Synonm&quot;)  # typo</span>
+<span class="sd">            &gt;&gt;&gt; ref_type = project.LexReferences.FindType("Synonm")  # typo</span>
 <span class="sd">            &gt;&gt;&gt; if ref_type:</span>
-<span class="sd">            ...     project.LexReferences.SetTypeName(ref_type, &quot;Synonym&quot;)</span>
+<span class="sd">            ...     project.LexReferences.SetTypeName(ref_type, "Synonym")</span>
 <span class="sd">            ...     print(project.LexReferences.GetTypeName(ref_type))</span>
 <span class="sd">            Synonym</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Can be set independently in multiple writing systems</span>
 <span class="sd">            - Empty string is allowed (clears the name)</span>
-<span class="sd">            - Changing name doesn&#39;t affect existing references</span>
+<span class="sd">            - Changing name doesn't affect existing references</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetTypeName, SetTypeReverseName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;ref_type_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">"ref_type_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="n">ref_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRefType</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">ref_type</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set reference type name '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+            <span class="n">ref_type</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetTypeReverseName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the reverse name for an asymmetric relation type.</span>
 
 <span class="sd">        For asymmetric relations, the reverse name is used for the opposite</span>
-<span class="sd">        direction. For example, if the name is &quot;Hypernym&quot;, the reverse name</span>
-<span class="sd">        would be &quot;Hyponym&quot;.</span>
+<span class="sd">        direction. For example, if the name is "Hypernym", the reverse name</span>
+<span class="sd">        would be "Hyponym".</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            ref_type_or_hvo: Either an ILexRefType object or its HVO</span>
@@ -523,11 +528,11 @@
 <span class="sd">            FP_NullParameterError: If ref_type_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; hyper_type = project.LexReferences.FindType(&quot;Hypernym&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; hyper_type = project.LexReferences.FindType("Hypernym")</span>
 <span class="sd">            &gt;&gt;&gt; if hyper_type:</span>
 <span class="sd">            ...     name = project.LexReferences.GetTypeName(hyper_type)</span>
 <span class="sd">            ...     reverse = project.LexReferences.GetTypeReverseName(hyper_type)</span>
-<span class="sd">            ...     print(f&quot;{name} &lt;-&gt; {reverse}&quot;)</span>
+<span class="sd">            ...     print(f"{name} &lt;-&gt; {reverse}")</span>
 <span class="sd">            Hypernym &lt;-&gt; Hyponym</span>
 
 <span class="sd">        Notes:</span>
@@ -537,8 +542,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetTypeReverseName, GetTypeName, GetMappingType</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;ref_type_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">"ref_type_or_hvo"</span><span class="p">)</span>
 
         <span class="n">ref_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRefType</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
@@ -546,13 +551,13 @@
         <span class="c1"># Check if this is an asymmetric relation</span>
         <span class="k">if</span> <span class="n">ref_type</span><span class="o">.</span><span class="n">MappingType</span> <span class="o">==</span> <span class="n">LexRefMappingTypes</span><span class="o">.</span><span class="n">ASYMMETRIC</span><span class="p">:</span>
             <span class="n">reverse_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">ref_type</span><span class="o">.</span><span class="n">ReverseName</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-            <span class="k">return</span> <span class="n">reverse_name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="n">reverse_name</span> <span class="ow">or</span> <span class="s2">""</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetTypeReverseName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the reverse name for an asymmetric relation type.</span>
 
 <span class="sd">        Args:</span>
@@ -566,9 +571,9 @@
 <span class="sd">            FP_ParameterError: If the relation type is not asymmetric</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; hyper_type = project.LexReferences.FindType(&quot;Hypernym&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; hyper_type = project.LexReferences.FindType("Hypernym")</span>
 <span class="sd">            &gt;&gt;&gt; if hyper_type:</span>
-<span class="sd">            ...     project.LexReferences.SetTypeReverseName(hyper_type, &quot;Hyponym&quot;)</span>
+<span class="sd">            ...     project.LexReferences.SetTypeReverseName(hyper_type, "Hyponym")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only applicable to asymmetric relations</span>
@@ -577,26 +582,28 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetTypeReverseName, SetTypeName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;ref_type_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">"ref_type_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="n">ref_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRefType</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Verify this is an asymmetric relation</span>
         <span class="k">if</span> <span class="n">ref_type</span><span class="o">.</span><span class="n">MappingType</span> <span class="o">!=</span> <span class="n">LexRefMappingTypes</span><span class="o">.</span><span class="n">ASYMMETRIC</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;SetTypeReverseName can only be used with asymmetric relations&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"SetTypeReverseName can only be used with asymmetric relations"</span><span class="p">)</span>
 
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandleAnalysis</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">ref_type</span><span class="o">.</span><span class="n">ReverseName</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set reference type reverse name '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+            <span class="n">ref_type</span><span class="o">.</span><span class="n">ReverseName</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetMappingType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_type_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the mapping type of a lexical relation type.</span>
 
 <span class="sd">        The mapping type determines how the relation behaves:</span>
@@ -610,7 +617,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: The mapping type as a string - one of:</span>
-<span class="sd">                &quot;Symmetric&quot;, &quot;Asymmetric&quot;, &quot;Tree&quot;, &quot;Sequence&quot;, or &quot;Unknown&quot;</span>
+<span class="sd">                "Symmetric", "Asymmetric", "Tree", "Sequence", or "Unknown"</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If ref_type_or_hvo is None</span>
@@ -619,7 +626,7 @@
 <span class="sd">            &gt;&gt;&gt; for ref_type in project.LexReferences.GetAllTypes():</span>
 <span class="sd">            ...     name = project.LexReferences.GetTypeName(ref_type)</span>
 <span class="sd">            ...     mapping = project.LexReferences.GetMappingType(ref_type)</span>
-<span class="sd">            ...     print(f&quot;{name}: {mapping}&quot;)</span>
+<span class="sd">            ...     print(f"{name}: {mapping}")</span>
 <span class="sd">            Synonym: Symmetric</span>
 <span class="sd">            Antonym: Symmetric</span>
 <span class="sd">            Hypernym: Asymmetric</span>
@@ -632,8 +639,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            CreateType, GetTypeName</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">&quot;ref_type_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="s2">"ref_type_or_hvo"</span><span class="p">)</span>
 
         <span class="n">ref_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRefType</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">)</span>
 
@@ -641,22 +648,22 @@
         <span class="n">mapping_value</span> <span class="o">=</span> <span class="n">ref_type</span><span class="o">.</span><span class="n">MappingType</span>
 
         <span class="k">if</span> <span class="n">mapping_value</span> <span class="o">==</span> <span class="n">LexRefMappingTypes</span><span class="o">.</span><span class="n">SYMMETRIC</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;Symmetric&quot;</span>
+            <span class="k">return</span> <span class="s2">"Symmetric"</span>
         <span class="k">elif</span> <span class="n">mapping_value</span> <span class="o">==</span> <span class="n">LexRefMappingTypes</span><span class="o">.</span><span class="n">ASYMMETRIC</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;Asymmetric&quot;</span>
+            <span class="k">return</span> <span class="s2">"Asymmetric"</span>
         <span class="k">elif</span> <span class="n">mapping_value</span> <span class="o">==</span> <span class="n">LexRefMappingTypes</span><span class="o">.</span><span class="n">TREE</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;Tree&quot;</span>
+            <span class="k">return</span> <span class="s2">"Tree"</span>
         <span class="k">elif</span> <span class="n">mapping_value</span> <span class="o">==</span> <span class="n">LexRefMappingTypes</span><span class="o">.</span><span class="n">SEQUENCE</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;Sequence&quot;</span>
+            <span class="k">return</span> <span class="s2">"Sequence"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;Unknown&quot;</span>
+            <span class="k">return</span> <span class="s2">"Unknown"</span>
 
     <span class="c1"># --- Reference Management ---</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense_or_entry</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all lexical references for a sense or entry, or all references in the entire project.</span>
 
 <span class="sd">        This returns all LexReference objects that include the specified</span>
@@ -666,12 +673,12 @@
 <span class="sd">            sense_or_entry: Either an ILexSense or ILexEntry object (or HVO).</span>
 <span class="sd">                           If None, iterates all lexical references in the entire project.</span>
 
-<span class="sd">        Yields:</span>
-<span class="sd">            ILexReference: Each reference that includes this sense/entry (or project)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EnumerableWrapper[ILexReference]: Each reference that includes this sense/entry (or project)</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Get references for specific sense</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("run")</span>
 <span class="sd">            &gt;&gt;&gt; if entry:</span>
 <span class="sd">            ...     senses = list(project.Senses.GetAll(entry))</span>
 <span class="sd">            ...     if senses:</span>
@@ -679,7 +686,7 @@
 <span class="sd">            ...             ref_type = project.LexReferences.GetType(ref)</span>
 <span class="sd">            ...             type_name = project.LexReferences.GetTypeName(ref_type)</span>
 <span class="sd">            ...             targets = project.LexReferences.GetTargets(ref)</span>
-<span class="sd">            ...             print(f&quot;{type_name}: {len(targets)} targets&quot;)</span>
+<span class="sd">            ...             print(f"{type_name}: {len(targets)} targets")</span>
 <span class="sd">            Synonym: 3 targets</span>
 <span class="sd">            Hypernym: 2 targets</span>
 
@@ -687,7 +694,7 @@
 <span class="sd">            &gt;&gt;&gt; for ref in project.LexReferences.GetAll():</span>
 <span class="sd">            ...     ref_type = project.LexReferences.GetType(ref)</span>
 <span class="sd">            ...     type_name = project.LexReferences.GetTypeName(ref_type)</span>
-<span class="sd">            ...     print(f&quot;Reference type: {type_name}&quot;)</span>
+<span class="sd">            ...     print(f"Reference type: {type_name}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - When sense_or_entry is provided:</span>
@@ -702,7 +709,7 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetTargets, GetReferencesOfType</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">sense_or_entry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Iterate ALL lexical references in entire project</span>
             <span class="n">seen_refs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -718,12 +725,12 @@
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSenseOrEntry</span><span class="p">(</span><span class="n">sense_or_entry</span><span class="p">)</span>
 
             <span class="c1"># Determine if this is a sense or entry</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;LexSense&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">"LexSense"</span><span class="p">:</span>
                     <span class="c1"># Get references for this sense</span>
                     <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">ReferringLexReferences</span><span class="p">:</span>
                         <span class="k">yield</span> <span class="n">ref</span>
-                <span class="k">elif</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span>
+                <span class="k">elif</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">"LexEntry"</span><span class="p">:</span>
                     <span class="c1"># Get references for all senses of this entry</span>
                     <span class="n">seen_refs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
                     <span class="k">for</span> <span class="n">sense</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">SensesOS</span><span class="p">:</span>
@@ -735,7 +742,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_type_or_name</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new lexical reference linking senses or entries.</span>
 
 <span class="sd">        Args:</span>
@@ -755,45 +762,45 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Create synonym relation between two senses</span>
-<span class="sd">            &gt;&gt;&gt; entry1 = project.LexEntry.Find(&quot;run&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; entry2 = project.LexEntry.Find(&quot;jog&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry1 = project.LexEntry.Find("run")</span>
+<span class="sd">            &gt;&gt;&gt; entry2 = project.LexEntry.Find("jog")</span>
 <span class="sd">            &gt;&gt;&gt; if entry1 and entry2:</span>
 <span class="sd">            ...     sense1 = list(project.Senses.GetAll(entry1))[0]</span>
 <span class="sd">            ...     sense2 = list(project.Senses.GetAll(entry2))[0]</span>
 <span class="sd">            ...</span>
 <span class="sd">            ...     # Find or create synonym type</span>
-<span class="sd">            ...     syn_type = project.LexReferences.FindType(&quot;Synonym&quot;)</span>
+<span class="sd">            ...     syn_type = project.LexReferences.FindType("Synonym")</span>
 <span class="sd">            ...     if not syn_type:</span>
-<span class="sd">            ...         syn_type = project.LexReferences.CreateType(&quot;Synonym&quot;, &quot;Symmetric&quot;)</span>
+<span class="sd">            ...         syn_type = project.LexReferences.CreateType("Synonym", "Symmetric")</span>
 <span class="sd">            ...</span>
 <span class="sd">            ...     # Create the reference</span>
 <span class="sd">            ...     ref = project.LexReferences.Create(syn_type, [sense1, sense2])</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create using type name</span>
-<span class="sd">            &gt;&gt;&gt; ref2 = project.LexReferences.Create(&quot;Antonym&quot;, [sense1, sense3])</span>
+<span class="sd">            &gt;&gt;&gt; ref2 = project.LexReferences.Create("Antonym", [sense1, sense3])</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - All targets must be same type (all senses or all entries)</span>
-<span class="sd">            - Targets are added to the reference&#39;s TargetsRS collection</span>
+<span class="sd">            - Targets are added to the reference's TargetsRS collection</span>
 <span class="sd">            - For asymmetric relations, order matters (first is source)</span>
 <span class="sd">            - Reference is automatically added to the relation type</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Delete, AddTarget, RemoveTarget, GetTargets</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_name</span><span class="p">,</span> <span class="s2">&quot;ref_type_or_name&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="s2">&quot;targets&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_name</span><span class="p">,</span> <span class="s2">"ref_type_or_name"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="s2">"targets"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">targets</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;At least 2 targets required to create a reference&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"At least 2 targets required to create a reference"</span><span class="p">)</span>
 
         <span class="c1"># Resolve reference type</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref_type_or_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">ref_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindType</span><span class="p">(</span><span class="n">ref_type_or_name</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">ref_type</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reference type &#39;</span><span class="si">{</span><span class="n">ref_type_or_name</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Reference type '</span><span class="si">{</span><span class="n">ref_type_or_name</span><span class="si">}</span><span class="s2">' not found"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">ref_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRefType</span><span class="p">(</span><span class="n">ref_type_or_name</span><span class="p">)</span>
 
@@ -806,14 +813,14 @@
         <span class="c1"># Verify all targets are the same type</span>
         <span class="n">first_class</span> <span class="o">=</span> <span class="n">resolved_targets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ClassName</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="n">first_class</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">resolved_targets</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;All targets must be the same type (all LexSense or all LexEntry)&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"All targets must be the same type (all LexSense or all LexEntry)"</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create reference&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create reference"</span><span class="p">):</span>
             <span class="c1"># Create the new reference using the factory</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">ILexReferenceFactory</span><span class="p">)</span>
             <span class="n">new_ref</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
-            <span class="c1"># Add reference to the type&#39;s members (must be done before setting properties)</span>
+            <span class="c1"># Add reference to the type's members (must be done before setting properties)</span>
             <span class="n">ref_type</span><span class="o">.</span><span class="n">MembersOC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">new_ref</span><span class="p">)</span>
 
             <span class="c1"># Add targets to the reference</span>
@@ -824,7 +831,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lex_ref_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete a lexical reference.</span>
 
 <span class="sd">        Args:</span>
@@ -835,7 +842,7 @@
 <span class="sd">            FP_NullParameterError: If lex_ref_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("run")</span>
 <span class="sd">            &gt;&gt;&gt; if entry:</span>
 <span class="sd">            ...     sense = list(project.Senses.GetAll(entry))[0]</span>
 <span class="sd">            ...     refs = list(project.LexReferences.GetAll(sense))</span>
@@ -849,30 +856,32 @@
 <span class="sd">            - The related entries/senses are not affected</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Removes the reference from the type&#39;s MembersOC collection</span>
+<span class="sd">            - Removes the reference from the type's MembersOC collection</span>
 <span class="sd">            - Targets are not deleted, only the relationship</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetAll</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="s2">&quot;lex_ref_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="s2">"lex_ref_or_hvo"</span><span class="p">)</span>
 
         <span class="n">lex_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveLexRef</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Cast owner to its concrete ILexRefType so MembersOC is reachable.</span>
         <span class="c1"># Raw lex_ref.Owner is typed as ICmObject and</span>
-        <span class="c1"># hasattr(...,&quot;MembersOC&quot;) returns False there, which is why the</span>
+        <span class="c1"># hasattr(...,"MembersOC") returns False there, which is why the</span>
         <span class="c1"># prior implementation silently no-opped.</span>
         <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedOwner</span><span class="p">(</span><span class="n">lex_ref</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Lex reference has no owning type&quot;</span><span class="p">)</span>
-        <span class="n">owner</span><span class="o">.</span><span class="n">MembersOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">lex_ref</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Lex reference has no owning type"</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete lexical reference"</span><span class="p">):</span>
+            <span class="n">owner</span><span class="o">.</span><span class="n">MembersOC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">lex_ref</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetTargets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lex_ref_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all target senses or entries in a lexical reference.</span>
 
 <span class="sd">        Args:</span>
@@ -885,18 +894,18 @@
 <span class="sd">            FP_NullParameterError: If lex_ref_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("run")</span>
 <span class="sd">            &gt;&gt;&gt; if entry:</span>
 <span class="sd">            ...     sense = list(project.Senses.GetAll(entry))[0]</span>
 <span class="sd">            ...     for ref in project.LexReferences.GetAll(sense):</span>
 <span class="sd">            ...         targets = project.LexReferences.GetTargets(ref)</span>
 <span class="sd">            ...         for target in targets:</span>
-<span class="sd">            ...             if target.ClassName == &quot;LexSense&quot;:</span>
+<span class="sd">            ...             if target.ClassName == "LexSense":</span>
 <span class="sd">            ...                 gloss = project.Senses.GetGloss(target)</span>
-<span class="sd">            ...                 print(f&quot;  -&gt; {gloss}&quot;)</span>
-<span class="sd">            ...             elif target.ClassName == &quot;LexEntry&quot;:</span>
+<span class="sd">            ...                 print(f"  -&gt; {gloss}")</span>
+<span class="sd">            ...             elif target.ClassName == "LexEntry":</span>
 <span class="sd">            ...                 headword = project.LexEntry.GetHeadword(target)</span>
-<span class="sd">            ...                 print(f&quot;  -&gt; {headword}&quot;)</span>
+<span class="sd">            ...                 print(f"  -&gt; {headword}")</span>
 <span class="sd">              -&gt; jog</span>
 <span class="sd">              -&gt; sprint</span>
 
@@ -908,16 +917,20 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            AddTarget, RemoveTarget, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="s2">&quot;lex_ref_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="s2">"lex_ref_or_hvo"</span><span class="p">)</span>
 
         <span class="n">lex_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveLexRef</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">lex_ref</span><span class="o">.</span><span class="n">TargetsRS</span><span class="p">)</span>
+        <span class="c1"># TargetsRS is declared over ICmObject and holds senses or</span>
+        <span class="c1"># entries; uncast elements expose neither interface's properties</span>
+        <span class="c1"># and cannot be passed back to Senses/LexEntry operations</span>
+        <span class="c1"># (issue #270).</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetTypedElements</span><span class="p">(</span><span class="n">lex_ref</span><span class="o">.</span><span class="n">TargetsRS</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">AddTarget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="n">sense_or_entry</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add a target sense or entry to an existing lexical reference.</span>
 
 <span class="sd">        Args:</span>
@@ -927,11 +940,11 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_ReadOnlyError: If project is not opened with write enabled</span>
 <span class="sd">            FP_NullParameterError: If lex_ref_or_hvo or sense_or_entry is None</span>
-<span class="sd">            FP_ParameterError: If target type doesn&#39;t match existing targets</span>
+<span class="sd">            FP_ParameterError: If target type doesn't match existing targets</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Find synonym reference</span>
-<span class="sd">            &gt;&gt;&gt; entry1 = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry1 = project.LexEntry.Find("run")</span>
 <span class="sd">            &gt;&gt;&gt; sense1 = list(project.Senses.GetAll(entry1))[0]</span>
 <span class="sd">            &gt;&gt;&gt; refs = list(project.LexReferences.GetAll(sense1))</span>
 <span class="sd">            &gt;&gt;&gt;</span>
@@ -939,29 +952,29 @@
 <span class="sd">            &gt;&gt;&gt; syn_ref = None</span>
 <span class="sd">            &gt;&gt;&gt; for ref in refs:</span>
 <span class="sd">            ...     ref_type = project.LexReferences.GetType(ref)</span>
-<span class="sd">            ...     if project.LexReferences.GetTypeName(ref_type) == &quot;Synonym&quot;:</span>
+<span class="sd">            ...     if project.LexReferences.GetTypeName(ref_type) == "Synonym":</span>
 <span class="sd">            ...         syn_ref = ref</span>
 <span class="sd">            ...         break</span>
 <span class="sd">            &gt;&gt;&gt;</span>
 <span class="sd">            &gt;&gt;&gt; if syn_ref:</span>
 <span class="sd">            ...     # Add another synonym</span>
-<span class="sd">            ...     entry2 = project.LexEntry.Find(&quot;sprint&quot;)</span>
+<span class="sd">            ...     entry2 = project.LexEntry.Find("sprint")</span>
 <span class="sd">            ...     sense2 = list(project.Senses.GetAll(entry2))[0]</span>
 <span class="sd">            ...     project.LexReferences.AddTarget(syn_ref, sense2)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Target must be same type as existing targets (sense or entry)</span>
 <span class="sd">            - Target can already exist in the reference (creates duplicate)</span>
-<span class="sd">            - For symmetric relations, order doesn&#39;t matter</span>
+<span class="sd">            - For symmetric relations, order doesn't matter</span>
 <span class="sd">            - For asymmetric relations, new target is added at end</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            RemoveTarget, GetTargets, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="s2">&quot;lex_ref_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense_or_entry</span><span class="p">,</span> <span class="s2">&quot;sense_or_entry&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="s2">"lex_ref_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense_or_entry</span><span class="p">,</span> <span class="s2">"sense_or_entry"</span><span class="p">)</span>
 
         <span class="n">lex_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveLexRef</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">)</span>
         <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSenseOrEntry</span><span class="p">(</span><span class="n">sense_or_entry</span><span class="p">)</span>
@@ -971,16 +984,17 @@
             <span class="n">first_target</span> <span class="o">=</span> <span class="n">lex_ref</span><span class="o">.</span><span class="n">TargetsRS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">!=</span> <span class="n">first_target</span><span class="o">.</span><span class="n">ClassName</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Target type mismatch: cannot add </span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2"> &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;to reference with </span><span class="si">{</span><span class="n">first_target</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2"> targets&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Target type mismatch: cannot add </span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2"> "</span>
+                    <span class="sa">f</span><span class="s2">"to reference with </span><span class="si">{</span><span class="n">first_target</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2"> targets"</span>
                 <span class="p">)</span>
 
         <span class="c1"># Add the target</span>
-        <span class="n">lex_ref</span><span class="o">.</span><span class="n">TargetsRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Add reference target"</span><span class="p">):</span>
+            <span class="n">lex_ref</span><span class="o">.</span><span class="n">TargetsRS</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">RemoveTarget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="n">sense_or_entry</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Remove a target sense or entry from a lexical reference.</span>
 
 <span class="sd">        Args:</span>
@@ -993,7 +1007,7 @@
 <span class="sd">            FP_ParameterError: If removing would leave fewer than 2 targets</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("run")</span>
 <span class="sd">            &gt;&gt;&gt; sense = list(project.Senses.GetAll(entry))[0]</span>
 <span class="sd">            &gt;&gt;&gt; refs = list(project.LexReferences.GetAll(sense))</span>
 <span class="sd">            &gt;&gt;&gt; if refs:</span>
@@ -1014,29 +1028,30 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            AddTarget, GetTargets, Delete</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="s2">&quot;lex_ref_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense_or_entry</span><span class="p">,</span> <span class="s2">&quot;sense_or_entry&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="s2">"lex_ref_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">sense_or_entry</span><span class="p">,</span> <span class="s2">"sense_or_entry"</span><span class="p">)</span>
 
         <span class="n">lex_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveLexRef</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">)</span>
         <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveSenseOrEntry</span><span class="p">(</span><span class="n">sense_or_entry</span><span class="p">)</span>
 
-        <span class="c1"># Verify we won&#39;t drop below 2 targets</span>
+        <span class="c1"># Verify we won't drop below 2 targets</span>
         <span class="k">if</span> <span class="n">lex_ref</span><span class="o">.</span><span class="n">TargetsRS</span><span class="o">.</span><span class="n">Count</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="s2">&quot;Cannot remove target: reference must have at least 2 targets. &quot;</span>
-                <span class="s2">&quot;Use Delete() to remove the entire reference instead.&quot;</span>
+                <span class="s2">"Cannot remove target: reference must have at least 2 targets. "</span>
+                <span class="s2">"Use Delete() to remove the entire reference instead."</span>
             <span class="p">)</span>
 
         <span class="c1"># Remove the target if it exists</span>
         <span class="k">if</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">lex_ref</span><span class="o">.</span><span class="n">TargetsRS</span><span class="p">:</span>
-            <span class="n">lex_ref</span><span class="o">.</span><span class="n">TargetsRS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Remove reference target"</span><span class="p">):</span>
+                <span class="n">lex_ref</span><span class="o">.</span><span class="n">TargetsRS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lex_ref_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the reference type of a lexical reference.</span>
 
 <span class="sd">        Args:</span>
@@ -1049,14 +1064,14 @@
 <span class="sd">            FP_NullParameterError: If lex_ref_or_hvo is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; entry = project.LexEntry.Find("run")</span>
 <span class="sd">            &gt;&gt;&gt; if entry:</span>
 <span class="sd">            ...     sense = list(project.Senses.GetAll(entry))[0]</span>
 <span class="sd">            ...     for ref in project.LexReferences.GetAll(sense):</span>
 <span class="sd">            ...         ref_type = project.LexReferences.GetType(ref)</span>
 <span class="sd">            ...         name = project.LexReferences.GetTypeName(ref_type)</span>
 <span class="sd">            ...         mapping = project.LexReferences.GetMappingType(ref_type)</span>
-<span class="sd">            ...         print(f&quot;{name} ({mapping})&quot;)</span>
+<span class="sd">            ...         print(f"{name} ({mapping})")</span>
 <span class="sd">            Synonym (Symmetric)</span>
 <span class="sd">            Hypernym (Asymmetric)</span>
 
@@ -1067,8 +1082,8 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetTypeName, GetMappingType, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="s2">&quot;lex_ref_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="s2">"lex_ref_or_hvo"</span><span class="p">)</span>
 
         <span class="n">lex_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveLexRef</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">)</span>
 
@@ -1078,9 +1093,10 @@
         <span class="c1"># The owner of a LexReference is always a LexRefType.</span>
         <span class="k">return</span> <span class="n">ILexRefType</span><span class="p">(</span><span class="n">lex_ref</span><span class="o">.</span><span class="n">Owner</span><span class="p">)</span>
 
+    <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetReferencesOfType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_type_or_name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all lexical references of a specific type.</span>
 
 <span class="sd">        Args:</span>
@@ -1096,13 +1112,13 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Get all synonym references</span>
-<span class="sd">            &gt;&gt;&gt; for ref in project.LexReferences.GetReferencesOfType(&quot;Synonym&quot;):</span>
+<span class="sd">            &gt;&gt;&gt; for ref in project.LexReferences.GetReferencesOfType("Synonym"):</span>
 <span class="sd">            ...     targets = project.LexReferences.GetTargets(ref)</span>
 <span class="sd">            ...     glosses = []</span>
 <span class="sd">            ...     for target in targets:</span>
-<span class="sd">            ...         if target.ClassName == &quot;LexSense&quot;:</span>
+<span class="sd">            ...         if target.ClassName == "LexSense":</span>
 <span class="sd">            ...             glosses.append(project.Senses.GetGloss(target))</span>
-<span class="sd">            ...     print(f&quot;Synonyms: {&#39;, &#39;.join(glosses)}&quot;)</span>
+<span class="sd">            ...     print(f"Synonyms: {', '.join(glosses)}")</span>
 <span class="sd">            Synonyms: run, jog, sprint</span>
 <span class="sd">            Synonyms: walk, stroll, amble</span>
 
@@ -1113,14 +1129,14 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetAll, GetType, FindType</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_name</span><span class="p">,</span> <span class="s2">&quot;ref_type_or_name&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">ref_type_or_name</span><span class="p">,</span> <span class="s2">"ref_type_or_name"</span><span class="p">)</span>
 
         <span class="c1"># Resolve reference type</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref_type_or_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">ref_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindType</span><span class="p">(</span><span class="n">ref_type_or_name</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">ref_type</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reference type &#39;</span><span class="si">{</span><span class="n">ref_type_or_name</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Reference type '</span><span class="si">{</span><span class="n">ref_type_or_name</span><span class="si">}</span><span class="s2">' not found"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">ref_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveRefType</span><span class="p">(</span><span class="n">ref_type_or_name</span><span class="p">)</span>
 
@@ -1132,10 +1148,10 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ShowComplexFormsIn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">complex_entry</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Show a component entry as a subentry under a complex form entry.</span>
 
-<span class="sd">        This creates a &quot;Show Complex Forms In&quot; relationship, making the</span>
+<span class="sd">        This creates a "Show Complex Forms In" relationship, making the</span>
 <span class="sd">        component entry appear as a subentry in dictionary views of the</span>
 <span class="sd">        complex form.</span>
 
@@ -1152,9 +1168,9 @@
 <span class="sd">            FP_ParameterError: If entries are invalid</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; # Show &quot;run&quot; as a component under &quot;running shoe&quot;</span>
-<span class="sd">            &gt;&gt;&gt; run_entry = project.LexEntry.Find(&quot;run&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; shoe_entry = project.LexEntry.Find(&quot;running shoe&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Show "run" as a component under "running shoe"</span>
+<span class="sd">            &gt;&gt;&gt; run_entry = project.LexEntry.Find("run")</span>
+<span class="sd">            &gt;&gt;&gt; shoe_entry = project.LexEntry.Find("running shoe")</span>
 <span class="sd">            &gt;&gt;&gt; if run_entry and shoe_entry:</span>
 <span class="sd">            ...     ref = project.LexReferences.ShowComplexFormsIn(</span>
 <span class="sd">            ...         run_entry,</span>
@@ -1162,38 +1178,38 @@
 <span class="sd">            ...     )</span>
 
 <span class="sd">            &gt;&gt;&gt; # Show multiple components under one complex form</span>
-<span class="sd">            &gt;&gt;&gt; run_entry = project.LexEntry.Find(&quot;run&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; away_entry = project.LexEntry.Find(&quot;away&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; runaway_entry = project.LexEntry.Find(&quot;runaway&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; run_entry = project.LexEntry.Find("run")</span>
+<span class="sd">            &gt;&gt;&gt; away_entry = project.LexEntry.Find("away")</span>
+<span class="sd">            &gt;&gt;&gt; runaway_entry = project.LexEntry.Find("runaway")</span>
 <span class="sd">            &gt;&gt;&gt; if run_entry and away_entry and runaway_entry:</span>
 <span class="sd">            ...     # This would typically be done differently, creating one</span>
 <span class="sd">            ...     # reference with multiple targets</span>
 <span class="sd">            ...     pass</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Uses the &quot;Complex Forms&quot; reference type</span>
+<span class="sd">            - Uses the "Complex Forms" reference type</span>
 <span class="sd">            - Creates entry-level references (not sense-level)</span>
 <span class="sd">            - Component entry appears as subentry in complex form</span>
 <span class="sd">            - Useful for compounds, derivatives, idioms, etc.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetComplexFormEntries, GetComponentEntries</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="s2">&quot;entry&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">complex_entry</span><span class="p">,</span> <span class="s2">&quot;complex_entry&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="s2">"entry"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">complex_entry</span><span class="p">,</span> <span class="s2">"complex_entry"</span><span class="p">)</span>
 
         <span class="n">component</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveEntry</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
         <span class="n">complex_form</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveEntry</span><span class="p">(</span><span class="n">complex_entry</span><span class="p">)</span>
 
-        <span class="c1"># Find &quot;Complex Forms&quot; reference type (read-only lookup)</span>
-        <span class="n">complex_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindType</span><span class="p">(</span><span class="s2">&quot;Complex Forms&quot;</span><span class="p">)</span>
+        <span class="c1"># Find "Complex Forms" reference type (read-only lookup)</span>
+        <span class="n">complex_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindType</span><span class="p">(</span><span class="s2">"Complex Forms"</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Show complex forms in&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Show complex forms in"</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">complex_type</span><span class="p">:</span>
                 <span class="c1"># Create it as a tree relation</span>
-                <span class="n">complex_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CreateType</span><span class="p">(</span><span class="s2">&quot;Complex Forms&quot;</span><span class="p">,</span> <span class="s2">&quot;Tree&quot;</span><span class="p">,</span> <span class="n">reverse_name</span><span class="o">=</span><span class="s2">&quot;Components&quot;</span><span class="p">)</span>
+                <span class="n">complex_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CreateType</span><span class="p">(</span><span class="s2">"Complex Forms"</span><span class="p">,</span> <span class="s2">"Tree"</span><span class="p">,</span> <span class="n">reverse_name</span><span class="o">=</span><span class="s2">"Components"</span><span class="p">)</span>
 
             <span class="c1"># Create reference with complex form as parent, component as child</span>
             <span class="c1"># In tree relations, first target is typically the parent</span>
@@ -1203,7 +1219,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetComplexFormEntries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all complex form entries that show this entry as a component.</span>
 
 <span class="sd">        Returns all complex forms (compounds, derivatives, etc.) that list</span>
@@ -1220,33 +1236,33 @@
 <span class="sd">            FP_NullParameterError: If entry is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; # Find all complex forms containing &quot;run&quot;</span>
-<span class="sd">            &gt;&gt;&gt; run_entry = project.LexEntry.Find(&quot;run&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Find all complex forms containing "run"</span>
+<span class="sd">            &gt;&gt;&gt; run_entry = project.LexEntry.Find("run")</span>
 <span class="sd">            &gt;&gt;&gt; if run_entry:</span>
 <span class="sd">            ...     complex_forms = project.LexReferences.GetComplexFormEntries(run_entry)</span>
 <span class="sd">            ...     for cf in complex_forms:</span>
 <span class="sd">            ...         headword = project.LexEntry.GetHeadword(cf)</span>
-<span class="sd">            ...         print(f&quot;Complex form: {headword}&quot;)</span>
+<span class="sd">            ...         print(f"Complex form: {headword}")</span>
 <span class="sd">            Complex form: running shoe</span>
 <span class="sd">            Complex form: run away</span>
 <span class="sd">            Complex form: run-up</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns entries from &quot;Complex Forms&quot; or similar reference types</span>
+<span class="sd">            - Returns entries from "Complex Forms" or similar reference types</span>
 <span class="sd">            - Useful for finding derivatives and compounds</span>
 <span class="sd">            - Returns empty list if entry is not a component of any complex form</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetComponentEntries, ShowComplexFormsIn</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="s2">&quot;entry&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="s2">"entry"</span><span class="p">)</span>
 
         <span class="n">component</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveEntry</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
 
         <span class="n">complex_forms</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="c1"># Find &quot;Complex Forms&quot; reference type</span>
-        <span class="n">complex_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindType</span><span class="p">(</span><span class="s2">&quot;Complex Forms&quot;</span><span class="p">)</span>
+        <span class="c1"># Find "Complex Forms" reference type</span>
+        <span class="n">complex_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindType</span><span class="p">(</span><span class="s2">"Complex Forms"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">complex_type</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">complex_forms</span>
 
@@ -1258,7 +1274,7 @@
                 <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">component</span><span class="o">.</span><span class="n">Hvo</span><span class="p">:</span>
                     <span class="c1"># For tree relations, other targets are related complex forms</span>
                     <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">other_target</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">targets</span><span class="p">):</span>
-                        <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span> <span class="ow">and</span> <span class="n">other_target</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span> <span class="ow">and</span> <span class="n">other_target</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">"LexEntry"</span><span class="p">:</span>
                             <span class="k">if</span> <span class="n">other_target</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">complex_forms</span><span class="p">:</span>
                                 <span class="n">complex_forms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">other_target</span><span class="p">)</span>
 
@@ -1266,7 +1282,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetComponentEntries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">complex_entry</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all component entries that make up a complex form entry.</span>
 
 <span class="sd">        Returns all component entries (roots, stems) that are shown as</span>
@@ -1283,32 +1299,32 @@
 <span class="sd">            FP_NullParameterError: If complex_entry is None</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; # Find components of &quot;running shoe&quot;</span>
-<span class="sd">            &gt;&gt;&gt; shoe_entry = project.LexEntry.Find(&quot;running shoe&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Find components of "running shoe"</span>
+<span class="sd">            &gt;&gt;&gt; shoe_entry = project.LexEntry.Find("running shoe")</span>
 <span class="sd">            &gt;&gt;&gt; if shoe_entry:</span>
 <span class="sd">            ...     components = project.LexReferences.GetComponentEntries(shoe_entry)</span>
 <span class="sd">            ...     for comp in components:</span>
 <span class="sd">            ...         headword = project.LexEntry.GetHeadword(comp)</span>
-<span class="sd">            ...         print(f&quot;Component: {headword}&quot;)</span>
+<span class="sd">            ...         print(f"Component: {headword}")</span>
 <span class="sd">            Component: run</span>
 <span class="sd">            Component: shoe</span>
 
 <span class="sd">        Notes:</span>
-<span class="sd">            - Returns entries from &quot;Complex Forms&quot; or similar reference types</span>
+<span class="sd">            - Returns entries from "Complex Forms" or similar reference types</span>
 <span class="sd">            - Useful for analyzing compound structure</span>
 <span class="sd">            - Returns empty list if entry has no components defined</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetComplexFormEntries, ShowComplexFormsIn</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">complex_entry</span><span class="p">,</span> <span class="s2">&quot;complex_entry&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">complex_entry</span><span class="p">,</span> <span class="s2">"complex_entry"</span><span class="p">)</span>
 
         <span class="n">complex_form</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ResolveEntry</span><span class="p">(</span><span class="n">complex_entry</span><span class="p">)</span>
 
         <span class="n">components</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="c1"># Find &quot;Complex Forms&quot; reference type</span>
-        <span class="n">complex_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindType</span><span class="p">(</span><span class="s2">&quot;Complex Forms&quot;</span><span class="p">)</span>
+        <span class="c1"># Find "Complex Forms" reference type</span>
+        <span class="n">complex_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FindType</span><span class="p">(</span><span class="s2">"Complex Forms"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">complex_type</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">components</span>
 
@@ -1320,7 +1336,7 @@
                 <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">Hvo</span> <span class="o">==</span> <span class="n">complex_form</span><span class="o">.</span><span class="n">Hvo</span><span class="p">:</span>
                     <span class="c1"># For tree relations, other targets are components</span>
                     <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">other_target</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">targets</span><span class="p">):</span>
-                        <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span> <span class="ow">and</span> <span class="n">other_target</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span> <span class="ow">and</span> <span class="n">other_target</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">==</span> <span class="s2">"LexEntry"</span><span class="p">:</span>
                             <span class="k">if</span> <span class="n">other_target</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">components</span><span class="p">:</span>
                                 <span class="n">components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">other_target</span><span class="p">)</span>
 
@@ -1330,7 +1346,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all syncable properties of a lexical reference for comparison.</span>
 
 <span class="sd">        Args:</span>
@@ -1338,13 +1354,13 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: Dictionary mapping property names to their values.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># MultiString properties</span>
         <span class="c1"># Name - optional name of the relationship</span>
         <span class="n">name_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"Name"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
 
@@ -1352,11 +1368,11 @@
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">ws_tag</span> <span class="o">=</span> <span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span>
                     <span class="n">name_dict</span><span class="p">[</span><span class="n">ws_tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">name_dict</span>
 
         <span class="c1"># Comment - additional notes</span>
         <span class="n">comment_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;Comment&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"Comment"</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ws_def</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">():</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
 
@@ -1364,20 +1380,20 @@
                 <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                     <span class="n">ws_tag</span> <span class="o">=</span> <span class="n">ws_def</span><span class="o">.</span><span class="n">Id</span>
                     <span class="n">comment_dict</span><span class="p">[</span><span class="n">ws_tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;Comment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">comment_dict</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">"Comment"</span><span class="p">]</span> <span class="o">=</span> <span class="n">comment_dict</span>
 
         <span class="c1"># Reference Atomic (RA) properties</span>
         <span class="c1"># ReferenceTypeRA - the type of reference relationship</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;ReferenceTypeRA&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">ReferenceTypeRA</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;ReferenceTypeRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">ReferenceTypeRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"ReferenceTypeRA"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">ReferenceTypeRA</span><span class="p">:</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"ReferenceTypeRA"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">ReferenceTypeRA</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;ReferenceTypeRA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">"ReferenceTypeRA"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compare two lexical references and return their differences.</span>
 
 <span class="sd">        Args:</span>
@@ -1388,7 +1404,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: (is_different, differences_dict)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ops1</span> <span class="o">=</span> <span class="n">ops1</span> <span class="ow">or</span> <span class="bp">self</span>
         <span class="n">ops2</span> <span class="o">=</span> <span class="n">ops2</span> <span class="ow">or</span> <span class="bp">self</span>
 
@@ -1409,7 +1425,7 @@
     <span class="c1"># --- Private Helper Methods ---</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveRefType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_type_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve HVO or object to ILexRefType.</span>
 
 <span class="sd">        Args:</span>
@@ -1419,18 +1435,18 @@
 <span class="sd">            ILexRefType: The resolved reference type object</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a reference type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            FP_ParameterError: If HVO doesn't refer to a reference type</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">ref_type_or_hvo</span><span class="p">)</span>
-            <span class="c1"># Verify it&#39;s the right type</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;MappingType&quot;</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a LexRefType&quot;</span><span class="p">)</span>
+            <span class="c1"># Verify it's the right type</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"MappingType"</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a LexRefType"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">return</span> <span class="n">ref_type_or_hvo</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveLexRef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lex_ref_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve HVO or object to ILexReference.</span>
 
 <span class="sd">        Args:</span>
@@ -1440,18 +1456,18 @@
 <span class="sd">            ILexReference: The resolved reference object</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to a lexical reference</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            FP_ParameterError: If HVO doesn't refer to a lexical reference</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">lex_ref_or_hvo</span><span class="p">)</span>
-            <span class="c1"># Verify it&#39;s the right type</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;TargetsRS&quot;</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a LexReference&quot;</span><span class="p">)</span>
+            <span class="c1"># Verify it's the right type</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"TargetsRS"</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a LexReference"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">return</span> <span class="n">lex_ref_or_hvo</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveSenseOrEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sense_or_entry</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve HVO or object to ILexSense or ILexEntry.</span>
 
 <span class="sd">        Args:</span>
@@ -1461,19 +1477,19 @@
 <span class="sd">            ILexSense or ILexEntry: The resolved object</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to sense or entry</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            FP_ParameterError: If HVO doesn't refer to sense or entry</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sense_or_entry</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">sense_or_entry</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;HVO does not refer to a LexSense or LexEntry&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;LexSense&quot;</span><span class="p">,</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Object is </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2">, not LexSense or LexEntry&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"HVO does not refer to a LexSense or LexEntry"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"LexSense"</span><span class="p">,</span> <span class="s2">"LexEntry"</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Object is </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2">, not LexSense or LexEntry"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">return</span> <span class="n">sense_or_entry</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__ResolveEntry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resolve HVO or object to ILexEntry.</span>
 
 <span class="sd">        Args:</span>
@@ -1483,17 +1499,17 @@
 <span class="sd">            ILexEntry: The resolved entry object</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            FP_ParameterError: If HVO doesn&#39;t refer to an entry</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            FP_ParameterError: If HVO doesn't refer to an entry</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">entry_or_hvo</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;ClassName&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">!=</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Object is not a LexEntry&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"ClassName"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">!=</span> <span class="s2">"LexEntry"</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Object is not a LexEntry"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">return</span> <span class="n">entry_or_hvo</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandleAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get writing system handle, defaulting to analysis WS.</span>
 
 <span class="sd">        Args:</span>
@@ -1501,7 +1517,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            int: The writing system handle</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span></div>
@@ -1543,8 +1559,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

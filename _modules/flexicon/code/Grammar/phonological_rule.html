@@ -54,7 +54,7 @@
 <span class="c1">#   Copyright 2025</span>
 <span class="c1">#</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Wrapper class for phonological rule objects with unified interface.</span>
 
 <span class="sd">This module provides PhonologicalRule, a wrapper class that transparently</span>
@@ -87,7 +87,7 @@
 
 <span class="sd">Example::</span>
 
-<span class="sd">    from flexlibs2.code.Grammar.phonological_rule import PhonologicalRule</span>
+<span class="sd">    from flexicon.code.Grammar.phonological_rule import PhonologicalRule</span>
 
 <span class="sd">    # Wrap a rule from GetAll()</span>
 <span class="sd">    rule = phonRuleOps.GetAll()[0]  # Typed as IPhSegmentRule</span>
@@ -101,16 +101,16 @@
 <span class="sd">    # Check capabilities</span>
 <span class="sd">    if wrapped.has_output_specs:</span>
 <span class="sd">        for spec in wrapped.output_specs:</span>
-<span class="sd">            print(f&quot;Output: {spec}&quot;)</span>
+<span class="sd">            print(f"Output: {spec}")</span>
 
 <span class="sd">    if wrapped.has_metathesis_parts:</span>
-<span class="sd">        print(&quot;This is a metathesis rule&quot;)</span>
+<span class="sd">        print("This is a metathesis rule")</span>
 
 <span class="sd">    # Optional: Advanced users can access concrete types</span>
 <span class="sd">    if wrapped.as_regular_rule():</span>
 <span class="sd">        concrete = wrapped.as_regular_rule()</span>
 <span class="sd">        # Use concrete interface for advanced operations</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..Shared.wrapper_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LCMObjectWrapper</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..lcm_casting</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast_to_concrete</span>
@@ -121,7 +121,7 @@
 <div class="viewcode-block" id="PhonologicalRule">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.phonological_rule.PhonologicalRule">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PhonologicalRule</span><span class="p">(</span><span class="n">LCMObjectWrapper</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Wrapper for phonological rule objects providing unified interface access.</span>
 
 <span class="sd">    Handles the three concrete types of phonological rules (PhRegularRule,</span>
@@ -141,10 +141,10 @@
 <span class="sd">        print(wrapped.input_contexts)</span>
 <span class="sd">        if wrapped.has_output_specs:</span>
 <span class="sd">            print(wrapped.output_specs)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lcm_rule</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize PhonologicalRule wrapper with a rule object.</span>
 
 <span class="sd">        Args:</span>
@@ -155,35 +155,35 @@
 
 <span class="sd">            rule = phonRuleOps.GetAll()[0]</span>
 <span class="sd">            wrapped = PhonologicalRule(rule)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lcm_rule</span><span class="p">)</span>
 
     <span class="c1"># ========== Common Properties (work across all rule types) ==========</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get the rule&#39;s name.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Get the rule's name.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: The rule name, or empty string if not set.</span>
 
 <span class="sd">        Example::</span>
 
-<span class="sd">            print(f&quot;Rule: {wrapped.name}&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            print(f"Rule: {wrapped.name}")</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
 
         <span class="n">name_multistring</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Name</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name_multistring</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="s2">""</span>
         <span class="n">default_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">Cache</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="n">name_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">name_multistring</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">default_ws</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">name_text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">name_text</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">direction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the direction of rule application.</span>
 
 <span class="sd">        Returns:</span>
@@ -193,18 +193,18 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.direction == 0:</span>
-<span class="sd">                print(&quot;Left-to-right application&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">                print("Left-to-right application")</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;Direction&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"Direction"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">Direction</span>
             <span class="k">return</span> <span class="mi">0</span>  <span class="c1"># Default: left-to-right</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">0</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">stratum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Optional[object]&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stratum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Optional[object]"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the stratum this rule applies in.</span>
 
 <span class="sd">        Returns:</span>
@@ -213,18 +213,18 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            if wrapped.stratum:</span>
-<span class="sd">                print(f&quot;Stratum: {wrapped.stratum.Name.BestAnalysisAlternative.Text}&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">                print(f"Stratum: {wrapped.stratum.Name.BestAnalysisAlternative.Text}")</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;StratumRA&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"StratumRA"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">StratumRA</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">input_contexts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ContextCollection&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">input_contexts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"ContextCollection"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the input contexts (structural description) for this rule.</span>
 
 <span class="sd">        Returns:</span>
@@ -235,10 +235,10 @@
 <span class="sd">        Example::</span>
 
 <span class="sd">            for context in wrapped.input_contexts:</span>
-<span class="sd">                print(f&quot;Input context: {context.context_name}&quot;)</span>
+<span class="sd">                print(f"Input context: {context.context_name}")</span>
 <span class="sd">                if context.is_simple_context_seg:</span>
 <span class="sd">                    segment = context.segment</span>
-<span class="sd">                    print(f&quot;Segment: {segment}&quot;)</span>
+<span class="sd">                    print(f"Segment: {segment}")</span>
 
 <span class="sd">            # Filter contexts</span>
 <span class="sd">            simple_contexts = wrapped.input_contexts.simple_contexts()</span>
@@ -249,9 +249,9 @@
 <span class="sd">            - Works on all rule types (regular, metathesis, reduplication)</span>
 <span class="sd">            - Returns ContextCollection for convenient filtering and type checking</span>
 <span class="sd">            - Contexts are wrapped in PhonologicalContext for unified interface</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;StrucDescOS&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"StrucDescOS"</span><span class="p">):</span>
                 <span class="n">contexts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">StrucDescOS</span><span class="p">)</span>
                 <span class="c1"># Wrap each context in PhonologicalContext</span>
                 <span class="n">wrapped_contexts</span> <span class="o">=</span> <span class="p">[</span><span class="n">PhonologicalContext</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span> <span class="k">for</span> <span class="n">ctx</span> <span class="ow">in</span> <span class="n">contexts</span><span class="p">]</span>
@@ -264,7 +264,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">has_output_specs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this rule has output specifications.</span>
 
 <span class="sd">        Returns:</span>
@@ -274,21 +274,21 @@
 
 <span class="sd">            if wrapped.has_output_specs:</span>
 <span class="sd">                for spec in wrapped.output_specs:</span>
-<span class="sd">                    print(f&quot;Output: {spec}&quot;)</span>
+<span class="sd">                    print(f"Output: {spec}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only PhRegularRule has output specifications</span>
 <span class="sd">            - PhMetathesisRule and PhReduplicationRule have their own</span>
 <span class="sd">              output representations</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhRegularRule&quot;</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;RightHandSidesOS&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhRegularRule"</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"RightHandSidesOS"</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">output_specs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the output specifications for this rule.</span>
 
 <span class="sd">        Only available on PhRegularRule. Returns empty list for other types.</span>
@@ -300,17 +300,17 @@
 
 <span class="sd">            if wrapped.has_output_specs:</span>
 <span class="sd">                for rhs in wrapped.output_specs:</span>
-<span class="sd">                    print(f&quot;Output spec: {rhs}&quot;)</span>
+<span class="sd">                    print(f"Output spec: {rhs}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only PhRegularRule has RightHandSidesOS</span>
 <span class="sd">            - Use has_output_specs to check before accessing</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_output_specs</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[]</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;RightHandSidesOS&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"RightHandSidesOS"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">RightHandSidesOS</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">[]</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -318,7 +318,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">has_metathesis_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this rule is a metathesis rule.</span>
 
 <span class="sd">        Returns:</span>
@@ -328,24 +328,24 @@
 
 <span class="sd">            if wrapped.has_metathesis_parts:</span>
 <span class="sd">                left, right = wrapped.metathesis_parts</span>
-<span class="sd">                print(f&quot;Swap: {left} &lt;-&gt; {right}&quot;)</span>
+<span class="sd">                print(f"Swap: {left} &lt;-&gt; {right}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only PhMetathesisRule objects have this capability</span>
 <span class="sd">            - Use metathesis_parts to get the actual parts</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhMetathesisRule&quot;</span>
-                <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;LeftPartOfMetathesisOS&quot;</span><span class="p">)</span>
-                <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;RightPartOfMetathesisOS&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhMetathesisRule"</span>
+                <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"LeftPartOfMetathesisOS"</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"RightPartOfMetathesisOS"</span><span class="p">)</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">metathesis_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the metathesis parts (left and right swapped segments).</span>
 
 <span class="sd">        Returns:</span>
@@ -357,22 +357,22 @@
 <span class="sd">            if wrapped.has_metathesis_parts:</span>
 <span class="sd">                left, right = wrapped.metathesis_parts</span>
 <span class="sd">                for part in left:</span>
-<span class="sd">                    print(f&quot;Left swapped part: {part}&quot;)</span>
+<span class="sd">                    print(f"Left swapped part: {part}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only PhMetathesisRule has these parts</span>
 <span class="sd">            - Use has_metathesis_parts to check before accessing</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_metathesis_parts</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[],</span> <span class="p">[]</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">left</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">LeftPartOfMetathesisOS</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;LeftPartOfMetathesisOS&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="p">[]</span>
+                <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">LeftPartOfMetathesisOS</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"LeftPartOfMetathesisOS"</span><span class="p">)</span> <span class="k">else</span> <span class="p">[]</span>
             <span class="p">)</span>
             <span class="n">right</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">RightPartOfMetathesisOS</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;RightPartOfMetathesisOS&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"RightPartOfMetathesisOS"</span><span class="p">)</span>
                 <span class="k">else</span> <span class="p">[]</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span>
@@ -381,7 +381,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">has_redup_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if this rule is a reduplication rule.</span>
 
 <span class="sd">        Returns:</span>
@@ -391,24 +391,24 @@
 
 <span class="sd">            if wrapped.has_redup_parts:</span>
 <span class="sd">                left, right = wrapped.redup_parts</span>
-<span class="sd">                print(f&quot;Reduplication: {left} &lt;-&gt; {right}&quot;)</span>
+<span class="sd">                print(f"Reduplication: {left} &lt;-&gt; {right}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only PhReduplicationRule objects have this capability</span>
 <span class="sd">            - Use redup_parts to get the actual parts</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhReduplicationRule&quot;</span>
-                <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;LeftPartOfReduplicationOS&quot;</span><span class="p">)</span>
-                <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;RightPartOfReduplicationOS&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhReduplicationRule"</span>
+                <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"LeftPartOfReduplicationOS"</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"RightPartOfReduplicationOS"</span><span class="p">)</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">redup_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the reduplication parts (left and right repeated segments).</span>
 
 <span class="sd">        Returns:</span>
@@ -420,24 +420,24 @@
 <span class="sd">            if wrapped.has_redup_parts:</span>
 <span class="sd">                left, right = wrapped.redup_parts</span>
 <span class="sd">                for part in left:</span>
-<span class="sd">                    print(f&quot;Left reduplicated part: {part}&quot;)</span>
+<span class="sd">                    print(f"Left reduplicated part: {part}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only PhReduplicationRule has these parts</span>
 <span class="sd">            - Use has_redup_parts to check before accessing</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_redup_parts</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[],</span> <span class="p">[]</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">left</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">LeftPartOfReduplicationOS</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;LeftPartOfReduplicationOS&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"LeftPartOfReduplicationOS"</span><span class="p">)</span>
                 <span class="k">else</span> <span class="p">[]</span>
             <span class="p">)</span>
             <span class="n">right</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="o">.</span><span class="n">RightPartOfReduplicationOS</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">&quot;RightPartOfReduplicationOS&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span><span class="p">,</span> <span class="s2">"RightPartOfReduplicationOS"</span><span class="p">)</span>
                 <span class="k">else</span> <span class="p">[]</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span>
@@ -449,7 +449,7 @@
 <div class="viewcode-block" id="PhonologicalRule.as_regular_rule">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.phonological_rule.PhonologicalRule.as_regular_rule">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_regular_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cast to IPhRegularRule if this is a regular rule.</span>
 
 <span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
@@ -472,9 +472,9 @@
 <span class="sd">            - Most users should use properties like has_output_specs and</span>
 <span class="sd">              output_specs instead</span>
 <span class="sd">            - Only useful if you need to call methods or access properties</span>
-<span class="sd">              that aren&#39;t exposed through the wrapper</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhRegularRule&quot;</span><span class="p">:</span>
+<span class="sd">              that aren't exposed through the wrapper</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhRegularRule"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
@@ -482,7 +482,7 @@
 <div class="viewcode-block" id="PhonologicalRule.as_metathesis_rule">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.phonological_rule.PhonologicalRule.as_metathesis_rule">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_metathesis_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cast to IPhMetathesisRule if this is a metathesis rule.</span>
 
 <span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
@@ -502,8 +502,8 @@
 <span class="sd">            - For users who know C# interfaces and want advanced control</span>
 <span class="sd">            - Most users should use properties like has_metathesis_parts and</span>
 <span class="sd">              metathesis_parts instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhMetathesisRule&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhMetathesisRule"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
@@ -511,7 +511,7 @@
 <div class="viewcode-block" id="PhonologicalRule.as_reduplication_rule">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.phonological_rule.PhonologicalRule.as_reduplication_rule">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_reduplication_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cast to IPhReduplicationRule if this is a reduplication rule.</span>
 
 <span class="sd">        For advanced users who need direct access to the C# concrete interface.</span>
@@ -531,15 +531,15 @@
 <span class="sd">            - For users who know C# interfaces and want advanced control</span>
 <span class="sd">            - Most users should use properties like has_redup_parts and</span>
 <span class="sd">              redup_parts instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">&quot;PhReduplicationRule&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_type</span> <span class="o">==</span> <span class="s2">"PhReduplicationRule"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">concrete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the raw concrete interface object.</span>
 
 <span class="sd">        For advanced users who need to access the underlying C# interface</span>
@@ -547,7 +547,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The concrete interface object (IPhRegularRule, IPhMetathesisRule,</span>
-<span class="sd">            or IPhReduplicationRule depending on the rule&#39;s actual type).</span>
+<span class="sd">            or IPhReduplicationRule depending on the rule's actual type).</span>
 
 <span class="sd">        Example::</span>
 
@@ -557,21 +557,21 @@
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - For power users only</span>
-<span class="sd">            - Bypasses the wrapper&#39;s abstraction</span>
+<span class="sd">            - Bypasses the wrapper's abstraction</span>
 <span class="sd">            - Normal users should prefer wrapper properties like</span>
 <span class="sd">              has_output_specs, output_specs, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation showing rule name and type.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;PhonologicalRule(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;Unnamed&#39;</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="w">        </span><span class="sd">"""String representation showing rule name and type."""</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"PhonologicalRule(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'Unnamed'</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Human-readable description.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Human-readable description."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Rule &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Unnamed </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">&quot;</span></div>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"Rule '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"Unnamed </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_type</span><span class="si">}</span><span class="s2">"</span></div>
 
 </pre></div>
 
@@ -610,8 +610,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

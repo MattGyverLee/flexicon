@@ -41,14 +41,14 @@
           <div class="body" role="main">
             
   <h1>Source code for flexicon.sync.dependency_resolver</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Dependency Resolver - Phase 3.2</span>
 
 <span class="sd">Discovers and resolves object dependencies by analyzing FLEx object relationships.</span>
 
 <span class="sd">Author: FlexTools Development Team</span>
 <span class="sd">Date: 2025-11-27</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Dict</span>
@@ -63,7 +63,7 @@
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_resolver.DependencyConfig">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DependencyConfig</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for dependency resolution.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Configuration for dependency resolution."""</span>
 
     <span class="c1"># What to include</span>
     <span class="n">include_owned</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># Import owned objects (children)</span>
@@ -91,21 +91,21 @@
 <div class="viewcode-block" id="DependencyResolver">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_resolver.DependencyResolver">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DependencyResolver</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Analyzes FLEx objects and discovers all dependencies.</span>
 
 <span class="sd">    Builds dependency graph by examining object ownership, references,</span>
 <span class="sd">    and cross-references.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize dependency resolver.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            source_project: Source FlexProject</span>
 <span class="sd">            target_project: Target FlexProject</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_project</span> <span class="o">=</span> <span class="n">source_project</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_project</span> <span class="o">=</span> <span class="n">target_project</span>
 
@@ -114,40 +114,40 @@
 
         <span class="c1"># Known FLEx ownership relationships</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ownership_map</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span> <span class="p">[</span>
-                <span class="p">(</span><span class="s2">&quot;LexemeFormOA&quot;</span><span class="p">,</span> <span class="s2">&quot;MoForm&quot;</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">&quot;AlternateFormsOS&quot;</span><span class="p">,</span> <span class="s2">&quot;MoForm&quot;</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">&quot;PronunciationsOS&quot;</span><span class="p">,</span> <span class="s2">&quot;LexPronunciation&quot;</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">&quot;SensesOS&quot;</span><span class="p">,</span> <span class="s2">&quot;LexSense&quot;</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">&quot;EtymologyOS&quot;</span><span class="p">,</span> <span class="s2">&quot;LexEtymology&quot;</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">&quot;VariantEntryTypesRS&quot;</span><span class="p">,</span> <span class="s2">&quot;LexEntryRef&quot;</span><span class="p">),</span>
+            <span class="s2">"LexEntry"</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s2">"LexemeFormOA"</span><span class="p">,</span> <span class="s2">"MoForm"</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"AlternateFormsOS"</span><span class="p">,</span> <span class="s2">"MoForm"</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"PronunciationsOS"</span><span class="p">,</span> <span class="s2">"LexPronunciation"</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"SensesOS"</span><span class="p">,</span> <span class="s2">"LexSense"</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"EtymologyOS"</span><span class="p">,</span> <span class="s2">"LexEtymology"</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"VariantEntryTypesRS"</span><span class="p">,</span> <span class="s2">"LexEntryRef"</span><span class="p">),</span>
             <span class="p">],</span>
-            <span class="s2">&quot;LexSense&quot;</span><span class="p">:</span> <span class="p">[</span>
-                <span class="p">(</span><span class="s2">&quot;ExamplesOS&quot;</span><span class="p">,</span> <span class="s2">&quot;LexExampleSentence&quot;</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">&quot;SensesOS&quot;</span><span class="p">,</span> <span class="s2">&quot;LexSense&quot;</span><span class="p">),</span>  <span class="c1"># Subsenses</span>
+            <span class="s2">"LexSense"</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s2">"ExamplesOS"</span><span class="p">,</span> <span class="s2">"LexExampleSentence"</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"SensesOS"</span><span class="p">,</span> <span class="s2">"LexSense"</span><span class="p">),</span>  <span class="c1"># Subsenses</span>
             <span class="p">],</span>
-            <span class="s2">&quot;MoForm&quot;</span><span class="p">:</span> <span class="p">[</span>
-                <span class="p">(</span><span class="s2">&quot;PhonEnvironmentsRC&quot;</span><span class="p">,</span> <span class="s2">&quot;PhEnvironment&quot;</span><span class="p">),</span>
+            <span class="s2">"MoForm"</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s2">"PhonEnvironmentsRC"</span><span class="p">,</span> <span class="s2">"PhEnvironment"</span><span class="p">),</span>
             <span class="p">],</span>
-            <span class="s2">&quot;Allomorph&quot;</span><span class="p">:</span> <span class="p">[</span>
-                <span class="p">(</span><span class="s2">&quot;PhonEnvironmentsRC&quot;</span><span class="p">,</span> <span class="s2">&quot;PhEnvironment&quot;</span><span class="p">),</span>
+            <span class="s2">"Allomorph"</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s2">"PhonEnvironmentsRC"</span><span class="p">,</span> <span class="s2">"PhEnvironment"</span><span class="p">),</span>
             <span class="p">],</span>
         <span class="p">}</span>
 
         <span class="c1"># Known FLEx reference relationships</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reference_map</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;LexSense&quot;</span><span class="p">:</span> <span class="p">[</span>
-                <span class="p">(</span><span class="s2">&quot;MorphoSyntaxAnalysisRA&quot;</span><span class="p">,</span> <span class="s2">&quot;PartOfSpeech&quot;</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">&quot;SemanticDomainsRC&quot;</span><span class="p">,</span> <span class="s2">&quot;CmSemanticDomain&quot;</span><span class="p">),</span>
+            <span class="s2">"LexSense"</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s2">"MorphoSyntaxAnalysisRA"</span><span class="p">,</span> <span class="s2">"PartOfSpeech"</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"SemanticDomainsRC"</span><span class="p">,</span> <span class="s2">"CmSemanticDomain"</span><span class="p">),</span>
             <span class="p">],</span>
-            <span class="s2">&quot;MoForm&quot;</span><span class="p">:</span> <span class="p">[</span>
-                <span class="p">(</span><span class="s2">&quot;MorphTypeRA&quot;</span><span class="p">,</span> <span class="s2">&quot;MoMorphType&quot;</span><span class="p">),</span>
+            <span class="s2">"MoForm"</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s2">"MorphTypeRA"</span><span class="p">,</span> <span class="s2">"MoMorphType"</span><span class="p">),</span>
             <span class="p">],</span>
-            <span class="s2">&quot;Allomorph&quot;</span><span class="p">:</span> <span class="p">[</span>
-                <span class="p">(</span><span class="s2">&quot;MorphTypeRA&quot;</span><span class="p">,</span> <span class="s2">&quot;MoMorphType&quot;</span><span class="p">),</span>
+            <span class="s2">"Allomorph"</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s2">"MorphTypeRA"</span><span class="p">,</span> <span class="s2">"MoMorphType"</span><span class="p">),</span>
             <span class="p">],</span>
-            <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span> <span class="p">[</span>
-                <span class="p">(</span><span class="s2">&quot;VariantFormEntryBackRefs&quot;</span><span class="p">,</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">),</span>  <span class="c1"># Variant relationships</span>
+            <span class="s2">"LexEntry"</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s2">"VariantFormEntryBackRefs"</span><span class="p">,</span> <span class="s2">"LexEntry"</span><span class="p">),</span>  <span class="c1"># Variant relationships</span>
             <span class="p">],</span>
         <span class="p">}</span>
 
@@ -156,7 +156,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">resolve_dependencies</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DependencyConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DependencyGraph</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Build dependency graph for object and its dependencies.</span>
 
 <span class="sd">        Args:</span>
@@ -166,7 +166,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            DependencyGraph with all dependencies</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">config</span> <span class="o">=</span> <span class="n">DependencyConfig</span><span class="p">()</span>
 
@@ -197,7 +197,7 @@
         <span class="n">current_owned_depth</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">current_ref_depth</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Recursively resolve dependencies.</span>
 
 <span class="sd">        Args:</span>
@@ -208,9 +208,9 @@
 <span class="sd">            visited: Set of visited GUIDs</span>
 <span class="sd">            current_owned_depth: Current depth in ownership hierarchy</span>
 <span class="sd">            current_ref_depth: Current depth in reference chain</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Get object GUID</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;Guid&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"Guid"</span><span class="p">):</span>
             <span class="k">return</span>
 
         <span class="n">guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
@@ -226,7 +226,7 @@
 
         <span class="c1"># Check if exists in target</span>
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">skip_existing</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists_in_target</span><span class="p">(</span><span class="n">guid</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Object </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2"> already exists in target, skipping dependencies&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Object </span><span class="si">{</span><span class="n">guid</span><span class="si">}</span><span class="s2"> already exists in target, skipping dependencies"</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="c1"># Resolve owned objects (children)</span>
@@ -270,11 +270,11 @@
 
                 <span class="c1"># Check if referenced object exists in target</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists_in_target</span><span class="p">(</span><span class="n">ref_guid</span><span class="p">):</span>
-                    <span class="c1"># Referenced object doesn&#39;t exist - need to import it from source</span>
+                    <span class="c1"># Referenced object doesn't exist - need to import it from source</span>
                     <span class="c1"># Try to get it from source</span>
                     <span class="n">source_ref_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_from_source</span><span class="p">(</span><span class="n">ref_guid</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">source_ref_obj</span><span class="p">:</span>
-                        <span class="c1"># Recursively resolve (but don&#39;t go too deep on references)</span>
+                        <span class="c1"># Recursively resolve (but don't go too deep on references)</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_recursive</span><span class="p">(</span>
                             <span class="n">obj</span><span class="o">=</span><span class="n">source_ref_obj</span><span class="p">,</span>
                             <span class="n">object_type</span><span class="o">=</span><span class="n">ref_type</span><span class="p">,</span>
@@ -294,7 +294,7 @@
 <div class="viewcode-block" id="DependencyResolver.get_owned_objects">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_resolver.DependencyResolver.get_owned_objects">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_owned_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all objects owned by this object.</span>
 
 <span class="sd">        Args:</span>
@@ -303,7 +303,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List of (owned_object, object_type) tuples</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">owned</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># Get ownership relationships for this type</span>
@@ -319,17 +319,17 @@
                 <span class="k">continue</span>
 
             <span class="c1"># Handle single owned object (OA suffix)</span>
-            <span class="k">if</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;OA&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"OA"</span><span class="p">):</span>
                 <span class="n">owned</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">prop_value</span><span class="p">,</span> <span class="n">owned_type</span><span class="p">))</span>
 
             <span class="c1"># Handle collection of owned objects (OS/OC suffix)</span>
-            <span class="k">elif</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;OS&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;OC&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"OS"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"OC"</span><span class="p">):</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">owned_obj</span> <span class="ow">in</span> <span class="n">prop_value</span><span class="p">:</span>
                         <span class="n">owned</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">owned_obj</span><span class="p">,</span> <span class="n">owned_type</span><span class="p">))</span>
                 <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
                     <span class="c1"># Not iterable</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Property </span><span class="si">{</span><span class="n">property_name</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2"> is not iterable&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Property </span><span class="si">{</span><span class="n">property_name</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2"> is not iterable"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">owned</span></div>
 
@@ -337,7 +337,7 @@
 <div class="viewcode-block" id="DependencyResolver.get_referenced_objects">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_resolver.DependencyResolver.get_referenced_objects">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_referenced_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all objects referenced by this object.</span>
 
 <span class="sd">        Args:</span>
@@ -346,7 +346,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List of (referenced_object, object_type) tuples</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">referenced</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># Get reference relationships for this type</span>
@@ -362,23 +362,23 @@
                 <span class="k">continue</span>
 
             <span class="c1"># Handle single reference (RA suffix)</span>
-            <span class="k">if</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;RA&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"RA"</span><span class="p">):</span>
                 <span class="n">referenced</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">prop_value</span><span class="p">,</span> <span class="n">ref_type</span><span class="p">))</span>
 
             <span class="c1"># Handle collection of references (RC suffix)</span>
-            <span class="k">elif</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;RC&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;RS&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"RC"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">property_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"RS"</span><span class="p">):</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">ref_obj</span> <span class="ow">in</span> <span class="n">prop_value</span><span class="p">:</span>
                         <span class="n">referenced</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ref_obj</span><span class="p">,</span> <span class="n">ref_type</span><span class="p">))</span>
                 <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
                     <span class="c1"># Not iterable</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Property </span><span class="si">{</span><span class="n">property_name</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2"> is not iterable&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Property </span><span class="si">{</span><span class="n">property_name</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2"> is not iterable"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">referenced</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_exists_in_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if object exists in target project.</span>
 
 <span class="sd">        Args:</span>
@@ -386,7 +386,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            True if exists, False otherwise</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Check cache first</span>
         <span class="k">if</span> <span class="n">guid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_existence_cache</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_existence_cache</span><span class="p">[</span><span class="n">guid</span><span class="p">]</span>
@@ -403,7 +403,7 @@
         <span class="k">return</span> <span class="n">exists</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_from_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get object from source project by GUID.</span>
 
 <span class="sd">        Args:</span>
@@ -411,7 +411,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Object if found, None otherwise</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">guid</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -420,7 +420,7 @@
 <div class="viewcode-block" id="DependencyResolver.clear_cache">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.dependency_resolver.DependencyResolver.clear_cache">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">clear_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear existence cache.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Clear existence cache."""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_existence_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
 </div>
 
@@ -461,8 +461,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

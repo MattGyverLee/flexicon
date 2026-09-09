@@ -41,14 +41,14 @@
           <div class="body" role="main">
             
   <h1>Source code for flexicon.sync.match_strategies</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Match Strategies - Pluggable object matching strategies</span>
 
 <span class="sd">This module provides strategies for matching objects between source and target projects.</span>
 
 <span class="sd">Author: FlexTools Development Team</span>
 <span class="sd">Date: 2025-11-26</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
@@ -60,7 +60,7 @@
 <div class="viewcode-block" id="MatchStrategy">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.match_strategies.MatchStrategy">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MatchStrategy</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Base class for object matching strategies.</span>
 
 <span class="sd">    Match strategies determine how to match objects between source and target</span>
@@ -68,7 +68,7 @@
 <span class="sd">    field-based (for cross-project merging).</span>
 
 <span class="sd">    Custom strategies can be implemented by sub classing and implementing match().</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="MatchStrategy.match">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.match_strategies.MatchStrategy.match">[docs]</a>
@@ -76,7 +76,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">match</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_candidates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find matching target object for source object.</span>
 
 <span class="sd">        Args:</span>
@@ -87,7 +87,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Matching target object, or None if no match found</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">pass</span></div>
 </div>
 
@@ -96,7 +96,7 @@
 <div class="viewcode-block" id="GuidMatchStrategy">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.match_strategies.GuidMatchStrategy">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">GuidMatchStrategy</span><span class="p">(</span><span class="n">MatchStrategy</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Match objects by GUID (Globally Unique Identifier).</span>
 
 <span class="sd">    This is the safest and most reliable matching strategy for projects that</span>
@@ -111,14 +111,14 @@
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; strategy = GuidMatchStrategy()</span>
 <span class="sd">        &gt;&gt;&gt; match = strategy.match(source_obj, target_objects, source_proj, target_proj)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="GuidMatchStrategy.match">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.match_strategies.GuidMatchStrategy.match">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">match</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_candidates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Match by GUID.</span>
 
 <span class="sd">        Args:</span>
@@ -129,17 +129,17 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Target object with matching GUID, or None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">source_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">source_obj</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
 
         <span class="c1"># Search for matching GUID in target</span>
         <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">target_candidates</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="o">==</span> <span class="n">source_guid</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Matched by GUID: </span><span class="si">{</span><span class="n">source_guid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Matched by GUID: </span><span class="si">{</span><span class="n">source_guid</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">candidate</span>
 
         <span class="c1"># No match found</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No GUID match for: </span><span class="si">{</span><span class="n">source_guid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No GUID match for: </span><span class="si">{</span><span class="n">source_guid</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 </div>
 
@@ -148,11 +148,11 @@
 <div class="viewcode-block" id="FieldMatchStrategy">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.match_strategies.FieldMatchStrategy">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FieldMatchStrategy</span><span class="p">(</span><span class="n">MatchStrategy</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Match objects by field values.</span>
 
 <span class="sd">    This strategy matches objects based on specified field values (e.g., headword,</span>
-<span class="sd">    form, name). Useful for merging independent projects that don&#39;t share GUIDs.</span>
+<span class="sd">    form, name). Useful for merging independent projects that don't share GUIDs.</span>
 
 <span class="sd">    Use this strategy when:</span>
 <span class="sd">    - Merging data from different projects</span>
@@ -162,16 +162,16 @@
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; # Match allomorphs by form</span>
 <span class="sd">        &gt;&gt;&gt; strategy = FieldMatchStrategy(</span>
-<span class="sd">        ...     key_fields=[&quot;form&quot;],</span>
+<span class="sd">        ...     key_fields=["form"],</span>
 <span class="sd">        ...     get_field_fn=lambda obj, ops: ops.GetForm(obj)</span>
 <span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt;</span>
 <span class="sd">        &gt;&gt;&gt; # Match entries by headword</span>
 <span class="sd">        &gt;&gt;&gt; strategy = FieldMatchStrategy(</span>
-<span class="sd">        ...     key_fields=[&quot;headword&quot;],</span>
+<span class="sd">        ...     key_fields=["headword"],</span>
 <span class="sd">        ...     get_field_fn=lambda obj, ops: ops.GetHeadword(obj)</span>
 <span class="sd">        ... )</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -180,7 +180,7 @@
         <span class="n">case_sensitive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">writing_system</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize FieldMatchStrategy.</span>
 
 <span class="sd">        Args:</span>
@@ -192,10 +192,10 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; strategy = FieldMatchStrategy(</span>
-<span class="sd">            ...     key_fields=[&quot;form&quot;, &quot;morph_type&quot;],</span>
+<span class="sd">            ...     key_fields=["form", "morph_type"],</span>
 <span class="sd">            ...     case_sensitive=False</span>
 <span class="sd">            ... )</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">key_fields</span> <span class="o">=</span> <span class="n">key_fields</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">get_field_fn</span> <span class="o">=</span> <span class="n">get_field_fn</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">case_sensitive</span> <span class="o">=</span> <span class="n">case_sensitive</span>
@@ -206,7 +206,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">match</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_candidates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Match by field values.</span>
 
 <span class="sd">        Args:</span>
@@ -217,7 +217,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            First target object with matching field values, or None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Get operations class name from source object</span>
         <span class="n">ops_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_operations_name</span><span class="p">(</span><span class="n">source_obj</span><span class="p">)</span>
 
@@ -226,7 +226,7 @@
         <span class="n">target_ops</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">target_project</span><span class="p">,</span> <span class="n">ops_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">source_ops</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">target_ops</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not get operations for </span><span class="si">{</span><span class="n">ops_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not get operations for </span><span class="si">{</span><span class="n">ops_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
 
         <span class="c1"># Extract source field values</span>
@@ -244,34 +244,34 @@
 
             <span class="c1"># Compare field values</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values_match</span><span class="p">(</span><span class="n">source_values</span><span class="p">,</span> <span class="n">target_values</span><span class="p">):</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Matched by fields </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">key_fields</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">source_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Matched by fields </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">key_fields</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">source_values</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">candidate</span>
 
         <span class="c1"># No match found</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No field match for: </span><span class="si">{</span><span class="n">source_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No field match for: </span><span class="si">{</span><span class="n">source_values</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_operations_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get operations class name for object.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get operations class name for object."""</span>
         <span class="c1"># Get class name from object</span>
         <span class="n">class_name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span>
 
         <span class="c1"># Common mappings</span>
         <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;MoStemAllomorph&quot;</span><span class="p">:</span> <span class="s2">&quot;Allomorph&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;LexEntry&quot;</span><span class="p">:</span> <span class="s2">&quot;LexEntry&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;LexSense&quot;</span><span class="p">:</span> <span class="s2">&quot;LexSense&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;LexExampleSentence&quot;</span><span class="p">:</span> <span class="s2">&quot;Example&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;PartOfSpeech&quot;</span><span class="p">:</span> <span class="s2">&quot;POS&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;PhPhoneme&quot;</span><span class="p">:</span> <span class="s2">&quot;Phoneme&quot;</span><span class="p">,</span>
+            <span class="s2">"MoStemAllomorph"</span><span class="p">:</span> <span class="s2">"Allomorph"</span><span class="p">,</span>
+            <span class="s2">"LexEntry"</span><span class="p">:</span> <span class="s2">"LexEntry"</span><span class="p">,</span>
+            <span class="s2">"LexSense"</span><span class="p">:</span> <span class="s2">"LexSense"</span><span class="p">,</span>
+            <span class="s2">"LexExampleSentence"</span><span class="p">:</span> <span class="s2">"Example"</span><span class="p">,</span>
+            <span class="s2">"PartOfSpeech"</span><span class="p">:</span> <span class="s2">"POS"</span><span class="p">,</span>
+            <span class="s2">"PhPhoneme"</span><span class="p">:</span> <span class="s2">"Phoneme"</span><span class="p">,</span>
             <span class="c1"># Add more as needed</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">class_name</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_extract_field_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract field values from object.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Extract field values from object."""</span>
         <span class="n">values</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_fields</span><span class="p">:</span>
@@ -283,37 +283,37 @@
         <span class="k">return</span> <span class="n">values</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_field_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ops</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a single field value from object.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get a single field value from object."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_field_fn</span><span class="p">:</span>
             <span class="c1"># Custom extraction function</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_field_fn</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span>
 
         <span class="c1"># Auto-detect based on field name</span>
-        <span class="k">if</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s2">&quot;form&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="s2">&quot;GetForm&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s2">"form"</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="s2">"GetForm"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">ops</span><span class="o">.</span><span class="n">GetForm</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s2">&quot;headword&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="s2">&quot;GetHeadword&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s2">"headword"</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="s2">"GetHeadword"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">ops</span><span class="o">.</span><span class="n">GetHeadword</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="s2">&quot;GetName&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s2">"name"</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="s2">"GetName"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">ops</span><span class="o">.</span><span class="n">GetName</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s2">&quot;gloss&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="s2">&quot;GetGloss&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s2">"gloss"</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="s2">"GetGloss"</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">ops</span><span class="o">.</span><span class="n">GetGloss</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
         <span class="c1"># Fallback: try direct property access</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not extract field &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39; from </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not extract field '</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">' from </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_values_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">target_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if field values match.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Check if field values match."""</span>
         <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_fields</span><span class="p">:</span>
             <span class="n">source_val</span> <span class="o">=</span> <span class="n">source_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
             <span class="n">target_val</span> <span class="o">=</span> <span class="n">target_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
@@ -341,7 +341,7 @@
 <div class="viewcode-block" id="HybridMatchStrategy">
 <a class="viewcode-back" href="../../../api/flexicon.sync.html#flexicon.sync.match_strategies.HybridMatchStrategy">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">HybridMatchStrategy</span><span class="p">(</span><span class="n">MatchStrategy</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Hybrid matching: Try GUID first, fall back to field-based.</span>
 
 <span class="sd">    This strategy combines GUID and field-based matching. It first attempts</span>
@@ -350,24 +350,24 @@
 
 <span class="sd">    Use this strategy when:</span>
 <span class="sd">    - Source and target may partially overlap</span>
-<span class="sd">    - Some objects share GUIDs, others don&#39;t</span>
+<span class="sd">    - Some objects share GUIDs, others don't</span>
 <span class="sd">    - You want reliability of GUID with flexibility of field matching</span>
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; strategy = HybridMatchStrategy(</span>
-<span class="sd">        ...     fallback_fields=[&quot;headword&quot;],</span>
+<span class="sd">        ...     fallback_fields=["headword"],</span>
 <span class="sd">        ...     case_sensitive=False</span>
 <span class="sd">        ... )</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fallback_fields</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">case_sensitive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize HybridMatchStrategy.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            fallback_fields: Fields to use for fallback field matching</span>
 <span class="sd">            case_sensitive: Whether field matching is case-sensitive</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">guid_strategy</span> <span class="o">=</span> <span class="n">GuidMatchStrategy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">field_strategy</span> <span class="o">=</span> <span class="n">FieldMatchStrategy</span><span class="p">(</span><span class="n">key_fields</span><span class="o">=</span><span class="n">fallback_fields</span><span class="p">,</span> <span class="n">case_sensitive</span><span class="o">=</span><span class="n">case_sensitive</span><span class="p">)</span>
 
@@ -376,7 +376,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">match</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">source_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_candidates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">source_project</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_project</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Try GUID match first, then field match.</span>
 
 <span class="sd">        Args:</span>
@@ -387,19 +387,19 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Matched target object, or None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Try GUID match first</span>
         <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">guid_strategy</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">target_candidates</span><span class="p">,</span> <span class="n">source_project</span><span class="p">,</span> <span class="n">target_project</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Matched by GUID (primary strategy)&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Matched by GUID (primary strategy)"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">match</span>
 
         <span class="c1"># Fallback to field match</span>
         <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">field_strategy</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">source_obj</span><span class="p">,</span> <span class="n">target_candidates</span><span class="p">,</span> <span class="n">source_project</span><span class="p">,</span> <span class="n">target_project</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Matched by fields (fallback strategy)&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Matched by fields (fallback strategy)"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">match</span></div>
 </div>
@@ -441,8 +441,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>

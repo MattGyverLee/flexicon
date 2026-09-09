@@ -65,7 +65,10 @@
     <span class="n">IPhNCFeatures</span><span class="p">,</span>
     <span class="n">IPhNCFeaturesFactory</span><span class="p">,</span>
     <span class="n">IPhPhoneme</span><span class="p">,</span>
+    <span class="n">IFsFeatStruc</span><span class="p">,</span>
+    <span class="n">IFsFeatStrucFactory</span><span class="p">,</span>
     <span class="n">IFsClosedValue</span><span class="p">,</span>
+    <span class="n">IFsClosedValueFactory</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.KernelInterfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITsString</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">SIL.LCModel.Core.Text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TsStringUtils</span>
@@ -82,7 +85,7 @@
 <div class="viewcode-block" id="NaturalClassOperations">
 <a class="viewcode-back" href="../../../../api/flexicon.code.Grammar.html#flexicon.code.Grammar.NaturalClassOperations.NaturalClassOperations">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">NaturalClassOperations</span><span class="p">(</span><span class="n">BaseOperations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class provides operations for managing natural classes in a</span>
 <span class="sd">    FieldWorks project.</span>
 
@@ -92,47 +95,47 @@
 
 <span class="sd">    Usage::</span>
 
-<span class="sd">        from flexlibs2 import FLExProject</span>
+<span class="sd">        from flexicon import FLExProject</span>
 
 <span class="sd">        project = FLExProject()</span>
-<span class="sd">        project.OpenProject(&quot;my project&quot;, writeEnabled=True)</span>
+<span class="sd">        project.OpenProject("my project", writeEnabled=True)</span>
 
 <span class="sd">        # Get all natural classes</span>
 <span class="sd">        for nc in project.NaturalClasses.GetAll():</span>
 <span class="sd">            name = project.NaturalClasses.GetName(nc)</span>
 <span class="sd">            abbr = project.NaturalClasses.GetAbbreviation(nc)</span>
 <span class="sd">            phonemes = project.NaturalClasses.GetPhonemes(nc)</span>
-<span class="sd">            print(f&quot;{name} ({abbr}): {len(phonemes)} phonemes&quot;)</span>
+<span class="sd">            print(f"{name} ({abbr}): {len(phonemes)} phonemes")</span>
 
 <span class="sd">        # Create a new natural class</span>
-<span class="sd">        stops = project.NaturalClasses.Create(&quot;Voiceless Stops&quot;, &quot;VLS&quot;)</span>
+<span class="sd">        stops = project.NaturalClasses.Create("Voiceless Stops", "VLS")</span>
 
 <span class="sd">        # Add phonemes to the class</span>
-<span class="sd">        p_phoneme = project.Phonemes.Find(&quot;/p/&quot;)</span>
+<span class="sd">        p_phoneme = project.Phonemes.Find("/p/")</span>
 <span class="sd">        if p_phoneme:</span>
 <span class="sd">            project.NaturalClasses.AddPhoneme(stops, p_phoneme)</span>
 
 <span class="sd">        project.CloseProject()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize NaturalClassOperations with a FLExProject instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            project: The FLExProject instance to operate on.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_GetSequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Specify which sequence to reorder for natural classes.</span>
 <span class="sd">        For NaturalClass, we reorder parent.SubPossibilitiesOS</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">SubPossibilitiesOS</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__WSHandle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Internal helper for writing system handles (analysis).</span>
 
 <span class="sd">        Args:</span>
@@ -140,13 +143,13 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            int: The writing system handle to use.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">wsHandle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">_FLExProject__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__GetNaturalClassObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Internal helper to get natural class object from HVO or object.</span>
 
 <span class="sd">        Args:</span>
@@ -154,13 +157,13 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IPhNaturalClass: The natural class object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">nc_or_hvo</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__GetPhonemeObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Internal helper to get phoneme object from HVO or object.</span>
 
 <span class="sd">        Args:</span>
@@ -168,13 +171,13 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IPhPhoneme: The phoneme object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">phoneme_or_hvo</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__SetNameAndAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Internal helper to set Name and Abbreviation on a natural class.</span>
 
 <span class="sd">        Writes to the default analysis writing system. The natural class must</span>
@@ -187,31 +190,36 @@
 <span class="sd">            name (str): Name to write (caller is responsible for validation).</span>
 <span class="sd">            abbreviation (str or None): Abbreviation to write. If None, no</span>
 <span class="sd">                abbreviation alternative is set.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span>
 
         <span class="n">mkstr_name</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">nc</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">abbreviation</span><span class="p">:</span>
-            <span class="n">mkstr_abbr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-            <span class="n">nc</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
+        <span class="c1"># Callers reach this helper from inside their own bracket, so this</span>
+        <span class="c1"># transaction joins that one (nesting-aware per B1). Stated anyway so</span>
+        <span class="c1"># the site is grep-auditable per D5.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set natural class name '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+            <span class="n">nc</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_name</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">abbreviation</span><span class="p">:</span>
+                <span class="n">mkstr_abbr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">abbreviation</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
+                <span class="n">nc</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr_abbr</span><span class="p">)</span>
 
     <span class="nd">@wrap_enumerable</span>
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all natural classes in the phonological inventory.</span>
 
-<span class="sd">        Yields:</span>
-<span class="sd">            IPhNaturalClass: Each natural class in the project.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EnumerableWrapper[IPhNaturalClass]: Each natural class in the project.</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; for nc in project.NaturalClasses.GetAll():</span>
 <span class="sd">            ...     name = project.NaturalClasses.GetName(nc)</span>
 <span class="sd">            ...     abbr = project.NaturalClasses.GetAbbreviation(nc)</span>
 <span class="sd">            ...     phonemes = project.NaturalClasses.GetPhonemes(nc)</span>
-<span class="sd">            ...     print(f&quot;{name} ({abbr}): {len(phonemes)} phonemes&quot;)</span>
+<span class="sd">            ...     print(f"{name} ({abbr}): {len(phonemes)} phonemes")</span>
 <span class="sd">            Voiceless Stops (VLS): 3 phonemes</span>
 <span class="sd">            Voiced Stops (VCD): 3 phonemes</span>
 <span class="sd">            Nasals (N): 3 phonemes</span>
@@ -224,7 +232,7 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetName, GetPhonemes</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
         <span class="k">if</span> <span class="n">phon_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">natural_classes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">phon_data</span><span class="o">.</span><span class="n">NaturalClassesOS</span><span class="p">)</span>
@@ -233,12 +241,12 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find a natural class by name.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): The name to search for. Compared via NFD-normalised</span>
-<span class="sd">                        casefold match against each natural class&#39;s Name in</span>
+<span class="sd">                        casefold match against each natural class's Name in</span>
 <span class="sd">                        the chosen WS.</span>
 <span class="sd">            wsHandle: Optional writing system handle. Defaults to analysis WS.</span>
 
@@ -253,12 +261,12 @@
 <span class="sd">              loop for that.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; vowels = project.NaturalClasses.Find(&quot;Vowels&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; vowels = project.NaturalClasses.Find("Vowels")</span>
 <span class="sd">            &gt;&gt;&gt; if vowels is not None:</span>
 <span class="sd">            ...     print(project.NaturalClasses.GetAbbreviation(vowels))</span>
 <span class="sd">            V</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">normalize_match_key</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">target</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -272,7 +280,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check whether a natural class with the given name exists.</span>
 
 <span class="sd">        Args:</span>
@@ -281,18 +289,18 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Find</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="n">wsHandle</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new natural class.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            name (str): The name of the natural class (e.g., &quot;Voiceless Stops&quot;).</span>
-<span class="sd">            abbreviation (str, optional): Short abbreviation (e.g., &quot;VLS&quot;, &quot;V&quot;, &quot;C&quot;).</span>
+<span class="sd">            name (str): The name of the natural class (e.g., "Voiceless Stops").</span>
+<span class="sd">            abbreviation (str, optional): Short abbreviation (e.g., "VLS", "V", "C").</span>
 <span class="sd">                If None, defaults to empty string.</span>
 
 <span class="sd">        Returns:</span>
@@ -305,16 +313,16 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Create basic consonant classes</span>
-<span class="sd">            &gt;&gt;&gt; stops = project.NaturalClasses.Create(&quot;Stops&quot;, &quot;P&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; fricatives = project.NaturalClasses.Create(&quot;Fricatives&quot;, &quot;F&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; nasals = project.NaturalClasses.Create(&quot;Nasals&quot;, &quot;N&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; stops = project.NaturalClasses.Create("Stops", "P")</span>
+<span class="sd">            &gt;&gt;&gt; fricatives = project.NaturalClasses.Create("Fricatives", "F")</span>
+<span class="sd">            &gt;&gt;&gt; nasals = project.NaturalClasses.Create("Nasals", "N")</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create vowel classes</span>
-<span class="sd">            &gt;&gt;&gt; vowels = project.NaturalClasses.Create(&quot;Vowels&quot;, &quot;V&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; high_vowels = project.NaturalClasses.Create(&quot;High Vowels&quot;, &quot;HV&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; vowels = project.NaturalClasses.Create("Vowels", "V")</span>
+<span class="sd">            &gt;&gt;&gt; high_vowels = project.NaturalClasses.Create("High Vowels", "HV")</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create without abbreviation</span>
-<span class="sd">            &gt;&gt;&gt; custom_class = project.NaturalClasses.Create(&quot;Custom Class&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; custom_class = project.NaturalClasses.Create("Custom Class")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Name should be descriptive of the phonological property</span>
@@ -324,18 +332,18 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Delete, AddPhoneme, SetName, SetAbbreviation</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Name cannot be empty"</span><span class="p">)</span>
 
         <span class="c1"># Create the new natural class using the factory</span>
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span><span class="n">IPhNCSegmentsFactory</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create natural class&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create natural class"</span><span class="p">):</span>
             <span class="n">nc</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
             <span class="c1"># Add to the natural classes collection (must be done before setting properties)</span>
@@ -349,7 +357,7 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Delete a natural class.</span>
 
 <span class="sd">        Args:</span>
@@ -360,8 +368,8 @@
 <span class="sd">            FP_NullParameterError: If nc_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; obsolete = project.NaturalClasses.Create(&quot;Obsolete&quot;, &quot;OBS&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; # ... realize it&#39;s not needed</span>
+<span class="sd">            &gt;&gt;&gt; obsolete = project.NaturalClasses.Create("Obsolete", "OBS")</span>
+<span class="sd">            &gt;&gt;&gt; # ... realize it's not needed</span>
 <span class="sd">            &gt;&gt;&gt; project.NaturalClasses.Delete(obsolete)</span>
 
 <span class="sd">        Warning:</span>
@@ -375,30 +383,32 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetAll</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">&quot;nc_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">"nc_or_hvo"</span><span class="p">)</span>
 
         <span class="c1"># Resolve to natural class object</span>
         <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Remove from the natural classes collection</span>
         <span class="n">phon_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">lp</span><span class="o">.</span><span class="n">PhonologicalDataOA</span>
-        <span class="n">phon_data</span><span class="o">.</span><span class="n">NaturalClassesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">nc</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Delete natural class"</span><span class="p">):</span>
+            <span class="n">phon_data</span><span class="o">.</span><span class="n">NaturalClassesOS</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">nc</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_or_hvo</span><span class="p">,</span> <span class="n">insert_after</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Duplicate a natural class, creating a new copy with a new GUID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            item_or_hvo: The IPhNaturalClass object or HVO to duplicate.</span>
 <span class="sd">            insert_after (bool): If True (default), insert after the source natural class.</span>
 <span class="sd">                                If False, insert at end of natural classes list.</span>
-<span class="sd">            deep (bool): If True, also duplicate owned objects (if any exist).</span>
-<span class="sd">                        If False (default), only copy simple properties and references.</span>
-<span class="sd">                        Note: NaturalClass has no owned objects, so deep has no effect.</span>
+<span class="sd">            deep (bool): Accepted for API uniformity across Operations classes.</span>
+<span class="sd">                        Feature-based natural classes own FeaturesOA, but it is</span>
+<span class="sd">                        always cloned regardless of this flag, so it is ignored.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            IPhNaturalClass: The newly created duplicate. Returns</span>
@@ -411,38 +421,38 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; ncOps = NaturalClassOperations(project)</span>
-<span class="sd">            &gt;&gt;&gt; stops = ncOps.Create(&quot;Voiceless Stops&quot;, &quot;VLS&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; stops = ncOps.Create("Voiceless Stops", "VLS")</span>
 <span class="sd">            &gt;&gt;&gt; # Add some phonemes...</span>
-<span class="sd">            &gt;&gt;&gt; # Now duplicate it to create &quot;Voiced Stops&quot;</span>
+<span class="sd">            &gt;&gt;&gt; # Now duplicate it to create "Voiced Stops"</span>
 <span class="sd">            &gt;&gt;&gt; voiced = ncOps.Duplicate(stops)</span>
-<span class="sd">            &gt;&gt;&gt; ncOps.SetName(voiced, &quot;Voiced Stops&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; ncOps.SetAbbreviation(voiced, &quot;VCD&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; ncOps.SetName(voiced, "Voiced Stops")</span>
+<span class="sd">            &gt;&gt;&gt; ncOps.SetAbbreviation(voiced, "VCD")</span>
 
 <span class="sd">            &gt;&gt;&gt; # Feature-based duplication also works:</span>
 <span class="sd">            &gt;&gt;&gt; back = project.NaturalClasses.CreateFeatureBased(</span>
-<span class="sd">            ...     &quot;Back vowels&quot;, &quot;Vb&quot;, specs=[(back_feat, plus)]</span>
+<span class="sd">            ...     "Back vowels", "Vb", specs=[(back_feat, plus)]</span>
 <span class="sd">            ... )</span>
 <span class="sd">            &gt;&gt;&gt; high_back = ncOps.Duplicate(back)</span>
 <span class="sd">            &gt;&gt;&gt; ncOps.GetType(high_back)</span>
-<span class="sd">            &#39;features&#39;</span>
+<span class="sd">            'features'</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Factory.Create() automatically generates a new GUID.</span>
-<span class="sd">            - insert_after=True preserves the original class&#39;s position.</span>
+<span class="sd">            - insert_after=True preserves the original class's position.</span>
 <span class="sd">            - Simple properties copied: Name, Abbreviation, Description.</span>
 <span class="sd">            - Concrete-type dispatch (issue #27):</span>
 <span class="sd">                - Segments-based source -&gt; IPhNCSegmentsFactory; copy</span>
 <span class="sd">                  SegmentsRC (phoneme members, shallow copy).</span>
 <span class="sd">                - Features-based source -&gt; IPhNCFeaturesFactory; clone</span>
-<span class="sd">                  FeaturesOA&#39;s (feature, value) specs into a new</span>
+<span class="sd">                  FeaturesOA's (feature, value) specs into a new</span>
 <span class="sd">                  IFsFeatStruc via PhonFeatures.MakeFeatStruc.</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, CreateFeatureBased, GetType, GetGuid, AddPhoneme</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">&quot;item_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">,</span> <span class="s2">"item_or_hvo"</span><span class="p">)</span>
 
         <span class="c1"># Get source natural class.</span>
         <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">item_or_hvo</span><span class="p">)</span>
@@ -453,11 +463,11 @@
         <span class="c1"># fallback changes propagate here automatically. Hardcoding</span>
         <span class="c1"># IPhNCSegmentsFactory (the original #27 bug) silently produced</span>
         <span class="c1"># wrong-type clones from feature-based sources; the inline</span>
-        <span class="c1"># `hasattr(source, &quot;FeaturesOA&quot;)` duplicate was the same rule</span>
+        <span class="c1"># `hasattr(source, "FeaturesOA")` duplicate was the same rule</span>
         <span class="c1"># as GetType but shipped a second copy that could drift.</span>
         <span class="c1"># (issue #96)</span>
         <span class="n">nc_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetType</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-        <span class="n">is_features</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc_type</span> <span class="o">==</span> <span class="s2">&quot;features&quot;</span><span class="p">)</span>
+        <span class="n">is_features</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc_type</span> <span class="o">==</span> <span class="s2">"features"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">is_features</span><span class="p">:</span>
             <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
@@ -468,7 +478,7 @@
                 <span class="n">IPhNCSegmentsFactory</span>
             <span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Duplicate natural class&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Duplicate natural class"</span><span class="p">):</span>
             <span class="n">duplicate</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
             <span class="c1"># Determine insertion position.</span>
@@ -499,14 +509,19 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Reference-collection copy of phoneme members (shallow:</span>
                 <span class="c1"># both classes reference the same IPhPhoneme objects).</span>
-                <span class="k">for</span> <span class="n">phoneme</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="p">:</span>
+                <span class="c1"># SegmentsRC is declared on the concrete IPhNCSegments, not</span>
+                <span class="c1"># on the base IPhNaturalClass that __GetNaturalClassObject</span>
+                <span class="c1"># returns; cast before reading it (same root pattern as the</span>
+                <span class="c1"># is_features branch already getting this right via the</span>
+                <span class="c1"># factory-typed `duplicate`).</span>
+                <span class="k">for</span> <span class="n">phoneme</span> <span class="ow">in</span> <span class="n">IPhNCSegments</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="p">:</span>
                     <span class="n">duplicate</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">phoneme</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">duplicate</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the name of a natural class.</span>
 
 <span class="sd">        Args:</span>
@@ -531,18 +546,18 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetName, GetAbbreviation</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">&quot;nc_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">"nc_or_hvo"</span><span class="p">)</span>
 
         <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="n">name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">nc</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc_or_hvo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the name of a natural class.</span>
 
 <span class="sd">        Args:</span>
@@ -556,9 +571,9 @@
 <span class="sd">            FP_ParameterError: If name is empty.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.Create(&quot;Plosives&quot;, &quot;P&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.Create("Plosives", "P")</span>
 <span class="sd">            &gt;&gt;&gt; # Prefer linguistic standard terminology</span>
-<span class="sd">            &gt;&gt;&gt; project.NaturalClasses.SetName(nc, &quot;Stops&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; project.NaturalClasses.SetName(nc, "Stops")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Use standard phonological terminology</span>
@@ -566,24 +581,26 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetName, SetAbbreviation</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">&quot;nc_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">"nc_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Name cannot be empty"</span><span class="p">)</span>
 
         <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="n">mkstr</span> <span class="o">=</span> <span class="n">TsStringUtils</span><span class="o">.</span><span class="n">MakeString</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">wsHandle</span><span class="p">)</span>
-        <span class="n">nc</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Set natural class name '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">):</span>
+            <span class="n">nc</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">set_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">,</span> <span class="n">mkstr</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetAbbreviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc_or_hvo</span><span class="p">,</span> <span class="n">wsHandle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the abbreviation of a natural class.</span>
 
 <span class="sd">        Args:</span>
@@ -597,21 +614,21 @@
 <span class="sd">            FP_NullParameterError: If nc_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.Create(&quot;Voiceless Stops&quot;, &quot;VLS&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.Create("Voiceless Stops", "VLS")</span>
 <span class="sd">            &gt;&gt;&gt; abbr = project.NaturalClasses.GetAbbreviation(nc)</span>
 <span class="sd">            &gt;&gt;&gt; print(abbr)</span>
 <span class="sd">            VLS</span>
 
 <span class="sd">            &gt;&gt;&gt; # Print rule using abbreviations</span>
 <span class="sd">            &gt;&gt;&gt; # Rule: VLS → VCD / V_V (voicing between vowels)</span>
-<span class="sd">            &gt;&gt;&gt; vls = project.NaturalClasses.Find(&quot;Voiceless Stops&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; vcd = project.NaturalClasses.Find(&quot;Voiced Stops&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; v = project.NaturalClasses.Find(&quot;Vowels&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; vls = project.NaturalClasses.Find("Voiceless Stops")</span>
+<span class="sd">            &gt;&gt;&gt; vcd = project.NaturalClasses.Find("Voiced Stops")</span>
+<span class="sd">            &gt;&gt;&gt; v = project.NaturalClasses.Find("Vowels")</span>
 <span class="sd">            &gt;&gt;&gt; if vls and vcd and v:</span>
 <span class="sd">            ...     vls_abbr = project.NaturalClasses.GetAbbreviation(vls)</span>
 <span class="sd">            ...     vcd_abbr = project.NaturalClasses.GetAbbreviation(vcd)</span>
 <span class="sd">            ...     v_abbr = project.NaturalClasses.GetAbbreviation(v)</span>
-<span class="sd">            ...     print(f&quot;{vls_abbr} → {vcd_abbr} / {v_abbr}_{v_abbr}&quot;)</span>
+<span class="sd">            ...     print(f"{vls_abbr} → {vcd_abbr} / {v_abbr}_{v_abbr}")</span>
 <span class="sd">            VLS → VCD / V_V</span>
 
 <span class="sd">        Notes:</span>
@@ -621,18 +638,18 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetName, SetAbbreviation</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">&quot;nc_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">"nc_or_hvo"</span><span class="p">)</span>
 
         <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">)</span>
         <span class="n">wsHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__WSHandle</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">)</span>
 
         <span class="n">abbr</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span><span class="n">nc</span><span class="o">.</span><span class="n">Abbreviation</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="n">wsHandle</span><span class="p">))</span><span class="o">.</span><span class="n">Text</span>
-        <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">abbr</span> <span class="ow">or</span> <span class="s2">""</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetPhonemes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get all phonemes in a natural class.</span>
 
 <span class="sd">        Args:</span>
@@ -648,7 +665,7 @@
 <span class="sd">            &gt;&gt;&gt; # Get members of voiceless stops</span>
 <span class="sd">            &gt;&gt;&gt; for nc in project.NaturalClasses.GetAll():</span>
 <span class="sd">            ...     name = project.NaturalClasses.GetName(nc)</span>
-<span class="sd">            ...     if name == &quot;Voiceless Stops&quot;:</span>
+<span class="sd">            ...     if name == "Voiceless Stops":</span>
 <span class="sd">            ...         phonemes = project.NaturalClasses.GetPhonemes(nc)</span>
 <span class="sd">            ...         for phoneme in phonemes:</span>
 <span class="sd">            ...             print(project.Phonemes.GetRepresentation(phoneme))</span>
@@ -661,7 +678,7 @@
 <span class="sd">            ...     name = project.NaturalClasses.GetName(nc)</span>
 <span class="sd">            ...     phonemes = project.NaturalClasses.GetPhonemes(nc)</span>
 <span class="sd">            ...     count = len(phonemes)</span>
-<span class="sd">            ...     print(f&quot;{name}: {count} phonemes&quot;)</span>
+<span class="sd">            ...     print(f"{name}: {count} phonemes")</span>
 <span class="sd">            Voiceless Stops: 3 phonemes</span>
 <span class="sd">            Voiced Stops: 3 phonemes</span>
 <span class="sd">            Nasals: 3 phonemes</span>
@@ -674,19 +691,19 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            AddPhoneme, RemovePhoneme</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">&quot;nc_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">"nc_or_hvo"</span><span class="p">)</span>
 
         <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Check if it&#39;s a segment-based natural class</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">&quot;SegmentsRC&quot;</span><span class="p">):</span>
+        <span class="c1"># Check if it's a segment-based natural class</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">"SegmentsRC"</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">nc</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">AddPhoneme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc_or_hvo</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add a phoneme to a natural class.</span>
 
 <span class="sd">        Args:</span>
@@ -700,10 +717,10 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Create voiceless stops class</span>
-<span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.Create(&quot;Voiceless Stops&quot;, &quot;VLS&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; p = project.Phonemes.Find(&quot;/p/&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; t = project.Phonemes.Find(&quot;/t/&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; k = project.Phonemes.Find(&quot;/k/&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.Create("Voiceless Stops", "VLS")</span>
+<span class="sd">            &gt;&gt;&gt; p = project.Phonemes.Find("/p/")</span>
+<span class="sd">            &gt;&gt;&gt; t = project.Phonemes.Find("/t/")</span>
+<span class="sd">            &gt;&gt;&gt; k = project.Phonemes.Find("/k/")</span>
 <span class="sd">            &gt;&gt;&gt; if p:</span>
 <span class="sd">            ...     project.NaturalClasses.AddPhoneme(nc, p)</span>
 <span class="sd">            &gt;&gt;&gt; if t:</span>
@@ -712,8 +729,8 @@
 <span class="sd">            ...     project.NaturalClasses.AddPhoneme(nc, k)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create vowel class</span>
-<span class="sd">            &gt;&gt;&gt; vowels = project.NaturalClasses.Create(&quot;Vowels&quot;, &quot;V&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; for repr in [&quot;/a/&quot;, &quot;/e/&quot;, &quot;/i/&quot;, &quot;/o/&quot;, &quot;/u/&quot;]:</span>
+<span class="sd">            &gt;&gt;&gt; vowels = project.NaturalClasses.Create("Vowels", "V")</span>
+<span class="sd">            &gt;&gt;&gt; for repr in ["/a/", "/e/", "/i/", "/o/", "/u/"]:</span>
 <span class="sd">            ...     phoneme = project.Phonemes.Find(repr)</span>
 <span class="sd">            ...     if phoneme:</span>
 <span class="sd">            ...         project.NaturalClasses.AddPhoneme(vowels, phoneme)</span>
@@ -726,26 +743,27 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            RemovePhoneme, GetPhonemes, Create</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">&quot;nc_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">"nc_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">"phoneme_or_hvo"</span><span class="p">)</span>
 
         <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">)</span>
         <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Check if it&#39;s a segment-based natural class</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">&quot;SegmentsRC&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Cannot add phoneme to feature-based natural class&quot;</span><span class="p">)</span>
+        <span class="c1"># Check if it's a segment-based natural class</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">"SegmentsRC"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Cannot add phoneme to feature-based natural class"</span><span class="p">)</span>
 
         <span class="c1"># Add the phoneme if not already present</span>
         <span class="k">if</span> <span class="n">phoneme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nc</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="p">:</span>
-            <span class="n">nc</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">phoneme</span><span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Add phoneme to natural class"</span><span class="p">):</span>
+                <span class="n">nc</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">phoneme</span><span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">RemovePhoneme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc_or_hvo</span><span class="p">,</span> <span class="n">phoneme_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Remove a phoneme from a natural class.</span>
 
 <span class="sd">        Args:</span>
@@ -761,50 +779,51 @@
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; # Remove /q/ from uvular stops if reclassified</span>
 <span class="sd">            &gt;&gt;&gt; for nc in project.NaturalClasses.GetAll():</span>
-<span class="sd">            ...     if project.NaturalClasses.GetName(nc) == &quot;Uvular Stops&quot;:</span>
-<span class="sd">            ...         q_phoneme = project.Phonemes.Find(&quot;/q/&quot;)</span>
+<span class="sd">            ...     if project.NaturalClasses.GetName(nc) == "Uvular Stops":</span>
+<span class="sd">            ...         q_phoneme = project.Phonemes.Find("/q/")</span>
 <span class="sd">            ...         if q_phoneme and q_phoneme in project.NaturalClasses.GetPhonemes(nc):</span>
 <span class="sd">            ...             project.NaturalClasses.RemovePhoneme(nc, q_phoneme)</span>
 
 <span class="sd">            &gt;&gt;&gt; # Clean up natural class</span>
 <span class="sd">            &gt;&gt;&gt; for nc in project.NaturalClasses.GetAll():</span>
-<span class="sd">            ...     if project.NaturalClasses.GetName(nc) == &quot;Obsolete Phonemes&quot;:</span>
+<span class="sd">            ...     if project.NaturalClasses.GetName(nc) == "Obsolete Phonemes":</span>
 <span class="sd">            ...         phonemes = project.NaturalClasses.GetPhonemes(nc)</span>
 <span class="sd">            ...         for phoneme in phonemes:</span>
 <span class="sd">            ...             project.NaturalClasses.RemovePhoneme(nc, phoneme)</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Only works with segment-based natural classes</span>
-<span class="sd">            - Phoneme must be in the class&#39;s SegmentsRC collection</span>
+<span class="sd">            - Phoneme must be in the class's SegmentsRC collection</span>
 <span class="sd">            - Use GetPhonemes() to check membership first</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            AddPhoneme, GetPhonemes</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">&quot;nc_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">&quot;phoneme_or_hvo&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">"nc_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">,</span> <span class="s2">"phoneme_or_hvo"</span><span class="p">)</span>
 
         <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">)</span>
         <span class="n">phoneme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetPhonemeObject</span><span class="p">(</span><span class="n">phoneme_or_hvo</span><span class="p">)</span>
 
-        <span class="c1"># Check if it&#39;s a segment-based natural class</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">&quot;SegmentsRC&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Cannot remove phoneme from feature-based natural class&quot;</span><span class="p">)</span>
+        <span class="c1"># Check if it's a segment-based natural class</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">"SegmentsRC"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Cannot remove phoneme from feature-based natural class"</span><span class="p">)</span>
 
         <span class="c1"># Check if phoneme is in the collection</span>
         <span class="k">if</span> <span class="n">phoneme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nc</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Phoneme not found in natural class&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Phoneme not found in natural class"</span><span class="p">)</span>
 
         <span class="c1"># Remove the phoneme</span>
-        <span class="n">nc</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">phoneme</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Remove phoneme from natural class"</span><span class="p">):</span>
+            <span class="n">nc</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="o">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">phoneme</span><span class="p">)</span>
 
     <span class="c1"># ========== FEATURE-BASED NATURAL CLASSES ==========</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">CreateFeatureBased</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">abbreviation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">specs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a feature-based natural class (IPhNCFeatures).</span>
 
 <span class="sd">        Feature-based natural classes define membership by phonological</span>
@@ -814,13 +833,13 @@
 <span class="sd">        the constraints brings it into the class automatically.</span>
 
 <span class="sd">        Use this for generative phonology where you want natural classes</span>
-<span class="sd">        like &quot;back vowels&quot; or &quot;voiced obstruents&quot; expressed as feature</span>
+<span class="sd">        like "back vowels" or "voiced obstruents" expressed as feature</span>
 <span class="sd">        bundles. Use ``Create`` instead for segment-based classes that</span>
 <span class="sd">        enumerate their phonemes.</span>
 
 <span class="sd">        Note: LCM natural-class objects are immutable in their concrete</span>
 <span class="sd">        type after creation -- there is no in-place switch between</span>
-<span class="sd">        segment-based and feature-based. To &quot;convert&quot; between types,</span>
+<span class="sd">        segment-based and feature-based. To "convert" between types,</span>
 <span class="sd">        Delete the old class and Create a new one.</span>
 
 <span class="sd">        Args:</span>
@@ -828,7 +847,7 @@
 <span class="sd">            abbreviation (str, optional): Short abbreviation. If None,</span>
 <span class="sd">                no abbreviation alternative is written.</span>
 <span class="sd">            specs (list[tuple], optional): A list of ``(feature, value)``</span>
-<span class="sd">                tuples used to populate the natural class&#39;s feature</span>
+<span class="sd">                tuples used to populate the natural class's feature</span>
 <span class="sd">                struct. Each side may be an LCM object (IFsClosedFeature,</span>
 <span class="sd">                IFsSymFeatVal), a wrapper, or an HVO. If provided, the</span>
 <span class="sd">                resulting NC has a populated ``FeaturesOA``. If omitted,</span>
@@ -844,37 +863,37 @@
 <span class="sd">            FP_ParameterError: If name is empty or specs is malformed.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; # Build &quot;back vowels&quot; as [+back]</span>
-<span class="sd">            &gt;&gt;&gt; back = project.PhonFeatures.Find(&quot;back&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; # Build "back vowels" as [+back]</span>
+<span class="sd">            &gt;&gt;&gt; back = project.PhonFeatures.Find("back")</span>
 <span class="sd">            &gt;&gt;&gt; back_plus = project.PhonFeatures.GetValues(back)[0]</span>
 <span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.CreateFeatureBased(</span>
-<span class="sd">            ...     &quot;Back vowels&quot;, &quot;Vb&quot;, specs=[(back, back_plus)]</span>
+<span class="sd">            ...     "Back vowels", "Vb", specs=[(back, back_plus)]</span>
 <span class="sd">            ... )</span>
 <span class="sd">            &gt;&gt;&gt; project.NaturalClasses.GetType(nc)</span>
-<span class="sd">            &#39;features&#39;</span>
+<span class="sd">            'features'</span>
 
 <span class="sd">            &gt;&gt;&gt; # Create empty, populate later</span>
-<span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.CreateFeatureBased(&quot;High vowels&quot;, &quot;Vh&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; high = project.PhonFeatures.Find(&quot;high&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.CreateFeatureBased("High vowels", "Vh")</span>
+<span class="sd">            &gt;&gt;&gt; high = project.PhonFeatures.Find("high")</span>
 <span class="sd">            &gt;&gt;&gt; high_plus = project.PhonFeatures.GetValues(high)[0]</span>
 <span class="sd">            &gt;&gt;&gt; project.NaturalClasses.SetFeatures(nc, [(high, high_plus)])</span>
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, GetType, GetFeatures, SetFeatures</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">&quot;Name cannot be empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"Name cannot be empty"</span><span class="p">)</span>
 
         <span class="c1"># Create the new feature-based natural class using its factory</span>
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">ServiceLocator</span><span class="o">.</span><span class="n">GetService</span><span class="p">(</span>
             <span class="n">IPhNCFeaturesFactory</span>
         <span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">&quot;Create feature-based natural class&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TransactionCM</span><span class="p">(</span><span class="s2">"Create feature-based natural class"</span><span class="p">):</span>
             <span class="n">nc</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">Create</span><span class="p">()</span>
 
             <span class="c1"># Add to the natural classes collection (must be done before</span>
@@ -896,15 +915,15 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return the concrete type of a natural class as a short string.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            nc_or_hvo: The IPhNaturalClass object or HVO.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: ``&quot;segments&quot;`` for IPhNCSegments (enumerated phoneme</span>
-<span class="sd">            members), ``&quot;features&quot;`` for IPhNCFeatures (feature-based</span>
+<span class="sd">            str: ``"segments"`` for IPhNCSegments (enumerated phoneme</span>
+<span class="sd">            members), ``"features"`` for IPhNCFeatures (feature-based</span>
 <span class="sd">            membership), or the LCM ClassName as a defensive fallback</span>
 <span class="sd">            for unknown subtypes.</span>
 
@@ -912,12 +931,12 @@
 <span class="sd">            FP_NullParameterError: If nc_or_hvo is None.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; stops = project.NaturalClasses.Create(&quot;Stops&quot;, &quot;P&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; stops = project.NaturalClasses.Create("Stops", "P")</span>
 <span class="sd">            &gt;&gt;&gt; project.NaturalClasses.GetType(stops)</span>
-<span class="sd">            &#39;segments&#39;</span>
-<span class="sd">            &gt;&gt;&gt; vb = project.NaturalClasses.CreateFeatureBased(&quot;Back vowels&quot;, &quot;Vb&quot;)</span>
+<span class="sd">            'segments'</span>
+<span class="sd">            &gt;&gt;&gt; vb = project.NaturalClasses.CreateFeatureBased("Back vowels", "Vb")</span>
 <span class="sd">            &gt;&gt;&gt; project.NaturalClasses.GetType(vb)</span>
-<span class="sd">            &#39;features&#39;</span>
+<span class="sd">            'features'</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            Use this to decide which mutators are valid for a given</span>
@@ -927,24 +946,24 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            Create, CreateFeatureBased, GetPhonemes, GetFeatures</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">&quot;nc_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">"nc_or_hvo"</span><span class="p">)</span>
 
         <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">)</span>
 
         <span class="c1"># Prefer concrete-type detection via the owning/reference property.</span>
         <span class="c1"># IPhNCFeatures has FeaturesOA; IPhNCSegments has SegmentsRC.</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">&quot;FeaturesOA&quot;</span><span class="p">):</span>
-            <span class="k">return</span> <span class="s2">&quot;features&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">&quot;SegmentsRC&quot;</span><span class="p">):</span>
-            <span class="k">return</span> <span class="s2">&quot;segments&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">"FeaturesOA"</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">"features"</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">"SegmentsRC"</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">"segments"</span>
         <span class="c1"># Defensive fallback for unknown subtypes</span>
         <span class="k">return</span> <span class="n">nc</span><span class="o">.</span><span class="n">ClassName</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc_or_hvo</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get the feature struct holding a feature-based natural class&#39;s</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Get the feature struct holding a feature-based natural class's</span>
 <span class="sd">        constraints.</span>
 
 <span class="sd">        Args:</span>
@@ -955,7 +974,7 @@
 <span class="sd">            IFsFeatStruc or None: The owned feature structure (with its</span>
 <span class="sd">            ``FeatureSpecsOC`` of IFsClosedValue specs), or ``None`` if</span>
 <span class="sd">            ``FeaturesOA`` is unset (e.g. a feature-based class created</span>
-<span class="sd">            with no initial specs that hasn&#39;t yet called ``SetFeatures``).</span>
+<span class="sd">            with no initial specs that hasn't yet called ``SetFeatures``).</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            FP_NullParameterError: If nc_or_hvo is None.</span>
@@ -963,10 +982,10 @@
 <span class="sd">                (i.e. it is a segment-based IPhNCSegments).</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; back = project.PhonFeatures.Find(&quot;back&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; back = project.PhonFeatures.Find("back")</span>
 <span class="sd">            &gt;&gt;&gt; back_plus = project.PhonFeatures.GetValues(back)[0]</span>
 <span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.CreateFeatureBased(</span>
-<span class="sd">            ...     &quot;Back vowels&quot;, &quot;Vb&quot;, specs=[(back, back_plus)]</span>
+<span class="sd">            ...     "Back vowels", "Vb", specs=[(back, back_plus)]</span>
 <span class="sd">            ... )</span>
 <span class="sd">            &gt;&gt;&gt; fs = project.NaturalClasses.GetFeatures(nc)</span>
 <span class="sd">            &gt;&gt;&gt; for spec in fs.FeatureSpecsOC:</span>
@@ -974,27 +993,27 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            SetFeatures, GetType, CreateFeatureBased</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">&quot;nc_or_hvo&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">"nc_or_hvo"</span><span class="p">)</span>
 
         <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">&quot;FeaturesOA&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">"FeaturesOA"</span><span class="p">):</span>
             <span class="n">name_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span>
                 <span class="n">nc</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;(unnamed)&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">"(unnamed)"</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Natural class &#39;</span><span class="si">{</span><span class="n">name_text</span><span class="si">}</span><span class="s2">&#39; is not feature-based &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;(class=</span><span class="si">{</span><span class="n">nc</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2">); GetFeatures only works on &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;IPhNCFeatures.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Natural class '</span><span class="si">{</span><span class="n">name_text</span><span class="si">}</span><span class="s2">' is not feature-based "</span>
+                <span class="sa">f</span><span class="s2">"(class=</span><span class="si">{</span><span class="n">nc</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2">); GetFeatures only works on "</span>
+                <span class="sa">f</span><span class="s2">"IPhNCFeatures."</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">nc</span><span class="o">.</span><span class="n">FeaturesOA</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">SetFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc_or_hvo</span><span class="p">,</span> <span class="n">specs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Replace a feature-based natural class&#39;s constraints with a new</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Replace a feature-based natural class's constraints with a new</span>
 <span class="sd">        feature struct built from ``specs``.</span>
 
 <span class="sd">        Any existing ``FeaturesOA`` is discarded -- assigning to an</span>
@@ -1016,13 +1035,13 @@
 <span class="sd">                or if specs is malformed.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.CreateFeatureBased(&quot;Back vowels&quot;, &quot;Vb&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; back = project.PhonFeatures.Find(&quot;back&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; nc = project.NaturalClasses.CreateFeatureBased("Back vowels", "Vb")</span>
+<span class="sd">            &gt;&gt;&gt; back = project.PhonFeatures.Find("back")</span>
 <span class="sd">            &gt;&gt;&gt; back_plus = project.PhonFeatures.GetValues(back)[0]</span>
 <span class="sd">            &gt;&gt;&gt; project.NaturalClasses.SetFeatures(nc, [(back, back_plus)])</span>
 
 <span class="sd">            &gt;&gt;&gt; # Replace constraints (previous FeaturesOA is discarded)</span>
-<span class="sd">            &gt;&gt;&gt; high = project.PhonFeatures.Find(&quot;high&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; high = project.PhonFeatures.Find("high")</span>
 <span class="sd">            &gt;&gt;&gt; high_plus = project.PhonFeatures.GetValues(high)[0]</span>
 <span class="sd">            &gt;&gt;&gt; project.NaturalClasses.SetFeatures(</span>
 <span class="sd">            ...     nc, [(back, back_plus), (high, high_plus)]</span>
@@ -1036,22 +1055,22 @@
 
 <span class="sd">        See Also:</span>
 <span class="sd">            GetFeatures, CreateFeatureBased, GetType</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EnsureWriteEnabled</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">&quot;nc_or_hvo&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">specs</span><span class="p">,</span> <span class="s2">&quot;specs&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">,</span> <span class="s2">"nc_or_hvo"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ValidateParam</span><span class="p">(</span><span class="n">specs</span><span class="p">,</span> <span class="s2">"specs"</span><span class="p">)</span>
 
         <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">nc_or_hvo</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">&quot;FeaturesOA&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">"FeaturesOA"</span><span class="p">):</span>
             <span class="n">name_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span>
                 <span class="n">nc</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">&quot;(unnamed)&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">"(unnamed)"</span>
             <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Natural class &#39;</span><span class="si">{</span><span class="n">name_text</span><span class="si">}</span><span class="s2">&#39; is not feature-based &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;(class=</span><span class="si">{</span><span class="n">nc</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2">); SetFeatures only works on &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;IPhNCFeatures.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Natural class '</span><span class="si">{</span><span class="n">name_text</span><span class="si">}</span><span class="s2">' is not feature-based "</span>
+                <span class="sa">f</span><span class="s2">"(class=</span><span class="si">{</span><span class="n">nc</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2">); SetFeatures only works on "</span>
+                <span class="sa">f</span><span class="s2">"IPhNCFeatures."</span>
             <span class="p">)</span>
 
         <span class="c1"># MakeFeatStruc attaches the new struct to nc.FeaturesOA BEFORE</span>
@@ -1063,40 +1082,58 @@
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get dictionary of syncable properties for cross-project synchronization.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            item: The IPhNaturalClass object.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            dict: Dictionary mapping property names to their values.</span>
-<span class="sd">                Keys are property names, values are the property values.</span>
+<span class="sd">            dict: Dictionary mapping property names to their values. Shapes:</span>
+
+<span class="sd">            - ``Name`` / ``Abbreviation`` / ``Description``:</span>
+<span class="sd">              ``{ws_id: text}`` multistring dicts (non-empty alts only).</span>
+<span class="sd">            - ``PhonemeGuids``: list of GUID strings (segment-based</span>
+<span class="sd">              IPhNCSegments members, from ``SegmentsRC``).</span>
+<span class="sd">            - ``FeaturesGuid``: ``str`` GUID of the owned IFsFeatStruc,</span>
+<span class="sd">              feature-based (IPhNCFeatures) classes only.</span>
+<span class="sd">            - ``Features``: a list of ``{"FeatureGuid": str, "ValueGuid":</span>
+<span class="sd">              str}`` specs -- one per IFsClosedValue in the class's</span>
+<span class="sd">              ``FeaturesOA.FeatureSpecsOC`` -- so a synced feature-based</span>
+<span class="sd">              natural class carries the actual feature-value constraints</span>
+<span class="sd">              that define its membership, not just its Name/GUID. The</span>
+<span class="sd">              feature/value GUIDs let ApplySyncableProperties rewire the</span>
+<span class="sd">              specs against the target project's (already-synced) feature</span>
+<span class="sd">              system. Same bug class as PhonemeOperations issue #222,</span>
+<span class="sd">              closed here for IPhNCFeatures.</span>
 
 <span class="sd">        Example:</span>
 <span class="sd">            &gt;&gt;&gt; ncOps = NaturalClassOperations(project)</span>
 <span class="sd">            &gt;&gt;&gt; nc = list(ncOps.GetAll())[0]</span>
 <span class="sd">            &gt;&gt;&gt; props = ncOps.GetSyncableProperties(nc)</span>
-<span class="sd">            &gt;&gt;&gt; print(props.keys())</span>
-<span class="sd">            dict_keys([&#39;Name&#39;, &#39;Abbreviation&#39;, &#39;Description&#39;, &#39;PhonemeGuids&#39;])</span>
+<span class="sd">            &gt;&gt;&gt; sorted(props.keys())</span>
+<span class="sd">            ['Abbreviation', 'Description', 'Features', 'FeaturesGuid', 'Name']</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Returns all MultiString properties (all writing systems)</span>
-<span class="sd">            - Returns PhonemeGuids as list of GUID strings (SegmentsRC members)</span>
+<span class="sd">            - ``PhonemeGuids`` and ``Features``/``FeaturesGuid`` are</span>
+<span class="sd">              mutually exclusive in practice: a natural class is either</span>
+<span class="sd">              segment-based (IPhNCSegments, has SegmentsRC) or</span>
+<span class="sd">              feature-based (IPhNCFeatures, has FeaturesOA), never both.</span>
 <span class="sd">            - Does not include GUID or HVO of the natural class itself</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
 
         <span class="c1"># Get all writing systems for MultiString properties</span>
         <span class="c1"># Fix: ILgWritingSystemFactory does not expose a .WritingSystems</span>
-        <span class="c1"># property; enumerate via the wrapper&#39;s WritingSystemOperations.GetAll(),</span>
+        <span class="c1"># property; enumerate via the wrapper's WritingSystemOperations.GetAll(),</span>
         <span class="c1"># which returns CoreWritingSystemDefinition objects with .Id / .Handle.</span>
         <span class="n">all_ws</span> <span class="o">=</span> <span class="p">{</span><span class="n">ws</span><span class="o">.</span><span class="n">Id</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">Handle</span> <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">WritingSystems</span><span class="o">.</span><span class="n">GetAll</span><span class="p">()}</span>
 
         <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># MultiString properties</span>
-        <span class="k">for</span> <span class="n">prop_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="s2">&quot;Abbreviation&quot;</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">prop_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"Name"</span><span class="p">,</span> <span class="s2">"Abbreviation"</span><span class="p">,</span> <span class="s2">"Description"</span><span class="p">]:</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">):</span>
                 <span class="n">prop_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">)</span>
                 <span class="n">ws_values</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1107,35 +1144,244 @@
                 <span class="k">if</span> <span class="n">ws_values</span><span class="p">:</span>  <span class="c1"># Only include property if it has values</span>
                     <span class="n">props</span><span class="p">[</span><span class="n">prop_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ws_values</span>
 
-        <span class="c1"># Reference Collection (RC) properties - return list of GUIDs</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="s2">&quot;SegmentsRC&quot;</span><span class="p">):</span>
-            <span class="n">phoneme_guids</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">phoneme</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="k">for</span> <span class="n">phoneme</span> <span class="ow">in</span> <span class="n">nc</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="p">]</span>
+        <span class="c1"># Reference Collection (RC) properties - return list of GUIDs.</span>
+        <span class="c1"># Segment-based (IPhNCSegments) natural classes only; left</span>
+        <span class="c1"># behaviourally as-is (same PhonemeGuids shape), but the dispatch</span>
+        <span class="c1"># itself is corrected below.</span>
+        <span class="c1">#</span>
+        <span class="c1"># IMPORTANT (found 2026-08-19 against live Ngoreme FLEx data):</span>
+        <span class="c1"># `GetAll()` (and `Object()`/`Find()`) yield objects wrapped by</span>
+        <span class="c1"># pythonnet under the BASE `IPhNaturalClass` interface, not the</span>
+        <span class="c1"># concrete `IPhNCSegments`/`IPhNCFeatures` subtype. Under</span>
+        <span class="c1"># pythonnet, attribute visibility follows the STATIC interface the</span>
+        <span class="c1"># object is wrapped as, not its runtime CLR type -- so</span>
+        <span class="c1"># `hasattr(nc, "SegmentsRC")` and `hasattr(nc, "FeaturesOA")` are</span>
+        <span class="c1"># BOTH always False here, even when the underlying object really</span>
+        <span class="c1"># is a populated PhNCSegments/PhNCFeatures. The previous hasattr</span>
+        <span class="c1"># gates were therefore dead code: verified live that 0/41</span>
+        <span class="c1"># PhNCFeatures and 0/7 PhNCSegments passed either gate, so neither</span>
+        <span class="c1"># PhonemeGuids nor Features/FeaturesGuid was ever emitted for any</span>
+        <span class="c1"># class reached via GetAll(). Discriminate on the reliable</span>
+        <span class="c1"># `.ClassName` string (declared on the base interface, so it is</span>
+        <span class="c1"># always visible) and cast to the concrete interface before</span>
+        <span class="c1"># touching a subtype-only member -- casting to the WRONG interface</span>
+        <span class="c1"># raises TypeError, so ClassName must be checked first.</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="n">nc</span><span class="o">.</span><span class="n">ClassName</span>
+        <span class="k">if</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"PhNCSegments"</span><span class="p">:</span>
+            <span class="n">seg_nc</span> <span class="o">=</span> <span class="n">IPhNCSegments</span><span class="p">(</span><span class="n">nc</span><span class="p">)</span>
+            <span class="n">phoneme_guids</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">phoneme</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span> <span class="k">for</span> <span class="n">phoneme</span> <span class="ow">in</span> <span class="n">seg_nc</span><span class="o">.</span><span class="n">SegmentsRC</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">phoneme_guids</span><span class="p">:</span>
-                <span class="n">props</span><span class="p">[</span><span class="s2">&quot;PhonemeGuids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">phoneme_guids</span>
+                <span class="n">props</span><span class="p">[</span><span class="s2">"PhonemeGuids"</span><span class="p">]</span> <span class="o">=</span> <span class="n">phoneme_guids</span>
+
+        <span class="c1"># Feature structure (IPhNCFeatures only). A feature-based natural</span>
+        <span class="c1"># class's entire reason for existing is its owned FeaturesOA</span>
+        <span class="c1"># constraint bundle -- without this block it was never captured,</span>
+        <span class="c1"># so every feature-based class synced across with a correct</span>
+        <span class="c1"># Name/GUID but a null FeaturesOA, and any rule referencing it</span>
+        <span class="c1"># then silently matched nothing (data-loss bug; same class as</span>
+        <span class="c1"># PhonemeOperations issue #222, applied here to IPhNCFeatures).</span>
+        <span class="k">elif</span> <span class="n">class_name</span> <span class="o">==</span> <span class="s2">"PhNCFeatures"</span><span class="p">:</span>
+            <span class="n">feat_nc</span> <span class="o">=</span> <span class="n">IPhNCFeatures</span><span class="p">(</span><span class="n">nc</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">feat_nc</span><span class="o">.</span><span class="n">FeaturesOA</span><span class="p">:</span>
+                <span class="n">features</span> <span class="o">=</span> <span class="n">feat_nc</span><span class="o">.</span><span class="n">FeaturesOA</span>
+                <span class="n">props</span><span class="p">[</span><span class="s2">"FeaturesGuid"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">Guid</span><span class="p">)</span>
+                <span class="n">specs</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="s2">"FeatureSpecsOC"</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">features</span><span class="o">.</span><span class="n">FeatureSpecsOC</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">cv</span> <span class="o">=</span> <span class="n">IFsClosedValue</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+                            <span class="n">feat_ra</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">FeatureRA</span>
+                            <span class="n">val_ra</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">ValueRA</span>
+                        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                            <span class="c1"># Non-closed spec shape (e.g. complex value) --</span>
+                            <span class="c1"># natural-class feature structs only use closed</span>
+                            <span class="c1"># values, so skip anything that isn't one.</span>
+                            <span class="k">continue</span>
+                        <span class="k">if</span> <span class="n">feat_ra</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">val_ra</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                        <span class="n">specs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                            <span class="s2">"FeatureGuid"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">feat_ra</span><span class="o">.</span><span class="n">Guid</span><span class="p">),</span>
+                            <span class="s2">"ValueGuid"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">val_ra</span><span class="o">.</span><span class="n">Guid</span><span class="p">),</span>
+                        <span class="p">})</span>
+                <span class="k">if</span> <span class="n">specs</span><span class="p">:</span>
+                    <span class="n">props</span><span class="p">[</span><span class="s2">"Features"</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span>
+        <span class="c1"># else: unknown/defensive fallback -- no membership or feature</span>
+        <span class="c1"># data captured, mirroring GetType()'s ClassName fallback.</span>
 
         <span class="k">return</span> <span class="n">props</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ApplySyncableProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply syncable properties (from GetSyncableProperties) onto an item.</span>
+<span class="w">        </span><span class="sd">"""Apply syncable properties (from GetSyncableProperties) onto a</span>
+<span class="sd">        natural class.</span>
 
-<span class="sd">        Inherited from BaseOperations; declared on the concrete class so static</span>
-<span class="sd">        API indexers see it. The base implementation handles every property</span>
-<span class="sd">        shape this class&#39;s GetSyncableProperties emits.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
+<span class="sd">        Handles the multistring fields (Name/Abbreviation/Description) and</span>
+<span class="sd">        ``PhonemeGuids`` via the BaseOperations loop -- unchanged behaviour</span>
+<span class="sd">        for segment-based (IPhNCSegments) natural classes. When the source</span>
+<span class="sd">        props carry ``Features``/``FeaturesGuid``, rewires the target's</span>
+<span class="sd">        owned FeaturesOA feature-value specs against the target project's</span>
+<span class="sd">        feature system by GUID (same bug class as PhonemeOperations issue</span>
+<span class="sd">        #222, closed here for IPhNCFeatures).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: Target IPhNaturalClass (already created + owned + GUID-</span>
+<span class="sd">                assigned by the caller).</span>
+<span class="sd">            props: dict produced by GetSyncableProperties.</span>
+<span class="sd">            ws_map: Optional source-&gt;target writing-system Id mapping.</span>
+<span class="sd">            fill_gaps: If True, only fill empty target alts / add missing</span>
+<span class="sd">                feature specs; never overwrite existing target data.</span>
+<span class="sd">                Feature specs are always purely additive (an existing</span>
+<span class="sd">                (feature, value) pair is never removed or replaced), so</span>
+<span class="sd">                this flag has no further effect on the Features branch</span>
+<span class="sd">                beyond the base loop's multistring handling.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If ``item`` is None, ``props`` is not a</span>
+<span class="sd">                dict, the source carries ``Features`` and/or</span>
+<span class="sd">                ``FeaturesGuid`` (including a present-but-empty feature</span>
+<span class="sd">                structure -- ``FeaturesGuid`` set with ``Features``</span>
+<span class="sd">                absent/``[]``) but the target item is not feature-based</span>
+<span class="sd">                (type mismatch), or a Features spec references a feature</span>
+<span class="sd">                or value GUID that does not exist in the target project.</span>
+<span class="sd">                Unlike PhonemeOperations' equivalent (which skips an</span>
+<span class="sd">                unresolved spec), an unresolvable GUID here RAISES:</span>
+<span class="sd">                silently dropping a natural-class feature spec is exactly</span>
+<span class="sd">                the data-loss defect this method exists to close, and a</span>
+<span class="sd">                rule referencing an incomplete class would otherwise fail</span>
+<span class="sd">                to match anything with no visible error. The feature</span>
+<span class="sd">                system must be synced into the target project *before*</span>
+<span class="sd">                natural classes are rewired.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Must run inside the caller's unit of work / already-open</span>
+<span class="sd">              transaction context where required by callers that batch</span>
+<span class="sd">              multiple applies together.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span><span class="s2">"ApplySyncableProperties: item is None"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"ApplySyncableProperties: props must be a dict, got "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">props</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Resolve once so an HVO or wrapper input is handled uniformly by</span>
+        <span class="c1"># the base loop and the dedicated Features handler below.</span>
+        <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__GetNaturalClassObject</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="c1"># Features/FeaturesGuid need dedicated handling; everything else</span>
+        <span class="c1"># (Name, Abbreviation, Description, PhonemeGuids, and any future</span>
+        <span class="c1"># plain scalars) goes through the base loop unchanged.</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Features"</span><span class="p">)</span>
+        <span class="n">features_guid</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"FeaturesGuid"</span><span class="p">)</span>
+        <span class="n">base_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"Features"</span><span class="p">,</span> <span class="s2">"FeaturesGuid"</span><span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ApplySyncableProperties</span><span class="p">(</span><span class="n">nc</span><span class="p">,</span> <span class="n">base_props</span><span class="p">,</span> <span class="n">ws_map</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="n">fill_gaps</span><span class="p">)</span>
+
+        <span class="c1"># Gate on the PRESENCE of either key, not truthiness of `features`</span>
+        <span class="c1"># alone. GetSyncableProperties omits the "Features" key entirely</span>
+        <span class="c1"># when a feature-based class's FeatureSpecsOC is genuinely empty</span>
+        <span class="c1"># (an IFsFeatStruc with zero specs -- e.g. an auto-generated</span>
+        <span class="c1"># placeholder natural class for a phonological rule), but it still</span>
+        <span class="c1"># emits "FeaturesGuid" whenever FeaturesOA is non-null. Gating on</span>
+        <span class="c1"># `if features:` alone treated that legitimate empty-but-present</span>
+        <span class="c1"># FeaturesOA the same as "no FeaturesOA at all" -- `[]`/`None` are</span>
+        <span class="c1"># both falsy -- so __ApplyFeatures was never called and the</span>
+        <span class="c1"># target's FeaturesOA stayed null even though the source</span>
+        <span class="c1"># definitively has one (found 2026-08-19 via code review, not a</span>
+        <span class="c1"># live run: GetSyncableProperties only ever emits FeaturesGuid</span>
+        <span class="c1"># when FeaturesOA is non-null, so a present FeaturesGuid with an</span>
+        <span class="c1"># absent/empty Features list means "source has an empty feature</span>
+        <span class="c1"># struct", not "source has none"). A source item with neither key</span>
+        <span class="c1"># present (segment-based, or a feature-based item somehow lacking</span>
+        <span class="c1"># FeaturesOA) correctly skips this whole block.</span>
+        <span class="k">if</span> <span class="n">features</span> <span class="ow">or</span> <span class="n">features_guid</span><span class="p">:</span>
+            <span class="c1"># Discriminate on ClassName, not hasattr(nc, "FeaturesOA") --</span>
+            <span class="c1"># `nc` here may be base-`IPhNaturalClass`-typed (e.g. resolved</span>
+            <span class="c1"># via `self.project.Object(hvo_or_guid)`, which returns a</span>
+            <span class="c1"># generic ICmObject/IPhNaturalClass wrapper), and pythonnet's</span>
+            <span class="c1"># attribute visibility follows that static wrapper type, not</span>
+            <span class="c1"># the runtime CLR type. `hasattr(nc, "FeaturesOA")` would be</span>
+            <span class="c1"># False even for a genuine PhNCFeatures target, which would</span>
+            <span class="c1"># misfire this type-mismatch guard on every real call. Verified</span>
+            <span class="c1"># live against Ngoreme FLEx (see GetSyncableProperties above</span>
+            <span class="c1"># for the full write-up).</span>
+            <span class="k">if</span> <span class="n">nc</span><span class="o">.</span><span class="n">ClassName</span> <span class="o">!=</span> <span class="s2">"PhNCFeatures"</span><span class="p">:</span>
+                <span class="n">name_text</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span>
+                    <span class="n">nc</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">"(unnamed)"</span>
+                <span class="k">raise</span> <span class="n">FP_ParameterError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"ApplySyncableProperties: source natural class "</span>
+                    <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">name_text</span><span class="si">}</span><span class="s2">' carries a Features/FeaturesGuid "</span>
+                    <span class="sa">f</span><span class="s2">"feature structure but the target item is not "</span>
+                    <span class="sa">f</span><span class="s2">"feature-based (class=</span><span class="si">{</span><span class="n">nc</span><span class="o">.</span><span class="n">ClassName</span><span class="si">}</span><span class="s2">); type mismatch "</span>
+                    <span class="sa">f</span><span class="s2">"between source and target natural class."</span>
+                <span class="p">)</span>
+            <span class="n">feat_nc</span> <span class="o">=</span> <span class="n">IPhNCFeatures</span><span class="p">(</span><span class="n">nc</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__ApplyFeatures</span><span class="p">(</span><span class="n">feat_nc</span><span class="p">,</span> <span class="n">features</span> <span class="ow">or</span> <span class="p">[],</span> <span class="n">features_guid</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__ApplyFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nc</span><span class="p">,</span> <span class="n">specs</span><span class="p">,</span> <span class="n">features_guid</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Thin call-through to ``BaseOperations._ApplyFeatureStruc`` (spec</span>
+<span class="sd">        feature-structure-sync-gap, T4): rewires a feature-based natural</span>
+<span class="sd">        class's FeaturesOA feature-value specs from a list of</span>
+<span class="sd">        ``{"FeatureGuid", "ValueGuid"}`` dicts, resolving each</span>
+<span class="sd">        feature/value against the TARGET project's feature system by</span>
+<span class="sd">        GUID.</span>
+
+<span class="sd">        A missing FeaturesOA is created (ownership-first), preserving</span>
+<span class="sd">        ``features_guid`` via ``_CreateWithGuid`` where the factory</span>
+<span class="sd">        supports a ``Create(Guid)`` overload. Specs are matched by</span>
+<span class="sd">        (FeatureGuid, ValueGuid) so re-application is idempotent.</span>
+
+<span class="sd">        Unlike ``PhonemeOperations.__ApplyFeatures`` (which passes</span>
+<span class="sd">        ``on_unresolved="skip"`` and logs nothing), NC passes</span>
+<span class="sd">        ``on_unresolved="raise"`` here -- see the ``Raises`` section of</span>
+<span class="sd">        ``ApplySyncableProperties`` for why: a silently-incomplete</span>
+<span class="sd">        FeaturesOA is precisely the bug this method closes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            nc: The target IPhNCFeatures object (already confirmed to</span>
+<span class="sd">                have a FeaturesOA property by the caller).</span>
+<span class="sd">            specs: list of ``{"FeatureGuid": str, "ValueGuid": str}``</span>
+<span class="sd">                dicts, as produced by GetSyncableProperties.</span>
+<span class="sd">            features_guid: Optional ``str`` GUID of the source</span>
+<span class="sd">                IFsFeatStruc, used to preserve identity when a new struct</span>
+<span class="sd">                must be created.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FP_ParameterError: If a spec is malformed, or if a feature or</span>
+<span class="sd">                value GUID does not resolve to an object in the target</span>
+<span class="sd">                project.</span>
+<span class="sd">        """</span>
+        <span class="n">nc_name</span> <span class="o">=</span> <span class="n">ITsString</span><span class="p">(</span>
+            <span class="n">nc</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">get_String</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">DefaultAnalWs</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">Text</span> <span class="ow">or</span> <span class="s2">"(unnamed)"</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ApplyFeatureStruc</span><span class="p">(</span>
+            <span class="n">nc</span><span class="p">,</span>
+            <span class="s2">"FeaturesOA"</span><span class="p">,</span>
+            <span class="n">specs</span><span class="p">,</span>
+            <span class="n">struct_guid</span><span class="o">=</span><span class="n">features_guid</span><span class="p">,</span>
+            <span class="n">on_unresolved</span><span class="o">=</span><span class="s2">"raise"</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"natural class '</span><span class="si">{</span><span class="n">nc_name</span><span class="si">}</span><span class="s2">'"</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="nd">@OperationsMethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">CompareTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">ops1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ops2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compare two natural classes and return detailed differences.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            item1: First natural class to compare (from source project).</span>
 <span class="sd">            item2: Second natural class to compare (from target project).</span>
-<span class="sd">            ops1: Optional NaturalClassOperations instance for item1&#39;s project.</span>
+<span class="sd">            ops1: Optional NaturalClassOperations instance for item1's project.</span>
 <span class="sd">                 Defaults to self.</span>
-<span class="sd">            ops2: Optional NaturalClassOperations instance for item2&#39;s project.</span>
+<span class="sd">            ops2: Optional NaturalClassOperations instance for item2's project.</span>
 <span class="sd">                 Defaults to self.</span>
 
 <span class="sd">        Returns:</span>
@@ -1144,8 +1390,8 @@
 <span class="sd">                - differences (dict): Maps property names to (value1, value2) tuples</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; nc1 = project1_ncOps.Find(&quot;Voiceless Stops&quot;)</span>
-<span class="sd">            &gt;&gt;&gt; nc2 = project2_ncOps.Find(&quot;Voiceless Stops&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; nc1 = project1_ncOps.Find("Voiceless Stops")</span>
+<span class="sd">            &gt;&gt;&gt; nc2 = project2_ncOps.Find("Voiceless Stops")</span>
 <span class="sd">            &gt;&gt;&gt; is_diff, diffs = project1_ncOps.CompareTo(</span>
 <span class="sd">            ...     nc1, nc2,</span>
 <span class="sd">            ...     ops1=project1_ncOps,</span>
@@ -1153,14 +1399,14 @@
 <span class="sd">            ... )</span>
 <span class="sd">            &gt;&gt;&gt; if is_diff:</span>
 <span class="sd">            ...     for prop, (val1, val2) in diffs.items():</span>
-<span class="sd">            ...         print(f&quot;{prop}: {val1} -&gt; {val2}&quot;)</span>
+<span class="sd">            ...         print(f"{prop}: {val1} -&gt; {val2}")</span>
 
 <span class="sd">        Notes:</span>
 <span class="sd">            - Compares all MultiString properties across all writing systems</span>
 <span class="sd">            - Compares phoneme membership by GUID</span>
 <span class="sd">            - Returns empty dict if items are identical</span>
 <span class="sd">            - Handles cross-project comparison via ops1/ops2</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">ops1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">ops1</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="k">if</span> <span class="n">ops2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1179,8 +1425,8 @@
             <span class="n">val1</span> <span class="o">=</span> <span class="n">props1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="n">val2</span> <span class="o">=</span> <span class="n">props2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-            <span class="c1"># For PhonemeGuids, compare as sets (order doesn&#39;t matter)</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;PhonemeGuids&quot;</span><span class="p">:</span>
+            <span class="c1"># For PhonemeGuids, compare as sets (order doesn't matter)</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"PhonemeGuids"</span><span class="p">:</span>
                 <span class="n">set1</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">val1</span><span class="p">)</span> <span class="k">if</span> <span class="n">val1</span> <span class="k">else</span> <span class="nb">set</span><span class="p">()</span>
                 <span class="n">set2</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">val2</span><span class="p">)</span> <span class="k">if</span> <span class="n">val2</span> <span class="k">else</span> <span class="nb">set</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">set1</span> <span class="o">!=</span> <span class="n">set2</span><span class="p">:</span>
@@ -1231,8 +1477,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Craig Farrow.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    &#169; Copyright 2026, Matthew Lee. Based on flexlibs by Craig Farrow..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
     </div>
   </body>
 </html>
