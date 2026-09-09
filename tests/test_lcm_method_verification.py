@@ -10,10 +10,110 @@
 # Copyright 2025
 #
 
+import io
 import pytest
+import tokenize
 from pathlib import Path
 from collections import defaultdict
 import re
+
+
+# ---------------------------------------------------------------------------
+# Source-scanning helpers
+# ---------------------------------------------------------------------------
+
+# Token types that carry prose rather than code. A docstring is just a
+# STRING token in expression position, so stripping STRING covers docstrings
+# and every other string literal in one pass. On Python 3.12+ an f-string is
+# tokenized piecewise: FSTRING_MIDDLE is the literal text between the
+# replacement fields, while the fields themselves arrive as ordinary NAME/OP
+# tokens. Dropping only FSTRING_MIDDLE therefore removes the prose and keeps
+# the real code -- `f"{obj.Create()}"` still reads as a Create call.
+_PROSE_TOKEN_TYPES = {tokenize.STRING, tokenize.COMMENT}
+if hasattr(tokenize, "FSTRING_MIDDLE"):  # Python 3.12+
+    _PROSE_TOKEN_TYPES.add(tokenize.FSTRING_MIDDLE)
+
+
+def strip_string_literals(source):
+    """
+    Blank out every string literal and comment, leaving code untouched.
+
+    These scans look for LCM call patterns as plain substrings, so any
+    mention of a pattern in prose is a false positive. The scans used to
+    strip triple-quoted docstrings with a regex, which left single- and
+    double-quoted literals in place. That is not a hypothetical gap:
+    ``GramCatOperations.Create`` is a deprecated override that only raises,
+    and its FP_ParameterError message contains the words
+    ``"GramCat.Create() has been removed (issue #276)"``. The file resolves
+    no factory and imports nothing from ``SIL.LCModel`` -- correctly -- yet
+    the docstring-only strip still saw a ``.Create()`` in it and demanded a
+    ``GetService(`` (issue #276). Tokenizing removes the whole class of
+    false positive rather than exempting one file.
+
+    Blanking preserves line and column offsets (newlines inside multi-line
+    literals are kept) so line numbers in any diagnostics still line up
+    with the file on disk.
+
+    Parameters:
+        source: Python source text.
+
+    Returns:
+        str: The same text with literal and comment characters replaced by
+        spaces. If the source cannot be tokenized, falls back to the
+        historical triple-quote regex strip so a scan never crashes on an
+        unparseable file.
+    """
+    try:
+        tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
+    except (tokenize.TokenError, IndentationError, SyntaxError):
+        fallback = re.sub(r'"""[\s\S]*?"""', "", source)
+        return re.sub(r"'''[\s\S]*?'''", "", fallback)
+
+    lines = source.splitlines(keepends=True)
+    for token in tokens:
+        if token.type not in _PROSE_TOKEN_TYPES:
+            continue
+        (start_row, start_col), (end_row, end_col) = token.start, token.end
+        for row in range(start_row, min(end_row, len(lines)) + 1):
+            line = lines[row - 1]
+            begin = start_col if row == start_row else 0
+            finish = end_col if row == end_row else len(line)
+            blanked = "".join(" " if ch != "\n" else "\n" for ch in line[begin:finish])
+            lines[row - 1] = line[:begin] + blanked + line[finish:]
+
+    return "".join(lines)
+
+
+def unresolved_factory_create(content):
+    """
+    Report whether a source file calls ``.Create()`` without a factory.
+
+    Extracted from ``test_all_factory_creates_have_service_locator`` so the
+    predicate can be exercised directly against synthetic sources -- a scan
+    that can no longer fail is worse than no scan at all.
+
+    Parameters:
+        content: Python source text of an Operations file.
+
+    Returns:
+        bool: True if the file contains a real (non-prose) ``.Create()``
+        call, does not take a ``factory`` parameter, and never calls
+        ``GetService(``.
+    """
+    code_only = strip_string_literals(content)
+
+    if ".Create()" not in code_only and "factory.Create()" not in code_only:
+        return False
+
+    # A shared helper may be handed an already-resolved factory instead of
+    # resolving one itself -- BaseOperations._CreateWithGuid /
+    # _CreateWithOptionalGuid take `factory` as a parameter and the
+    # GetService( call lives in the caller. Only require GetService( from
+    # files that resolve their own factory.
+    if re.search(r"def \w+\([^)]*\bfactory\b", code_only, re.DOTALL):
+        return False
+
+    return "GetService(" not in code_only
 
 
 class LCMMethodVerifier:
@@ -151,28 +251,20 @@ class TestLCMMethodVerification:
         Pattern:
             factory = ServiceLocator.GetService(IxxxFactory)
             new_obj = factory.Create()
+
+        Only real code counts: `unresolved_factory_create` blanks string
+        literals and comments before matching, so a `.Create()` written in
+        prose -- a docstring example, or the FP_ParameterError text in the
+        deprecated GramCatOperations.Create override -- is not a call.
         """
         ops_dir = Path("flexicon/code")
 
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
 
-            # Only check actual code, not docstrings
-            # Remove docstrings first
-            code_only = re.sub(r'"""[\s\S]*?"""', "", content)
-            code_only = re.sub(r"'''[\s\S]*?'''", "", code_only)
-
-            if ".Create()" in code_only or "factory.Create()" in code_only:
-                # A shared helper may be handed an already-resolved factory
-                # instead of resolving one itself -- BaseOperations
-                # ._CreateWithGuid/_CreateWithOptionalGuid take `factory` as a
-                # parameter and the GetService( call lives in the caller. Only
-                # require GetService( from files that resolve their own factory.
-                if re.search(r"def \w+\([^)]*\bfactory\b", code_only, re.DOTALL):
-                    continue
-
-                # Should have GetService somewhere in actual code
-                assert "GetService(" in code_only, f"{py_file}: Create() should be on factory from GetService"
+            assert not unresolved_factory_create(
+                content
+            ), f"{py_file}: Create() should be on factory from GetService"
 
     def test_collection_methods_valid(self):
         """
@@ -198,9 +290,10 @@ class TestLCMMethodVerification:
         for py_file in ops_dir.rglob("*Operations.py"):
             content = py_file.read_text(encoding="utf-8")
 
-            # Remove docstrings to avoid false positives
-            code_only = re.sub(r'"""[\s\S]*?"""', "", content)
-            code_only = re.sub(r"'''[\s\S]*?'''", "", code_only)
+            # Remove prose to avoid false positives. Same helper as
+            # test_all_factory_creates_have_service_locator: docstrings were
+            # never the only place a pattern can be quoted rather than called.
+            code_only = strip_string_literals(content)
 
             # Find patterns like something.SensesOS.XXX in actual code.
             # LCM owning-sequence/collection properties are PascalCase and
@@ -282,13 +375,13 @@ class TestLCMMethodVerification:
         [INFO] Test: Methods grouped by LCM category and status.
 
         VERIFIED CATEGORIES:
-        ✓ ServiceLocator - GetService, GetInstance
-        ✓ TsStringUtils - MakeString
-        ✓ Factory - Create
-        ✓ Repository - CopyObject
-        ✓ MultiString - CopyAlternatives
-        ✓ Collections - Add, Insert, Remove, IndexOf
-        ✓ Properties - Text, Owner, WriteEnabled
+        [OK] ServiceLocator - GetService, GetInstance
+        [OK] TsStringUtils - MakeString
+        [OK] Factory - Create
+        [OK] Repository - CopyObject
+        [OK] MultiString - CopyAlternatives
+        [OK] Collections - Add, Insert, Remove, IndexOf
+        [OK] Properties - Text, Owner, WriteEnabled
         """
         assert True, "All method categories verified"
 

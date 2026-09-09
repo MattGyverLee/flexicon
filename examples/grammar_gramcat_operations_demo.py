@@ -1,266 +1,278 @@
 #!/usr/bin/env python3
 """
-Full CRUD Demo: GramcatOperations for flexlibs
+Deprecation Pointer: GramCatOperations -> POSOperations
 
-This script demonstrates complete CRUD operations for gramcat.
-Performs actual create, read, update, and delete operations on test data.
+`project.GramCat` is DEPRECATED. It no longer has a CRUD surface of its own:
+it returns a deprecated `GramCatOperations`, a subclass of `POSOperations`
+that addresses the very same list (`LangProject.PartsOfSpeechOA`). The full
+CRUD walkthrough therefore lives in `examples/grammar_pos_operations_demo.py`,
+and this script does not repeat it.
+
+Note that `project.GramCat` is NOT `project.POS`:
+`project.GramCat is project.POS` is False. It is a distinct, lazily created
+and then cached instance. That is deliberate -- it is what keeps the
+explanatory `GramCat.Create()` override reachable on the path a legacy caller
+actually takes.
+
+What this script does instead:
+  1. Explains which FLEx concept each similarly-named API actually addresses.
+  2. Shows the DeprecationWarning fired by the first project.GramCat access.
+  3. Shows that GramCat is a distinct object over the same POS list.
+  4. Shows that project.GramCat.Create() raises FP_ParameterError.
+
+Background (issue #276): GramCatOperations used to walk
+`LangProject.MsFeatureSystemOA.TypesOC`, a collection of `IFsFeatStrucType`.
+That is a structural template for feature structures, never a grammatical
+category. At list level a grammatical category IS a Part of Speech
+(`IPartOfSpeech` in `LangProject.PartsOfSpeechOA`), a list POSOperations
+already owns completely.
+
+This demo is READ-ONLY. It opens the project without write access and makes
+no changes. Removal of the GramCat spelling is scheduled for v5.0.0.
 
 Author: FlexTools Development Team
-Date: 2026-02-28
-Version: 2.3.0
+Date: 2026-09-09
 """
 
-from flexicon import FLExProject, FLExInitialize, FLExCleanup
+import warnings
+
+from flexicon import (
+    FLExProject,
+    FLExInitialize,
+    FLExCleanup,
+    FP_ParameterError,
+    GramCatOperations,
+    POSOperations,
+)
 
 
-def demo_gramcat_crud():
-    """
-    Demonstrate full CRUD operations for gramcat.
-
-    Tests:
-    - CREATE: Create new test gramcat
-    - READ: Get all gramcats, find by name/identifier
-    - UPDATE: Modify gramcat properties
-    - DELETE: Remove test gramcat
-    """
-
+def print_naming_map():
+    """Print the three-way disambiguation the name 'GramCat' needs."""
+    print("\n" + "=" * 70)
+    print("STEP 1: WHICH API DID YOU ACTUALLY WANT?")
     print("=" * 70)
-    print("GRAMCAT OPERATIONS - FULL CRUD TEST")
+    print(
+        """
+Three FLEx concepts wear confusingly similar names. They are different LCM
+classes, and only the first is a category.
+
+  1. The inventory of categories        (FLEx: Grammar > Categories)
+     LCM: IPartOfSpeech in LangProject.PartsOfSpeechOA
+     API: project.POS          <- the list the deprecated project.GramCat
+                                  also addresses
+
+  2. A sense's "Grammatical Info."      (FLEx: Lexicon sense field)
+     LCM: the MSA, ILexSense.MorphoSyntaxAnalysisRA -- a composite that
+          references a POS and owns a feature structure
+     API: project.Senses.GetGrammaticalInfo(sense)
+          project.Senses.GetPartOfSpeechObject(sense)  (just the category)
+          project.MSA.*                                (to build one)
+
+  3. A feature-structure template       (FLEx: Grammar > Features, type list)
+     LCM: IFsFeatStrucType in LangProject.MsFeatureSystemOA.TypesOC
+     API: project.InflectionFeatures.TypeFind(name)
+          project.InflectionFeatures.TypeCreate(name, abbreviation)
+
+The old GramCatOperations served (3) while its name promised (1).
+"""
+    )
+
+
+def demo_deprecation_warning(project):
+    """Show the DeprecationWarning fired by the FIRST project.GramCat access.
+
+    Must run before any other step touches project.GramCat: the property
+    builds GramCatOperations once and caches it, so the warning fires exactly
+    once per project.
+    """
+    print("=" * 70)
+    print("STEP 2: THE FIRST project.GramCat ACCESS WARNS")
     print("=" * 70)
 
-    # Initialize FieldWorks
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        first = project.GramCat
+
+    print(f"\n  project.GramCat -> {type(first).__name__}")
+
+    deprecations = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+    if deprecations:
+        print("\n  [WARN] DeprecationWarning:")
+        for line in str(deprecations[0].message).split(". "):
+            if line.strip():
+                print(f"    {line.strip().rstrip('.')}.")
+    else:
+        print("\n  [FAIL] Expected a DeprecationWarning on first access, got none.")
+
+    # The property caches, so the warning does not repeat.
+    with warnings.catch_warnings(record=True) as caught_again:
+        warnings.simplefilter("always")
+        second = project.GramCat
+
+    repeated = [w for w in caught_again if issubclass(w.category, DeprecationWarning)]
+    print("\n  Second access (the instance is cached):")
+    print(f"    project.GramCat is project.GramCat  ->  {second is first}")
+    print(f"    DeprecationWarnings on re-access    ->  {len(repeated)}")
+    if repeated or second is not first:
+        print("    [FAIL] Expected one silent, cached re-access.")
+    else:
+        print("    [OK] Warned once, on first access only.")
+
+    print("\n  [NOTE] To surface these in your own scripts:")
+    print("           python -W error::DeprecationWarning your_script.py")
+    print("  [NOTE] Constructing GramCatOperations(project) by hand warns too.")
+
+
+def demo_same_list_distinct_object(project):
+    """Show GramCat is a distinct object addressing the same POS list."""
+    print("\n" + "=" * 70)
+    print("STEP 3: A DISTINCT OBJECT OVER THE SAME POS LIST")
+    print("=" * 70)
+
+    gramcat = project.GramCat
+    pos = project.POS
+
+    print(f"\n  type(project.GramCat)           ->  {type(gramcat).__name__}")
+    print(f"  type(project.POS)               ->  {type(pos).__name__}")
+    print(f"  project.GramCat is project.POS  ->  {gramcat is pos}")
+    print(f"  isinstance(gramcat, GramCatOperations) -> "
+          f"{isinstance(gramcat, GramCatOperations)}")
+    print(f"  isinstance(gramcat, POSOperations)     -> "
+          f"{isinstance(gramcat, POSOperations)}")
+
+    if gramcat is pos:
+        print("\n  [FAIL] Expected two distinct objects. The raising")
+        print("         GramCat.Create() override is unreachable if the")
+        print("         property just returns project.POS.")
+        return
+
+    print("\n  [OK] Not the same object -- a deprecated POSOperations subclass.")
+    print("       Keeping it distinct is what makes STEP 4 reachable.")
+
+    gramcat_names = [gramcat.GetName(p) for p in gramcat.GetAll()]
+    pos_names = [pos.GetName(p) for p in pos.GetAll()]
+
+    print("\n  Both spellings read LangProject.PartsOfSpeechOA:")
+    print(f"    len(project.GramCat.GetAll())  ->  {len(gramcat_names)}")
+    print(f"    len(project.POS.GetAll())      ->  {len(pos_names)}")
+    if gramcat_names == pos_names:
+        print("    [OK] Same categories, same order.")
+    else:
+        print("    [FAIL] The two spellings disagree about the list contents.")
+
+    print("\n  Reading the category inventory (first 5, via the POS spelling):")
+    shown = 0
+    for p in pos.GetAll():
+        print(f"    - {pos.GetName(p)} ({pos.GetAbbreviation(p)})")
+        shown += 1
+        if shown >= 5:
+            break
+    if shown == 0:
+        print("    (no categories in this project)")
+
+
+def demo_create_raises(project):
+    """Show that project.GramCat.Create() raises and writes nothing."""
+    print("\n" + "=" * 70)
+    print("STEP 4: project.GramCat.Create() RAISES -- IT NEVER MADE A CATEGORY")
+    print("=" * 70)
+
+    print("\n  Calling project.GramCat.Create('crud_test_gramcat')...")
+    try:
+        project.GramCat.Create("crud_test_gramcat")
+    except FP_ParameterError as e:
+        print("  [OK] FP_ParameterError raised before any write:\n")
+        for line in str(e).replace(". ", ".\n").split("\n"):
+            if line.strip():
+                print(f"    {line.strip()}")
+    else:
+        print("  [FAIL] Expected FP_ParameterError and the call succeeded.")
+        return
+
+    print(
+        """
+  [NOTE] Only FP_ParameterError is caught above, deliberately. Were the
+         GramCat spelling ever collapsed back onto project.POS, this same
+         call would reach POSOperations.Create(name, abbreviation) and raise
+         a bare TypeError about a missing 'abbreviation' -- which names
+         neither the replacement nor the reason. That regression escapes
+         this demo loudly instead of being swallowed.
+
+  Replacements (all write operations -- this demo is read-only, so they are
+  shown but not executed):
+
+    # Top-level category:
+    verb = project.POS.Create("Verb", "v")
+
+    # Subcategory:
+    sub = project.POS.AddSubcategory(verb, "Transitive Verb", "vt")
+    assert project.POS.GetParent(sub) is not None
+
+    # A feature-structure type, if that is what you actually wanted:
+    ftype = project.InflectionFeatures.TypeCreate("Common agreement", "tCommonAgr")
+
+  [WARN] If this project was ever written to by the old GramCat.Create, it
+         has stray IFsFeatStrucType entries under Grammar > Features carrying
+         whatever names were passed. Clean those up by hand in FLEx. No
+         automatic cleanup is offered and none should be attempted: a stray is
+         indistinguishable from a type legitimately made by TypeCreate, and one
+         may since have been referenced via TypeRA.
+"""
+    )
+
+
+def demo_gramcat_deprecation():
+    """Run the read-only deprecation walkthrough."""
+    print("=" * 70)
+    print("GRAMCAT OPERATIONS - DEPRECATED, USE POS")
+    print("=" * 70)
+
+    print_naming_map()
+
     FLExInitialize()
 
-    # Open project with write enabled
     project = FLExProject()
     try:
-        project.OpenProject("Sena 3", writeEnabled=True)
+        project.OpenProject("Sena 3", writeEnabled=False)
     except Exception as e:
         print(f"Cannot run demo - FLEx project not available: {e}")
         FLExCleanup()
         return
 
-    test_obj = None
-    test_name = "crud_test_gramcat"
-
     try:
-        # ==================== READ: Initial state ====================
-        print("\n" + "=" * 70)
-        print("STEP 1: READ - Get existing gramcats")
+        # Order matters: the warning fires on the FIRST GramCat access.
+        demo_deprecation_warning(project)
+        demo_same_list_distinct_object(project)
+        demo_create_raises(project)
+
         print("=" * 70)
-
-        print("\nGetting all gramcats...")
-        initial_count = 0
-        for obj in project.GramCat.GetAll():
-            # Display first few objects
-            try:
-                name = project.GramCat.GetName(obj) if hasattr(project.GramCat, "GetName") else str(obj)
-                print(f"  - {name}")
-            except:
-                print(f"  - [Object {initial_count + 1}]")
-            initial_count += 1
-            if initial_count >= 5:
-                break
-
-        print(f"\nTotal gramcats (showing first 5): {initial_count}")
-
-        # ==================== CREATE ====================
-        print("\n" + "=" * 70)
-        print("STEP 2: CREATE - Create new test gramcat")
+        print("SUMMARY")
         print("=" * 70)
+        print(
+            """
+  project.GramCat            -> deprecated GramCatOperations over the POS
+                                list; NOT project.POS (the `is` test is False)
+  First access               -> DeprecationWarning, once per project (cached)
+  GramCat.GetAll/GetName/... -> POS data (IPartOfSpeech), not feature types
+  GramCat.Create(...)        -> raises FP_ParameterError, writes nothing
+  Removal                    -> scheduled for v5.0.0
 
-        # Check if test object already exists
-        try:
-            if hasattr(project.GramCat, "Exists") and project.GramCat.Exists(test_name):
-                print(f"\nTest gramcat '{test_name}' already exists")
-                print("Deleting existing one first...")
-                existing = project.GramCat.Find(test_name) if hasattr(project.GramCat, "Find") else None
-                if existing:
-                    project.GramCat.Delete(existing)
-                    print("  Deleted existing test gramcat")
-        except:
-            pass
+  For the full category CRUD walkthrough, run:
+      examples/grammar_pos_operations_demo.py
 
-        # Create new object
-        print(f"\nCreating new gramcat: '{test_name}'")
-
-        try:
-            # Attempt to create with common parameters
-            test_obj = project.GramCat.Create(test_name)
-        except TypeError:
-            try:
-                # Try without parameters if that fails
-                test_obj = project.GramCat.Create()
-                if hasattr(project.GramCat, "SetName"):
-                    project.GramCat.SetName(test_obj, test_name)
-            except Exception as e:
-                print(f"  Note: Create method may require specific parameters: {e}")
-                test_obj = None
-
-        if test_obj:
-            print(f"  SUCCESS: Gramcat created!")
-            try:
-                if hasattr(project.GramCat, "GetName"):
-                    print(f"  Name: {project.GramCat.GetName(test_obj)}")
-            except:
-                pass
-        else:
-            print(f"  Note: Could not create gramcat (may require special parameters)")
-            print("  Skipping remaining tests...")
-            return
-
-        # ==================== READ: Verify creation ====================
-        print("\n" + "=" * 70)
-        print("STEP 3: READ - Verify gramcat was created")
-        print("=" * 70)
-
-        # Test Exists
-        if hasattr(project.GramCat, "Exists"):
-            print(f"\nChecking if '{test_name}' exists...")
-            exists = project.GramCat.Exists(test_name)
-            print(f"  Exists: {exists}")
-
-        # Test Find
-        if hasattr(project.GramCat, "Find"):
-            print(f"\nFinding gramcat by name...")
-            found_obj = project.GramCat.Find(test_name)
-            if found_obj:
-                print(f"  FOUND: gramcat")
-                try:
-                    if hasattr(project.GramCat, "GetName"):
-                        print(f"  Name: {project.GramCat.GetName(found_obj)}")
-                except:
-                    pass
-            else:
-                print("  NOT FOUND")
-
-        # Count after creation
-        print("\nCounting all gramcats after creation...")
-        current_count = sum(1 for _ in project.GramCat.GetAll())
-        print(f"  Count before: {initial_count}")
-        print(f"  Count after:  {current_count}")
-        print(f"  Difference:   +{current_count - initial_count}")
-
-        # ==================== UPDATE ====================
-        print("\n" + "=" * 70)
-        print("STEP 4: UPDATE - Modify gramcat properties")
-        print("=" * 70)
-
-        if test_obj:
-            updated = False
-
-            # Try common update methods
-            if hasattr(project.GramCat, "SetName"):
-                try:
-                    new_name = "crud_test_gramcat_modified"
-                    print(f"\nUpdating name to: '{new_name}'")
-                    old_name = project.GramCat.GetName(test_obj) if hasattr(project.GramCat, "GetName") else test_name
-                    project.GramCat.SetName(test_obj, new_name)
-                    updated_name = (
-                        project.GramCat.GetName(test_obj) if hasattr(project.GramCat, "GetName") else new_name
-                    )
-                    print(f"  Old name: {old_name}")
-                    print(f"  New name: {updated_name}")
-                    test_name = new_name  # Update for cleanup
-                    updated = True
-                except Exception as e:
-                    print(f"  Note: SetName failed: {e}")
-
-            # Try other Set methods
-            for method_name in dir(project.GramCat):
-                if method_name.startswith("Set") and method_name != "SetName" and not updated:
-                    print(f"\nFound update method: {method_name}")
-                    print("  (Method available but not tested in this demo)")
-                    break
-
-            if updated:
-                print("\n  UPDATE: SUCCESS")
-            else:
-                print("\n  Note: No standard update methods found or tested")
-
-        # ==================== READ: Verify updates ====================
-        print("\n" + "=" * 70)
-        print("STEP 5: READ - Verify updates persisted")
-        print("=" * 70)
-
-        if hasattr(project.GramCat, "Find"):
-            print(f"\nFinding gramcat after update...")
-            updated_obj = project.GramCat.Find(test_name)
-            if updated_obj:
-                print(f"  FOUND: gramcat")
-                try:
-                    if hasattr(project.GramCat, "GetName"):
-                        print(f"  Name: {project.GramCat.GetName(updated_obj)}")
-                except:
-                    pass
-            else:
-                print("  NOT FOUND - Update may not have persisted")
-
-        # ==================== DELETE ====================
-        print("\n" + "=" * 70)
-        print("STEP 6: DELETE - Remove test gramcat")
-        print("=" * 70)
-
-        if test_obj:
-            print(f"\nDeleting test gramcat...")
-            try:
-                obj_name = project.GramCat.GetName(test_obj) if hasattr(project.GramCat, "GetName") else test_name
-            except:
-                obj_name = test_name
-
-            project.GramCat.Delete(test_obj)
-            print(f"  Deleted: {obj_name}")
-
-            # Verify deletion
-            print("\nVerifying deletion...")
-            if hasattr(project.GramCat, "Exists"):
-                still_exists = project.GramCat.Exists(test_name)
-                print(f"  Still exists: {still_exists}")
-
-                if not still_exists:
-                    print("  DELETE: SUCCESS")
-                else:
-                    print("  DELETE: FAILED - Gramcat still exists")
-
-            # Count after deletion
-            final_count = sum(1 for _ in project.GramCat.GetAll())
-            print(f"\n  Count after delete: {final_count}")
-            print(f"  Back to initial:    {final_count == initial_count}")
-
-        # ==================== SUMMARY ====================
-        print("\n" + "=" * 70)
-        print("CRUD TEST SUMMARY")
-        print("=" * 70)
-        print("\nOperations tested:")
-        print("  [CREATE] Create new gramcat")
-        print("  [READ]   GetAll, Find, Exists, Get methods")
-        print("  [UPDATE] Set methods")
-        print("  [DELETE] Delete gramcat")
-        print("\nTest completed successfully!")
+  For migration steps, see docs/MIGRATION_GUIDE.md
+      "Breaking Change: project.GramCat now addresses the Part of Speech list"
+"""
+        )
 
     except Exception as e:
-        print(f"\n\nERROR during CRUD test: {e}")
+        print(f"\n\nERROR during demo: {e}")
         import traceback
 
         traceback.print_exc()
 
     finally:
-        # Cleanup: Ensure test object is removed
-        print("\n" + "=" * 70)
-        print("CLEANUP")
-        print("=" * 70)
-
-        try:
-            for name in ["crud_test_gramcat", "crud_test_gramcat_modified"]:
-                if hasattr(project.GramCat, "Exists") and project.GramCat.Exists(name):
-                    obj = project.GramCat.Find(name) if hasattr(project.GramCat, "Find") else None
-                    if obj:
-                        project.GramCat.Delete(obj)
-                        print(f"  Cleaned up: {name}")
-        except:
-            pass
-
-        print("\nClosing project...")
+        print("Closing project...")
         project.CloseProject()
         FLExCleanup()
 
@@ -272,40 +284,33 @@ def demo_gramcat_crud():
 if __name__ == "__main__":
     print(
         """
-Gramcat Operations - Full CRUD Demo
+GramCat Operations - Deprecation Pointer
 =====================================================
 
-This demonstrates COMPLETE CRUD operations for gramcat.
+project.GramCat is DEPRECATED (issue #276). It returns a deprecated
+GramCatOperations that addresses the Part of Speech list -- the same list as
+project.POS, though not the same object. This script explains the rename and
+shows the one call that now raises. It does NOT demonstrate CRUD -- see
+examples/grammar_pos_operations_demo.py for that.
 
-Operations Tested:
-==================
+Shown here:
+===========
 
-CREATE: Create new gramcat
-READ:   GetAll(), Find(), Exists(), Get...() methods
-UPDATE: Set...() methods
-DELETE: Delete()
-
-Test Flow:
-==========
-1. READ initial state
-2. CREATE new test gramcat
-3. READ to verify creation
-4. UPDATE gramcat properties
-5. READ to verify updates
-6. DELETE test gramcat
-7. Verify deletion
+1. Which API addresses which FLEx concept (categories vs MSA vs feature types)
+2. The DeprecationWarning on the first project.GramCat access
+3. GramCat as a distinct object over the same POS list
+4. project.GramCat.Create() raising FP_ParameterError
 
 Requirements:
-  - FLEx project with write access
+  - A FLEx project (opened READ-ONLY)
   - Python.NET runtime
 
-WARNING: This demo modifies the database!
-         Test gramcat is created and deleted during the demo.
+[NOTE] This demo makes NO changes to the database.
     """
     )
 
-    response = input("\nRun CRUD demo? (y/N): ")
+    response = input("\nRun deprecation demo? (y/N): ")
     if response.lower() == "y":
-        demo_gramcat_crud()
+        demo_gramcat_deprecation()
     else:
         print("\nDemo skipped.")

@@ -690,7 +690,7 @@ Both bugs share the root cause: a pattern that works correctly for one LCM type 
 | 1 | `TextsWords/WfiGlossOperations.py` | `MeaningsOC` (Duplicate) | 1 | [DONE] Fixed #158 Cycle 2 |
 | 2 | `TextsWords/WfiGlossOperations.py` | `MeaningsOC` (Reorder) | 2 | [DONE] Fixed #158 Cycle 2 |
 | 3 | `TextsWords/WfiGlossOperations.py` | `MeaningsOC` (test) | -- | [DONE] test locked Cycle 2 |
-| 4 | `Grammar/GramCatOperations.py` | `TypesOC` (Duplicate) | 1 | [DONE] Fixed #158 Cycle 3 |
+| 4 | `Grammar/GramCatOperations.py` | `TypesOC` (Duplicate) | 1 | [DONE] Fixed #158 Cycle 3 -- site since deleted by #276 (see note) |
 | 5 | `Notebook/NoteOperations.py` | `AnnotationsOC` (Duplicate) | 1 | [DONE] Fixed #158 Cycle 3 |
 | 6 | `Notebook/NoteOperations.py` | `AnnotationsOC` (Reorder) | 2 | [DONE] Fixed #158 Cycle 3 |
 | 7 | `Notebook/DataNotebookOperations.py` | `RecordsOC` (Duplicate) | 1 | [DONE] Fixed #158 Cycle 3 |
@@ -700,7 +700,7 @@ Both bugs share the root cause: a pattern that works correctly for one LCM type 
 **Notes**:
 - Sites 1-3 were fixed in #158 Cycle 2 (WfiGloss sweep).
 - Sites 4-9 were fixed in #158 Cycle 3 (sibling sweep).
-- Site 4 (GramCatOperations) has a mixed OC/OS Duplicate(): the subcategory branch uses `SubPossibilitiesOS` (OS, correctly uses IndexOf/Insert); only the top-level `TypesOC` branch required the fix.
+- Site 4 (GramCatOperations) **had** a mixed OC/OS `Duplicate()`: the subcategory branch used `SubPossibilitiesOS` (OS, correctly using IndexOf/Insert); only the top-level `TypesOC` branch required the #158 fix. **Superseded by #276 (2026-09-09):** `GramCatOperations` was walking the wrong collection entirely -- `MsFeatureSystemOA.TypesOC` holds `IFsFeatStrucType`, which is a structural template for feature structures and never a grammatical category. The class is now a thin deprecated subclass of `POSOperations`, and its whole `Duplicate()` (both branches) was deleted along with the `TypesOC` code path. Duplication of a category is now `POSOperations.Duplicate`, which uses `PartsOfSpeechOA.PossibilitiesOS` at top level and `SubPossibilitiesOS` below it -- both OS, so `IndexOf`/`Insert` are correct there and the OC sub-pattern no longer arises at this site. The #158 lesson (an OC takes `Add`, not `IndexOf`/`Insert`) remains live at sites 1-3 and 5-9. Row retained for history.
 - Site 7 (DataNotebookOperations) similarly has a mixed OC/OS Duplicate(): the sub-record branch uses `SubRecordsOS` (OS, unchanged); only the top-level `RecordsOC` branch required the fix.
 - Site 5 (NoteOperations.Duplicate) similarly dispatches between `RepliesOS` (OS, unchanged) and `AnnotationsOC` (OC, fixed).
 - Site 9 (WfiAnalysisOperations) exhibited both sub-patterns 1 and 3 in the same if-block; one combined fix covers both.

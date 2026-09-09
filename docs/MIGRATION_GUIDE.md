@@ -2,6 +2,13 @@
 
 Flexicon is a major version upgrade (2.0) with improvements to API consistency and user experience. This guide covers breaking changes and how to update your scripts.
 
+> **[WARN] Newest breaking change:**
+> [`project.GramCat` now addresses the Part of Speech list](#breaking-change-projectgramcat-now-addresses-the-part-of-speech-list).
+> Any script calling `project.GramCat.*` is affected: `GetAll` / `GetName` /
+> `GetSubcategories` now return categories instead of feature-structure types,
+> and `GramCat.Create()` raises. Sections in this guide are appended in the
+> order they were written; the newest is at the bottom.
+
 ## Breaking Change: Empty Multistring Field Handling
 
 ### What Changed
@@ -256,5 +263,213 @@ rg --type py 'GetAvailableMorphTypes\(.*include_subcategories='
 ```
 
 Replace `flat=` with `recursive=` (same boolean value). Replace `include_subcategories=True` with `recursive=True`.
+
+---
+
+# v4.6 -> next Migration
+
+## Breaking Change: `project.GramCat` now addresses the Part of Speech list
+
+### What Changed
+
+`GramCatOperations` walked `LangProject.MsFeatureSystemOA.TypesOC`, a
+collection of `IFsFeatStrucType`. That was the wrong collection. An
+`IFsFeatStrucType` is a structural template for feature structures -- it
+declares which features may co-occur inside an `IFsFeatStruc` -- and it is
+never a grammatical category.
+
+At list level a grammatical category **is** a Part of Speech: `IPartOfSpeech`
+in `LangProject.PartsOfSpeechOA`, the list `POSOperations` already owns
+completely. So `GramCatOperations` is now a thin deprecated subclass of
+`POSOperations`, and `project.GramCat` returns an instance of it that
+addresses `PartsOfSpeechOA`.
+
+`project.GramCat` is **not** `project.POS`. It is a distinct, lazily created
+and then cached `GramCatOperations` instance -- `project.GramCat is
+project.POS` evaluates to `False`. The distinction is deliberate: it is what
+keeps `GramCat.Create()`'s explanatory override reachable on the path real
+callers take (see below). `Create` is the only member that differs; everything
+else is inherited unchanged, so both spellings address the same list and
+return the same objects.
+
+| Behavior | v4.6 and earlier | next release |
+|---|---|---|
+| `project.GramCat` | A separate `GramCatOperations` over `MsFeatureSystemOA.TypesOC` | A deprecated `GramCatOperations` -- a `POSOperations` subclass -- over `PartsOfSpeechOA`, created once and cached per project |
+| `project.GramCat is project.POS` | `False` (different classes, different lists) | Still `False` -- a distinct instance addressing the same list, not the same object |
+| `GramCat.GetAll()` | `IFsFeatStrucType` (feature-structure types) | `IPartOfSpeech` (categories) |
+| `GramCat.GetAll(recursive=True)` | Silently truncated -- the elements are not possibilities and have no `SubPossibilitiesOS` | Descends the real category hierarchy |
+| `GramCat.GetName(x)` / `SetName(x, n)` | Named a feature-structure type | Names a category |
+| `GramCat.GetSubcategories(x)` | Could not work | Delegates to `POSOperations.GetSubcategories` |
+| `GramCat.Create(name)` / `Create(name, parent)` | Wrote a stray `IFsFeatStrucType` into the feature system | Raises `FP_ParameterError` and writes nothing |
+| `GramCat.Delete(x)` / `Duplicate(x)` | Addressed `TypesOC` | Address `PartsOfSpeechOA` |
+| `GramCatOperations(project)` | Silent | Emits `DeprecationWarning` |
+| First `project.GramCat` access | Silent | Emits `DeprecationWarning` -- the property constructs `GramCatOperations` on first access, so the warning fires once per project and later accesses reuse the cached instance silently |
+| `GramCat.Find(...)` / `GramCat.Exists(...)` | Advertised by the type stub, `AttributeError` at runtime | Genuinely resolve, inherited from `POSOperations` |
+| `POSOperations.GetParent(pos)` | Absent | Returns the owning `IPartOfSpeech`, or `None` for a top-level category |
+
+`project.GramCat` is retained as a **deprecated discoverability spelling** so
+that callers thinking in FLEx UI terms (Grammar > Categories) can still find
+the wrapper. Removal is scheduled for the **v5.0.0** boundary. New code should
+spell it `project.POS`.
+
+### Why This Changed
+
+Three FLEx concepts wear confusingly similar names. They are different LCM
+classes, and only the first is a category (#276):
+
+| You mean | FLEx calls it | LCM | Flexicon API |
+|---|---|---|---|
+| The inventory of categories | Grammar > Categories | `IPartOfSpeech` in `PartsOfSpeechOA` | `project.POS` (formerly `project.GramCat`) |
+| A sense's "Grammatical Info." | Lexicon sense field | the MSA, `ILexSense.MorphoSyntaxAnalysisRA` | `project.Senses.GetGrammaticalInfo(sense)`, `project.MSA.*` |
+| A feature-structure template | Grammar > Features (type list) | `IFsFeatStrucType` in `MsFeatureSystemOA.TypesOC` | `project.InflectionFeatures.TypeFind` / `TypeCreate` |
+
+`GramCat` served the third while its name, its module placement and its own
+docstrings promised the first. Because `IFsFeatStrucType` is not an
+`ICmPossibility`, every hierarchy feature it advertised was unreachable. The
+fix is subtraction plus one backfill (`POSOperations.GetParent`), not a second
+CRUD surface over the category list.
+
+### Migration: browsing, naming and deleting categories
+
+No signature change -- but the objects you get back are different, so any code
+that inspected them as feature-structure types needs revisiting.
+
+**Before (v4.6):**
+```python
+for cat in project.GramCat.GetAll():          # IFsFeatStrucType
+    print(project.GramCat.GetName(cat))
+```
+
+**After:**
+```python
+for pos in project.POS.GetAll():              # IPartOfSpeech
+    print(project.POS.GetName(pos), project.POS.GetAbbreviation(pos))
+
+# Hierarchy actually works now:
+for sub in project.POS.GetSubcategories(pos, recursive=True):
+    assert project.POS.GetParent(sub) is not None
+```
+
+### Migration: `GramCat.Create()` raises -- pick a replacement
+
+`GramCat.Create(name, parent=None)` is retained with its old signature only so
+that an existing caller gets an explanatory `FP_ParameterError` instead of a
+bare `TypeError` about a missing `abbreviation`. It raises **before any
+write**; nothing is created and no transaction is opened.
+
+You get that error on the path a real caller takes -- through
+`project.GramCat`, with the old two-argument-or-fewer call shape:
+
+```python
+>>> project.GramCat.Create("Transitive")
+Traceback (most recent call last):
+  ...
+FP_ParameterError: GramCat.Create() has been removed (issue #276): it never
+created a grammatical category. It created a stray IFsFeatStrucType in the
+feature system (LangProject.MsFeatureSystemOA.TypesOC), which is a structural
+template for feature structures, not a category. A list-level grammatical
+category is a Part of Speech: use project.POS.Create(name, abbreviation) for
+a top-level category, or project.POS.AddSubcategory(parent, name,
+abbreviation) for a subcategory. If you did want a feature-structure type,
+use project.InflectionFeatures.TypeCreate(name, abbreviation).
+```
+
+This is why `project.GramCat` is a distinct `GramCatOperations` instance
+rather than `project.POS` itself. Had the property simply returned
+`project.POS`, the call above would have reached `POSOperations.Create(name,
+abbreviation)` and raised `TypeError: POSOperations.Create() missing 1
+required positional argument: 'abbreviation'` -- which names neither the
+replacement nor the reason -- and the explanatory error would only ever have
+been reachable by constructing `GramCatOperations` by hand, which no existing
+caller does.
+
+There is no correct behaviour to preserve here: every `GramCat.Create` call
+ever made added a stray `IFsFeatStrucType` to the feature system, not a
+category. Creating a category genuinely requires an abbreviation -- it is what
+interlinear renders -- so `POSOperations.Create` is not being softened to
+accept the old call shape.
+
+**Before (v4.6):**
+```python
+cat = project.GramCat.Create("Transitive")
+sub = project.GramCat.Create("Transitive", parent=verb)
+```
+
+**After:**
+```python
+# Top-level category:
+cat = project.POS.Create("Transitive", "tr")
+
+# Subcategory:
+sub = project.POS.AddSubcategory(verb, "Transitive Verb", "vt")
+
+# If you actually wanted a feature-structure type:
+ftype = project.InflectionFeatures.TypeCreate("Common agreement", "tCommonAgr")
+```
+
+### Migration: you actually wanted the feature-structure types
+
+Everything the old implementation touched now lives on
+`project.InflectionFeatures`:
+
+| Old | New |
+|---|---|
+| `project.GramCat.GetAll()` | `project.InflectionFeatures.TypeFind(name)` for lookup by name |
+| `project.GramCat.Create(name)` | `project.InflectionFeatures.TypeCreate(name, abbreviation)` |
+
+### Migration: you actually wanted the sense's "Grammatical Info."
+
+That field is the MSA, not a category:
+
+```python
+info = project.Senses.GetGrammaticalInfo(sense)       # the MSA composite
+pos = project.Senses.GetPartOfSpeechObject(sense)     # just the category behind it
+```
+
+Use `project.MSA.*` to build one.
+
+### [WARN] Clean-up: stray feature-structure types written by `GramCat.Create`
+
+If your project was ever written to by `GramCat.Create`, it contains stray
+`IFsFeatStrucType` entries carrying whatever name you passed -- they surface
+in FLEx under **Grammar > Features** as unexplained entries in the type list
+(for example "1st person" sitting alongside "tCommonAgr"). They are harmless
+to analysis output, since nothing reads a type absent a `TypeRA` reference,
+but they corrupt the Features inventory as presented to a linguist.
+
+**Clean these up by hand in FLEx. No automatic cleanup is offered, and none
+should be attempted.** A stray is indistinguishable from a type legitimately
+created by `InflectionFeatures.TypeCreate`, and one may since have been wired
+up via `TypeRA`. Deciding which is which requires a human looking at the
+specific project -- delete only the entries you recognise as category names
+that were never meant to be feature-structure types.
+
+### Migration: Detect-and-Fix Recipe
+
+```bash
+# Every call through the deprecated spelling:
+rg --type py 'project\.GramCat\.'
+
+# The calls that now raise:
+rg --type py 'GramCat\.Create\('
+
+# Direct construction of the deprecated class:
+rg --type py 'GramCatOperations\('
+```
+
+Then replace `project.GramCat.` with `project.POS.` throughout, and handle
+each `Create` call per the table above. To surface remaining uses at runtime:
+
+```bash
+python -W error::DeprecationWarning your_script.py
+```
+
+### What If I Can't Migrate Yet?
+
+Pin `pyflexicon==4.6.0`. No back-compat shim is provided, and none is planned:
+the old `GramCat` write path produced incorrect data rather than different
+data. Read-only callers get a longer runway -- `project.GramCat` keeps
+resolving, to a deprecated wrapper over the POS list, until it is removed at
+v5.0.0. Expect one `DeprecationWarning` per project in the meantime.
 
 ---

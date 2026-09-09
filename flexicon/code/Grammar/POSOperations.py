@@ -570,6 +570,72 @@ class POSOperations(BaseOperations, CatalogBackedMixin):
         return result
 
     @OperationsMethod
+    def GetParent(self, pos_or_hvo):
+        """
+        Get the parent category of a part of speech.
+
+        Args:
+            pos_or_hvo: The IPartOfSpeech object or HVO.
+
+        Returns:
+            IPartOfSpeech: The owning part of speech, or None if this POS
+            is top-level (owned by the PartsOfSpeechOA possibility list
+            rather than by another category).
+
+        Raises:
+            FP_NullParameterError: If pos_or_hvo is None.
+
+        Example:
+            >>> posOps = POSOperations(project)
+            >>> noun = posOps.Find("Noun")
+            >>> proper = posOps.AddSubcategory(noun, "Proper Noun", "PN")
+            >>> posOps.GetName(posOps.GetParent(proper))
+            'Noun'
+
+            >>> # Walk the hierarchy upward to the root
+            >>> cat = proper
+            >>> while cat is not None:
+            ...     print(posOps.GetName(cat))
+            ...     cat = posOps.GetParent(cat)
+            Proper Noun
+            Noun
+
+        Notes:
+            - Returns None for top-level categories: their Owner is the
+              ICmPossibilityList at ``lp.PartsOfSpeechOA``, which is not a
+              possibility and therefore not a parent category.
+            - The owner is discriminated by ``ClassName`` rather than by
+              attempting a CLR cast and catching the failure, matching
+              ``__ResolveObject``'s ClassName-gated shape (contract C2).
+              An owner that is a POS is routed back through
+              ``__ResolveObject`` so the returned object is cast to
+              ``IPartOfSpeech`` and exposes subtype-only members --
+              ``Owner`` alone hands back a bare ``ICmObject``.
+            - This is the inverse of GetSubcategories: for any subcategory
+              ``s`` of ``p``, ``GetParent(s) is p``.
+
+        See Also:
+            GetSubcategories, AddSubcategory, GetAll
+        """
+        self._ValidateParam(pos_or_hvo, "pos_or_hvo")
+
+        pos = self.__ResolveObject(pos_or_hvo)
+
+        owner = getattr(pos, "Owner", None)
+        if owner is None:
+            return None
+
+        # Top-level POSs are owned by the PartsOfSpeechOA possibility list
+        # ("CmPossibilityList"); only a subcategory is owned by another
+        # "PartOfSpeech". Anything else (an owner with no ClassName at all,
+        # e.g. a non-LCM stand-in) is treated as "no parent category"
+        # rather than raising.
+        if getattr(owner, "ClassName", None) != "PartOfSpeech":
+            return None
+
+        return self.__ResolveObject(owner)
+
+    @OperationsMethod
     def AddSubcategory(self, pos_or_hvo, name, abbreviation):
         """
         Add a subcategory to a part of speech.

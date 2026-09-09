@@ -1712,20 +1712,86 @@ class FLExProject(object):
     @property
     def GramCat(self):
         """
-        Access to grammatical category operations.
+        Deprecated discoverability alias for POS.
 
         Returns:
-            GramCatOperations: Instance providing grammatical category management methods
+            GramCatOperations: A distinct, lazily-cached deprecated
+            subclass of ``POSOperations``. It **addresses the same list**
+            as ``project.POS`` -- ``IPartOfSpeech`` in
+            ``LangProject.PartsOfSpeechOA`` -- and inherits its
+            behaviour, but it is *not* the same object:
+            ``project.GramCat is project.POS`` is **False**.
+
+        At list level, a "grammatical category" *is* a part of speech.
+        The full CRUD surface -- ``GetAll``, ``Find``, ``Create``,
+        ``AddSubcategory``, ``GetSubcategories``, ``GetParent``,
+        ``Delete`` -- lives on ``project.POS``. This alias is retained
+        only so callers thinking in FLEx UI terminology (Grammar >
+        Categories) can find the wrapper from either spelling; new code
+        should spell it ``project.POS``.
+
+        Two things are deliberately *not* inherited transparently:
+
+        - Constructing the alias emits a :class:`DeprecationWarning`.
+          The instance is cached, so the warning fires once per project,
+          not once per attribute access.
+        - ``project.GramCat.Create(...)`` **always raises**
+          :class:`FP_ParameterError`, before any write. The old
+          ``Create(name, parent=None)`` signature is kept precisely so
+          that a legacy caller gets that explanatory error -- naming
+          ``project.POS.Create(name, abbreviation)`` for a top-level
+          category and
+          ``project.POS.AddSubcategory(parent, name, abbreviation)``
+          for a subcategory -- instead of a bare ``TypeError`` about a
+          missing ``abbreviation`` argument. That raising override is
+          the migration signpost, which is why this property returns a
+          ``GramCatOperations`` rather than ``self.POS`` (issue #276;
+          see ``specs/276-gramcat-collection/spec.md`` section 4).
+
+        Removal is scheduled for the v5.0.0 boundary, alongside the
+        other deprecated compatibility surfaces.
+
+        Three FLEx concepts wear confusingly similar names. They are
+        different LCM classes, and only the first is a category
+        (issue #276):
+
+        - ``project.GramCat`` / ``project.POS`` -- the **category
+          inventory** (FLEx: Grammar > Categories). Create, browse,
+          nest and delete categories here.
+        - ``project.Senses.GetGrammaticalInfo(sense)`` -- the sense's
+          **MSA** (``ILexSense.MorphoSyntaxAnalysisRA``), which is what
+          FLEx labels "Grammatical Info." That is a composite, not a
+          kind of category: use
+          ``project.Senses.GetPartOfSpeechObject(sense)`` for just the
+          category behind it, and ``project.MSA.*`` to build one.
+        - ``project.InflectionFeatures`` -- the feature side of that
+          composite, including the feature-structure types in
+          ``MsFeatureSystemOA.TypesOC`` via ``TypeFind`` /
+          ``TypeCreate``. An ``IFsFeatStrucType`` is a structural
+          template for feature structures; it is never a grammatical
+          category.
 
         Example:
-            >>> project = FLExProject()
-            >>> project.OpenProject("MyProject", writeEnabled=True)
-            >>> # Get all grammatical categories
-            >>> for gc in project.GramCat.GetAll():
-            ...     name = project.GramCat.GetName(gc)
-            ...     print(f"Category: {name}")
-            >>> # Create a new category
-            >>> gc = project.GramCat.Create("Transitive")
+            >>> # Reads behave identically -- both address
+            >>> # LangProject.PartsOfSpeechOA:
+            >>> project.GramCat.Find("Verb")
+            >>> project.POS.Find("Verb")
+            >>>
+            >>> # Browse the category inventory:
+            >>> for pos in project.POS.GetAll():
+            ...     print(project.POS.GetName(pos))
+            >>>
+            >>> # Writes must go through project.POS. Creating a category
+            >>> # needs an abbreviation (it is what interlinear renders);
+            >>> # nest with AddSubcategory:
+            >>> verb = project.POS.Create("Verb", "v")
+            >>> project.POS.AddSubcategory(verb, "Transitive Verb", "vt")
+            >>>
+            >>> # The deprecated spelling refuses, with a pointer:
+            >>> # project.GramCat.Create("Transitive")
+            >>> #   -> FP_ParameterError: GramCat.Create() has been
+            >>> #      removed (issue #276) ... use
+            >>> #      project.POS.Create(name, abbreviation)
         """
         if "_gramcat_ops" not in self.__dict__:
             from .Grammar.GramCatOperations import GramCatOperations
@@ -1873,12 +1939,12 @@ class FLExProject(object):
         Example:
             >>> entry = list(project.LexiconAllEntries())[0]
             >>> sense = entry.SensesOS[0]
-            >>> verb_pos = project.GramCat.Find("Verb")
+            >>> verb_pos = project.POS.Find("Verb")
             >>> # Stem MSA with POS = Verb
             >>> project.MSA.CreateStem(sense, verb_pos)
             >>> # Derivational affix that turns nouns into verbs
-            >>> n_pos = project.GramCat.Find("Noun")
-            >>> v_pos = project.GramCat.Find("Verb")
+            >>> n_pos = project.POS.Find("Noun")
+            >>> v_pos = project.POS.Find("Verb")
             >>> project.MSA.CreateDerivAff(sense, from_pos=n_pos, to_pos=v_pos)
         """
         if "_msa_ops" not in self.__dict__:

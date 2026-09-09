@@ -138,12 +138,12 @@ class MSAOperations(BaseOperations):
         sense = entry.SensesOS[0]
 
         # Stem MSA (most common case): assign POS to a lexical entry.
-        verb_pos = project.GramCat.Find("Verb")
+        verb_pos = project.POS.Find("Verb")
         project.MSA.CreateStem(sense, verb_pos)
 
         # Derivational affix: noun -> verb
-        n_pos = project.GramCat.Find("Noun")
-        v_pos = project.GramCat.Find("Verb")
+        n_pos = project.POS.Find("Noun")
+        v_pos = project.POS.Find("Verb")
         project.MSA.CreateDerivAff(sense, from_pos=n_pos, to_pos=v_pos)
 
     See Also:

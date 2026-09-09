@@ -11,6 +11,76 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+### Changed (Breaking)
+
+- **`project.GramCat` now addresses the Part of Speech list, not the
+  feature-structure type list** (#276). `GramCatOperations` walked
+  `LangProject.MsFeatureSystemOA.TypesOC`, whose elements are
+  `IFsFeatStrucType` -- a structural template for feature structures, never a
+  grammatical category. At list level a grammatical category *is* a Part of
+  Speech (`IPartOfSpeech` in `PartsOfSpeechOA`), a list `POSOperations` already
+  owns completely, so `GramCatOperations` is now a deprecated subclass of
+  `POSOperations` and `project.GramCat` returns a lazily-created, cached
+  instance of it. That instance is **not** `project.POS`
+  (`project.GramCat is project.POS` is `False`); it addresses the same list and
+  inherits the same behaviour, but stays distinct so that its raising `Create`
+  override is reachable on the path real callers take. `GetAll` / `Find` /
+  `GetName` / `SetName` / `GetSubcategories` / `Delete` / `Duplicate` therefore
+  return and address POS data instead of feature types, and
+  `GetAll(recursive=True)` descends the category hierarchy instead of silently
+  truncating (the old elements were not possibilities and had no
+  `SubPossibilitiesOS`). Callers who wanted the feature-structure types want
+  `project.InflectionFeatures.TypeFind` / `TypeCreate`; callers who wanted a
+  sense's "Grammatical Info." want `project.Senses.GetGrammaticalInfo`. See
+  `docs/MIGRATION_GUIDE.md` for migration steps.
+- **`GramCatOperations.Create()` now raises `FP_ParameterError` and writes
+  nothing** (#276). The old signature `Create(name, parent=None)` is retained
+  only so an existing caller gets an explanatory error rather than a bare
+  `TypeError` about a missing `abbreviation`. `project.GramCat.Create("x")`
+  raises it directly -- verified live -- which is precisely why the property
+  returns a distinct `GramCatOperations` rather than `project.POS`: had it
+  returned `project.POS`, the same call would have reached
+  `POSOperations.Create(name, abbreviation)` and produced the bare `TypeError`
+  the override exists to prevent. There was no correct behaviour to preserve:
+  every call added a stray `IFsFeatStrucType` to the feature system, which
+  surfaces in FLEx under Grammar > Features. The message names
+  `project.POS.Create(name, abbreviation)`,
+  `project.POS.AddSubcategory(parent, name, abbreviation)` and
+  `project.InflectionFeatures.TypeCreate(name, abbreviation)`. Projects written
+  to by the old `Create` have strays to hand-clean; no automatic cleanup is
+  offered, because a stray is indistinguishable from legitimate `TypeCreate`
+  output and may since have been referenced via `TypeRA`.
+
+### Added
+
+- **`POSOperations.GetParent(pos_or_hvo)`** (#276) -- returns the owning
+  `IPartOfSpeech` for a subcategory, or `None` for a top-level category (whose
+  owner is the `PartsOfSpeechOA` list, not a possibility). Backfilled so that
+  the hierarchy capability `GramCatOperations` advertised survives the
+  delegation; it is the inverse of `AddSubcategory`.
+
+### Deprecated
+
+- **`GramCatOperations` and `project.GramCat`** (#276) -- retained as a
+  discoverability spelling for callers thinking in FLEx UI terms (Grammar >
+  Categories). `GramCatOperations` is now a thin subclass of `POSOperations`
+  that emits a `DeprecationWarning` on construction; because `project.GramCat`
+  caches the instance it builds, that warning fires once per project, on first
+  access, rather than on every attribute access. Removal is scheduled for the
+  v5.0.0 boundary. Use `project.POS` / `POSOperations` in new code.
+
+### Fixed
+
+- **`GramCatOperations.pyi` no longer advertises methods that did not exist**
+  (#276). The stub declared `Find` and `Exists`, which the implementation never
+  defined, so both raised `AttributeError` at runtime. The stub now declares
+  only `__init__` and the `Create` override; both `Find` and `Exists` genuinely
+  resolve, inherited from `POSOperations`. Docstrings that steered callers to
+  `project.GramCat.Find("Verb")` (in `FLExProject` and `MSAOperations`) now
+  spell it `project.POS.Find("Verb")`; the one remaining `project.GramCat.Find`
+  example sits inside the deprecated property's own docstring, where it
+  documents the equivalence.
+
 ---
 
 ## [4.6.0] - 2026-09-08

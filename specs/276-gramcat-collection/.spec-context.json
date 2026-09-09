@@ -1,0 +1,268 @@
+{
+  "workflow": "companion",
+  "specName": "276-gramcat-collection",
+  "branch": "276-gramcat-collection",
+  "selectedAt": "2026-09-09T16:55:34.214Z",
+  "currentStep": "implement",
+  "status": "completed",
+  "history": [
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-09-09T16:57:45.729Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T10",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T16:59:40.389Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T3",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T17:01:46.940Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T6",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T17:01:47.212Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T2",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T17:03:00.790Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T4",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T17:07:23.783Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T5",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T17:07:23.999Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T9",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T17:10:02.988Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T7",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T17:15:02.422Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T8",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T17:15:02.637Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T12",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T17:16:22.006Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T11",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T17:45:14.728Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T13",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T18:17:19.843Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-09-09T18:17:37.002Z"
+    }
+  ],
+  "telemetryInstanceId": "0082f344-3ede-4d56-8dba-0856137e1b20",
+  "currentTask": "T13",
+  "task_summaries": {
+    "T10": {
+      "status": "DONE",
+      "did": "Confirmed survivors need no change: phase2 TestGramCatOperations builds a local MockOperations and never touches the real class; baseline/conftest sites are name-only imports; baseline surface asserts (GetAll/Create/Find/reordering) all satisfied via POSOperations inheritance; no filterwarnings=error so T4's DeprecationWarning is inert",
+      "files": [
+        "tests/phase2_validation_tests.py",
+        "tests/test_operations_baseline.py",
+        "tests/conftest.py"
+      ]
+    },
+    "T3": {
+      "status": "DONE",
+      "did": "FLExProject.GramCat now returns self.POS; _gramcat_ops lazy cache and its local import removed; docstring rewritten on the Features->InflectionFeatures alias shape with the three-way disambiguation (category inventory / sense-level MSA / feature side); FLExProject.pyi return type retyped to POSOperations",
+      "files": [
+        "flexicon/code/FLExProject.py",
+        "flexicon/code/FLExProject.pyi"
+      ]
+    },
+    "T6": {
+      "status": "DONE",
+      "did": "Replaced all six false project.GramCat.Find() docstring calls with project.POS.Find() (FLExProject.py MSA property x3, MSAOperations.py class docstring x3); confirmed downstream MSA.CreateStem/CreateDerivAff consume IPartOfSpeech so examples stay valid",
+      "files": [
+        "flexicon/code/FLExProject.py",
+        "flexicon/code/Lexicon/MSAOperations.py"
+      ]
+    },
+    "T2": {
+      "status": "DONE",
+      "did": "Backfilled POSOperations.GetParent(pos_or_hvo) using the __ResolveObject ClassName-discriminator idiom (no cast-and-catch, no System import); corrected the pre-existing .pyi param name; 13 new unit tests pass, plus 22 POS + 22 contract tests green",
+      "files": [
+        "flexicon/code/Grammar/POSOperations.py",
+        "flexicon/code/Grammar/POSOperations.pyi",
+        "tests/operations/test_276_pos_getparent.py"
+      ]
+    },
+    "T4": {
+      "status": "DONE",
+      "did": "GramCatOperations reduced 796->159 lines: now a deprecated POSOperations subclass warning on construction; deleted 14 TypesOC members incl. ApplySyncableProperties (a passthrough that would have shadowed the real POS implementation); Create kept as a raising FP_ParameterError override that performs no write; all SIL.LCModel imports dropped; 326 baseline tests pass",
+      "files": [
+        "flexicon/code/Grammar/GramCatOperations.py"
+      ]
+    },
+    "T5": {
+      "status": "DONE",
+      "did": "GramCatOperations.pyi reduced to the deprecated-subclass shape; removed the false Find/Exists declarations (and GetAll/Delete/Duplicate/GetName/SetName/GetGUID/__getattr__) that advertised a surface raising AttributeError; only __init__ and the Create -> NoReturn override remain",
+      "files": [
+        "flexicon/code/Grammar/GramCatOperations.pyi"
+      ]
+    },
+    "T9": {
+      "status": "DONE",
+      "did": "Removed the code/Grammar/GramCatOperations.py entry from expected_contract.json (T4 left the file with zero SIL.LCModel imports) and decremented total_files_with_lcm_deps 79->78. Made this a surgical edit rather than a full regen: a regen would have folded ~9 files of unrelated pre-existing drift into this commit. All five dropped types are still imported elsewhere so the aggregate lists needed no change. 22 contract tests pass",
+      "files": [
+        "tests/contract/snapshots/expected_contract.json"
+      ]
+    },
+    "T7": {
+      "status": "DONE",
+      "did": "Replaced the by-design-failing recursion test with one pinning the resolution (GetAll reads PartsOfSpeechOA not MsFeatureSystemOA; GramCat is a POSOperations subclass with no re-declared GetAll); kept the LCM baseline test; rewrote the class docstring to record the ruling; repointed the GetSubcategories row plus two further tests T4 broke. 69 pass, was 4 failed/64 passed",
+      "files": [
+        "tests/operations/test_collection_cast_pattern.py"
+      ]
+    },
+    "T8": {
+      "status": "DONE",
+      "did": "git rm tests/operations/test_gramcat_duplicate.py (246 lines, mock-only, pinned the deleted TypesOC path). #163 coverage confirmed retained at three sites that still own a real OC; no CI, test-list or docs-index reference to the deleted file",
+      "files": [
+        "tests/operations/test_gramcat_duplicate.py"
+      ]
+    },
+    "T12": {
+      "status": "DONE",
+      "did": "MIGRATION_GUIDE.md: 172-line breaking-change section incl. the ruling Q4 no-auto-cleanup warning; CHANGELOG.md: Unreleased entry following the file's own '### Changed (Breaking)' shape; API_ISSUES_CATEGORIZED.md: site-4 row and its note annotated as superseded, nothing deleted; demo rewritten read-only as a deprecation pointer (a full POS twin demo already existed) - syntax-checked ASCII-clean by the orchestrator",
+      "files": [
+        "docs/MIGRATION_GUIDE.md",
+        "CHANGELOG.md",
+        "docs/API_ISSUES_CATEGORIZED.md",
+        "examples/grammar_gramcat_operations_demo.py"
+      ]
+    },
+    "T11": {
+      "status": "DONE",
+      "did": "LIVE PASS on Target sandbox + Sena 3 sandbox, run_mode=live, 8 passed. All four demonstrations verified with values re-read from the LCM: alias identity; GetAll yields PartOfSpeech with GetAll hvos matching an independent direct PartsOfSpeechOA walk and zero TypesOC overlap (Sena3 flat=11 deep=37); GetParent round-trip 10443->10442 and None at top level (Owner.ClassName=CmPossibilityList), also on pre-existing Sena 3 data; Create raises and writes nothing (TypesOC count 0->0, POS hvo set identical). Evidence at evidence/live-T11.md",
+      "files": [
+        "tests/operations/test_276_gramcat_pos_alias.py",
+        "specs/276-gramcat-collection/evidence/live-T11.md"
+      ]
+    },
+    "T13": {
+      "status": "DONE",
+      "did": "Filed all six follow-ups on MattGyverLee/flexicon after gh repo set-default: #293 stray IFsFeatStrucType cleanup guidance (docs, no auto-migration per ruling Q4), #294 DefaultFeaturesOA/InherFeatValOA exposure (ruling Q5), #295 POSOperations.Duplicate OS/OC coverage gap, #296 contract snapshot drift, #297 __init__.pyi omits 43 Operations classes, #298 grammar_pos_operations_demo.py:89. Cross-linked #252/#257 and left a follow-up index comment on #276; all drafts scanned for the close-keyword hazard"
+    }
+  },
+  "concerns": [
+    {
+      "note": "tests/contract/snapshots/expected_contract.json is stale well beyond issue #276. A full regen adds code/transaction.py and code/undoable_operation.py as new LCM-dependent files and changes BaseOperations.py, FLExProject.py, FLExInit.py, NaturalClassOperations.py, AllomorphOperations.py, WfiMorphBundleOperations.py and lcm_casting.py, plus type_usage for TsStringUtils/Sldr/FwTextPropType. T9 was done surgically to keep #276 reviewable; the accumulated drift needs its own regen commit.",
+      "step": "implement"
+    },
+    {
+      "note": "Deleting test_gramcat_duplicate.py leaves POSOperations.Duplicate (POSOperations.py ~967-1061, uses SubPossibilitiesOS.IndexOf/Insert) as the live #163-shaped code path with no mock coverage anywhere. specs/feature-structure-sync-gap/reviews/cycle15-verification.md:60 already noted it had zero test references. Candidate T13 follow-up.",
+      "step": "implement"
+    },
+    {
+      "note": "T4 made GramCat inherit POSOperations hard CLR casts (IPartOfSpeech(x) at POSOperations.py:560,565) in place of the stubbable cast_to_concrete, so pure-Python stub hierarchies now raise TypeError. Two existing tests needed a monkeypatch fixture. Also POSOperations.GetSubcategories does not use _GetTypedElements/cast_to_concrete like its sibling sites, so test_collection_cast_pattern needed a per-site _DIRECT_INTERFACE_CASTS opt-in; conforming the source instead would let that allowlist be deleted.",
+      "step": "implement"
+    },
+    {
+      "note": "Pre-existing, unrelated to #276: flexicon/__init__.pyi omits ALL 43 Operations classes that __init__.py exports, so Pyright reports them as unknown import symbols (visible now on examples/grammar_gramcat_operations_demo.py:37). Same defect class as T5 but inverted - the stub understates the surface rather than overstating it. Candidate follow-up.",
+      "step": "implement"
+    },
+    {
+      "note": "Stale generated artifacts still show the pre-T6 project.GramCat.Find docstrings: flexicon/docs/flexiconAPI/_modules/.../FLExProject.html:1963-1968 and MSAOperations.html:186-191 need a Sphinx regen; docs/audit/LCM_CAPABILITIES_AUDIT_REFERENCES.md:63,144,499 cite GramCatOperations imports T4 dropped and need tools/extract_api_usage.py rerun. Also examples/grammar_pos_operations_demo.py:89 is independently broken (POS.Create(test_name) missing the required abbreviation raises TypeError, swallowed by a bare except) - now more visible since the gramcat demo redirects readers there.",
+      "step": "implement"
+    }
+  ],
+  "verified": [
+    {
+      "what": "T11 live LCM verification of the GramCat->POS alias on a real FLEx database",
+      "command": "python scripts/restore_target.py; $env:FLEXLIBS_REQUIRE_LIVE=1; python -m pytest tests/operations/test_276_gramcat_pos_alias.py -m requires_live_project -q",
+      "result": "8 passed in 8.02s, run_mode=live, zero skipped; Target sandbox + Sena 3 sandbox; no TEST_276 residue in the real Target.fwdata",
+      "warnings": [
+        "test_lcm_method_verification heuristic false positive - see concern"
+      ]
+    },
+    {
+      "what": "T11 live LCM re-verification after the GramCat property ruling (write path changed, so the prior pass no longer carried)",
+      "command": "python scripts/restore_target.py; $env:FLEXLIBS_REQUIRE_LIVE=1; python -m pytest tests/operations/test_276_gramcat_pos_alias.py -m requires_live_project -q",
+      "result": "PASS - 8 passed 1 warning in 7.79s, run_mode=live, zero skipped. Property route now raises FP_ParameterError naming both replacements (run 1 got a bare TypeError); GramCat is POS -> False; DeprecationWarning fires once then 0 on cached access; GetAll == POS.GetAll == direct PartsOfSpeechOA walk (5 hvos), TypesOC overlap empty; Sena 3 flat=11 deep=37 with TypesOC hvos (14407,121568) disjoint; Delete subtree cleanup returns to baseline; no TEST_276 residue in real Target.fwdata. Full suite 1748 passed, 710 deselected",
+      "warnings": [
+        "Unhandled DeprecationWarning in test_getall_elements_are_partofspeech_not_featstructype - expected, corroborates demo 1, no filterwarnings=error so it cannot fail the run"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "project.GramCat returns a lazily-cached distinct GramCatOperations instance, NOT self.POS; the literal is-identity is dropped",
+      "why": "spec.md was internally contradictory - section 4 wanted GramCat.Create to raise a helpful FP_ParameterError naming the replacements, sections 2/3 wanted project.GramCat is project.POS. Live verification proved these are mutually exclusive: with the is-identity, project.GramCat.Create(\"Transitive\") reached POSOperations.Create and raised a bare TypeError, so the migration signpost was unreachable on the exact path FlexTools/FlexTrans callers take. Repo owner ruled to keep the override reachable. Section 3s concern about two CRUD surfaces is not reintroduced: GramCatOperations stays a subclass with one inherited implementation plus one deliberate raising override.",
+      "rejected": "Keeping project.GramCat is project.POS and letting migrating callers receive a stock TypeError with no pointer, relying on MIGRATION_GUIDE alone"
+    }
+  ],
+  "step_summaries": {
+    "implement": {
+      "summary": "GramCat retired as a TypesOC CRUD surface and re-addressed onto the POS list: POSOperations.GetParent backfilled, GramCatOperations reduced 796->159 lines as a deprecated subclass whose Create raises with a migration pointer, docs and contract snapshot corrected, live-verified twice on real LCM"
+    }
+  },
+  "last_action": "all 13 tasks done - T11 live PASS (run_mode=live, 8/8), full suite 1748 passed, six follow-ups filed #293-#298; commit not made, tree needs scoping to 18 of 35 paths"
+}

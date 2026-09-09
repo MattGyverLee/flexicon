@@ -150,6 +150,31 @@ def _ops(cls, project=None):
     return instance
 
 
+@pytest.fixture
+def pos_interface_cast(monkeypatch):
+    """
+    Stand in for the CLR ``IPartOfSpeech(...)`` call POSOperations makes.
+
+    POSOperations casts each SubPossibilitiesOS child with the concrete
+    interface directly rather than through ``cast_to_concrete``, so a
+    pure-Python stub hierarchy cannot pass through it unpatched. The stub
+    mirrors the real interface in the one respect the recursion depends
+    on: an IPartOfSpeech ALWAYS exposes ``SubPossibilitiesOS`` -- empty
+    when the category has no children -- which is exactly why casting
+    cures the silent truncation issue #270 describes.
+    """
+    from flexicon.code.Grammar import POSOperations as _pos_module
+
+    def _cast(raw):
+        concrete = _Concrete(raw)
+        if not hasattr(concrete, "SubPossibilitiesOS"):
+            concrete.SubPossibilitiesOS = _FakeSeq()
+        return concrete
+
+    monkeypatch.setattr(_pos_module, "IPartOfSpeech", _cast)
+    return _cast
+
+
 # ---------------------------------------------------------------------------
 # 1. The helpers themselves
 # ---------------------------------------------------------------------------
@@ -449,10 +474,19 @@ class TestSubPossibilityRecursion:
         child = _Raw("CmPossibility", 2, children=[grandchild])
         return _Concrete(_Raw("CmPossibility", 1, children=[child]))
 
-    def test_gramcat_getsubcategories_descends(self, stub_cast):
-        from flexicon.code.Grammar.GramCatOperations import GramCatOperations
+    def test_pos_getsubcategories_descends(self, pos_interface_cast):
+        """
+        The category-hierarchy walk, reached the way callers reach it.
 
-        ops = _ops(GramCatOperations)
+        This was written against ``GramCatOperations.GetSubcategories``.
+        Issue #276 ruled that a list-level grammatical category IS a Part
+        of Speech, so GramCat is now a deprecated subclass of
+        POSOperations and this method is POSOperations'. Same walk, same
+        #270 pattern -- addressed at the class that owns it.
+        """
+        from flexicon.code.Grammar.POSOperations import POSOperations
+
+        ops = _ops(POSOperations)
         result = ops.GetSubcategories(self._hierarchy())
 
         assert [r.Hvo for r in result] == [2, 3], (
@@ -463,15 +497,44 @@ class TestSubPossibilityRecursion:
             "(issue #270)."
         )
 
-    def test_gramcat_getsubcategories_casts_direct_children(self, stub_cast):
-        from flexicon.code.Grammar.GramCatOperations import GramCatOperations
+    def test_pos_getsubcategories_casts_direct_children(
+        self, pos_interface_cast
+    ):
+        from flexicon.code.Grammar.POSOperations import POSOperations
 
-        ops = _ops(GramCatOperations)
+        ops = _ops(POSOperations)
         result = ops.GetSubcategories(
             self._hierarchy(), recursive=False
         )
         assert [r.Hvo for r in result] == [2]
         assert all(getattr(r, "was_cast", False) for r in result)
+
+    def test_gramcat_inherits_the_same_walk(self):
+        """
+        The deprecated alias must not grow its own copy of the walk.
+
+        Issue #276's fix is subtraction: one hierarchy walker over one
+        list. A GetSubcategories back in GramCatOperations.__dict__ is
+        the two-CRUD-surfaces problem returning.
+        """
+        from flexicon.code.Grammar.GramCatOperations import GramCatOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
+
+        assert "GetSubcategories" not in GramCatOperations.__dict__, (
+            "GramCatOperations has re-declared GetSubcategories. It must "
+            "inherit POSOperations.GetSubcategories (issue #276); see "
+            "specs/276-gramcat-collection/evidence/domain-ruling.md."
+        )
+        resolved = next(
+            klass
+            for klass in GramCatOperations.__mro__
+            if "GetSubcategories" in klass.__dict__
+        )
+        assert resolved is POSOperations, (
+            f"GramCat.GetSubcategories resolves to {resolved.__name__}, "
+            "not POSOperations -- the alias no longer delegates to the "
+            "class that owns LangProject.PartsOfSpeechOA (issue #276)."
+        )
 
     def test_possibilitylist_getsubitems_descends(self, stub_cast):
         from flexicon.code.Lists.PossibilityListOperations import (
@@ -709,9 +772,14 @@ _FIXED_SITES = [
     ("DataNotebookOperations.GetAllStatuses",
      "flexicon.code.Notebook.DataNotebookOperations",
      "DataNotebookOperations", "GetAllStatuses", "PossibilitiesOS"),
-    ("GramCatOperations.GetSubcategories",
-     "flexicon.code.Grammar.GramCatOperations",
-     "GramCatOperations", "GetSubcategories", "SubPossibilitiesOS"),
+    # Was GramCatOperations.GetSubcategories. Issue #276 retired that
+    # class to a deprecated subclass of POSOperations, so the method now
+    # lives -- and is exercised -- at the class that owns the list. This
+    # is the only POSOperations row in the table; dropping it as a
+    # duplicate would lose the coverage, not deduplicate it.
+    ("POSOperations.GetSubcategories",
+     "flexicon.code.Grammar.POSOperations",
+     "POSOperations", "GetSubcategories", "SubPossibilitiesOS"),
     ("VariantOperations.GetAllTypes",
      "flexicon.code.Lexicon.VariantOperations",
      "VariantOperations", "GetAllTypes", "PossibilitiesOS"),
@@ -733,6 +801,19 @@ _FIXED_SITES = [
 ]
 
 
+# A site whose collection is statically homogeneous may cast with the
+# concrete interface directly instead of the generic helper. That is
+# STRONGER than cast_to_concrete, not weaker: cast_to_concrete is total
+# and returns an unrecognised element unchanged, whereas a direct
+# interface call raises on a wrong-typed element. Listed explicitly, per
+# site, so the generic requirement stays the default everywhere else.
+_DIRECT_INTERFACE_CASTS = {
+    # POSOperations.GetSubcategories walks IPartOfSpeech.SubPossibilitiesOS,
+    # which cannot legally hold anything but IPartOfSpeech.
+    "POSOperations.GetSubcategories": "IPartOfSpeech(",
+}
+
+
 class TestCollectionCastSites:
     """Every site #270 confirmed broken must route elements through the cast."""
 
@@ -743,7 +824,11 @@ class TestCollectionCastSites:
         self, label, import_path, class_name, method_name, collection
     ):
         src = _method_source(import_path, class_name, method_name)
-        assert "_GetTypedElements" in src or "cast_to_concrete" in src, (
+        accepted = ["_GetTypedElements", "cast_to_concrete"]
+        direct = _DIRECT_INTERFACE_CASTS.get(label)
+        if direct:
+            accepted.append(direct)
+        assert any(token in src for token in accepted), (
             f"{label} does not cast its elements. {collection} is declared "
             f"over a BASE interface, so the raw elements expose no subtype "
             f"surface, fail isinstance against their own interface, and "
@@ -821,7 +906,8 @@ class TestCollectionCastSites:
 
 
 # ---------------------------------------------------------------------------
-# 6. The one #270 claim that does NOT hold: GramCatOperations.GetAll
+# 6. The one #270 claim that was never a casting bug:
+#    GramCatOperations.GetAll -- resolved as a data-model defect by #276
 # ---------------------------------------------------------------------------
 
 
@@ -835,22 +921,41 @@ _BASELINE = (
 
 class TestGramCatGetAllRecursionClaim:
     """
-    Issue #270 reports GramCatOperations.GetAll's
-    `hasattr(cat, "SubPossibilitiesOS")` guard as a casting bug. It is a
-    real silent no-op, but NOT a casting one, and casting cannot fix it.
+    Issue #270 reported GramCatOperations.GetAll's
+    `hasattr(cat, "SubPossibilitiesOS")` guard as a casting bug. It was a
+    real silent no-op, but never a casting one, and casting could not
+    have fixed it. #270 found it in passing during its collection-cast
+    sweep and correctly refused to paper over it with a cast that would
+    have done nothing; it left the underlying data-model question open
+    instead. Issue #276 closed that question.
 
-    GetAll walks `lp.MsFeatureSystemOA.TypesOC`, whose elements are
-    IFsFeatStrucType. Per the checked-in LCM reflection baseline,
-    IFsFeatStrucType is not an ICmPossibility and has no
-    SubPossibilitiesOS at all, so the guard is CORRECTLY False and the
-    recursion is unreachable no matter how the element is cast. Fixing it
-    means deciding what a "grammatical category" is (a feature-struc-type
-    or a possibility) -- a data-model decision, tracked separately.
+    **The ruling.** Recorded in full in
+    `specs/276-gramcat-collection/evidence/domain-ruling.md`. Three FLEx
+    concepts wear confusingly similar names; only the first is a
+    category:
 
-    This test pins the finding so nobody "fixes" GetAll by adding a cast
-    that does nothing, and fails loudly if a future LCM makes
-    IFsFeatStrucType a possibility (at which point the recursion becomes
-    real and GetAll must be revisited).
+    - At list level, a "grammatical category" IS a Part of Speech --
+      `IPartOfSpeech` in `LangProject.PartsOfSpeechOA`. So
+      `project.GramCat` now returns `project.POS`, and
+      `GramCatOperations` is a deprecated subclass of `POSOperations`
+      rather than a second CRUD surface.
+    - At entry/sense level, "Grammatical Info." is the **MSA**
+      (`ILexSense.MorphoSyntaxAnalysisRA`) -- a different LCM class that
+      *references* a category and owns an `IFsFeatStruc`. It is not a
+      kind of category.
+    - `IFsFeatStrucType` is **never** a grammatical category. It is a
+      structural template for feature structures. The old GetAll walked
+      `MsFeatureSystemOA.TypesOC`, which is the wrong collection
+      outright. That side of the model lives at
+      `project.InflectionFeatures`, reached via `TypeFind` /
+      `TypeCreate`.
+
+    So the recursion was unreachable because the elements were the wrong
+    CLASS, not because they were uncast. The two tests below pin both
+    halves of the finding: the LCM baseline fact that made the guard
+    correctly False (still true, and it must fail loudly if a future LCM
+    makes IFsFeatStrucType a possibility), and the resolution that
+    retired the guard.
     """
 
     def test_fsfeatstructype_has_no_subpossibilities(self):
@@ -868,21 +973,52 @@ class TestGramCatGetAllRecursionClaim:
         )
         assert "SIL.LCModel.ICmPossibility" not in entry["interfaces"]
 
-    def test_getall_recursion_is_documented_as_unreachable(self):
+    def test_getall_reads_the_category_list_not_the_feature_system(self):
         """
-        GetAll must not pretend to be fixed by a cast that is a no-op for
-        FsFeatStrucType. If someone adds one, this test asks them to
-        resolve the data-model question instead.
+        The resolution, pinned: GramCat.GetAll walks the category list.
+
+        `_method_source` searches the MRO, so asking GramCatOperations
+        for `GetAll` now yields `POSOperations.GetAll` -- which is
+        precisely the outcome under test.
         """
+        from flexicon.code.Grammar.GramCatOperations import GramCatOperations
+        from flexicon.code.Grammar.POSOperations import POSOperations
+
+        assert issubclass(GramCatOperations, POSOperations), (
+            "GramCatOperations is no longer a subclass of POSOperations. "
+            "Issue #276 ruled that a list-level grammatical category IS a "
+            "Part of Speech, so GramCat became a deprecated alias instead "
+            "of a second CRUD surface over its own collection. See "
+            "specs/276-gramcat-collection/evidence/domain-ruling.md."
+        )
+        assert "GetAll" not in GramCatOperations.__dict__, (
+            "GramCatOperations has re-declared its own GetAll. It must "
+            "inherit POSOperations.GetAll; a second implementation is how "
+            "the two-walkers-over-one-list problem issue #276 removed "
+            "comes back."
+        )
+
         src = _method_source(
             "flexicon.code.Grammar.GramCatOperations",
             "GramCatOperations",
             "GetAll",
         )
-        assert "MsFeatureSystemOA" in src, (
-            "GramCatOperations.GetAll no longer reads MsFeatureSystemOA -- "
-            "the data-model question this test documents has moved. "
-            "Update the test alongside it."
+        assert "MsFeatureSystemOA" not in src, (
+            "GramCat.GetAll is reading MsFeatureSystemOA again. Its "
+            "elements are IFsFeatStrucType -- structural templates for "
+            "feature structures, never grammatical categories -- so the "
+            "SubPossibilitiesOS recursion is dead code, Create writes a "
+            "stray into the feature system, and Delete removes from the "
+            "wrong collection. That is the defect issue #276 fixed. The "
+            "feature side belongs to project.InflectionFeatures "
+            "(TypeFind / TypeCreate); see "
+            "specs/276-gramcat-collection/evidence/domain-ruling.md."
+        )
+        assert "PartsOfSpeechOA" in src, (
+            "GramCat.GetAll no longer walks LangProject.PartsOfSpeechOA. "
+            "Issue #276 ruled that the category inventory IS the Part of "
+            "Speech list; see "
+            "specs/276-gramcat-collection/evidence/domain-ruling.md."
         )
 
 
