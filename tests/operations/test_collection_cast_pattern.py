@@ -990,32 +990,68 @@ class TestCollectionCastLive:
                 return
         pytest.skip("No multi-level semantic domain found to exercise recursion")
 
-    @pytest.mark.live_phase("ConstChartCellTagOperations", "read")
-    def test_chart_cell_tag_getall_is_not_empty_when_tags_exist(self, sena3_sandbox):
+    @pytest.mark.live_phase("ConstChartCellTagOperations", "add")
+    def test_chart_cell_tag_getall_is_not_empty_when_tags_exist(self, target_sandbox):
         """
-        Pre-state:  a chart row whose CellsOS contains a ConstChartTag
-                    (established by reading ClassName directly off
-                    CellsOS, which needs no cast).
-        Post-state: ConstChartCellTagOperations.GetAll(row) returns
-                    exactly those tags. Before the fix the isinstance
-                    filter matched nothing and this was always [].
+        Pre-state:  a TEST_ chart with one TEST_ row and CellsOS.Count
+                    == 0 (verified immediately after row creation --
+                    the blank Target has no pre-existing charts, so the
+                    precondition is constructed rather than assumed).
+        Action:     two TEST_ ConstChartTag cell-parts are added to the
+                    row via ConstChartCellTagOperations.Create.
+        Post-state: re-querying the row's CellsOS directly (ClassName
+                    == "ConstChartTag", no cast needed) gives `expected`;
+                    ConstChartCellTagOperations.GetAll(row) must return
+                    exactly those two Hvos, in order. Before the fix the
+                    isinstance filter over CellsOS matched nothing and
+                    GetAll always returned [] (issue #270 Tier 4).
         """
-        charts = list(sena3_sandbox.ConstChart.GetAll())
-        if not charts:
-            pytest.skip("Sena 3 has no constituent charts")
+        charts = target_sandbox.ConstCharts
+        rows = target_sandbox.ConstChartRows
+        markers = target_sandbox.ConstChartMarkers
+        cell_tags = target_sandbox.ConstChartCellTags
 
-        for chart in charts:
-            for row in sena3_sandbox.ConstChartRows.GetAll(chart):
-                expected = [
-                    c.Hvo for c in row.CellsOS if c.ClassName == "ConstChartTag"
-                ]
-                if not expected:
-                    continue
-                actual = [t.Hvo for t in sena3_sandbox.ConstChartCellTags.GetAll(row)]
-                assert actual == expected, (
-                    f"GetAll returned {actual}, expected {expected}. The "
-                    "isinstance filter over CellsOS matched nothing "
-                    "(issue #270 Tier 4)."
-                )
-                return
-        pytest.skip("No chart row with a ConstChartTag found in Sena 3")
+        created_tags = []
+        col = marker = chart = None
+        try:
+            col = markers.Create("TEST_270_col")
+            marker = markers.Create("TEST_270_tag")
+            chart = charts.Create("TEST_270_chart")
+            # label= omitted: ConstChartRowOperations.Create calls
+            # new_row.Label.set_String(...), but Label on IConstChartRow
+            # is a bare ITsString with no set_String method (confirmed
+            # live: AttributeError). That write-path bug is orthogonal
+            # to the Tier 4 claim under test and is tracked separately.
+            row = rows.Create(chart)
+
+            assert row.CellsOS.Count == 0, "pre-state: row already has cells"
+
+            created_tags.append(cell_tags.Create(row, col, marker))
+            created_tags.append(cell_tags.Create(row, col, marker))
+
+            # Post-state read back from the LCM, not from `created_tags`.
+            expected = [
+                c.Hvo for c in row.CellsOS if c.ClassName == "ConstChartTag"
+            ]
+            actual = [t.Hvo for t in cell_tags.GetAll(row)]
+            assert len(actual) == 2 and actual == expected, (
+                f"GetAll returned {actual}, expected {expected}. The "
+                "isinstance filter over CellsOS matched nothing "
+                "(issue #270 Tier 4)."
+            )
+        finally:
+            # Deleting the chart cascades to its rows and cell-parts
+            # (ConstChartOperations.Delete), but the marker vocabulary
+            # items are owned by the project-wide ChartMarkersOA list,
+            # not the chart, so they need their own cleanup.
+            if chart is not None:
+                try:
+                    charts.Delete(chart)
+                except Exception:
+                    pass
+            for item in (marker, col):
+                if item is not None:
+                    try:
+                        markers.Delete(item)
+                    except Exception:
+                        pass
