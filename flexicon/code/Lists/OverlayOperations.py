@@ -465,9 +465,19 @@ class OverlayOperations(PossibilityItemOperations):
 
         overlay = self._PossibilityItemOperations__ResolveObject(overlay_or_hvo)
 
-        # Possibility items may be stored in SubPossibilitiesOS
-        if hasattr(overlay, "SubPossibilitiesOS"):
-            return list(overlay.SubPossibilitiesOS)
+        # ICmOverlay's complete own-declared property surface is
+        # Name, PossItemsRC, PossListRA (confirmed by live reflection,
+        # 2026-09-09; see specs/277-nonexistent-property-reads/
+        # evidence/live-277-overlays.md). There is no SubPossibilitiesOS
+        # on ICmOverlay -- that hasattr was always False, so this method
+        # returned [] unconditionally regardless of the overlay's actual
+        # contents (issue #277). PossItemsRC is a reference COLLECTION
+        # (ILcmReferenceCollection<ICmPossibility>), not a sequence, but
+        # it is iterable/materialisable the same way -- see
+        # AllomorphOperations.GetPhoneEnv's `list(allomorph.PhoneEnvRC)`
+        # for the established house pattern with an RC property.
+        if hasattr(overlay, "PossItemsRC"):
+            return list(overlay.PossItemsRC)
         return []
 
     # --- Search Operations ---

@@ -72,9 +72,22 @@ class EnvironmentOperations(BaseOperations):
     def _GetSequence(self, parent):
         """
         Specify which sequence to reorder for environments.
-        For Environment, we reorder parent.EnvironmentsOA.PossibilitiesOS
+        For Environment, we reorder parent.EnvironmentsOS
+
+        ``IPhPhonData`` (the ``parent`` here -- ``project.lp.PhonologicalDataOA``)
+        owns ``EnvironmentsOS`` directly, an ``IPhEnvironment`` owning
+        sequence. There is no ``EnvironmentsOA`` property on this type and
+        no intervening possibility list to hop through via
+        ``.PossibilitiesOS`` -- confirmed live by ``.NET`` reflection
+        (issue #277; see specs/277-nonexistent-property-reads/evidence/
+        live-277-environments.md). The wrong form here was a copy/paste
+        of a pattern that IS correct for other sequence-owning types in
+        this codebase (e.g. ``InflectionFeatureOperations._GetSequence``
+        legitimately reads ``parent.FeaturesOA.PossibilitiesOS``, because
+        its parent type really does own an intervening
+        ``CmPossibilityList``) but was never true for ``IPhPhonData``.
         """
-        return parent.EnvironmentsOA.PossibilitiesOS
+        return parent.EnvironmentsOS
 
     @wrap_enumerable
     @OperationsMethod
