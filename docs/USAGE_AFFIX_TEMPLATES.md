@@ -4,14 +4,14 @@
 
 Affix templates (MoInflAffixTemplate) define inflectional morphology patterns in FieldWorks Language Explorer. Each part of speech (POS) can have its own set of templates, and each template defines slots where affixes attach.
 
-This guide shows how to work with affix templates using the FlexLibs2 wrapper API.
+This guide shows how to work with affix templates using the Flexicon wrapper API.
 
 ## Quick Start
 
 ### Get All Templates
 
 ```python
-from flexlibs2 import FLExProject, MorphRuleOperations
+from flexicon import FLExProject, MorphRuleOperations
 
 project = FLExProject()
 project.OpenProject("my project")
@@ -52,7 +52,7 @@ full_templates = templates.where(
 
 ```python
 # Get a POS first
-from flexlibs2 import PartOfSpeechOperations
+from flexicon import PartOfSpeechOperations
 
 posOps = PartOfSpeechOperations(project)
 verb = posOps.Find("Verb")
@@ -62,7 +62,7 @@ template = ruleOps.CreateAffixTemplate(verb, "Verb Inflection")
 print(f"Created: {template}")
 
 # The returned object is a raw LCM object, wrap it to use convenience properties
-from flexlibs2.code.Grammar.affix_template import AffixTemplate
+from flexicon.code.Grammar.affix_template import AffixTemplate
 wrapped = AffixTemplate(template)
 print(f"Total slots: {wrapped.total_slots}")
 ```
@@ -317,7 +317,7 @@ for template in prefix_templates:
     print(name)
 ```
 
-### After (FlexLibs2 Wrapper)
+### After (Flexicon Wrapper)
 
 ```python
 templates = ruleOps.GetAllAffixTemplates()
@@ -371,7 +371,7 @@ if is_diff:
 ### Common Errors
 
 ```python
-from flexlibs2 import FP_ReadOnlyError, FP_ParameterError
+from flexicon import FP_ReadOnlyError, FP_ParameterError
 
 try:
     # Must have write enabled
@@ -458,5 +458,5 @@ See **LCM Development Guide** for detailed slot configuration.
 ---
 
 **Generated:** 2026-02-28
-**Version:** FlexLibs2 v2.3
+**Version:** Flexicon v2.3
 **Status:** Complete

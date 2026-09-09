@@ -18,12 +18,12 @@ This guide covers testing Phase 1 (rollback transactions) and Phase 2 (full undo
 ### Quick Syntax Check
 
 ```bash
-cd flexlibs2
+cd flexicon
 
 # Verify Python syntax is valid
-python -m py_compile flexlibs2/code/FLExProject.py
-python -m py_compile flexlibs2/code/transaction.py
-python -m py_compile flexlibs2/code/undoable_operation.py
+python -m py_compile flexicon/code/FLExProject.py
+python -m py_compile flexicon/code/transaction.py
+python -m py_compile flexicon/code/undoable_operation.py
 
 echo "[OK] Syntax check passed"
 ```
@@ -36,14 +36,14 @@ import sys
 sys.path.insert(0, '.')
 
 # Test Phase 1 imports
-from flexlibs2.code.FLExProject import FP_TransactionError
-from flexlibs2.code.transaction import _FLExTransaction
+from flexicon.code.FLExProject import FP_TransactionError
+from flexicon.code.transaction import _FLExTransaction
 
 # Test Phase 2 imports
-from flexlibs2.code.undoable_operation import _FLExUndoableOperation
+from flexicon.code.undoable_operation import _FLExUndoableOperation
 
 # Test package-level export
-from flexlibs2 import FP_TransactionError as ExportedError
+from flexicon import FP_TransactionError as ExportedError
 
 print("[OK] All imports successful")
 print(f"    FP_TransactionError: {FP_TransactionError}")
@@ -64,9 +64,9 @@ import sys
 sys.path.insert(0, '.')
 
 from unittest.mock import Mock, MagicMock
-from flexlibs2.code.transaction import _FLExTransaction
-from flexlibs2.code.undoable_operation import _FLExUndoableOperation
-from flexlibs2.code.FLExProject import FP_TransactionError, FP_ReadOnlyError
+from flexicon.code.transaction import _FLExTransaction
+from flexicon.code.undoable_operation import _FLExUndoableOperation
+from flexicon.code.FLExProject import FP_TransactionError, FP_ReadOnlyError
 
 
 def test_transaction_success_no_rollback():
@@ -235,9 +235,9 @@ python test_undo_redo_mocked.py
    - Open FLEx
    - Project Properties > Sharing tab
    - Enable "Share project contents with programs on this computer"
-4. **flexlibs2 importable**:
+4. **flexicon importable**:
    ```bash
-   python -c "from flexlibs2 import FLExProject; print('OK')"
+   python -c "from flexicon import FLExProject; print('OK')"
    ```
 
 ### Phase 1: Rollback Transaction Test
@@ -251,7 +251,7 @@ Create `test_phase1_integration.py`:
 import sys
 sys.path.insert(0, '.')
 
-from flexlibs2 import FLExProject, FLExInitialize, AllProjectNames
+from flexicon import FLExProject, FLExInitialize, AllProjectNames
 
 
 def test_phase1_transaction_rollback():
@@ -387,7 +387,7 @@ This script will:
 import sys
 sys.path.insert(0, '.')
 
-from flexlibs2 import FLExProject, FLExInitialize
+from flexicon import FLExProject, FLExInitialize
 
 FLExInitialize()
 project = FLExProject()
@@ -451,7 +451,7 @@ finally:
 import sys
 sys.path.insert(0, '.')
 
-from flexlibs2 import FLExProject, FLExInitialize
+from flexicon import FLExProject, FLExInitialize
 
 FLExInitialize()
 project = FLExProject()
@@ -573,20 +573,20 @@ This will:
 
 ### Import Errors
 ```bash
-# Ensure flexlibs2 is in path
-python -c "import sys; sys.path.insert(0, '.'); from flexlibs2 import FLExProject"
+# Ensure flexicon is in path
+python -c "import sys; sys.path.insert(0, '.'); from flexicon import FLExProject"
 ```
 
 ### FLEx Not Found
 ```bash
 # Check FieldWorks is installed
-python -c "from flexlibs2 import FLExInitialize; FLExInitialize()"
+python -c "from flexicon import FLExInitialize; FLExInitialize()"
 ```
 
 ### Project Not Found
 ```bash
 # List available projects
-python -c "from flexlibs2 import AllProjectNames; print(AllProjectNames())"
+python -c "from flexicon import AllProjectNames; print(AllProjectNames())"
 ```
 
 ### Research Script Issues

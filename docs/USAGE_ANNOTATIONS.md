@@ -2,9 +2,9 @@
 
 ## Overview
 
-This guide covers how to work with annotation wrappers in FlexLibs2 v2.3. Annotations are notes and comments that can be attached to various FLEx objects (lexical entries, senses, texts, etc.).
+This guide covers how to work with annotation wrappers in Flexicon v2.3. Annotations are notes and comments that can be attached to various FLEx objects (lexical entries, senses, texts, etc.).
 
-Unlike other polymorphic types in FlexLibs2 (like phonological rules or morphosyntactic analyses), annotations use **definition-based polymorphism**: the type is determined by an `AnnotationDefn` (definition) property, not by C# class inheritance.
+Unlike other polymorphic types in Flexicon (like phonological rules or morphosyntactic analyses), annotations use **definition-based polymorphism**: the type is determined by an `AnnotationDefn` (definition) property, not by C# class inheritance.
 
 The annotation wrapper classes hide this complexity, providing a clean interface for working with annotations regardless of their type.
 
@@ -54,7 +54,7 @@ The `Annotation` wrapper detects the type by reading the annotation definition's
 Annotations are typically retrieved from objects using `NoteOperations`:
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("my_project", writeEnabled=True)
@@ -540,7 +540,7 @@ for anno in recent_translator:
 
 ## See Also
 
-- [NoteOperations](../flexlibs2/code/Notebook/NoteOperations.py) - Low-level operations
-- [AnnotationDefOperations](../flexlibs2/code/System/AnnotationDefOperations.py) - Type management
-- [Annotation](../flexlibs2/code/Notebook/annotation.py) - Wrapper implementation
-- [AnnotationCollection](../flexlibs2/code/Notebook/annotation_collection.py) - Collection implementation
+- [NoteOperations](../flexicon/code/Notebook/NoteOperations.py) - Low-level operations
+- [AnnotationDefOperations](../flexicon/code/System/AnnotationDefOperations.py) - Type management
+- [Annotation](../flexicon/code/Notebook/annotation.py) - Wrapper implementation
+- [AnnotationCollection](../flexicon/code/Notebook/annotation_collection.py) - Collection implementation

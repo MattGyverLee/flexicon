@@ -1878,7 +1878,7 @@ See git history for previous changelog entries.
 No action required. Simply upgrade the package:
 
 ```bash
-pip install flexlibs2==2.3.0
+pip install flexicon==2.3.0
 ```
 
 Existing code will continue to work unchanged. All v2.0, v2.1, and v2.2 APIs remain fully functional.
@@ -1888,8 +1888,8 @@ Existing code will continue to work unchanged. All v2.0, v2.1, and v2.2 APIs rem
 To use the latest wrappers for additional domains:
 
 ```python
-from flexlibs2.wrappers import Allomorph, CompoundRule, AffixTemplate
-from flexlibs2.collections import AllomorphCollection, CompoundRuleCollection
+from flexicon.wrappers import Allomorph, CompoundRule, AffixTemplate
+from flexicon.collections import AllomorphCollection, CompoundRuleCollection
 
 # Work with allomorphs transparently
 allomorphs = project.Allomorph.GetAll()
@@ -1920,7 +1920,7 @@ Existing code continues to work without modification.
 
 ## Contributing
 
-See CONTRIBUTING.md for guidelines on contributing to FlexLibs2.
+See CONTRIBUTING.md for guidelines on contributing to Flexicon.
 
 ---
 

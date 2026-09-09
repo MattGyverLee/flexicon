@@ -3769,7 +3769,7 @@ class LexSenseOperations(BaseOperations):
             logger.info(f"Merging sense (HVO: {victim.Hvo}) into survivor (HVO: {survivor.Hvo})")
             survivor.MergeObject(victim, fLoseNoStringData)
 
-            # Optional deduplication layer (NEW value added by FlexLibs2)
+            # Optional deduplication layer (NEW value added by Flexicon)
             if auto_deduplicate:
                 logger.debug(f"Running auto-deduplication on merged sense (HVO: {survivor.Hvo})")
                 self.__DeduplicateExamplesInSense(survivor)

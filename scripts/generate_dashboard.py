@@ -25,7 +25,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlexLibs2 - Test Execution Dashboard</title>
+    <title>Flexicon - Test Execution Dashboard</title>
     <style>
         :root {
             --bg-primary: #0b0f19;
@@ -873,7 +873,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <!-- HEADER -->
         <header>
             <div class="logo-section">
-                <h1>FlexLibs2</h1>
+                <h1>Flexicon</h1>
                 <p>Comprehensive Test Dashboard</p>
             </div>
             <div class="timestamp" id="run-time">

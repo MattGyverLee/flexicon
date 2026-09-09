@@ -20,7 +20,7 @@ This document provides a comprehensive analysis of the flexlibs dependency on th
 - **Total SIL.* Imports**: 569 import statements
 - **Unique Classes Used**: 233 unique LCM classes/interfaces
 - **SIL Namespaces Used**: 14 namespaces
-- **Files Analyzed**: 73 Python files (with SIL imports) of 106 scanned in `flexlibs2/code/`
+- **Files Analyzed**: 73 Python files (with SIL imports) of 106 scanned in `flexicon/code/`
 - **Critical Dependencies**: 15 classes used in 5+ files
 
 ---
@@ -460,7 +460,7 @@ This is the primary namespace containing all LCM data model interfaces, reposito
 - All Tags classes
 - Core exceptions and enums
 
-**Risk Level**: **HIGH** - This is the core dependency. Changes to LCM interfaces directly impact flexlibs2.
+**Risk Level**: **HIGH** - This is the core dependency. Changes to LCM interfaces directly impact flexicon.
 
 ### SIL.LCModel.Core.KernelInterfaces
 
@@ -637,10 +637,10 @@ See `api_usage_summary.json` for the complete list of all 233 classes used.
 
 To regenerate this data:
 ```bash
-python tools/extract_api_usage.py --all --code-dir flexlibs2/code
+python tools/extract_api_usage.py --all --code-dir flexicon/code
 ```
 
-The tool defaults to `../flexlibs/code` (the legacy path); pass `--code-dir flexlibs2/code` (or an absolute path) to point it at the current source tree.
+The tool defaults to `../flexlibs/code` (the legacy path); pass `--code-dir flexicon/code` (or an absolute path) to point it at the current source tree.
 
 ---
 

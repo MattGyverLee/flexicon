@@ -1,14 +1,14 @@
-# FlexLibs → FlexLibs2 Migration Guide
+# FlexLibs → Flexicon Migration Guide
 
-FlexLibs2 is a major version upgrade (2.0) with improvements to API consistency and user experience. This guide covers breaking changes and how to update your scripts.
+Flexicon is a major version upgrade (2.0) with improvements to API consistency and user experience. This guide covers breaking changes and how to update your scripts.
 
 ## Breaking Change: Empty Multistring Field Handling
 
 ### What Changed
 
-FlexLibs2 **automatically converts FLEx's empty placeholder ("***") to Python's empty string ("")** in all functions that return multistring field values (glosses, definitions, forms, etc.).
+Flexicon **automatically converts FLEx's empty placeholder ("***") to Python's empty string ("")** in all functions that return multistring field values (glosses, definitions, forms, etc.).
 
-| Behavior | FlexLibs (v1.x) | FlexLibs2 (v2.0) |
+| Behavior | FlexLibs (v1.x) | Flexicon (v2.0) |
 |----------|-----------------|------------------|
 | `LexiconGetSenseGloss(sense)` | Returns `"***"` | Returns `""` |
 | `sense.Gloss.BestAnalysisAlternative.Text` | Returns `"***"` | Still returns `"***"` (raw C# result) |
@@ -21,7 +21,7 @@ FlexLibs2 **automatically converts FLEx's empty placeholder ("***") to Python's 
 - Some methods explicitly check for "***" (BestStr, custom fields)
 - Users had to know which methods needed wrapping and which didn't
 
-**Better UX in FlexLibs2:**
+**Better UX in Flexicon:**
 - All public functions automatically normalize empty strings
 - Users write simpler, more Pythonic code
 - No need to learn the "***" FLEx convention
@@ -37,7 +37,7 @@ if gloss == "***":
     print("Gloss is empty")
 ```
 
-**After (FlexLibs2):**
+**After (Flexicon):**
 ```python
 gloss = project.LexiconGetSenseGloss(sense)
 if not gloss:  # or: if gloss == ""
@@ -56,7 +56,7 @@ form = project.BestStr(entry.LexemeFormOA.Form)
 definition = project.BestStr(sense.Definition)
 ```
 
-**After (FlexLibs2):**
+**After (Flexicon):**
 ```python
 # Not needed - these already return normalized strings
 gloss = sense.Gloss.BestAnalysisAlternative.Text  # Still "***" if direct access
@@ -76,14 +76,14 @@ if text == "***":
     print("Empty")
 ```
 
-**After (FlexLibs2):**
+**After (Flexicon):**
 ```python
 # Direct access still returns "***" (raw C#)
 text = sense.Gloss.BestAnalysisAlternative.Text
 if text == "***":
     print("Empty")  # Still need this check
 
-# Better: use FlexLibs2 operations methods
+# Better: use Flexicon operations methods
 # (These do automatic conversion)
 gloss = SenseOperations.GetGloss(sense)  # Returns ""
 ```
@@ -92,7 +92,7 @@ gloss = SenseOperations.GetGloss(sense)  # Returns ""
 
 ## Summary of Changes
 
-| Feature | FlexLibs | FlexLibs2 | Action |
+| Feature | FlexLibs | Flexicon | Action |
 |---------|----------|-----------|--------|
 | Empty multistring handling | Inconsistent | Automatic (all functions) | Remove "***" checks, use `if not value:` instead |
 | BestStr() utility | Available | Still available (but not needed) | Can remove from scripts |
@@ -119,7 +119,7 @@ See [CLAUDE.md](../CLAUDE.md) for more details on FLEx conventions and data hand
 
 ## v2 to v3 Migration
 
-FlexLibs2 v3.0.0 (April 7, 2026) introduced two breaking changes. If you are upgrading from
+Flexicon v3.0.0 (April 7, 2026) introduced two breaking changes. If you are upgrading from
 any v2.x release, check both sections below.
 
 ### 1. Removed: `project.Reversal` API
@@ -223,7 +223,7 @@ mt = project.LexEntry.GetAvailableMorphTypes(recursive=True)
 
 ### What Changed
 
-Counting queries (`POSOperations.GetEntryCount`, `SemanticDomainOperations.GetSenseCount`) default to `recursive=False` -- they count only objects tagged with the requested category exactly, matching every count column FLEx itself surfaces (Categories tool, Lexicon Browse view, Tools > Statistics). The previous v2.4 default of `recursive=True` for `GetEntryCount` was reverted in #101 because users would see flexlibs2 reporting ~3x the counts FLEx shows and assume flexlibs2 was wrong.
+Counting queries (`POSOperations.GetEntryCount`, `SemanticDomainOperations.GetSenseCount`) default to `recursive=False` -- they count only objects tagged with the requested category exactly, matching every count column FLEx itself surfaces (Categories tool, Lexicon Browse view, Tools > Statistics). The previous v2.4 default of `recursive=True` for `GetEntryCount` was reverted in #101 because users would see flexicon reporting ~3x the counts FLEx shows and assume flexicon was wrong.
 
 The two distinct user questions:
 

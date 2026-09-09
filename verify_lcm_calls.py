@@ -173,7 +173,7 @@ class LCMCallAnalyzer:
                 print(f"    Status: VERIFIED")
             print()
 
-        print("\nMETHODS USED IN FLEXLIBS2:\n")
+        print("\nMETHODS USED IN FLEXICON:\n")
 
         for category, calls in sorted(categories.items()):
             if calls:

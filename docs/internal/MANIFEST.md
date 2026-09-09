@@ -26,15 +26,15 @@ The canonical index of every doc the `/lex-doc` agent maintains. Each entry decl
 | Doc | Purpose | Update Triggers | Status |
 |---|---|---|---|
 | `docs/ARCHITECTURE.md` | High-level overview of wrapper + collection pattern | New domain, module restructuring, change to public-API shape | live |
-| `docs/ARCHITECTURE_WRAPPERS.md` | Wrapper-class guide (concrete patterns, internal casting) | Changes under `flexlibs2/code/Shared/wrapper_base.py`, new wrapper class | live |
-| `docs/ARCHITECTURE_COLLECTIONS.md` | SmartCollection guide | Changes under `flexlibs2/code/Shared/smart_collection.py`, new collection subclass | live |
-| `docs/API_SURFACE.md` | Generated snapshot of SIL/LCM API usage (imports, namespaces, dependency hotspots) | Regenerate via `python tools/extract_api_usage.py --code-dir flexlibs2/code --all` at release cuts or yearly | external-managed (refreshed 2026-05-27) |
+| `docs/ARCHITECTURE_WRAPPERS.md` | Wrapper-class guide (concrete patterns, internal casting) | Changes under `flexicon/code/Shared/wrapper_base.py`, new wrapper class | live |
+| `docs/ARCHITECTURE_COLLECTIONS.md` | SmartCollection guide | Changes under `flexicon/code/Shared/smart_collection.py`, new collection subclass | live |
+| `docs/API_SURFACE.md` | Generated snapshot of SIL/LCM API usage (imports, namespaces, dependency hotspots) | Regenerate via `python tools/extract_api_usage.py --code-dir flexicon/code --all` at release cuts or yearly | external-managed (refreshed 2026-05-27) |
 
 ## Convention docs
 
 | Doc | Purpose | Update Triggers | Status |
 |---|---|---|---|
-| `docs/CATALOG_CONVENTIONS.md` | CatalogSourceId prefix policies (GOLD / PHON / INFL / synthetic) | Changes under `flexlibs2/code/Shared/catalog*.py`; new catalog domain | live |
+| `docs/CATALOG_CONVENTIONS.md` | CatalogSourceId prefix policies (GOLD / PHON / INFL / synthetic) | Changes under `flexicon/code/Shared/catalog*.py`; new catalog domain | live |
 | `docs/EXCEPTION_HANDLING.md` | FLEx-specific exception taxonomy and patterns | New `FP_*Error` class; change to `_EnsureWriteEnabled` / `_ValidateParam` | live |
 | `docs/internal/CONTRACT_TESTING.md` | LibLCM contract test conventions | New contract test category; FW version bump | live |
 | `docs/internal/TESTING_STRATEGY.md` | Project-wide testing approach | Test infrastructure changes (conftest, fixtures) | live |
@@ -49,18 +49,18 @@ The canonical index of every doc the `/lex-doc` agent maintains. Each entry decl
 | Doc | Purpose | Update Triggers | Status |
 |---|---|---|---|
 | `docs/USAGE_AFFIX_TEMPLATES.md` | Affix-template workflows | Changes to affix-template operations | live |
-| `docs/USAGE_ALLOMORPHS.md` | Allomorph operations workflows | `flexlibs2/code/Lexicon/AllomorphOperations.py` | live |
+| `docs/USAGE_ALLOMORPHS.md` | Allomorph operations workflows | `flexicon/code/Lexicon/AllomorphOperations.py` | live |
 | `docs/USAGE_ANNOTATIONS.md` | Annotation workflows | Annotation-related operations | live |
 | `docs/USAGE_COMPOUND_RULES.md` | Compound-rule workflows | Compound-rule operations | live |
 | `docs/USAGE_CONTEXTS.md` | Phonological context workflows | `PhonologicalRuleOperations` context-handling | live |
 | `docs/USAGE_MORPHOSYNTAX.md` | MSA workflows | `MSAOperations`, `LexSenseOperations.SetPartOfSpeech` | live |
 | `docs/USAGE_PHONOLOGICAL_RULES.md` | Phonological rule workflows | `PhonologicalRuleOperations`, `WireRule`, alpha-features | live |
 | `docs/USAGE_PROHIBITIONS.md` | Phonological prohibition workflows | Prohibition / restriction operations | live |
-| `docs/operations/LexEntryOperations_README.md` | Per-class README for LexEntryOperations | `flexlibs2/code/Lexicon/LexEntryOperations.py` | live |
-| `docs/operations/LEXSENSE_OPERATIONS_EXAMPLE.md` | Example workflows for LexSenseOperations | `flexlibs2/code/Lexicon/LexSenseOperations.py` | live |
+| `docs/operations/LexEntryOperations_README.md` | Per-class README for LexEntryOperations | `flexicon/code/Lexicon/LexEntryOperations.py` | live |
+| `docs/operations/LEXSENSE_OPERATIONS_EXAMPLE.md` | Example workflows for LexSenseOperations | `flexicon/code/Lexicon/LexSenseOperations.py` | live |
 | `docs/operations/PRONUNCIATION_OPERATIONS_SUMMARY.md` | Summary of pronunciation operations | Pronunciation-related operations | live |
 | `docs/operations/PRONUNCIATION_OPERATIONS_USAGE.md` | Pronunciation usage patterns | Pronunciation-related operations | live |
-| `docs/operations/TEXTOPERATIONS_USAGE.md` | TextOperations usage patterns | `flexlibs2/code/TextsWords/TextOperations.py` | live |
+| `docs/operations/TEXTOPERATIONS_USAGE.md` | TextOperations usage patterns | `flexicon/code/TextsWords/TextOperations.py` | live |
 | `docs/operations/WRITING_SYSTEM_OPERATIONS_SUMMARY.md` | Writing-system operations summary | WS-related operations | live |
 
 ## Audit / inventory docs
@@ -111,17 +111,17 @@ The canonical index of every doc the `/lex-doc` agent maintains. Each entry decl
 
 ### Resolved (2026-05-27 first-run audit)
 
-- **`docs/API_SURFACE.md`** is generated (via `tools/extract_api_usage.py`), not maintained by drift-checking. Reclassified `external-managed`. Refreshed 2026-05-27 (files analyzed 66 -> 73; SIL imports 527 -> 569; unique classes 194 -> 233; factories 42 -> 74). Tool default code-dir was wrong (`../flexlibs/code` finds 0 files); use `--code-dir flexlibs2/code --all`.
+- **`docs/API_SURFACE.md`** is generated (via `tools/extract_api_usage.py`), not maintained by drift-checking. Reclassified `external-managed`. Refreshed 2026-05-27 (files analyzed 66 -> 73; SIL imports 527 -> 569; unique classes 194 -> 233; factories 42 -> 74). Tool default code-dir was wrong (`../flexlibs/code` finds 0 files); use `--code-dir flexicon/code --all`.
 - **`docs/FUNCTION_REFERENCE.md`** is hand-maintained. Refreshed 2026-05-27 with Phase 5/6 additions in a "Recent Additions (Post-v2.0)" supersection (+47 method entries, +232 lines). Original 14 Phase sections preserved.
 - **`docs/internal/LISTS_CONSOLIDATION_TEMPLATE.md`** was a one-time refactoring guide, not a reusable template. Refactor landed; per issue #54 the resulting `AgentOperations(PossibilityItemOperations)` inheritance turned out to be wrong, so the doc is partially superseded too. Reclassified `archived`. Not moved.
 
 ### Open follow-ups for user decision
 
-- **`flexlibs2/__init__.py` declares version `3.0.0` but `CHANGELOG.md` latest is v2.4.0** — surfaced during the API_SURFACE refresh. Either the package version string is ahead of releases, or the CHANGELOG needs a v3.0.0 entry.
+- **`flexicon/__init__.py` declares version `3.0.0` but `CHANGELOG.md` latest is v2.4.0** — surfaced during the API_SURFACE refresh. Either the package version string is ahead of releases, or the CHANGELOG needs a v3.0.0 entry.
 - **`CHANGELOG.md` v2.4.0/v2.4.1 duplicate + reversed dates** — filed as issue #146. Recommend verifying against `git tag --list 'v2.4*'`.
-- ~~**`reports/audit/` JSON corpus**~~ — Resolved 2026-05-28. Tracked (4 files, ~300KB total). The corpus is load-bearing: `docs/audit/LCM_CAPABILITIES_AUDIT_REFERENCES.md` cites it by file:line so reproducibility across the team matters more than commit-history churn. Regenerate via `python tools/extract_api_usage.py --code-dir flexlibs2/code --all` from repo root. **Caveat:** the tool emits OS-native path separators in JSON (`code\\BaseOperations.py` on Windows, `code/BaseOperations.py` on POSIX). Refreshing on a different OS will produce a noisy diff. Either always refresh on Windows, or fix the tool to emit `as_posix()` paths (one-line change at [tools/extract_api_usage.py:120](tools/extract_api_usage.py#L120)) before adding a CI regeneration job.
+- ~~**`reports/audit/` JSON corpus**~~ — Resolved 2026-05-28. Tracked (4 files, ~300KB total). The corpus is load-bearing: `docs/audit/LCM_CAPABILITIES_AUDIT_REFERENCES.md` cites it by file:line so reproducibility across the team matters more than commit-history churn. Regenerate via `python tools/extract_api_usage.py --code-dir flexicon/code --all` from repo root. **Caveat:** the tool emits OS-native path separators in JSON (`code\\BaseOperations.py` on Windows, `code/BaseOperations.py` on POSIX). Refreshing on a different OS will produce a noisy diff. Either always refresh on Windows, or fix the tool to emit `as_posix()` paths (one-line change at [tools/extract_api_usage.py:120](tools/extract_api_usage.py#L120)) before adding a CI regeneration job.
 - **CI-driven regeneration?** — Investigate whether `API_SURFACE.md` should be regenerated automatically (CI job) and whether `FUNCTION_REFERENCE.md` should be auto-generated from `@OperationsMethod` introspection rather than hand-maintained. Both are currently stale-by-default until someone re-runs the refresh. **Blocked on**: path-separator normalization in `extract_api_usage.py` (see corpus note above) — until the tool emits POSIX paths, any Linux-runner CI will report constant drift against the tracked Windows-generated JSONs.
-- ~~**`LCM_AUDIT_*` set at repo root**~~ — Done 2026-05-27. Refreshed (counts, file lists, per-domain ops listings) and relocated to `docs/audit/` (6 files). Deep prose in `LCM_CAPABILITIES_AUDIT.md` and per-import file/line refs in `LCM_CAPABILITIES_AUDIT_REFERENCES.md` are partially refreshed — see `## TODO` blocks at the top of those docs. No inbound link rewrites needed (cross-refs between the 6 files are bare filenames). Future refreshes: `python tools/extract_api_usage.py --code-dir flexlibs2/code --all` produces the JSON corpus the audit set reads.
+- ~~**`LCM_AUDIT_*` set at repo root**~~ — Done 2026-05-27. Refreshed (counts, file lists, per-domain ops listings) and relocated to `docs/audit/` (6 files). Deep prose in `LCM_CAPABILITIES_AUDIT.md` and per-import file/line refs in `LCM_CAPABILITIES_AUDIT_REFERENCES.md` are partially refreshed — see `## TODO` blocks at the top of those docs. No inbound link rewrites needed (cross-refs between the 6 files are bare filenames). Future refreshes: `python tools/extract_api_usage.py --code-dir flexicon/code --all` produces the JSON corpus the audit set reads.
 - **`RELEASE_NOTES_v2.3.0.md` archive move** — Done 2026-05-27. Moved to `docs/_archive/RELEASE_NOTES_v2.3.0.md` via `git mv`. Manifest path updated.
 - **`history.md` archive move REVERTED 2026-05-27** — File moved back to repo root after user clarified it's a live upstream-sync surface (one of the few remaining links with cdfarrow/flexlibs upstream). Manifest entry reclassified from `archived` to `live (upstream-sync)`. Lesson: load-bearing duplicates can look archive-worthy on filename inspection alone; verify intent against upstream parity before classifying. See `~/.claude/projects/.../memory/project_history_md_upstream_sync.md`.
 

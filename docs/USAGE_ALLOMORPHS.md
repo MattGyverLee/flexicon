@@ -15,7 +15,7 @@ The Allomorph wrapper transparently handles both types, providing unified access
 ### Before (Without Wrappers)
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("my_project", writeEnabled=False)
@@ -40,7 +40,7 @@ for allomorph in project.Allomorphs.GetAll(entry):
 ### After (With Wrappers)
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("my_project", writeEnabled=False)
@@ -70,7 +70,7 @@ for allomorph in allomorphs:
 ### Getting Allomorphs
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("my_project")

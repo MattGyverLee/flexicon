@@ -181,7 +181,7 @@ project.Pronunciations.Create(entry, "rʌn", "en-fonipa")
 
 ### Basic Example
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("MyProject", writeEnabled=True)

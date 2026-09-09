@@ -1,6 +1,6 @@
 # LibLCM Contract Testing
 
-FlexLibs2 depends on ~226 types from SIL's LibLCM assemblies across 72 source files. The contract test suite verifies that these dependencies stay consistent -- both within flexlibs2 code and against installed versions of LibLCM.
+Flexicon depends on ~226 types from SIL's LibLCM assemblies across 72 source files. The contract test suite verifies that these dependencies stay consistent -- both within flexicon code and against installed versions of LibLCM.
 
 ## Quick Start
 
@@ -18,13 +18,13 @@ The contract test system works in two modes:
 
 ### Mode 1: Static Analysis (runs anywhere, no FieldWorks needed)
 
-Parses every `.py` file in `flexlibs2/code/` using Python's AST module and extracts:
+Parses every `.py` file in `flexicon/code/` using Python's AST module and extracts:
 
 - Every `from SIL.LCModel import ...` statement
 - Which properties and methods are called on those types
 - Which factories and repositories are used
 
-This produces an "expected contract" -- what flexlibs2 *needs* from LibLCM.
+This produces an "expected contract" -- what flexicon *needs* from LibLCM.
 
 The pre-commit hook compares this against a checked-in baseline and catches:
 
@@ -34,7 +34,7 @@ The pre-commit hook compares this against a checked-in baseline and catches:
 
 ### Mode 2: Live Verification (requires FieldWorks + pythonnet)
 
-Connects to actual LibLCM assemblies via pythonnet and checks that every type, property, and method flexlibs2 expects actually exists. This mode:
+Connects to actual LibLCM assemblies via pythonnet and checks that every type, property, and method flexicon expects actually exists. This mode:
 
 - Verifies all 226 types are present in the installed LibLCM
 - Checks that every property/method access in your code has a matching member
@@ -159,7 +159,7 @@ Output:
      --snapshot tests/contract/snapshots/liblcm_9.3.json -v
    ```
 
-   This maps every breakage back to the specific flexlibs2 source files affected.
+   This maps every breakage back to the specific flexicon source files affected.
 
 ## File Structure
 
@@ -172,7 +172,7 @@ tests/contract/
     compare_contracts.py         # Diff engine + report formatter
     test_lcm_contract.py         # Pytest runner (16 tests)
     snapshots/
-        expected_contract.json   # Baseline: what flexlibs2 expects
+        expected_contract.json   # Baseline: what flexicon expects
 
 hooks/
     pre-commit                   # Git hook script

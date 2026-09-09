@@ -1,12 +1,12 @@
 # LCM Capabilities Audit - Executive Summary
 
 **Audit Date:** 2026-05-27
-**Scope:** 106 Python files in `flexlibs2/code/`
+**Scope:** 106 Python files in `flexicon/code/`
 **Status:** REFRESHED — Ready for review
 
 ## Quick Overview
 
-This audit analyzes **14 SIL namespaces** imported across **73 files** in the flexlibs2 codebase, totalling **569 import statements** over **233 unique classes/interfaces**, organized behind **60 user-facing Operations classes** (plus the `BaseOperations` parent).
+This audit analyzes **14 SIL namespaces** imported across **73 files** in the flexicon codebase, totalling **569 import statements** over **233 unique classes/interfaces**, organized behind **60 user-facing Operations classes** (plus the `BaseOperations` parent).
 
 ### Key Numbers
 
@@ -28,7 +28,7 @@ This audit analyzes **14 SIL namespaces** imported across **73 files** in the fl
 
 ## The Architecture in 30 Seconds
 
-FlexLibs2 uses a **Repository -> Factory -> Wrapper** pattern:
+Flexicon uses a **Repository -> Factory -> Wrapper** pattern:
 
 ```
 Users
@@ -335,7 +335,7 @@ Dangerous operations are all protected:
 ## File Organization
 
 ```
-flexlibs2/code/                                   (106 .py files)
+flexicon/code/                                   (106 .py files)
 - FLExProject.py                <- User API entry point (~95 properties)
 - BaseOperations.py             <- Parent class for all operations
 - FLExInit.py                   <- Initialization
@@ -401,7 +401,7 @@ flexlibs2/code/                                   (106 .py files)
 ## TODOs in Code
 
 ### TODO #1: Linux Flatpak Support
-- **File:** `flexlibs2/code/FLExGlobals.py:103`
+- **File:** `flexicon/code/FLExGlobals.py:103`
 - **Issue:** Old path logic doesn't work with flatpak (FW Apr2024+ migration)
 - **Current:** Windows/macOS only
 - **Effort:** LOW - Detection + path fallback
@@ -409,7 +409,7 @@ flexlibs2/code/                                   (106 .py files)
 - **Status:** Still open since original audit
 
 ### TODO #2: Use FW Project Chooser
-- **File:** `flexlibs2/code/FLExLCM.py:59`
+- **File:** `flexicon/code/FLExLCM.py:59`
 - **Issue:** Using simple file listing, not FW native dialog
 - **Current:** Works but not user-friendly
 - **Effort:** LOW - Use existing dialog class
@@ -437,7 +437,7 @@ flexlibs2/code/                                   (106 .py files)
 
 ### User-Level (Safe)
 ```python
-from flexlibs2.code.FLExProject import FLExProject
+from flexicon.code.FLExProject import FLExProject
 
 project = FLExProject()
 project.OpenProject("MyProject", writeEnabled=True)
@@ -464,7 +464,7 @@ ws_handle = project.WSHandle('en')
 ts = TsStringUtils.MakeString("text", ws_handle)
 
 # Type casting
-from flexlibs2.code.lcm_casting import cast_to_concrete
+from flexicon.code.lcm_casting import cast_to_concrete
 concrete = cast_to_concrete(base_interface_obj)
 ```
 
@@ -501,6 +501,6 @@ The project successfully achieves its goal of making FLEx data accessible withou
 ---
 
 **Audit Date:** 2026-05-27 (refreshed from 2025-03-16)
-**Scope:** flexlibs2/code directory (106 Python files)
+**Scope:** flexicon/code directory (106 Python files)
 **Methodology:** Automated import extraction via `tools/extract_api_usage.py` + manual usage-pattern review
 **Confidence Level:** HIGH - All 569 import statements traced, all 60 Operations documented

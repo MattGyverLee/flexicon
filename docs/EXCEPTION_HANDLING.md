@@ -1,18 +1,18 @@
-# Exception Handling Guide for flexlibs2
+# Exception Handling Guide for flexicon
 
 ## Overview
 
-This guide documents proper exception handling in flexlibs2, which wraps FLEx's .NET LibLCM library in Python. Exception handling requires understanding both Python and .NET exception types, as FLEx operations throw .NET exceptions that must be caught explicitly.
+This guide documents proper exception handling in flexicon, which wraps FLEx's .NET LibLCM library in Python. Exception handling requires understanding both Python and .NET exception types, as FLEx operations throw .NET exceptions that must be caught explicitly.
 
-**Key Principle:** flexlibs2 is a bridge between Python and .NET. Always catch the actual .NET exception types that FLEx throws, not generic Python exception types.
+**Key Principle:** flexicon is a bridge between Python and .NET. Always catch the actual .NET exception types that FLEx throws, not generic Python exception types.
 
 ---
 
 ## Exception Hierarchy
 
-### Custom flexlibs2 Exceptions
+### Custom flexicon Exceptions
 
-flexlibs2 defines custom exception classes for API consistency and error context:
+flexicon defines custom exception classes for API consistency and error context:
 
 #### Project-Level Exceptions (FP_ProjectError)
 These are raised during project opening and initialization:
@@ -62,7 +62,7 @@ When converting LCM objects between types, several exceptions can occur:
 
 **Pattern: Safe Casting with Type Checking**
 ```python
-from flexlibs2 import FLExProject, FP_ParameterError
+from flexicon import FLExProject, FP_ParameterError
 import System
 
 def safe_cast_to_person(obj):
@@ -466,7 +466,7 @@ Write tests for exception handling to ensure errors are caught correctly.
 **Pattern: Exception Testing**
 ```python
 import pytest
-from flexlibs2 import FP_ParameterError
+from flexicon import FP_ParameterError
 
 def test_invalid_cast_raises_error():
     """Test that invalid casts are caught and converted."""
@@ -890,9 +890,9 @@ def test_safe_entry_modification_workflow():
 
 ## Import Reference
 
-### Import flexlibs2 Exceptions
+### Import flexicon Exceptions
 ```python
-from flexlibs2 import (
+from flexicon import (
     FP_Error,
     FP_ProjectError,
     FP_FileNotFoundError,
@@ -935,11 +935,11 @@ from SIL.LCModel import (
 
 ## Exception Handling Checklist
 
-When implementing exception handling in flexlibs2:
+When implementing exception handling in flexicon:
 
 - [ ] Identify what .NET exceptions the operation can throw
 - [ ] Catch specific exception types, not generic `Exception`
-- [ ] Convert .NET exceptions to flexlibs2 custom exceptions where appropriate
+- [ ] Convert .NET exceptions to flexicon custom exceptions where appropriate
 - [ ] Include original exception in error messages
 - [ ] Log exceptions for debugging (use `logger.debug()` with `exc_info=True`)
 - [ ] Document expected exceptions in docstrings
@@ -1020,4 +1020,4 @@ except System.InvalidCastException:
 
 **Document Version:** 1.0
 **Last Updated:** 2026-02-21
-**Author:** flexlibs2 Development Team
+**Author:** flexicon Development Team

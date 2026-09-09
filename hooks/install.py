@@ -9,7 +9,7 @@
 #
 
 """
-Install local git hooks for flexlibs2 development.
+Install local git hooks for flexicon development.
 
 These hooks only run on your machine -- they are never pushed to CI.
 

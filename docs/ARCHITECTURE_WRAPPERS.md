@@ -2,7 +2,7 @@
 
 ## Overview
 
-Wrapper classes are a fundamental pattern in FlexLibs2 for solving the two-layer LCM type system problem. They provide a transparent, user-friendly interface that hides the complexity of pythonnet casting while maximizing the functionality of LCM objects.
+Wrapper classes are a fundamental pattern in Flexicon for solving the two-layer LCM type system problem. They provide a transparent, user-friendly interface that hides the complexity of pythonnet casting while maximizing the functionality of LCM objects.
 
 This guide explains why wrapper classes exist, how they work, and how to create new ones for your domain.
 
@@ -70,7 +70,7 @@ Wrapper classes store both the base interface and the concrete type, then use `_
 
 ```python
 # With wrapping - what users experience:
-from flexlibs2.code.Grammar.PhonologicalRuleOperations import PhonologicalRuleOperations
+from flexicon.code.Grammar.PhonologicalRuleOperations import PhonologicalRuleOperations
 
 rules = phonRuleOps.GetAll()  # Returns wrapped objects
 
@@ -138,10 +138,10 @@ Much cleaner! The wrapper handles all the casting internally.
 
 ### Base Wrapper: LCMObjectWrapper
 
-FlexLibs2 provides `LCMObjectWrapper` as the base class for all wrappers:
+Flexicon provides `LCMObjectWrapper` as the base class for all wrappers:
 
 ```python
-from flexlibs2.code.Shared.wrapper_base import LCMObjectWrapper
+from flexicon.code.Shared.wrapper_base import LCMObjectWrapper
 
 class PhonologicalRule(LCMObjectWrapper):
     """
@@ -223,7 +223,7 @@ if rule.class_type == 'PhRegularRule':
 Here's a complete example of a domain-specific wrapper:
 
 ```python
-from flexlibs2.code.Shared.wrapper_base import LCMObjectWrapper
+from flexicon.code.Shared.wrapper_base import LCMObjectWrapper
 
 
 class PhonologicalRule(LCMObjectWrapper):
@@ -332,7 +332,7 @@ class PhonologicalRuleOperations(BaseOperations):
 Another example with multiple concrete types:
 
 ```python
-from flexlibs2.code.Shared.wrapper_base import LCMObjectWrapper
+from flexicon.code.Shared.wrapper_base import LCMObjectWrapper
 
 
 class MorphoSyntacticAnalysis(LCMObjectWrapper):
@@ -428,7 +428,7 @@ The second approach is:
 ### Example 1: Creating a Wrapper
 
 ```python
-from flexlibs2.code.Shared.wrapper_base import LCMObjectWrapper
+from flexicon.code.Shared.wrapper_base import LCMObjectWrapper
 from SIL.LCModel import IPhSegmentRule  # Type annotation only
 
 
@@ -449,7 +449,7 @@ def get_phonological_rule(rule_hvo: int) -> PhonologicalRule:
 ### Example 2: Accessing Properties Through Wrapper
 
 ```python
-from flexlibs2.code.Grammar.PhonologicalRuleOperations import PhonologicalRuleOperations
+from flexicon.code.Grammar.PhonologicalRuleOperations import PhonologicalRuleOperations
 
 ops = project.PhonologicalRules
 
@@ -612,7 +612,7 @@ Don't create wrappers for:
 When creating a wrapper for a new domain:
 
 ```python
-from flexlibs2.code.Shared.wrapper_base import LCMObjectWrapper
+from flexicon.code.Shared.wrapper_base import LCMObjectWrapper
 
 
 class DomainSpecificObject(LCMObjectWrapper):
@@ -658,7 +658,7 @@ class DomainSpecificObject(LCMObjectWrapper):
 
 ## See Also
 
-- `flexlibs2/code/Shared/wrapper_base.py` - Base wrapper implementation
-- `flexlibs2/code/lcm_casting.py` - Casting utilities used internally
+- `flexicon/code/Shared/wrapper_base.py` - Base wrapper implementation
+- `flexicon/code/lcm_casting.py` - Casting utilities used internally
 - `docs/ARCHITECTURE_COLLECTIONS.md` - Smart collections (often used with wrappers)
 - `CLAUDE.md` - Design philosophy and conventions

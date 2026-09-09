@@ -127,7 +127,7 @@ class AgentOperations(PossibilityItemOperations):
             guid (optional): GUID to assign to the new agent, as a
                 ``System.Guid`` or string. Use this when REPRODUCING an
                 agent from another project so it keeps its original
-                identity -- useful with the ``flexlibs2/sync/`` engine
+                identity -- useful with the ``flexicon/sync/`` engine
                 for preserving which agent evaluated an analysis across
                 a transfer or merge. None (the default) mints a fresh
                 GUID. Note that the 3 bootstrap agents

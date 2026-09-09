@@ -122,7 +122,7 @@ The code used the wrong accessor and got null values.
 
 ### Pre-Fix Behavior
 ```python
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
 FLExInitialize()
 project = FLExProject()
@@ -142,7 +142,7 @@ AttributeError: 'ILangProject' object has no attribute 'MorphTypesOA'
 
 ### Post-Fix Behavior
 ```python
-from flexlibs2 import FLExProject, FLExInitialize, FLExCleanup
+from flexicon import FLExProject, FLExInitialize, FLExCleanup
 
 FLExInitialize()
 project = FLExProject()

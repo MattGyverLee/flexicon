@@ -2,7 +2,7 @@
 #
 #   flexicon.code.Shared.string_utils
 #
-#   String utility functions for FlexLibs2.
+#   String utility functions for Flexicon.
 #
 #   FLEx/LCM uses '***' as a placeholder when multilingual string fields
 #   have no value set. This module provides utilities to normalize these

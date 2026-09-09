@@ -1,9 +1,9 @@
 # LCM Capabilities Audit - Complete Documentation
 
-A comprehensive audit of all Language and Culture Model (LCM) capabilities imported into flexlibs2, their exposure through the public API, and internal usage patterns.
+A comprehensive audit of all Language and Culture Model (LCM) capabilities imported into flexicon, their exposure through the public API, and internal usage patterns.
 
 **Audit Date:** 2026-05-27
-**Scope:** flexlibs2/code directory (106 Python files)
+**Scope:** flexicon/code directory (106 Python files)
 **Status:** REFRESHED — Ready for review
 
 > Refreshed from the original 2025-03-16 audit. Counts, namespace breakdowns, and per-domain inventories were regenerated from the live tree via `tools/extract_api_usage.py`. The deep narrative in `LCM_CAPABILITIES_AUDIT.md` retains the original prose with refreshed numbers and a TODO block for sections that warrant a fuller rewrite.
@@ -166,7 +166,7 @@ SIL.LCModel (233 classes)    ← FieldWorks internals (hidden)
 
 ## Quick Answers
 
-### "What does flexlibs2 import from LCM?"
+### "What does flexicon import from LCM?"
 - See **LCM_AUDIT_SUMMARY.md** - "What's Imported" section
 
 ### "Is LCM usage safe?"
@@ -203,7 +203,7 @@ SIL.LCModel (233 classes)    ← FieldWorks internals (hidden)
 All audit documents now live under `docs/audit/`:
 
 ```
-/d/Github/_Projects/_LEX/flexlibs2/
+/d/Github/_Projects/_LEX/flexicon/
 └── docs/audit/
     ├── README_LCM_AUDIT.md                    ← Overview (this file)
     ├── LCM_AUDIT_INDEX.md                     ← Navigation hub
@@ -251,13 +251,13 @@ See **LCM_AUDIT_SUMMARY.md** - "Recommendations Summary" for details.
 ## Methodology
 
 **Approach:**
-- Automated extraction via `tools/extract_api_usage.py --code-dir flexlibs2/code --all` regenerates the JSON corpus in `reports/audit/`
+- Automated extraction via `tools/extract_api_usage.py --code-dir flexicon/code --all` regenerates the JSON corpus in `reports/audit/`
 - File-by-file code tracing for usage patterns and TODO scan
 - Cross-reference validation
 - Risk categorization (manual)
 
 **Confidence Level:** HIGH
-**Coverage:** 100% of SIL imports in flexlibs2/code directory
+**Coverage:** 100% of SIL imports in flexicon/code directory
 
 ---
 

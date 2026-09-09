@@ -1,6 +1,6 @@
-# Using Phonological Rules in FlexLibs2
+# Using Phonological Rules in Flexicon
 
-This guide shows how to work with phonological rules in FlexLibs2, including the new wrapper classes that simplify access to rules without exposing ClassName or casting complexity.
+This guide shows how to work with phonological rules in Flexicon, including the new wrapper classes that simplify access to rules without exposing ClassName or casting complexity.
 
 ## Overview
 
@@ -11,14 +11,14 @@ Phonological rules in FieldWorks come in three concrete types:
 
 All three types share common properties (name, direction, input contexts) but have type-specific properties.
 
-FlexLibs2 provides a unified interface through the `PhonologicalRule` wrapper class, which transparently handles these differences so you don't need to check `ClassName` or cast objects manually.
+Flexicon provides a unified interface through the `PhonologicalRule` wrapper class, which transparently handles these differences so you don't need to check `ClassName` or cast objects manually.
 
 ## Before: The Old Way
 
 Without wrappers, you had to deal with casting and type checking:
 
 ```python
-from flexlibs2 import FLExProject, PhonologicalRuleOperations
+from flexicon import FLExProject, PhonologicalRuleOperations
 
 project = FLExProject()
 project.OpenProject("my project")
@@ -34,7 +34,7 @@ for rule in phonRuleOps.GetAll():
     # Check type to access type-specific properties
     if rule.ClassName == 'PhRegularRule':
         # Need to cast to access RightHandSidesOS
-        from flexlibs2.code.lcm_casting import cast_to_concrete
+        from flexicon.code.lcm_casting import cast_to_concrete
         concrete = cast_to_concrete(rule)
         for rhs in concrete.RightHandSidesOS:
             print(f"Output: {rhs}")
@@ -51,7 +51,7 @@ project.CloseProject()
 With wrappers, you access properties directly without casting:
 
 ```python
-from flexlibs2 import FLExProject, PhonologicalRuleOperations
+from flexicon import FLExProject, PhonologicalRuleOperations
 
 project = FLExProject()
 project.OpenProject("my project")

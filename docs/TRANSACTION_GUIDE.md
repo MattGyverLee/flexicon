@@ -1,4 +1,4 @@
-# Transaction Guide: Safe Rollback Operations in FlexLibs2
+# Transaction Guide: Safe Rollback Operations in Flexicon
 
 > **Accuracy note (2026-09-07, issue #243 T5b -- assertion only, not a
 > rewrite).** This guide's Phase 1 rollback narrative below (the
@@ -14,7 +14,7 @@
 
 ## Overview
 
-FlexLibs2 Phase 1 introduces safe transaction rollback via context managers. If an error occurs during a series of database operations, all changes can be automatically rolled back to the state before the transaction started.
+Flexicon Phase 1 introduces safe transaction rollback via context managers. If an error occurs during a series of database operations, all changes can be automatically rolled back to the state before the transaction started.
 
 This guide covers **Phase 1 (rollback-only)** behavior. Phase 2 (full undo stack integration with FLEx Ctrl+Z) is pending research and will be documented separately.
 
@@ -25,7 +25,7 @@ This guide covers **Phase 1 (rollback-only)** behavior. Phase 2 (full undo stack
 ### Basic Transaction
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("MyProject", writeEnabled=True)
@@ -77,7 +77,7 @@ Under `undoable=False`, save via `CloseProject()` instead.
 
 ### 1. Marking a Checkpoint
 
-When you enter a `with project.Transaction(...)` block, FlexLibs2 attempts to mark a rollback point in the LCM undo stack:
+When you enter a `with project.Transaction(...)` block, Flexicon attempts to mark a rollback point in the LCM undo stack:
 
 ```python
 with project.Transaction("operation"):  # <-- Mark set here
@@ -111,7 +111,7 @@ with project.Transaction("operation"):  # <-- Mark set here
 ### Catching Transaction Errors
 
 ```python
-from flexlibs2 import FLExProject, FP_TransactionError
+from flexicon import FLExProject, FP_TransactionError
 
 project = FLExProject()
 project.OpenProject("MyProject", writeEnabled=True)
@@ -289,8 +289,8 @@ Phase 2 requires research to verify the LCM APIs (BeginUndoTask, EndUndoTask, et
 
 Until Phase 2:
 - Transactions do NOT appear in FLEx's undo menu
-- Manual undo in FLEx will NOT affect flexlibs2 operations that happened within a `BeginNonUndoableTask()` session
-- FLEx Ctrl+Z is unavailable while using flexlibs2 (by design, to prevent user confusion)
+- Manual undo in FLEx will NOT affect flexicon operations that happened within a `BeginNonUndoableTask()` session
+- FLEx Ctrl+Z is unavailable while using flexicon (by design, to prevent user confusion)
 
 ---
 
@@ -298,7 +298,7 @@ Until Phase 2:
 
 ### "Transaction: no LCM rollback API found"
 
-**What it means:** FlexLibs2 could not locate the LCM APIs needed for rollback.
+**What it means:** Flexicon could not locate the LCM APIs needed for rollback.
 
 **Why it happens:** The LCM method names (Mark, RollbackToMark) may be named differently or unavailable in your FieldWorks version.
 
@@ -306,7 +306,7 @@ Until Phase 2:
 
 **Fix:**
 1. See `docs/internal/RESEARCH_NEEDED.md` for the list of APIs being researched
-2. Report this issue with your FW version to the FlexLibs2 team
+2. Report this issue with your FW version to the Flexicon team
 
 ### Project appears inconsistent after rollback failure
 
@@ -322,10 +322,10 @@ Until Phase 2:
 
 ### Transactions work, but changes aren't visible in FLEx
 
-This is **expected**. FlexLibs2 runs in `BeginNonUndoableTask()` mode, which means:
+This is **expected**. Flexicon runs in `BeginNonUndoableTask()` mode, which means:
 - Changes are **not added** to FLEx's undo stack
 - Changes are **persisted to the database** but not shown in FLEx's UI
-- You must **close the project** in FlexLibs2 and **reopen it in FLEx** to see the changes
+- You must **close the project** in Flexicon and **reopen it in FLEx** to see the changes
 
 ---
 
@@ -367,7 +367,7 @@ project.SaveChanges()  # Persist pending changes
 ## See Also
 
 - `docs/internal/RESEARCH_NEEDED.md` - Details on Phase 2 research and API verification
-- `flexlibs2.code.transaction._FLExTransaction` - Internal context manager class
+- `flexicon.code.transaction._FLExTransaction` - Internal context manager class
 - `FLExProject.OpenProject()` - How to open projects with write access
 - `FP_ReadOnlyError`, `FP_TransactionError` - Exceptions
 

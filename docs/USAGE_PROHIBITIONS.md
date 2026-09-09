@@ -1,7 +1,7 @@
 # Morphosyntactic Prohibitions Usage Guide
 
 **Version:** v2.3+
-**API:** flexlibs2.code.Grammar
+**API:** flexicon.code.Grammar
 **Classes:** AdhocProhibition, ProhibitionCollection
 **Base Class:** LCMObjectWrapper, SmartCollection
 
@@ -9,7 +9,7 @@
 
 ## Overview
 
-Ad hoc morphosyntactic prohibitions define restrictions on which morphemes can combine with each other in a language. FlexLibs2 v2.3 introduces a unified wrapper interface for working with ad hoc prohibitions, handling three concrete types transparently.
+Ad hoc morphosyntactic prohibitions define restrictions on which morphemes can combine with each other in a language. Flexicon v2.3 introduces a unified wrapper interface for working with ad hoc prohibitions, handling three concrete types transparently.
 
 ### What Are Prohibitions?
 
@@ -50,12 +50,12 @@ Users must:
 
 ## The Solution: AdhocProhibition Wrapper
 
-FlexLibs2 v2.3 provides `AdhocProhibition`, a transparent wrapper that handles all three types.
+Flexicon v2.3 provides `AdhocProhibition`, a transparent wrapper that handles all three types.
 
 ### Basic Usage
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("my project")
@@ -84,7 +84,7 @@ project.CloseProject()
 
 ## Prohibition Types
 
-All three types inherit from IMoAdhocProhib. FlexLibs2 provides convenience methods to check type:
+All three types inherit from IMoAdhocProhib. Flexicon provides convenience methods to check type:
 
 ### 1. Grammatical Feature Prohibitions (MoAdhocProhibGr)
 

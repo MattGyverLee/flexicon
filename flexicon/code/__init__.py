@@ -1,4 +1,4 @@
-# FlexLibs2 Code Module
+# Flexicon Code Module
 #
 # Exports the PythonicWrapper for suffix-free property access, and
 # `cast_to_concrete` -- the public escape hatch for polymorphic LCM

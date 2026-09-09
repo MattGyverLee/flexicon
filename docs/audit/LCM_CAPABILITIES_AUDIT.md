@@ -1,9 +1,9 @@
-# FlexLibs2 LCM Capabilities Audit
+# Flexicon LCM Capabilities Audit
 
 **Audit Date:** 2026-05-27 (refreshed from 2025-03-16)
-**Scope:** 106 Python files in `flexlibs2/code/` (60 Operations classes + BaseOperations parent)
+**Scope:** 106 Python files in `flexicon/code/` (60 Operations classes + BaseOperations parent)
 **Status:** REFRESHED -- Ready for review
-**Methodology:** Automated extraction via `tools/extract_api_usage.py --code-dir flexlibs2/code --all` (JSON outputs in `reports/audit/`) supplemented by manual usage-pattern review.
+**Methodology:** Automated extraction via `tools/extract_api_usage.py --code-dir flexicon/code --all` (JSON outputs in `reports/audit/`) supplemented by manual usage-pattern review.
 
 > ## TODO -- Sections requiring fuller narrative rewrite
 >
@@ -739,7 +739,7 @@ Use sparingly and document your usage!
 
 ## Conclusion
 
-The FlexLibs2 architecture successfully **abstracts away LCM complexity** while maintaining full functionality through a clean, user-friendly API. The 90+ imported LCM classes are strategically hidden behind 57 Operations classes that provide safe, validated access to FieldWorks data.
+The Flexicon architecture successfully **abstracts away LCM complexity** while maintaining full functionality through a clean, user-friendly API. The 90+ imported LCM classes are strategically hidden behind 57 Operations classes that provide safe, validated access to FieldWorks data.
 
 **Strengths:**
 - Consistent wrapper pattern across all domains

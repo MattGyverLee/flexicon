@@ -2939,7 +2939,7 @@ class LexEntryOperations(BaseOperations):
             - **Alternate form deduplication** (identical form + morph type)
             - **MSA deduplication** (equivalent grammatical analyses)
 
-        FlexLibs2 Adds (Optional):
+        Flexicon Adds (Optional):
             - Sense deduplication (identical gloss + definition)
             - Pronunciation deduplication (identical form per WS)
             - Allomorph deduplication (identical form + morph type)
@@ -2976,7 +2976,7 @@ class LexEntryOperations(BaseOperations):
         Notes:
             - This operation is IRREVERSIBLE (victim is deleted)
             - Delegates all core merge logic to LibLCM's battle-tested ILexEntry.MergeObject()
-            - FlexLibs2 adds optional deduplication layer for senses/pronunciations/allomorphs
+            - Flexicon adds optional deduplication layer for senses/pronunciations/allomorphs
             - Based on FLEx LexEntry.MergeObject (OverridesLing_Lex.cs:3432-3548)
 
         See Also:
@@ -3006,7 +3006,7 @@ class LexEntryOperations(BaseOperations):
             logger.info(f"Merging entry (HVO: {victim.Hvo}) into survivor (HVO: {survivor.Hvo})")
             survivor.MergeObject(victim, fLoseNoStringData)
 
-            # Optional deduplication layer (NEW value added by FlexLibs2)
+            # Optional deduplication layer (NEW value added by Flexicon)
             if auto_deduplicate:
                 logger.debug(f"Running auto-deduplication on merged entry (HVO: {survivor.Hvo})")
                 self.__DeduplicateSensesInEntry(survivor)

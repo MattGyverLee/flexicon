@@ -1,14 +1,14 @@
-# FlexLibs2 Architecture Overview
+# Flexicon Architecture Overview
 
 ## Introduction
 
-FlexLibs2 is built on a foundation of patterns and principles designed to make accessing FieldWorks Language Explorer (FLEx) data safe, intuitive, and powerful. This document provides a high-level overview of the architecture and guides you to detailed documentation for each component.
+Flexicon is built on a foundation of patterns and principles designed to make accessing FieldWorks Language Explorer (FLEx) data safe, intuitive, and powerful. This document provides a high-level overview of the architecture and guides you to detailed documentation for each component.
 
 ---
 
 ## Core Architecture: Wrapper + Collection Pattern
 
-The heart of FlexLibs2 v2.2+ architecture is a two-part pattern that solves the complexity of the underlying LCM (Language and Culture Model) API:
+The heart of Flexicon v2.2+ architecture is a two-part pattern that solves the complexity of the underlying LCM (Language and Culture Model) API:
 
 ### 1. Wrapper Classes
 
@@ -115,7 +115,7 @@ voicing = rules.filter(name_contains='voicing')  # Domain-specific filter
 ### Wrapper Classes
 
 **Files:**
-- `flexlibs2/code/Shared/wrapper_base.py` - Base wrapper implementation
+- `flexicon/code/Shared/wrapper_base.py` - Base wrapper implementation
 - Domain-specific wrappers in respective modules
 
 **Responsibility:**
@@ -134,7 +134,7 @@ voicing = rules.filter(name_contains='voicing')  # Domain-specific filter
 ### Smart Collections
 
 **Files:**
-- `flexlibs2/code/Shared/smart_collection.py` - Base collection class
+- `flexicon/code/Shared/smart_collection.py` - Base collection class
 - Domain-specific collections in respective modules
 
 **Responsibility:**
@@ -153,7 +153,7 @@ voicing = rules.filter(name_contains='voicing')  # Domain-specific filter
 ### Operations Classes
 
 **Files:**
-- `flexlibs2/code/[Domain]/[Type]Operations.py`
+- `flexicon/code/[Domain]/[Type]Operations.py`
 
 **Responsibility:**
 - Implement CRUD operations (Get, GetAll, Create, Update, Delete)
@@ -179,7 +179,7 @@ class MyOperations(BaseOperations):
 ### LCM Casting Layer
 
 **Files:**
-- `flexlibs2/code/lcm_casting.py`
+- `flexicon/code/lcm_casting.py`
 
 **Responsibility:**
 - `cast_to_concrete()` - Convert base interface to concrete type
@@ -325,7 +325,7 @@ v2.2 is designed for forward compatibility:
 ### Pattern 1: Simple Wrapper for Multi-Type Domain
 
 ```python
-from flexlibs2.code.Shared.wrapper_base import LCMObjectWrapper
+from flexicon.code.Shared.wrapper_base import LCMObjectWrapper
 
 class DomainObject(LCMObjectWrapper):
     """Wrapper for base interface with multiple concrete types."""
@@ -346,7 +346,7 @@ class DomainObject(LCMObjectWrapper):
 ### Pattern 2: Collection with Domain Filtering
 
 ```python
-from flexlibs2.code.Shared.smart_collection import SmartCollection
+from flexicon.code.Shared.smart_collection import SmartCollection
 
 class DomainCollection(SmartCollection):
     """Collection with domain-specific filtering."""
@@ -389,7 +389,7 @@ class DomainOperations(BaseOperations):
 ## File Organization
 
 ```
-flexlibs2/code/
+flexicon/code/
 ├── Shared/
 │   ├── wrapper_base.py           # LCMObjectWrapper base class
 │   ├── smart_collection.py       # SmartCollection base class

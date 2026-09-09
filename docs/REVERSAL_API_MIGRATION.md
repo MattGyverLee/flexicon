@@ -8,13 +8,13 @@ The new API splits index-level and entry-level operations into separate classes,
 - Clearer separation of concerns
 - Better testability
 - Explicit operations instead of bundled methods
-- Better alignment with FlexLibs2 architecture
+- Better alignment with Flexicon architecture
 - Improved discoverability of available operations
 
 ## Migration Timeline
 
-- **flexlibs2 v2.5+**: Deprecation warnings active, migration guide available
-- **flexlibs2 v3.0**: Bundled API methods removed (requires user migration)
+- **flexicon v2.5+**: Deprecation warnings active, migration guide available
+- **flexicon v3.0**: Bundled API methods removed (requires user migration)
 
 ## Quick Reference: Migration Table
 
@@ -47,7 +47,7 @@ The new API splits index-level and entry-level operations into separate classes,
 
 **Before (Deprecated API):**
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("MyProject", writeEnabled=True)
@@ -69,7 +69,7 @@ finally:
 
 **After (New API):**
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("MyProject", writeEnabled=True)
@@ -274,6 +274,6 @@ index = project.ReversalIndexes.FindByWritingSystem("en")
 For questions or migration issues, open an issue on GitHub with `[REVERSAL-MIGRATION]` tag.
 
 See also:
-- [FlexLibs2 API Documentation](../README.md)
+- [Flexicon API Documentation](../README.md)
 - [ReversalIndexOperations API Reference](../docs/API_REFERENCE.md#reversalindexoperations)
 - [ReversalIndexEntryOperations API Reference](../docs/API_REFERENCE.md#reversalindexentryoperations)

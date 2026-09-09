@@ -2,7 +2,7 @@
 
 ## Overview
 
-FlexLibs2 wraps six SIL/FieldWorks catalogs. Each catalog populates a
+Flexicon wraps six SIL/FieldWorks catalogs. Each catalog populates a
 distinct LCM domain (POS, phonological features, inflection features,
 semantic domains, anthropology items, IPA phonemes), and each one
 follows a different convention for the value written to the LCM
@@ -24,8 +24,8 @@ catalog entry.
 | GOLDEtic (POS)          | `POSOperations`                 | `"GOLD:"` prefix on `entry.id`                                             | `"GOLD:Adjective"`                     |
 | PhonFeats               | `PhonFeatureOperations`         | bare `entry.id` (no prefix)                                                | `"fPAConsonantal"`                     |
 | EticGlossList           | `InflectionFeatureOperations`   | bare `entry.id` (no prefix)                                                | `"fDeg"`                               |
-| SemDom                  | `SemanticDomainOperations`      | LCM-native (`XmlList.ImportList` writes whatever it writes)                | (no flexlibs2 policy applied)          |
-| OCM                     | `AnthropologyOperations`        | LCM-native (`XmlList.ImportList` writes whatever it writes)                | (no flexlibs2 policy applied)          |
+| SemDom                  | `SemanticDomainOperations`      | LCM-native (`XmlList.ImportList` writes whatever it writes)                | (no flexicon policy applied)          |
+| OCM                     | `AnthropologyOperations`        | LCM-native (`XmlList.ImportList` writes whatever it writes)                | (no flexicon policy applied)          |
 | BasicIPAInfo            | `PhonemeOperations`             | synthetic `"BasicIPA:"` prefix used for in-memory dedup ONLY               | `"BasicIPA:u0061"` (never written)     |
 
 ---
@@ -42,7 +42,7 @@ speech imported from `GOLDEtic.xml`. The `GOLD:` prefix identifies the
 catalog source (the GOLD ontology, used by SIL) so that downstream tools
 can disambiguate which catalog the id belongs to.
 
-FlexLibs2 follows the FW convention: `POSOperations` sets
+Flexicon follows the FW convention: `POSOperations` sets
 `CATALOG_PREFIX_WRITE = "GOLD"`, and `CatalogBackedMixin._create_from_entry`
 writes `CatalogSourceId = f"{CATALOG_PREFIX_WRITE}:{entry.id}"`.
 
@@ -54,7 +54,7 @@ the etic gloss-list catalogs. `PhonFeatsEticGlossList.xml` items land in
 `EticGlossList.xml` items land in `MsFeatureSystemOA` similarly. Whether
 FW omits the prefix because the catalog id is unambiguous on its own
 (the `f`/`v`/`g` prefixes in the entry ids already encode the category)
-or for historical reasons is irrelevant to flexlibs2: we follow the FW
+or for historical reasons is irrelevant to flexicon: we follow the FW
 convention exactly so round-trips work.
 
 `PhonFeatureOperations` and `InflectionFeatureOperations` both set
@@ -66,7 +66,7 @@ convention exactly so round-trips work.
 `SemDom.xml` (semantic domains) and `OCM.xml` (anthropology items) ship
 in LCM's own `<LangProject><...List><CmPossibilityList>...` XML shape
 and are consumed by `SIL.LCModel.Application.ApplicationServices.XmlList.ImportList`
-directly. FlexLibs2 does NOT parse these catalogs and does NOT set
+directly. Flexicon does NOT parse these catalogs and does NOT set
 `CatalogSourceId` for the imported items; whatever LCM writes is what
 ends up in the field. (Empirically, LCM leaves the field empty for most
 items in these two catalogs.)
@@ -75,7 +75,7 @@ items in these two catalogs.)
 `_LCMNativeCatalogImportMixin` (a separate mixin from
 `CatalogBackedMixin`). The `CATALOG_PREFIX_WRITE` attribute does not
 apply to these classes because no entry-by-entry write happens in
-flexlibs2.
+flexicon.
 
 ### 4. Synthetic prefix for BasicIPAInfo
 
@@ -106,17 +106,17 @@ OCM).
 
 | Class                          | File                                                                | Lines        | `CATALOG_PREFIX_WRITE` |
 | ------------------------------ | ------------------------------------------------------------------- | ------------ | ---------------------- |
-| `POSOperations`                | `flexlibs2/code/Grammar/POSOperations.py`                           | 76-80        | `"GOLD"`               |
-| `PhonFeatureOperations`        | `flexlibs2/code/Grammar/PhonFeatureOperations.py`                   | 119-122      | `None`                 |
-| `InflectionFeatureOperations`  | `flexlibs2/code/Grammar/InflectionFeatureOperations.py`             | 122-125      | `None`                 |
-| `SemanticDomainOperations`     | `flexlibs2/code/Lexicon/SemanticDomainOperations.py`                | (uses `_LCMNativeCatalogImportMixin`; no `CATALOG_PREFIX_WRITE`) | n/a |
-| `AnthropologyOperations`       | `flexlibs2/code/Notebook/AnthropologyOperations.py`                 | (uses `_LCMNativeCatalogImportMixin`; no `CATALOG_PREFIX_WRITE`) | n/a |
-| `PhonemeOperations`            | `flexlibs2/code/Grammar/PhonemeOperations.py`                       | ~1641-1645   | n/a (synthetic in-memory) |
+| `POSOperations`                | `flexicon/code/Grammar/POSOperations.py`                           | 76-80        | `"GOLD"`               |
+| `PhonFeatureOperations`        | `flexicon/code/Grammar/PhonFeatureOperations.py`                   | 119-122      | `None`                 |
+| `InflectionFeatureOperations`  | `flexicon/code/Grammar/InflectionFeatureOperations.py`             | 122-125      | `None`                 |
+| `SemanticDomainOperations`     | `flexicon/code/Lexicon/SemanticDomainOperations.py`                | (uses `_LCMNativeCatalogImportMixin`; no `CATALOG_PREFIX_WRITE`) | n/a |
+| `AnthropologyOperations`       | `flexicon/code/Notebook/AnthropologyOperations.py`                 | (uses `_LCMNativeCatalogImportMixin`; no `CATALOG_PREFIX_WRITE`) | n/a |
+| `PhonemeOperations`            | `flexicon/code/Grammar/PhonemeOperations.py`                       | ~1641-1645   | n/a (synthetic in-memory) |
 
 ### Where the prefix is applied
 
 The bare-vs-prefixed write in `CatalogBackedMixin._create_from_entry`
-(file `flexlibs2/code/Shared/catalog_backed.py`, lines ~501-505):
+(file `flexicon/code/Shared/catalog_backed.py`, lines ~501-505):
 
 ```python
 if self.CATALOG_PREFIX_WRITE is None:
@@ -126,7 +126,7 @@ else:
 ```
 
 The synthetic BasicIPA tag in `PhonemeOperations.ImportCatalog`
-(file `flexlibs2/code/Grammar/PhonemeOperations.py`, lines ~1641-1645):
+(file `flexicon/code/Grammar/PhonemeOperations.py`, lines ~1641-1645):
 
 ```python
 # Synthetic catalog tag (BasicIPAInfo has no real GUIDs).
@@ -138,9 +138,9 @@ synthetic_tag = (
 
 The LCM-native catalogs (SemDom / OCM) write `CatalogSourceId` via
 `SIL.LCModel.Application.ApplicationServices.XmlList.ImportList`
-internally; the call site in flexlibs2 lives in
+internally; the call site in flexicon lives in
 `_LCMNativeCatalogImportMixin._import_lcm_native_catalog` in
-`flexlibs2/code/Shared/catalog_backed.py`. flexlibs2 does not set the
+`flexicon/code/Shared/catalog_backed.py`. flexicon does not set the
 field directly for these catalogs.
 
 ---
@@ -174,7 +174,7 @@ This means:
    catalog) or `None`.
 3. If LCM-native: subclass `_LCMNativeCatalogImportMixin` and set
    `LCM_LIST_FIELD_NAME` + `LANG_PROJECT_LIST_ATTR`. `CatalogSourceId`
-   policy is determined by LCM, not by flexlibs2.
+   policy is determined by LCM, not by flexicon.
 4. If the catalog has no per-entry GUIDs and the LCM target has no
    `CatalogSourceId` field (the BasicIPAInfo shape), follow the
    refuse-on-non-empty pattern and use a synthetic prefix only for
@@ -189,8 +189,8 @@ This means:
 - `docs/ARCHITECTURE_WRAPPERS.md` -- wrapper-class pattern used by some
   of these Operations classes.
 - `docs/ARCHITECTURE_COLLECTIONS.md` -- smart-collection pattern.
-- `flexlibs2/code/Shared/catalog.py` -- catalog XML parsing helpers and
+- `flexicon/code/Shared/catalog.py` -- catalog XML parsing helpers and
   `find_catalog_entry` (which is prefix-aware).
-- `flexlibs2/code/Shared/catalog_backed.py` -- both `CatalogBackedMixin`
+- `flexicon/code/Shared/catalog_backed.py` -- both `CatalogBackedMixin`
   (etic catalogs) and `_LCMNativeCatalogImportMixin` (LCM-native
   catalogs).

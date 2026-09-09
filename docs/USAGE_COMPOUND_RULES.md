@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers using the **CompoundRule** wrapper and **CompoundRuleCollection** smart collection in FlexLibs2 v2.3. These wrappers transparently handle compound rules without exposing ClassName or casting complexity.
+This guide covers using the **CompoundRule** wrapper and **CompoundRuleCollection** smart collection in Flexicon v2.3. These wrappers transparently handle compound rules without exposing ClassName or casting complexity.
 
 ## The Problem: Type Complexity Without Wrappers
 
@@ -41,7 +41,7 @@ for rule in morphRuleOps.GetAll():
 
 ## Compound Rule Types
 
-FlexLibs2 supports two concrete compound rule types:
+Flexicon supports two concrete compound rule types:
 
 | Type | Class Name | Head Location |
 |------|-----------|---------------|
@@ -62,7 +62,7 @@ Both types share common properties:
 All compound rule types expose these common properties:
 
 ```python
-from flexlibs2.code.Grammar.compound_rule import CompoundRule
+from flexicon.code.Grammar.compound_rule import CompoundRule
 
 # Get a rule from operations
 rule = morphRuleOps.GetAll()[0]
@@ -114,7 +114,7 @@ concrete = wrapped.concrete
 `GetAll()` returns a `CompoundRuleCollection` that manages compound rules while showing type diversity.
 
 ```python
-from flexlibs2.code.Grammar.compound_rule_collection import CompoundRuleCollection
+from flexicon.code.Grammar.compound_rule_collection import CompoundRuleCollection
 
 # GetAll returns CompoundRuleCollection
 rules = morphRuleOps.GetAll()
@@ -235,8 +235,8 @@ rules.clear()
 ## Complete Example: Analyzing Compound Rules
 
 ```python
-from flexlibs2 import FLExProject
-from flexlibs2.code.Grammar.compound_rule import CompoundRule
+from flexicon import FLExProject
+from flexicon.code.Grammar.compound_rule import CompoundRule
 
 # Open project
 project = FLExProject('ProjectName')
@@ -299,7 +299,7 @@ for rule in morphRuleOps.GetAll():
 
 ```python
 # New pattern - clean and unified
-from flexlibs2.code.Grammar.compound_rule import CompoundRule
+from flexicon.code.Grammar.compound_rule import CompoundRule
 
 rules = morphRuleOps.GetAll()
 for rule in rules:
@@ -391,4 +391,4 @@ This implementation follows the **Phase 2 (Phonological Rules)** pattern:
 
 - [API Design Philosophy](API_DESIGN_PHILOSOPHY.md) - Design principles
 - [Phonological Rules Wrappers](USAGE_PHONOLOGICAL_RULES.md) - Similar pattern for phonology
-- [FlexLibs2 Architecture](README.rst) - Overall system design
+- [Flexicon Architecture](README.rst) - Overall system design

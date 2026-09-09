@@ -71,7 +71,7 @@ add fields from inside the test.
 ## What the wrapper enforces
 
 `CustomFieldOperations.CreateField` (in
-`flexlibs2/code/System/CustomFieldOperations.py`) checks
+`flexicon/code/System/CustomFieldOperations.py`) checks
 `ActionHandlerAccessor.CurrentDepth > 0` before doing anything. In Phase 1
 mode this is always true, so the call always raises:
 
@@ -114,4 +114,4 @@ mode background.
 - Issue #21 — corruption-on-reopen postmortem
 - `docs/TRANSACTION_GUIDE.md` — Phase 1 vs Phase 2 transaction modes
 - `docs/internal/RESEARCH_NEEDED.md` — open questions on LCM transaction semantics
-- `flexlibs2/code/System/CustomFieldOperations.py` — the guard
+- `flexicon/code/System/CustomFieldOperations.py` — the guard

@@ -1,6 +1,6 @@
 # Template: Python Module Header
 
-Use this when creating a new Python source file under `flexlibs2/code/`. Place at the very top, before imports.
+Use this when creating a new Python source file under `flexicon/code/`. Place at the very top, before imports.
 
 ## Format
 

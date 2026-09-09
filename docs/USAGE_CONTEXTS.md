@@ -1,6 +1,6 @@
-# Phonological Contexts in FlexLibs2
+# Phonological Contexts in Flexicon
 
-Phonological contexts describe the environments where phonological rules apply. FlexLibs2 provides wrapper classes and smart collections to work with contexts transparently across their multiple concrete types.
+Phonological contexts describe the environments where phonological rules apply. Flexicon provides wrapper classes and smart collections to work with contexts transparently across their multiple concrete types.
 
 ## Context Types
 
@@ -21,7 +21,7 @@ All types share a common base interface, but have different properties.
 Without wrappers, working with contexts required type checking and casting:
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject('TestProject')
 phonRuleOps = project.grammar.phonological_rules
@@ -57,7 +57,7 @@ for context in contexts:
 With the `PhonologicalContext` wrapper and `ContextCollection`, work is simpler and more intuitive:
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject('TestProject')
 phonRuleOps = project.grammar.phonological_rules
@@ -305,8 +305,8 @@ first_three = contexts[0:3]  # Returns new ContextCollection
 ### Collection Modification
 
 ```python
-from flexlibs2.code.System.context_collection import ContextCollection
-from flexlibs2.code.System.phonological_context import PhonologicalContext
+from flexicon.code.System.context_collection import ContextCollection
+from flexicon.code.System.phonological_context import PhonologicalContext
 
 contexts = ContextCollection()
 
@@ -404,7 +404,7 @@ for context in rule.input_contexts:
 
 ### PhonologicalContext Class
 
-Located in: `flexlibs2.code.System.phonological_context`
+Located in: `flexicon.code.System.phonological_context`
 
 ```python
 class PhonologicalContext(LCMObjectWrapper):
@@ -439,7 +439,7 @@ class PhonologicalContext(LCMObjectWrapper):
 
 ### ContextCollection Class
 
-Located in: `flexlibs2.code.System.context_collection`
+Located in: `flexicon.code.System.context_collection`
 
 ```python
 class ContextCollection(SmartCollection):

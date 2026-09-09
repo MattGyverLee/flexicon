@@ -9,8 +9,8 @@ The `TextOperations` class provides complete CRUD operations for FLEx Text objec
 ## Quick Start
 
 ```python
-from flexlibs2 import FLExProject
-from flexlibs2.code.TextOperations import TextOperations
+from flexicon import FLExProject
+from flexicon.code.TextOperations import TextOperations
 
 # Open project with write access
 project = FLExProject()
@@ -198,8 +198,8 @@ text_ops.SetGenre(text, None)
 ## Complete Example
 
 ```python
-from flexlibs2 import FLExProject
-from flexlibs2.code.TextOperations import TextOperations
+from flexicon import FLExProject
+from flexicon.code.TextOperations import TextOperations
 
 # Initialize
 project = FLExProject()

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Smart collections are a fundamental pattern in FlexLibs2 for presenting multiple concrete types in a unified way. They allow users to work with heterogeneous collections (objects of different types) naturally while still seeing type diversity and having the ability to filter by type.
+Smart collections are a fundamental pattern in Flexicon for presenting multiple concrete types in a unified way. They allow users to work with heterogeneous collections (objects of different types) naturally while still seeing type diversity and having the ability to filter by type.
 
 This guide explains why smart collections exist, how they work, and how to create new ones for your domain.
 
@@ -140,10 +140,10 @@ Much more user-friendly!
 
 ### Base SmartCollection
 
-FlexLibs2 provides `SmartCollection` as the base class:
+Flexicon provides `SmartCollection` as the base class:
 
 ```python
-from flexlibs2.code.Shared.smart_collection import SmartCollection
+from flexicon.code.Shared.smart_collection import SmartCollection
 
 
 class MyCollection(SmartCollection):
@@ -257,7 +257,7 @@ regular_voicing = rules.by_type('PhRegularRule').filter(name_contains='voicing')
 Here's a complete example:
 
 ```python
-from flexlibs2.code.Shared.smart_collection import SmartCollection
+from flexicon.code.Shared.smart_collection import SmartCollection
 
 
 class PhonologicalRuleCollection(SmartCollection):
@@ -405,7 +405,7 @@ class PhonologicalRuleCollection(SmartCollection):
 Another example for a different domain:
 
 ```python
-from flexlibs2.code.Shared.smart_collection import SmartCollection
+from flexicon.code.Shared.smart_collection import SmartCollection
 
 
 class LexicalEntryCollection(SmartCollection):
@@ -479,8 +479,8 @@ class LexicalEntryCollection(SmartCollection):
 In an operations class:
 
 ```python
-from flexlibs2.code.Grammar.phonological_rule_collection import PhonologicalRuleCollection
-from flexlibs2.code.Grammar.PhonologicalRule import PhonologicalRule
+from flexicon.code.Grammar.phonological_rule_collection import PhonologicalRuleCollection
+from flexicon.code.Grammar.PhonologicalRule import PhonologicalRule
 
 
 class PhonologicalRuleOperations(BaseOperations):
@@ -593,7 +593,7 @@ print(every_other)  # Type breakdown of filtered set
 ### Example 6: Building a Collection Manually
 
 ```python
-from flexlibs2.code.Grammar.phonological_rule_collection import PhonologicalRuleCollection
+from flexicon.code.Grammar.phonological_rule_collection import PhonologicalRuleCollection
 
 # Create empty collection
 collection = PhonologicalRuleCollection()
@@ -785,7 +785,7 @@ Don't create collections for:
 When creating a collection for a new domain:
 
 ```python
-from flexlibs2.code.Shared.smart_collection import SmartCollection
+from flexicon.code.Shared.smart_collection import SmartCollection
 
 
 class DomainObjectCollection(SmartCollection):
@@ -828,6 +828,6 @@ class DomainObjectCollection(SmartCollection):
 
 ## See Also
 
-- `flexlibs2/code/Shared/smart_collection.py` - SmartCollection base class
+- `flexicon/code/Shared/smart_collection.py` - SmartCollection base class
 - `docs/ARCHITECTURE_WRAPPERS.md` - Wrapper classes (often used with collections)
 - `CLAUDE.md` - Design philosophy and conventions

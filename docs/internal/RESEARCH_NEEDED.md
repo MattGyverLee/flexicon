@@ -37,7 +37,7 @@ For this to work, the underlying LCM APIs must:
 
 **What to test:**
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 project = FLExProject()
 project.OpenProject("TestProject", writeEnabled=True)
 
@@ -204,14 +204,14 @@ project.SaveChanges()  # Ensure it's persisted
 
 1. **FieldWorks 9+** installed and licensed
 2. **Test project** available (create a new one or use existing)
-3. **FlexLibs2** installed or in development mode
+3. **flexicon** installed or in development mode
 4. **Python** with pythonnet (Python.NET) available
 
 ### Step 1: Set Up Test Environment
 
 ```bash
-cd flexlibs2
-python -c "from flexlibs2 import FLExProject; print('FlexLibs2 OK')"
+cd flexicon
+python -c "from flexicon import FLExProject; print('flexicon OK')"
 ```
 
 ### Step 2: Create Research Script
@@ -226,7 +226,7 @@ Create a file `test_phase2_research.py`:
 # Research script to verify Phase 2 LCM APIs
 #
 
-from flexlibs2 import FLExProject, FLExInitialize
+from flexicon import FLExProject, FLExInitialize
 
 FLExInitialize()
 project = FLExProject()
@@ -272,7 +272,7 @@ Create an issue or PR with:
 ### If All Tests Pass (All YES)
 
 ✅ Phase 2 implementation can begin:
-1. Create `flexlibs2/code/undoable_operation.py`
+1. Create `flexicon/code/undoable_operation.py`
 2. Add `undoable` parameter to `OpenProject()`
 3. Add `UndoableOperation()`, `Undo()`, `Redo()` methods
 4. Update documentation

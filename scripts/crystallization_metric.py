@@ -64,11 +64,26 @@ def _pct(n: int, d: int) -> str:
 
 def scan_operations_classes(root: Path) -> dict:
     """
-    Scan flexlibs2/code for *Operations.py files (excluding BaseOperations).
+    Scan flexicon/code for *Operations.py files (excluding BaseOperations).
     Returns dict: class_name -> {"path": posix_str, "methods": set}
+
+    Raises FileNotFoundError if code_dir is missing, or exists but yields no
+    *Operations.py files. Path.rglob() on a missing/wrong directory returns
+    no matches WITHOUT raising, which previously let this script (and
+    live_coverage_metric.py) silently report zero Operations classes for
+    months after the flexlibs2 -> flexicon rename went unnoticed here (see
+    the issue #240 audit). Do not let that degrade silently again.
     """
     classes = {}
-    code_dir = root / "flexlibs2" / "code"
+    code_dir = root / "flexicon" / "code"
+    if not code_dir.is_dir():
+        raise FileNotFoundError(
+            f"scan_operations_classes: {code_dir} does not exist. "
+            "Path.rglob() on a missing directory returns no matches without "
+            "raising, so this would otherwise silently report zero "
+            "Operations classes instead of erroring. Check for a package "
+            "rename, or pass the correct repo root."
+        )
     for path in code_dir.rglob("*Operations.py"):
         if path.name == "BaseOperations.py":
             continue
@@ -83,6 +98,14 @@ def scan_operations_classes(root: Path) -> dict:
             "path": path.relative_to(root).as_posix(),
             "methods": methods,
         }
+    if not classes:
+        raise FileNotFoundError(
+            f"scan_operations_classes: {code_dir} exists but no "
+            "*Operations.py files were found beneath it. This scan should "
+            "discover ~80+ Operations classes; zero means the directory is "
+            "wrong or empty -- treat this as a hard failure, not an empty "
+            "report."
+        )
     return classes
 
 
@@ -231,9 +254,19 @@ def _parse_git_numstat(output: str) -> list:
 
 def _git_churn(root: Path, since_days: int) -> tuple:
     """
-    Run git log --numstat for the past `since_days` days over flexlibs2/code/.
+    Run git log --numstat for the past `since_days` days over flexicon/code/.
     Returns (records, error_msg).  error_msg is None on success.
     Tolerates missing git gracefully.
+
+    Only the current path (flexicon/code/) is scanned, not the pre-rename
+    flexlibs2/code/ path. `git log --follow` does not work for directory
+    pathspecs, and passing both pathspecs would double-count the rename
+    commit itself (old-path deletions + new-path additions showing as churn
+    on a commit that changed no actual code). Since these are short rolling
+    windows (30d/90d) evaluated relative to "now", any gap this introduces
+    is transient: it self-heals once 90 days have elapsed since the rename
+    (2026-07-04, commit 9b82ffaf), after which every commit in the window
+    is naturally under flexicon/code/ anyway.
     """
     since = f"{since_days} days ago"
     cmd = [
@@ -242,7 +275,7 @@ def _git_churn(root: Path, since_days: int) -> tuple:
         f"--since={since}",
         "--format=COMMIT %H %ai",
         "--",
-        "flexlibs2/code/",
+        "flexicon/code/",
     ]
     try:
         result = subprocess.run(
@@ -272,7 +305,7 @@ def compute_churn(root: Path, classes: dict) -> dict:
                   r["date"] >= (datetime.date.today() - datetime.timedelta(days=30))]
 
     # Build stem -> list of records mappings
-    # An Operations file path looks like flexlibs2/code/.../FooOperations.py
+    # An Operations file path looks like flexicon/code/.../FooOperations.py
     stem_records_90: dict = defaultdict(list)
     stem_records_30: dict = defaultdict(list)
     for r in records_90:
@@ -548,7 +581,7 @@ def render_report(
     lines += [
         "## Stability axis (churn)",
         "",
-        "Lines added + removed across `flexlibs2/code/` per Operations class "
+        "Lines added + removed across `flexicon/code/` per Operations class "
         "over the last 90 days.  Classes that are stabilized AND have non-zero "
         "30-day churn are flagged as **[MOVING]** -- declared crystallized but "
         "still changing.",
@@ -674,9 +707,9 @@ def render_report(
         "```",
         "",
         "Inputs:",
-        "- `flexlibs2/code/**/*Operations.py` -- Operations class inventory",
+        "- `flexicon/code/**/*Operations.py` -- Operations class inventory",
         "- `tests/live_status.json` -- per-test outcomes from the most recent live pytest run",
-        "- `git log --numstat` -- rolling 90-day churn over flexlibs2/code/",
+        "- `git log --numstat` -- rolling 90-day churn over flexicon/code/",
         "- `tests/crystallization_history.jsonl` -- prior run snapshots",
         "",
         "Outputs:",

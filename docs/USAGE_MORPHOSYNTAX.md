@@ -1,6 +1,6 @@
 # Morphosyntactic Analysis (MSA) Usage Guide
 
-This guide demonstrates how to work with morphosyntactic analyses (MSAs) using FlexLibs2's unified wrapper interface.
+This guide demonstrates how to work with morphosyntactic analyses (MSAs) using Flexicon's unified wrapper interface.
 
 ## What Are Morphosyntactic Analyses?
 
@@ -15,7 +15,7 @@ MSAs describe the grammatical properties of morphemes:
 Without the wrapper, you had to manually check types and cast:
 
 ```python
-from flexlibs2.code.lcm_casting import cast_to_concrete, get_pos_from_msa
+from flexicon.code.lcm_casting import cast_to_concrete, get_pos_from_msa
 
 entry = project.lp.LexDB.Entries[0]
 
@@ -50,8 +50,8 @@ for msa in entry.MorphoSyntaxAnalysesOC:
 With wrappers, the same logic is clean and type-safe:
 
 ```python
-from flexlibs2.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
-from flexlibs2.code.Lexicon.msa_collection import MSACollection
+from flexicon.code.Lexicon.morphosyntax_analysis import MorphosyntaxAnalysis
+from flexicon.code.Lexicon.msa_collection import MSACollection
 
 entry = project.lp.LexDB.Entries[0]
 
@@ -231,7 +231,7 @@ print(f"Derivational affixes: {len(msas.deriv_aff_msas())}")
 In typical usage, you'd get MSAs through entry operations:
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("my_project", writeEnabled=False)

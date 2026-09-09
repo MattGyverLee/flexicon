@@ -79,7 +79,7 @@ The flexlibs testing infrastructure uses a three-tier approach:
 pytest tests/test_operations_baseline.py -v
 
 # Run with coverage
-pytest tests/test_operations_baseline.py --cov=flexlibs2.code
+pytest tests/test_operations_baseline.py --cov=flexicon.code
 ```
 
 **What It Catches:**
@@ -282,7 +282,7 @@ pytest tests/operations/test_lexentry_operations.py::TestLexEntryOperationsCRUDM
 pytest tests/operations/test_lexentry_operations.py::TestLexEntryOperationsCRUDMethods::test_has_create_method -v
 
 # Run with coverage
-pytest tests/ --cov=flexlibs2.code --cov-report=html
+pytest tests/ --cov=flexicon.code --cov-report=html
 
 # Run with verbose output
 pytest tests/ -vv --tb=long
@@ -347,7 +347,7 @@ MockOwningSequence   # Owning sequences with reordering
 ```python
 def test_create_entry(mock_flex_project):
     """Test entry creation with mock."""
-    from flexlibs2.code.Lexicon.LexEntryOperations import LexEntryOperations
+    from flexicon.code.Lexicon.LexEntryOperations import LexEntryOperations
 
     ops = LexEntryOperations(mock_flex_project)
 
@@ -361,7 +361,7 @@ def test_create_entry(mock_flex_project):
 ```python
 def test_reorder_senses(mock_flex_project, mock_lex_entry):
     """Test sense reordering."""
-    from flexlibs2.code.Lexicon.LexSenseOperations import LexSenseOperations
+    from flexicon.code.Lexicon.LexSenseOperations import LexSenseOperations
 
     # Add mock senses
     senses = generate_test_senses(mock_lex_entry, count=3)
@@ -397,7 +397,7 @@ Add your operations class to `test_operations_baseline.py`:
 
 ```python
 NEW_OPERATIONS = [
-    ('MyOperations', 'flexlibs2.code.MyModule.MyOperations'),
+    ('MyOperations', 'flexicon.code.MyModule.MyOperations'),
 ]
 ```
 
@@ -425,14 +425,14 @@ class TestMyOperationsImport:
     """Test import and instantiation."""
 
     def test_import(self):
-        from flexlibs2.code.MyModule.MyOperations import MyOperations
+        from flexicon.code.MyModule.MyOperations import MyOperations
         assert MyOperations is not None
 
 class TestMyOperationsCRUDMethods:
     """Test CRUD methods exist."""
 
     def test_has_getall(self, mock_flex_project):
-        from flexlibs2.code.MyModule.MyOperations import MyOperations
+        from flexicon.code.MyModule.MyOperations import MyOperations
         ops = MyOperations(mock_flex_project)
         assert hasattr(ops, 'GetAll')
 ```
@@ -448,7 +448,7 @@ class TestMyOperationsIntegration:
 
     @pytest.fixture(scope="class")
     def flex_project(self):
-        from flexlibs2 import FLExInitialize, FLExCleanup, FLExProject
+        from flexicon import FLExInitialize, FLExCleanup, FLExProject
         FLExInitialize()
         project = FLExProject()
         project.OpenProject("TestProject", writeEnabled=True)
@@ -457,7 +457,7 @@ class TestMyOperationsIntegration:
         FLExCleanup()
 
     def test_create_item(self, flex_project):
-        from flexlibs2.code.MyModule.MyOperations import MyOperations
+        from flexicon.code.MyModule.MyOperations import MyOperations
         ops = MyOperations(flex_project)
         item = ops.Create("test")
         assert item is not None
@@ -571,16 +571,16 @@ raise PermissionError()  # Different exception
 
 ```bash
 # Generate coverage report
-pytest tests/ --cov=flexlibs2.code --cov-report=html
+pytest tests/ --cov=flexicon.code --cov-report=html
 
 # View coverage in browser
 open htmlcov/index.html
 
 # Generate coverage summary
-pytest tests/ --cov=flexlibs2.code --cov-report=term
+pytest tests/ --cov=flexicon.code --cov-report=term
 
 # Check coverage thresholds
-pytest tests/ --cov=flexlibs2.code --cov-fail-under=80
+pytest tests/ --cov=flexicon.code --cov-fail-under=80
 ```
 
 ### Coverage Exclusions

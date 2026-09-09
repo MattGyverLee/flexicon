@@ -15,7 +15,7 @@ The `PronunciationOperations` class provides comprehensive management of pronunc
 ## Quick Start
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 # Open project with write access
 project = FLExProject()
@@ -368,7 +368,7 @@ print(f"Pronunciation GUID: {guid}")
 ### Example 1: Add IPA and Audio to Entry
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("MyProject", writeEnabled=True)
@@ -396,7 +396,7 @@ project.CloseProject()
 ### Example 2: Export All Pronunciations to CSV
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 import csv
 
 project = FLExProject()
@@ -423,7 +423,7 @@ print("Export complete!")
 ### Example 3: Batch Add Pronunciations from Dictionary
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 # Dictionary of word -> IPA mappings
 pronunciations = {
@@ -460,7 +460,7 @@ project.CloseProject()
 ### Example 4: Update Pronunciations in Bulk
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("MyProject", writeEnabled=True)
@@ -485,7 +485,7 @@ project.CloseProject()
 ### Example 5: Link Audio Files to Pronunciations
 
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 import os
 
 project = FLExProject()
@@ -522,8 +522,8 @@ project.CloseProject()
 ## Error Handling
 
 ```python
-from flexlibs2 import FLExProject
-from flexlibs2.code.FLExProject import (
+from flexicon import FLExProject
+from flexicon.code.FLExProject import (
     FP_ReadOnlyError,
     FP_NullParameterError,
     FP_ParameterError

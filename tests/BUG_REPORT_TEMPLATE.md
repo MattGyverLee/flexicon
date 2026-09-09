@@ -77,7 +77,7 @@ Example:
 ```
 1. Open FLEx project: "TestProject_Scripture"
 2. Initialize flexlibs:
-   from flexlibs2 import FLExProject
+   from flexicon import FLExProject
    project = FLExProject()
    project.OpenProject("TestProject_Scripture", writeEnabled=True)
 3. Call method:

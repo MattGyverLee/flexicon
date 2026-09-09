@@ -66,7 +66,7 @@ pre-commit run check-duplicate-decorators
 
 Check only files in a directory:
 ```bash
-pre-commit run --files flexlibs2/code/Grammar/*.py
+pre-commit run --files flexicon/code/Grammar/*.py
 ```
 
 ### Bypass (Not Recommended)

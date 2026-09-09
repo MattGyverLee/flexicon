@@ -1,9 +1,9 @@
 # LCM Capabilities Audit - Complete Documentation Index
 
-This is your entry point for the comprehensive audit of LCM (Language and Culture Model) capabilities imported into flexlibs2.
+This is your entry point for the comprehensive audit of LCM (Language and Culture Model) capabilities imported into flexicon.
 
 **Audit Date:** 2026-05-27
-**Scope:** 106 Python files in `flexlibs2/code/`
+**Scope:** 106 Python files in `flexicon/code/`
 **Status:** REFRESHED — Ready for review
 
 ## Documents Generated
@@ -69,7 +69,7 @@ Navigation and quick reference to all audit documents
 
 ## Quick Navigation by Question
 
-### "What does flexlibs2 import from LCM?"
+### "What does flexicon import from LCM?"
 - See **LCM_AUDIT_SUMMARY.md** - "What's Imported" section
 
 ### "Is LCM usage safe?"
@@ -102,7 +102,7 @@ Navigation and quick reference to all audit documents
 ## Key Statistics at a Glance
 
 ```
-Scope: flexlibs2/code directory (106 Python files)
+Scope: flexicon/code directory (106 Python files)
 - Files with SIL imports: 73
 - Distinct SIL namespaces: 14
 - Total LCM import statements: 569
@@ -317,7 +317,7 @@ LCM_CAPABILITIES_AUDIT_REFERENCES.md
 All audit documents are in `docs/audit/`:
 
 ```
-/d/Github/_Projects/_LEX/flexlibs2/
+/d/Github/_Projects/_LEX/flexicon/
 └── docs/audit/
     ├── LCM_AUDIT_INDEX.md                    ← You are here
     ├── LCM_AUDIT_SUMMARY.md                  ← Start here

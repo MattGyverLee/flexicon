@@ -426,7 +426,7 @@ ImportError: cannot import name 'IMoMorphRule' from 'SIL.LCModel'
      producing a NullReferenceException. Fixed by inserting a null check:
      if `index is None`, raise `FP_ParameterError` with a message naming
      the orphaned entry (callers require a WS, so silent return is wrong).
-     File: `flexlibs2/code/Reversal/ReversalIndexEntryOperations.py`
+     File: `flexicon/code/Reversal/ReversalIndexEntryOperations.py`
 
    Iterate-and-delete snapshot sweep (Cat 7 companion):
    - `ConstChartOperations.py` (~line 111): `for chart in discourse.ChartsOC`
@@ -651,7 +651,7 @@ Category 8 and Category 9 are the same trap at different levels:
 **MergeSegments translation_policy constants** (use instead of bare strings):
 
 ```python
-from flexlibs2.code.TextsWords.SegmentOperations import (
+from flexicon.code.TextsWords.SegmentOperations import (
     TRANSLATION_POLICY_MIGRATE,   # 'migrate' — concatenate translations/notes into seg1
     TRANSLATION_POLICY_DISCARD,   # 'discard' — silently drop seg2 content
     TRANSLATION_POLICY_REJECT,    # 'reject'  — raise FP_ParameterError if seg2 has content
@@ -674,7 +674,7 @@ segs = list(project.Segments.GetAll(para))
 new_seg = project.Segments.AppendSentence(para, "New sentence.")
 
 # Merge with explicit policy:
-from flexlibs2.code.TextsWords.SegmentOperations import TRANSLATION_POLICY_MIGRATE
+from flexicon.code.TextsWords.SegmentOperations import TRANSLATION_POLICY_MIGRATE
 merged = project.Segments.MergeSegments(seg1, seg2, translation_policy=TRANSLATION_POLICY_MIGRATE)
 
 # Full reparse (destructive — wipes analyses and translations):

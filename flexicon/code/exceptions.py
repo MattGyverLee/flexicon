@@ -1,7 +1,7 @@
 #
 #   exceptions.py
 #
-#   Module:     FlexLibs2 exception classes
+#   Module:     Flexicon exception classes
 #
 #   Copyright 2025
 #

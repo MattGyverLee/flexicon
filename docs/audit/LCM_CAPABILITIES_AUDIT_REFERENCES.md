@@ -1,9 +1,9 @@
-# FlexLibs2 LCM Capabilities - Code References
+# Flexicon LCM Capabilities - Code References
 
 This document provides specific file and line references for each LCM capability mentioned in the main audit.
 
 **Audit Date:** 2026-05-27 (refreshed from 2025-03-16)
-**Scope:** 106 Python files in `flexlibs2/code/`
+**Scope:** 106 Python files in `flexicon/code/`
 **Status:** REFRESHED -- Ready for review
 
 > Line numbers below reflect the original 2025-03-16 snapshot. The current line numbers may have shifted (e.g., `FLExGlobals.py` TODO is now at line 103, `FLExLCM.py` TODO is now at line 59). The categorical inventory has been refreshed in `Summary Statistics` below; for full source-of-truth on every import location, see the regenerated JSON in `reports/audit/api_usage_extract.json` (one record per import statement with file path and line number).
@@ -374,7 +374,7 @@ This document provides specific file and line references for each LCM capability
 ## Casting Operations
 
 ### lcm_casting.py Module
-- **Location:** `/d/Github/_Projects/_LEX/flexlibs2/flexlibs2/code/lcm_casting.py`
+- **Location:** `/d/Github/_Projects/_LEX/flexicon/flexicon/code/lcm_casting.py`
 - **Purpose:** Type casting for polymorphic LCM objects
 - **Key Function:** `cast_to_concrete()` - convert base interface to concrete type
 - **Imports from SIL.LCModel (lines 104-150):**
@@ -399,7 +399,7 @@ IMoEndoCompound, IMoExoCompound
 
 **Usage Pattern:**
 ```python
-from flexlibs2.code.lcm_casting import cast_to_concrete
+from flexicon.code.lcm_casting import cast_to_concrete
 
 for msa in entry.MorphoSyntaxAnalysesOC:
     concrete = cast_to_concrete(msa)  # Returns actual type (MoStemMsa, etc.)
@@ -439,14 +439,14 @@ for msa in entry.MorphoSyntaxAnalysesOC:
 ## Known TODOs with Code References
 
 ### 1. Linux Flatpak Support
-- **File:** `/d/Github/_Projects/_LEX/flexlibs2/flexlibs2/code/FLExGlobals.py`
+- **File:** `/d/Github/_Projects/_LEX/flexicon/flexicon/code/FLExGlobals.py`
 - **Lines:** 103+ (was 102-105 in original audit)
 - **Issue:** FW now uses flatpak on Linux, old path logic doesn't work
 - **Current:** Only Windows/macOS supported
 - **Status:** Still open since 2025-03-16
 
 ### 2. Project Chooser Dialog
-- **File:** `/d/Github/_Projects/_LEX/flexlibs2/flexlibs2/code/FLExLCM.py`
+- **File:** `/d/Github/_Projects/_LEX/flexicon/flexicon/code/FLExLCM.py`
 - **Line:** 59 (was 53-54 in original audit)
 - **Issue:** Using simple file listing instead of FW native dialog
 - **Enhancement:** Would use `ChooseLangProjectDialog()` and support network drives
