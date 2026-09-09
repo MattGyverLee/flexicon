@@ -30,6 +30,7 @@ These are raised during normal operation:
 - **`FP_WritingSystemError`** - Invalid writing system for the project
 - **`FP_NullParameterError`** - Required parameter is None
 - **`FP_ParameterError`** - Invalid parameter value or type
+- **`FP_TransactionError`** - Invalid transaction state, e.g. `AbortSession()` called inside a transaction block
 - **`FP_ConflictingSaveError`** - Another client saved changes to the project that cannot be reconciled with this session's unsaved changes; raised by `flexicon.code.headless_ui.HeadlessLcmUI.ConflictingSave()` (see issue #238)
 
 ### .NET Exception Types to Catch
@@ -893,7 +894,6 @@ def test_safe_entry_modification_workflow():
 ### Import flexicon Exceptions
 ```python
 from flexicon import (
-    FP_Error,
     FP_ProjectError,
     FP_FileNotFoundError,
     FP_FileLockedError,
@@ -903,6 +903,7 @@ from flexicon import (
     FP_WritingSystemError,
     FP_NullParameterError,
     FP_ParameterError,
+    FP_TransactionError,
     FP_ConflictingSaveError,
 )
 ```
