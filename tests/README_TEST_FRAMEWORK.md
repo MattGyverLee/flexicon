@@ -1,8 +1,8 @@
-# FlexLibs2 Validation Test Framework
+# flexicon Validation Test Framework
 
 ## Overview
 
-This comprehensive test framework validates the Phase 2-4 consolidation refactoring of FlexLibs2 validation patterns. It provides reusable infrastructure for testing all 43 operation classes and their validation methods.
+This comprehensive test framework validates the Phase 2-4 consolidation refactoring of flexicon validation patterns. It provides reusable infrastructure for testing all 43 operation classes and their validation methods.
 
 ## Test Framework Components
 
@@ -235,7 +235,7 @@ pytest tests/ -v
 
 ### Quick Test (Phase 2)
 ```bash
-cd /d/Github/flexlibs2
+cd /d/Github/flexicon
 python -m pytest tests/phase2_validation_tests.py -v
 ```
 
@@ -246,7 +246,7 @@ python -m pytest tests/ -v
 
 ### With Coverage
 ```bash
-python -m pytest tests/ --cov=flexlibs2 --cov-report=html
+python -m pytest tests/ --cov=flexicon --cov-report=html
 ```
 
 ### Quiet Output
@@ -345,7 +345,7 @@ def test_with_helpers(self):
 ### "conftest.py not found"
 Ensure you're running pytest from project root:
 ```bash
-cd /d/Github/flexlibs2
+cd /d/Github/flexicon
 python -m pytest tests/
 ```
 

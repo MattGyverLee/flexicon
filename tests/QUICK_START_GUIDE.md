@@ -42,7 +42,7 @@ pytest tests/test_exception_handling.py::TestAgentOperationsExceptionHandling::t
 
 ### Run with Coverage
 ```bash
-pytest tests/test_*.py --cov=flexlibs2 --cov-report=html
+pytest tests/test_*.py --cov=flexicon --cov-report=html
 ```
 
 ### Run Quietly (Summary Only)
@@ -61,14 +61,14 @@ All 77 tests pass:
 ## File Locations
 
 Absolute paths:
-- `/d/Github/flexlibs2/tests/test_exception_handling.py`
-- `/d/Github/flexlibs2/tests/test_sense_lookups.py`
-- `/d/Github/flexlibs2/tests/test_homographs.py`
+- `/d/Github/flexicon/tests/test_exception_handling.py`
+- `/d/Github/flexicon/tests/test_sense_lookups.py`
+- `/d/Github/flexicon/tests/test_homographs.py`
 
 Documentation:
-- `/d/Github/flexlibs2/tests/TEST_SUMMARY.md`
-- `/d/Github/flexlibs2/tests/TESTS_VERIFICATION_REPORT.txt`
-- `/d/Github/flexlibs2/tests/QUICK_START_GUIDE.md`
+- `/d/Github/flexicon/tests/TEST_SUMMARY.md`
+- `/d/Github/flexicon/tests/TESTS_VERIFICATION_REPORT.txt`
+- `/d/Github/flexicon/tests/QUICK_START_GUIDE.md`
 
 ## Test Breakdown
 

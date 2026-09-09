@@ -64,10 +64,10 @@ def scan_operations_classes(root: Path) -> dict:
             "methods": methods,
         }
     if not classes:
-        raise FileNotFoundError(
+        raise RuntimeError(
             f"scan_operations_classes: {code_dir} exists but no "
             "*Operations.py files were found beneath it. This scan should "
-            "discover ~80+ Operations classes; zero means the directory is "
+            "discover the whole Operations surface; zero means the directory is "
             "wrong or empty -- treat this as a hard failure, not an empty "
             "report."
         )

@@ -1,6 +1,6 @@
 # Phase 0 Verification - Complete Documentation
 
-Welcome to Phase 0 of the flexlibs2 code quality improvement initiative. This directory contains all verification tests and findings before implementing quality improvements.
+Welcome to Phase 0 of the flexicon code quality improvement initiative. This directory contains all verification tests and findings before implementing quality improvements.
 
 ---
 
@@ -9,7 +9,7 @@ Welcome to Phase 0 of the flexlibs2 code quality improvement initiative. This di
 ### To Run the Verification Script
 
 ```bash
-cd /d/Github/flexlibs2
+cd /d/Github/flexicon
 python tests/manual_verification.py
 ```
 
@@ -182,7 +182,7 @@ PHASE_0_SUMMARY.md (Start here - overview)
 - [ ] `core/resolvers.py` - Update lookup error handling and add PossibilityList utility
 
 ### Operations Classes
-- [ ] `flexlibs2/code/BaseOperations.py` - Add transaction support
+- [ ] `flexicon/code/BaseOperations.py` - Add transaction support
 - [ ] All operation classes - Update exception handling
 - [ ] Classes doing DateTime parsing - Update exception handling
 

@@ -1,7 +1,7 @@
 # Phase 1-2 Unit Tests Summary
 
 ## Overview
-Created comprehensive unit test suite for Phase 1-2 fixes in the flexlibs2 project.
+Created comprehensive unit test suite for Phase 1-2 fixes in the flexicon project.
 
 **Total Tests**: 77
 **Test Files**: 3
@@ -214,7 +214,7 @@ pytest tests/test_exception_handling.py::TestAgentOperationsExceptionHandling::t
 
 ### Run with coverage report:
 ```bash
-pytest tests/test_*.py --cov=flexlibs2 --cov-report=html
+pytest tests/test_*.py --cov=flexicon --cov-report=html
 ```
 
 ## Test Structure
@@ -251,9 +251,9 @@ Each test includes:
 ## Files Modified
 
 **Created**:
-- /d/Github/flexlibs2/tests/test_exception_handling.py
-- /d/Github/flexlibs2/tests/test_sense_lookups.py
-- /d/Github/flexlibs2/tests/test_homographs.py
+- /d/Github/flexicon/tests/test_exception_handling.py
+- /d/Github/flexicon/tests/test_sense_lookups.py
+- /d/Github/flexicon/tests/test_homographs.py
 
 **No existing files modified**
 

@@ -33,7 +33,12 @@ from pathlib import Path
 
 PHASES = ("read", "add", "reorder", "modify", "delete")
 STATUS_GLYPH = {"pass": "[PASS]", "fail": "[FAIL]", "skip": "[SKIP]"}
-TOTAL_CLASSES_EXPECTED = 60  # canonical denominator; matches live_coverage_metric.py
+# NOTE: the crystallization denominator is NOT hardcoded. It is the live
+# count of Operations classes found by scan_operations_classes(), carried
+# through as coverage["total_classes"]. A hardcoded constant silently drifts
+# every time an Operations class is added or removed, and quietly skews the
+# score -- which is the same failure mode as the flexicon rename that made
+# this scan return zero for months.
 
 # Score formula weights
 W_COVERAGE = 0.5
@@ -99,10 +104,10 @@ def scan_operations_classes(root: Path) -> dict:
             "methods": methods,
         }
     if not classes:
-        raise FileNotFoundError(
+        raise RuntimeError(
             f"scan_operations_classes: {code_dir} exists but no "
             "*Operations.py files were found beneath it. This scan should "
-            "discover ~80+ Operations classes; zero means the directory is "
+            "discover the whole Operations surface; zero means the directory is "
             "wrong or empty -- treat this as a hard failure, not an empty "
             "report."
         )
@@ -429,7 +434,7 @@ def compute_score(coverage: dict, churn: dict, regression: dict) -> dict:
 
     regression_factor = still_stabilized / max(1, stabilized_ever)
     """
-    total = max(1, TOTAL_CLASSES_EXPECTED)
+    total = max(1, coverage["total_classes"])
     coverage_factor = coverage["stabilized"] / total
 
     churn_30 = churn["churn_30d"]
@@ -675,8 +680,8 @@ def render_report(
         f"      + {W_STABILITY} * stability_factor",
         f"      + {W_REGRESSION} * regression_factor",
         "",
-        f"coverage_factor   = stabilized / {TOTAL_CLASSES_EXPECTED}",
-        f"                  = {coverage['stabilized']} / {TOTAL_CLASSES_EXPECTED}",
+        f"coverage_factor   = stabilized / {coverage['total_classes']}",
+        f"                  = {coverage['stabilized']} / {coverage['total_classes']}",
         f"                  = {scored['coverage_factor']:.4f}",
         "",
         "stability_factor  = max(0, 1 - churn_30d / max(1, churn_90d / 3))",
@@ -762,7 +767,7 @@ def main():
         print(f"[WARN] Git churn unavailable: {churn['git_error']}")
     print(f"[OK] Wrote {target.relative_to(root).as_posix()}")
     print(f"     Operations classes : {len(classes)}")
-    print(f"     Stabilized         : {coverage['stabilized']} / {TOTAL_CLASSES_EXPECTED}")
+    print(f"     Stabilized         : {coverage['stabilized']} / {coverage['total_classes']}")
     print(f"     Churn 30d / 90d    : {churn['churn_30d']} / {churn['churn_90d']} lines")
     print(f"     Regression factor  : {scored['regression_factor']:.3f}")
     print(f"     Crystallization    : {scored['score']:.2f} / 1.00")

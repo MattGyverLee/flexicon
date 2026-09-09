@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides detailed test specifications for all 6 Scripture Operations classes in flexlibs2. These classes handle Scripture books, sections, headings, references, and import workflows.
+This document provides detailed test specifications for all 6 Scripture Operations classes in flexicon. These classes handle Scripture books, sections, headings, references, and import workflows.
 
 **Test Scope**: 6 Scripture Operations classes
 **Related Classes**: ParagraphOperations, TextOperations, StTextOperations
@@ -1109,7 +1109,7 @@ f_map = project.ScrMarkerMappings.Create(import_set, "\\f", "\\f*", "Footnote")
 
 ### Common Setup
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("TestProject_Scripture", writeEnabled=True)

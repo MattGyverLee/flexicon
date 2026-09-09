@@ -1,4 +1,4 @@
-# FlexLibs2 Validation Test Coverage Matrix
+# flexicon Validation Test Coverage Matrix
 
 ## Overview
 
@@ -312,7 +312,7 @@ Comprehensive test coverage for Phase 2-4 validation consolidation refactoring.
 
 ### Quick Start (Phase 2-3)
 ```bash
-cd /d/Github/flexlibs2
+cd /d/Github/flexicon
 python -m pytest tests/phase2_validation_tests.py tests/phase3_lexicon_validation_tests.py -v
 ```
 
@@ -342,7 +342,7 @@ pytest -m bounds_checking
 
 ### Coverage Report
 ```bash
-pytest tests/ --cov=flexlibs2 --cov-report=html
+pytest tests/ --cov=flexicon --cov-report=html
 ```
 
 ---

@@ -253,7 +253,7 @@ Before proceeding with Phase 1 implementation, complete these:
 - [ ] `core/resolvers.py` - Update HVO lookup error handling
 
 ### Priority 2: Operations Classes
-- [ ] `flexlibs2/code/BaseOperations.py` - Add transaction support
+- [ ] `flexicon/code/BaseOperations.py` - Add transaction support
 - [ ] All operation classes that do lookups - Update exception handling
 - [ ] All operation classes that parse dates - Update exception handling
 

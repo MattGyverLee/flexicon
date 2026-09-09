@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides detailed test specifications for all 6 Reversal and Wordform Operations classes in flexlibs2. These classes handle reversal indexes, wordform analysis, morpheme breakdown, and glossing.
+This document provides detailed test specifications for all 6 Reversal and Wordform Operations classes in flexicon. These classes handle reversal indexes, wordform analysis, morpheme breakdown, and glossing.
 
 **Test Scope**: 6 Reversal & Wordform Operations classes
 **Related Classes**: LexSenseOperations, LexEntryOperations, TextOperations
@@ -1196,7 +1196,7 @@ project.WfiGlosses.Delete(gloss)
 
 ### Common Setup
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("TestProject_Reversal_Wordform", writeEnabled=True)

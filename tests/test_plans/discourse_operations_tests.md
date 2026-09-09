@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides detailed test specifications for all 6 Discourse Operations classes in flexlibs2. These classes handle discourse analysis, constituent charts, chart rows, word groups, and discourse markers.
+This document provides detailed test specifications for all 6 Discourse Operations classes in flexicon. These classes handle discourse analysis, constituent charts, chart rows, word groups, and discourse markers.
 
 **Test Scope**: 6 Discourse Operations classes
 **Related Classes**: TextOperations, SegmentOperations, ParagraphOperations
@@ -1018,7 +1018,7 @@ chart = project.Charts.Create(text, "Templated Chart", template=template)
 
 ### Common Setup
 ```python
-from flexlibs2 import FLExProject
+from flexicon import FLExProject
 
 project = FLExProject()
 project.OpenProject("TestProject_Discourse", writeEnabled=True)
