@@ -12,6 +12,174 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 ## [Unreleased]
 
 ### Fixed
+- **`LexiconSetComplexFormType()` and `LexiconGetComplexFormType()` no
+  longer no-op silently on a base-typed `entry_ref`** (issue #280). Both
+  methods gated their entire body on `hasattr(entry_ref,
+  "ComplexEntryTypesRS")` with no `else`. pythonnet surfaces only the
+  static type's attributes, so that check is `False` for any `entry_ref`
+  that arrived as a bare `ICmObject` -- from an HVO, or any other
+  round-tripped path -- regardless of the concrete object. The setter
+  therefore did nothing at all and reported success, and the getter
+  returned `None` as though no complex form type were set. The common
+  path happened to work only because `entry.EntryRefsOS` is a typed
+  owning sequence whose elements come back concrete. Both methods now
+  cast via `cast_to_concrete()` first and raise
+  `FP_ParameterError("Object is not a LexEntryRef")` when the object
+  genuinely is not a `LexEntryRef`. **Behaviour change:** a call that
+  previously failed silently now either succeeds or raises; a getter that
+  previously returned `None` for a wrong object type now raises.
+- **`cast_to_concrete()` now recognises `LexEntryRef`** (issue #280).
+  `"LexEntryRef"` was never registered in `lcm_casting.py`'s interface
+  cache, so `cast_to_concrete()` returned such objects unchanged and the
+  `ComplexEntryTypesRS` / `ComponentLexemesRS` / `PrimaryLexemesRS` /
+  `VariantEntryTypesRS` members stayed unreachable on a base-typed or
+  HVO-resolved entry ref.
+- **~44 `__ResolveObject`-family resolvers across 24 Operations classes
+  now cast before returning** (issue #275, generalising the
+  `LexEntryOperations` fix in #269). Each carried the same two defects:
+  the non-int branch returned the object uncast, so an object arriving as
+  `ICmObject` from a polymorphic LCM collection raised `AttributeError`
+  on the very next attribute access; and the HVO branch guarded with
+  `isinstance(obj, ISomething)` against `FLExProject.Object()`, which is
+  declared to return `ICmObject` and so failed even for genuine
+  instances, raising a spurious `FP_ParameterError`. Both branches now
+  dispatch on `ClassName` and cast, keeping the original `isinstance`
+  leg as a fallback. This is a **strict widening** -- it accepts
+  everything the previous guards accepted, plus the genuine objects they
+  falsely rejected -- and legitimate rejections (e.g. an `ILexSense` HVO
+  passed where an `ILexEntry` is required) are preserved. Affected:
+  `EtymologyOperations`, `VariantOperations`, `SemanticDomainOperations`,
+  `MediaOperations`, the seven `Discourse/ConstChart*` classes,
+  `LocationOperations`, `PersonOperations`, the two `Reversal/*` classes,
+  the six `Scripture/*` classes, `StratumOperations`, `TextOperations`,
+  and `WfiAnalysisOperations`.
+- **`PhonemeOperations.__ApplyBasicIPASymbol`'s miss-case drop is now
+  logged** (issue #250 Defect 3, applied to the #266 site). Kept in step
+  with `_apply_props_loop`'s warning so a single sync of a single phoneme
+  cannot report two different outcomes for `BasicIPASymbol` versus
+  `Name`/`Description`.
+- **`WritingSystemOperations.Exists()` now honours its own documented
+  "active only" contract instead of scanning the whole LDML store**
+  (issue #250 Defect 1). The docstring said "active only" three times, but
+  the body delegated to `_GetWSByTag()`, which walks the unfiltered
+  `ServiceLocator.WritingSystems.AllWritingSystems` -- so `Exists()`
+  returned `True` for a writing system that was present in the project's
+  LDML store (e.g. deactivated via the FLEx UI, or inherited from a
+  template) but absent from `CurVernWss`/`CurAnalysisWss`, in direct
+  contradiction of `GetAll()`, which every other consumer of "does this
+  writing system exist" implicitly treats as the ground truth. This is a
+  **behaviour change to a public predicate**: any internal or external
+  caller that was (perhaps unknowingly) relying on the old whole-store
+  answer will now see `False` for a store-present-but-inactive tag. The
+  one internal caller that did -- `Create()`'s own "already exists" guard
+  -- is addressed by the Defect 2 fix below; no other internal caller was
+  found (swept via `git grep` for `WritingSystems.Exists` and
+  `self.Exists` inside `WritingSystemOperations.py`). The whole-store
+  question this replaces is still answerable, under its own name:
+  **`WritingSystemOperations.ExistsInStore(language_tag)`** (new method).
+- **`WritingSystemOperations.Create()` no longer refuses to activate a
+  writing system that is present in the store but not currently active**
+  (issue #250 Defect 2). Previously, `Create()` was the *only* route to
+  `AddToCurrentVernacularWritingSystems`/`AddToCurrentAnalysisWritingSystems`,
+  and it raised `FP_ParameterError("... already exists")` for ANY tag
+  `Exists()` reported as present -- which, per Defect 1, included inactive
+  store entries. That made a store-present-but-inactive writing system
+  permanently unreachable through the public API: `Exists()` said "yes"
+  (so callers could not safely `Create()` it) and `Create()` refused to
+  activate it (so there was no other way to make it usable). `Create()`
+  now checks store-presence directly: if the tag already has an LDML, it
+  reuses that definition and only activates it (`name` is ignored in that
+  path, since the writing system's `DisplayLabel` already exists); a
+  genuinely new tag is created exactly as before. The "already active"
+  guard is unchanged in effect (now correctly scoped to *active* tags only,
+  per the Defect 1 fix), so no currently-succeeding call to `Create()`
+  changes behaviour.
+- **`BaseOperations._apply_props_loop`'s silent writing-system drop is now
+  logged** (issue #250 Defect 3). When a multistring alt's target writing
+  system is genuinely absent from the target project (absent under both
+  exact and normalized matching -- the ambiguous case already raises, per
+  Defect 4/#250), the alt is still dropped -- this is ordinary,
+  correct behaviour for a cross-project sync between projects with
+  different writing-system coverage, and turning it into a raise would
+  fail every such sync outright, a worse regression than the silent drop
+  it replaces. What changes is observability: the drop now always emits a
+  `logging.getLogger("flexicon").warning(...)` naming the property, the
+  source and resolved writing-system ids, and the target object's type and
+  Hvo. This is **unconditional**, not gated behind a `strict=` kwarg whose
+  `False` default would have preserved the silent behaviour (see
+  `CLAUDE.md`, "Don't Add a Flag for Behaviour That Should Be
+  Unconditional") -- every caller gets the diagnostic, all the time. The
+  previous docstring advice ("callers wanting strict mapping should
+  pre-validate ws_map") is superseded: pre-validation is now possible via
+  `WritingSystemOperations.Ensure()` (see Added below), not `Exists()`
+  alone, since `Exists()` cannot distinguish "will resolve" from "will
+  drop".
+- **`PhonemeOperations.__ApplyBasicIPASymbol` now resolves a case- or
+  separator-divergent writing-system tag instead of silently dropping the
+  `BasicIPASymbol` alt** (issue #266, closing one of the two sites #250
+  Defect 4 deliberately left open). This site ran its own exact-case
+  `{ws.Id: ws.Handle}` lookup in parallel with `BaseOperations
+  ._apply_props_loop`'s already-fixed one, so syncing a phoneme whose
+  writing-system ids differed only by case or separator saved its
+  `Name`/`Description` (which delegate to `_apply_props_loop`) while
+  silently discarding its `BasicIPASymbol` alt under the identical
+  divergent spelling. The lookup now routes through the same
+  `BaseOperations._resolve_ws_handle` helper Defect 4 introduced
+  specifically for this one-line substitution (spec 250 C-D4-7), reusing
+  one normalized side-index per `ApplySyncableProperties` call
+  (C-D4-4). This is a **bug fix, not a breaking change**: no
+  currently-succeeding write changes behaviour. **New failure mode:** if
+  two or more distinctly cased/separated writing-system spellings in the
+  target project normalize to the same form but resolve to *different*
+  handles, `SetBasicIPASymbol` (via `ApplySyncableProperties`) now raises
+  `FP_ParameterError` naming both ambiguous spellings, rather than
+  guessing which one the caller meant -- where it previously always
+  degraded silently. `Lexicon/ExampleOperations.ApplySyncableProperties`'s
+  `TranslationsOC` loop remains the one still-open sibling site, tracked
+  separately as issue #267 because its loop creates and attaches the
+  `ICmTranslation` before resolving any writing system, so introducing a
+  resolver that can raise needs the loop reordered or a proven rollback
+  first.
+- **`ExampleOperations.ApplySyncableProperties`'s `TranslationsOC` loop now
+  resolves a case- or separator-divergent writing-system tag instead of
+  silently dropping the `ICmTranslation.Translation` alt** (issue #267,
+  closing the last of the three sibling sites #250 Defect 4 deliberately
+  left open). Unlike #266's one-line substitution, this site could not be
+  fixed by swapping in `BaseOperations._resolve_ws_handle` alone: the loop
+  created and attached the `ICmTranslation` to `TranslationsOC` *before*
+  resolving any of its alts' target writing systems, so a resolver that
+  can raise `FP_ParameterError` on an ambiguous normalized spelling
+  (C-D4-3 step 2b) would have left a zero-alt `ICmTranslation` orphaned on
+  the example -- a malformed object, arguably worse than the drop being
+  fixed. The loop is now restructured to resolve every alt's target
+  writing-system handle *before* `ICmTranslationFactory.Create` /
+  `TranslationsOC.Add` run, so an ambiguous spelling raises before
+  anything is attached and the operation stays total by construction
+  (verified: `BaseOperations._TransactionCM`'s own docstring states
+  neither of its two phases auto-rolls-back a partial write in the
+  current build, so this could not have been left to the enclosing
+  transaction). One normalized side-index (`_ws_resolve_cache`) is built
+  at most once per `ApplySyncableProperties` call and shared across every
+  translation and every alt within it (C-D4-4), mirroring #266's cache
+  discipline. This is a **bug fix, not a breaking change**: no
+  currently-succeeding write changes behaviour. **New failure mode:**
+  syncing an example's translations can now raise `FP_ParameterError`
+  naming both ambiguous spellings when the target project has two or more
+  distinctly cased/separated writing systems that normalize to the same
+  form, where it previously always degraded silently. A target writing
+  system genuinely absent under both exact and normalized matching still
+  falls through to a skip -- but, mirroring `BaseOperations
+  ._apply_props_loop`'s own Defect 3 fix above, that skip is now
+  unconditionally logged too (`logging.getLogger("flexicon.code.Lexicon
+  .ExampleOperations").warning(...)`, naming the source and resolved
+  writing-system ids and the owning example's type/Hvo -- the
+  `ICmTranslation` itself does not exist yet at the point the miss is
+  detected, since resolution now happens before creation), not gated
+  behind a `strict=` kwarg (CLAUDE.md "Don't Add a Flag for Behaviour
+  That Should Be Unconditional"). Without this, the site would have
+  reintroduced the exact "one sync operation, two different outcomes"
+  asymmetry #250's own coverage-boundary note called out: the shared
+  multistring path warns on a miss, this site silently would not have.
 - **`tests/conftest.py` no longer makes a second, unguarded `Sldr.Initialize()`
   call, which made the offline suite's pass/fail count order-dependent**
   (#264). The session-scoped `initialize_flex_for_tests` fixture called
@@ -40,6 +208,26 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   No new SLDR-init helper was added. `FLExInitialize()` is already the
   single guarded init path; a second helper would only be one more seam to
   keep in sync with it.
+
+### Added
+- **`WritingSystemOperations.ExistsInStore(language_tag)`** -- the
+  whole-store writing-system predicate that `Exists()` used to answer by
+  accident (issue #250 Defect 1). Returns `True` for a tag present
+  anywhere in the project's LDML store, active or not.
+- **`WritingSystemOperations.Ensure(language_tag, name, is_vernacular=True)
+  -> (ws, created: bool)`** -- an idempotent activate-or-create call
+  (issue #250 Defects 1-3). Collapses the previous two-call,
+  two-collection `Exists()`-then-`Create()` dance -- which could not be
+  written correctly, since the two methods disagreed on what "exists"
+  meant -- into one call that: no-ops if the tag is already active;
+  activates (without creating a duplicate LDML) if the tag is present in
+  the store but inactive; creates a genuinely new writing system
+  otherwise. `created` is `True` only in the last case. See the method's
+  docstring for the documented divergence between the issue's suggested
+  2-tuple return shape and the finer 3-way state (already-active /
+  activated-from-store / genuinely-new), which is additionally observable
+  via `logging.getLogger("flexicon.code.System.WritingSystemOperations")`
+  at INFO level.
 
 ---
 

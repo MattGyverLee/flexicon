@@ -11,6 +11,8 @@
 #   Copyright 2025
 #
 
+import logging
+
 # Import FLEx LCM types
 from SIL.LCModel import SpecialWritingSystemCodes
 from SIL.LCModel.Core.KernelInterfaces import ITsString
@@ -23,6 +25,8 @@ from ..FLExProject import (
     FP_WritingSystemError,
 )
 from ..BaseOperations import BaseOperations, OperationsMethod, wrap_enumerable
+
+logger = logging.getLogger(__name__)
 
 
 class WritingSystemOperations(BaseOperations):
@@ -187,21 +191,25 @@ class WritingSystemOperations(BaseOperations):
     @OperationsMethod
     def Create(self, language_tag, name, is_vernacular=True):
         """
-        Create a new writing system in the project.
+        Create (or activate) a writing system in the project.
 
         Args:
             language_tag (str): Language tag (e.g., "en", "fr", "qaa-x-kal")
-            name (str): Display name for the writing system
+            name (str): Display name for the writing system. Only used when
+                a brand-new LDML is created -- ignored when ``language_tag``
+                is already present in the project's LDML store (see Notes).
             is_vernacular (bool): True for vernacular, False for analysis.
                 Defaults to True.
 
         Returns:
-            IWritingSystemDefinition: The newly created writing system
+            IWritingSystemDefinition: The newly created or newly activated
+                writing system
 
         Raises:
             FP_ReadOnlyError: If project is not opened with write enabled
             FP_NullParameterError: If language_tag or name is None
-            FP_ParameterError: If language_tag is empty or already exists
+            FP_ParameterError: If language_tag is empty, or already active
+                (vernacular or analysis) -- see ``Exists()``
 
         Example:
             >>> # Create a vernacular writing system
@@ -224,9 +232,22 @@ class WritingSystemOperations(BaseOperations):
             - The writing system is automatically added to vernacular or
               analysis list based on is_vernacular parameter
             - Default font settings may be inherited from system defaults
+            - **Store-present-but-inactive tags (issue #250 Defect 2):** the
+              guard above only refuses an already-ACTIVE tag (what
+              ``Exists()`` checks). If ``language_tag`` already has an LDML
+              in the project's store -- e.g. a writing system that was
+              configured once and later deactivated, or inherited from a
+              template (``ExistsInStore()`` would return True) -- this
+              method does NOT create a second, duplicate
+              ``WritingSystemDefinition`` for it. It reuses the existing one
+              and only activates it (adds it to the requested current list);
+              ``name`` is ignored in that case since the writing system's
+              DisplayLabel already exists. Use ``Ensure()`` if you want a
+              single idempotent call that also tells you which of these two
+              paths was taken.
 
         See Also:
-            Delete, Exists, GetAll
+            Delete, Exists, ExistsInStore, Ensure, GetAll
         """
         self._EnsureWriteEnabled()
 
@@ -236,26 +257,44 @@ class WritingSystemOperations(BaseOperations):
         if not language_tag or not language_tag.strip():
             raise FP_ParameterError("Language tag cannot be empty")
 
-        # Check if writing system already exists
+        # Check if writing system is already ACTIVE (vernacular or
+        # analysis). Exists() answers only that question (issue #250
+        # Defect 1) -- a store-present-but-inactive tag does NOT raise
+        # here; it is handled below by reusing rather than re-creating.
         if self.Exists(language_tag):
             raise FP_ParameterError(f"Writing system '{language_tag}' already exists")
 
         ws_manager = self.project.project.ServiceLocator.WritingSystemManager
 
         with self._TransactionCM(f"Create writing system '{language_tag}'"):
-            # Create + register the WS with the manager. Set() stores it in the
-            # repository, assigns a runtime Handle, and persists the .ldml
-            # backing file on Save. Without Set(), Create() returns a detached
-            # object -- adding the tag to CurXxxWss would yield an orphan
-            # reference and the next OpenProject would hit a modal
-            # "Unable to create writing system: <tag>" dialog from liblcm.
-            ws = ws_manager.Create(language_tag)
-            ws.Abbreviation = language_tag
-            try:
-                ws.DisplayLabel = name
-            except Exception:
-                pass
-            ws_manager.Set(ws)
+            # A tag can be present in the project's LDML store without being
+            # active (issue #250 Defect 2) -- store-presence and usability
+            # are different questions, and conflating them previously made
+            # this method the ONLY route to AddToCurrent*WritingSystems
+            # refuse to activate a store-present-but-inactive tag at all.
+            # _GetWSByTag() is the whole-store lookup (what ExistsInStore()
+            # exposes publicly); reuse the existing definition instead of
+            # asking the manager to create a duplicate for an Id it already
+            # tracks.
+            existing_ws = self._GetWSByTag(language_tag)
+            if existing_ws is not None:
+                ws = existing_ws
+            else:
+                # Genuinely new: create + register the WS with the manager.
+                # Set() stores it in the repository, assigns a runtime
+                # Handle, and persists the .ldml backing file on Save.
+                # Without Set(), Create() returns a detached object --
+                # adding the tag to CurXxxWss would yield an orphan
+                # reference and the next OpenProject would hit a modal
+                # "Unable to create writing system: <tag>" dialog from
+                # liblcm.
+                ws = ws_manager.Create(language_tag)
+                ws.Abbreviation = language_tag
+                try:
+                    ws.DisplayLabel = name
+                except Exception:
+                    pass
+                ws_manager.Set(ws)
 
             # AddToCurrent* updates BOTH the full XxxWss list AND the current
             # list via the proper change-notification path. Raw assignment to
@@ -267,6 +306,124 @@ class WritingSystemOperations(BaseOperations):
                 self.project.lp.AddToCurrentAnalysisWritingSystems(ws)
 
             return ws
+
+    @OperationsMethod
+    def Ensure(self, language_tag, name, is_vernacular=True):
+        """
+        Idempotently ensure a writing system is active, creating it only if
+        it does not exist anywhere in the project yet.
+
+        Resolves the ``Exists()``/``Create()`` deadlock at the heart of
+        issue #250 (Defects 1-3): a caller previously had no single-call way
+        to ask "make this writing system usable" without first arbitrating
+        between two collections that disagree (``Exists()``'s active-only
+        answer vs. ``Create()``'s own now-fixed store-presence check).
+        ``Ensure()`` collapses that into one idempotent call.
+
+        Args:
+            language_tag (str): Language tag (e.g., "en", "fr", "qaa-x-kal")
+            name (str): Display name, used ONLY when a genuinely new writing
+                system is created. Ignored when the tag is already active or
+                already present in the store (its existing DisplayLabel is
+                left untouched).
+            is_vernacular (bool): True to ensure/activate as a vernacular
+                writing system, False for analysis. Defaults to True. If the
+                tag is already active in the OTHER category, it is ADDED to
+                the requested category as well rather than moved -- FLEx
+                allows a writing system to be both vernacular and analysis
+                simultaneously, and ``Ensure()`` never demotes an existing
+                activation.
+
+        Returns:
+            tuple[IWritingSystemDefinition, bool]: ``(ws, created)``.
+            ``created`` is True only when a genuinely new writing system was
+            created (the tag did not exist anywhere in the project's LDML
+            store before this call). It is False both when the tag was
+            already active (a true no-op) and when it was present in the
+            store but inactive and has now been activated -- both leave the
+            store's writing-system count unchanged, which is the
+            operationally relevant distinction for an idempotent pre-pass
+            such as a cross-project sync guard. See Notes for how to observe
+            the finer three-way distinction the issue also asks for.
+
+        Raises:
+            FP_ReadOnlyError: If project is not opened with write enabled
+            FP_NullParameterError: If language_tag or name is None
+            FP_ParameterError: If language_tag is empty
+
+        Example:
+            >>> # Replaces the old, incorrect Exists()-then-Create() dance:
+            >>> #   if not tgt_ops.Exists(tag):       # False positive risk
+            >>> #       tgt_ops.Create(tag, name)      # would then raise
+            >>> ws, created = project.WritingSystems.Ensure("etu-fonipa", "Ejagham IPA")
+            >>> created
+            False   # was present in the store but inactive; now activated
+
+        Notes:
+            - Three input states are possible (already-active,
+              present-but-inactive, genuinely-absent) but ``created``
+              distinguishes only two outcomes (see Returns). All three are
+              logged at INFO level to ``logging.getLogger(__name__)`` so a
+              caller that needs the fuller distinction can read it from the
+              log, or can call ``Exists()`` before ``Ensure()`` if it needs
+              to know synchronously which case applied.
+            - Never removes or deactivates a writing system; only adds.
+
+        See Also:
+            Exists, ExistsInStore, Create
+        """
+        self._ValidateParam(language_tag, "language_tag")
+        self._ValidateParam(name, "name")
+        self._EnsureWriteEnabled()
+
+        if not language_tag or not language_tag.strip():
+            raise FP_ParameterError("Language tag cannot be empty")
+
+        target_tags = (
+            self._GetAllVernacularWSTags() if is_vernacular
+            else self._GetAllAnalysisWSTags()
+        )
+        existing_ws = self._GetWSByTag(language_tag)  # whole-store lookup
+
+        if existing_ws is not None and existing_ws.Id in target_tags:
+            logger.info(
+                "WritingSystems.Ensure(%r): already active (%s); no-op.",
+                language_tag, "vernacular" if is_vernacular else "analysis",
+            )
+            return existing_ws, False
+
+        ws_manager = self.project.project.ServiceLocator.WritingSystemManager
+
+        with self._TransactionCM(f"Ensure writing system '{language_tag}'"):
+            if existing_ws is not None:
+                ws = existing_ws
+                created = False
+                logger.info(
+                    "WritingSystems.Ensure(%r): present in store but "
+                    "inactive; activating without creating a new LDML.",
+                    language_tag,
+                )
+            else:
+                ws = ws_manager.Create(language_tag)
+                ws.Abbreviation = language_tag
+                try:
+                    ws.DisplayLabel = name
+                except Exception:
+                    pass
+                ws_manager.Set(ws)
+                created = True
+                logger.info(
+                    "WritingSystems.Ensure(%r): not present anywhere; "
+                    "creating a new writing system.",
+                    language_tag,
+                )
+
+            if is_vernacular:
+                self.project.lp.AddToCurrentVernacularWritingSystems(ws)
+            else:
+                self.project.lp.AddToCurrentAnalysisWritingSystems(ws)
+
+            return ws, created
 
     @OperationsMethod
     def Delete(self, ws_handle_or_tag):
@@ -831,7 +988,8 @@ class WritingSystemOperations(BaseOperations):
             language_tag (str): Language tag to check (e.g., "en", "qaa-x-kal")
 
         Returns:
-            bool: True if writing system exists and is active, False otherwise
+            bool: True if writing system exists and is active (vernacular or
+                analysis), False otherwise
 
         Raises:
             FP_NullParameterError: If language_tag is None
@@ -846,12 +1004,67 @@ class WritingSystemOperations(BaseOperations):
             Arabic writing system not found
 
         Notes:
-            - Only checks active (vernacular or analysis) writing systems
+            - Only checks active (vernacular or analysis) writing systems --
+              i.e. the same set ``GetAll()`` yields. A tag that is present in
+              the project's LDML store but not currently active (vernacular
+              or analysis) returns False here. Use ``ExistsInStore()`` for
+              the whole-store question, or ``Ensure()`` to both check and
+              activate in one call (issue #250 Defect 1).
             - Comparison is case-insensitive
             - Handles both '-' and '_' in tags
 
         See Also:
-            GetAll, Create, Delete
+            GetAll, Create, Delete, ExistsInStore, Ensure
+        """
+        self._ValidateParam(language_tag, "language_tag")
+
+        ws = self._GetWSByTag(language_tag)
+        if ws is None:
+            return False
+
+        active_tags = self._GetAllVernacularWSTags() | self._GetAllAnalysisWSTags()
+        return ws.Id in active_tags
+
+    @OperationsMethod
+    def ExistsInStore(self, language_tag):
+        """
+        Check if a writing system with the given language tag exists ANYWHERE
+        in the project's LDML store, whether or not it is currently active.
+
+        This is the whole-store counterpart to ``Exists()`` (issue #250
+        Defect 1): a project can hold an inactive LDML for a writing system
+        that was configured and later deactivated, or inherited from a
+        template. That writing system is "present" in the sense this method
+        checks, but it is not usable for reading or writing lexical data
+        until it is active -- see ``Ensure()``.
+
+        Args:
+            language_tag (str): Language tag to check (e.g., "en", "qaa-x-kal")
+
+        Returns:
+            bool: True if a writing system with this tag exists anywhere in
+                the store (active or not), False otherwise
+
+        Raises:
+            FP_NullParameterError: If language_tag is None
+
+        Example:
+            >>> # A writing system deactivated via the FLEx UI still has an
+            >>> # LDML file on disk -- ExistsInStore() sees it, Exists() does not.
+            >>> project.WritingSystems.Exists("fr")
+            False
+            >>> project.WritingSystems.ExistsInStore("fr")
+            True
+
+        Notes:
+            - Comparison is case-insensitive and folds '-'/'_' (same
+              normalization as ``Exists()``)
+            - This is the only place in the public API that intentionally
+              answers the whole-store question under that normalization --
+              do not use it as a stand-in for "is this writing system usable"
+
+        See Also:
+            Exists, Ensure, Create
         """
         self._ValidateParam(language_tag, "language_tag")
 

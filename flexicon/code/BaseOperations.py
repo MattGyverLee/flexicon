@@ -444,6 +444,8 @@ def _apply_props_loop(item, props, target_ws_by_id, fill_gaps=False,
         _ts_string_utils: The imported TsStringUtils class, passed in to avoid
             a re-import inside the pure helper.
     """
+    import logging
+
     # Lazily-built normalized WS-id side-index, shared across every
     # writing-system alt resolved within this single _apply_props_loop
     # call (spec 250 C-D4-4: built at most once per apply call, never
@@ -472,8 +474,34 @@ def _apply_props_loop(item, props, target_ws_by_id, fill_gaps=False,
                     target_ws_by_id, tgt_ws_id, _index_cache=_ws_resolve_cache
                 )
                 if tgt_handle is None:
-                    # Target lacks this WS; skip silently. Callers wanting
-                    # strict mapping should pre-validate ws_map.
+                    # Target genuinely lacks this WS (absent from
+                    # target_ws_by_id under both exact and normalized
+                    # matching -- an ambiguous spelling already raised
+                    # above via _resolve_ws_handle). This is NOT treated as
+                    # an error: source and target projects legitimately
+                    # differ in writing-system coverage, and a raise here
+                    # would turn every ordinary partial-overlap sync into a
+                    # hard failure -- a worse regression than the drop it
+                    # replaces. But the drop is no longer silent (spec 250
+                    # Defect 3): it is unconditionally logged, not gated
+                    # behind a strict= kwarg whose False default would
+                    # preserve the silent behaviour (CLAUDE.md "Don't Add a
+                    # Flag for Behaviour That Should Be Unconditional").
+                    # Callers wanting strict mapping should pre-validate
+                    # with WritingSystemOperations.Ensure() (issue #250
+                    # Defect 2), not Exists() (Defect 1) -- Exists() alone
+                    # cannot distinguish "will resolve" from "will drop".
+                    logging.getLogger("flexicon").warning(
+                        "_apply_props_loop: dropping %s alt for writing "
+                        "system %r (resolved target id %r) on %s Hvo=%s -- "
+                        "target project has no such writing system, active "
+                        "or in its LDML store. Call "
+                        "WritingSystemOperations.Ensure(tgt_ws_id, ...) "
+                        "first to activate or create it if this text "
+                        "should be kept.",
+                        prop_name, src_ws_id, tgt_ws_id,
+                        type(item).__name__, getattr(item, "Hvo", "?"),
+                    )
                     continue
                 if fill_gaps:
                     existing = prop_obj.get_String(tgt_handle)
