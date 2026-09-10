@@ -107,8 +107,15 @@ class SegmentOperations(BaseOperations):
         super().__init__(project)
 
     def _GetSequence(self, parent):
-        """Specify which sequence to reorder for segment analyses (reference sequence)."""
-        return parent.AnalysesRS
+        """Specify which sequence to reorder: a paragraph's segments.
+
+        ``parent`` must be an IStTxtPara -- the same type GetAll()/
+        AppendSentence() already require via __GetParagraphObject().
+        AnalysesRS has its own dedicated API (SetAnalysis/ReplaceAnalysis/
+        InsertAnalysis/AppendAnalysis/RemoveAnalysis, issue #215) and must
+        not be targeted by Sort/MoveUp/MoveDown/MoveToIndex.
+        """
+        return parent.SegmentsOS
 
     def __WSHandle(self, wsHandle):
         """

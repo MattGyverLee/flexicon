@@ -57,8 +57,14 @@ class ParagraphOperations(BaseOperations):
         super().__init__(project)
 
     def _GetSequence(self, parent):
-        """Specify which sequence to reorder for paragraph segments."""
-        return parent.SegmentsOS
+        """Specify which sequence to reorder: a text's paragraphs.
+
+        ``parent`` must be an IText -- the same type Create()/GetAll()/
+        InsertAt() already require via __GetTextObject(). IStText is not
+        accepted here even though it owns ParagraphsOS directly, because no
+        sibling method on this class accepts it either.
+        """
+        return parent.ContentsOA.ParagraphsOS
 
     def __WSHandle(self, wsHandle):
         """
