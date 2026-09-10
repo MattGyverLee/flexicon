@@ -10,6 +10,56 @@ None
 
 ## History
 
+### 2026-09-10 - v4.8.0 release cut: the silent-failure sweep
+
+Cuts v4.8.0 from `main`. Bumps `flexicon/__init__.py` to 4.8.0, promotes
+`[Unreleased]` to `[4.8.0] - 2026-09-10`, and adds
+`RELEASE_NOTES_v4.8.0.md`.
+
+**The theme is silent failure.** The release closes #275 (~44
+`__ResolveObject`-family resolvers across 24 Operations classes that
+never cast, so a bare `ICmObject` from a polymorphic collection raised
+`AttributeError` on the next attribute access, and whose HVO branch
+rejected genuine objects via an `isinstance` guard against a method
+declared to return `ICmObject`), #280 (`LexiconSetComplexFormType`
+no-opping silently on an uncast `entry_ref`, plus `LexEntryRef` missing
+from the cast registry), #250 Defects 1-3 (`Exists()` contradicting its
+own "active only" docstring, and `Create()` refusing to activate a
+store-present-but-inactive writing system, which together made such a
+writing system permanently unreachable through the public API), and #266
+and #267 -- the last two sibling sites where a case- or
+separator-divergent writing-system tag caused an alt to be discarded
+without a word. Every remaining legitimate drop is now logged
+unconditionally rather than behind a `strict=` kwarg whose `False`
+default would have preserved the silent behaviour.
+
+Two behavioural breaks ship with it, both labelled in the changelog:
+`WritingSystemOperations.Exists()` is now active-only (the whole-store
+question moves to the new `ExistsInStore()`), and the complex-form-type
+accessors now raise on a non-`LexEntryRef` instead of failing silently.
+
+**Test-infrastructure note.** #264 removed a duplicated, unguarded
+`Sldr.Initialize()` in `tests/conftest.py` that made the offline suite's
+pass/fail count order-dependent -- an ~1270-result discrepancy was
+observed between two runs of the identical command on the identical
+commit. Suite counts recorded before this cut are not reliable baselines.
+This cut measured 1883 passed / 777 deselected.
+
+**Cut-time repair.** The offline gate was red at `6435d92`, which edited
+docstring examples across 19 files after the #275 docstring ratchet had
+already landed and was not re-run against it. The ratchet's baseline was
+reconciled at cut time: 78 stale entries pruned (examples that commit
+genuinely fixed -- `Filters.Create` and `Discourse.GetAllCharts` arity
+were spot-verified) and one entry re-recorded under a changed key, where
+`project.lp` became `project.lexDB` in `PersonOperations.AddLanguage`.
+Both spellings are internal plumbing to the ratchet, so this is
+pre-existing debt with a new key, not new debt. Fixing that example
+properly needs `lexdb.LanguagesOA` reachable from
+`PossibilityListOperations.GetAllLists()`, which today enumerates eight
+LexDb lists but not that one; filed as follow-up rather than fixed under
+a release cut.
+
+
 ### 2026-09-09 - v4.7.0 release cut: the FlexTools/MCP bridge, and the GramCat correction
 
 Cuts v4.7.0 from `main` at the merge of `flexicon-project-bridge`. Bumps

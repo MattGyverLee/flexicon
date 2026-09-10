@@ -11,8 +11,53 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
 
 ## [Unreleased]
 
+---
+
+## [4.8.0] - 2026-09-10
+
+> **Contains two behavioural breaking changes -- read the two
+> `BREAKING (behavioural)` entries under Fixed before upgrading.**
+> Neither removes a signature or changes the meaning of a default a
+> caller passes explicitly, so this ships as a minor bump per the
+> precedent set by 4.4.0, 4.6.0 and 4.7.0; `v5.0.0` stays reserved for
+> the `flexlibs2` alias removal.
+>
+> 1. **`WritingSystemOperations.Exists()` is now active-only**, matching
+>    the contract its docstring already stated three times. A caller
+>    relying on the old whole-store answer wants the new
+>    `ExistsInStore()`.
+> 2. **`LexiconSetComplexFormType()` / `LexiconGetComplexFormType()` now
+>    raise instead of failing silently** on an object that is not a
+>    `LexEntryRef`. The setter previously did nothing and reported
+>    success; the getter previously returned `None`.
+>
+> The theme is **silent failure**. The largest single change is #275: ~44
+> `__ResolveObject`-family resolvers across 24 Operations classes never
+> cast, so any object arriving as a bare `ICmObject` from a polymorphic
+> LCM collection raised `AttributeError` on the next attribute access,
+> while the HVO branch's `isinstance` guard rejected genuine objects. Two
+> writing-system-alt drops (#266, #267) that discarded user data without a
+> word are closed, and every remaining legitimate drop is now
+> unconditionally logged rather than silent.
+>
+> Separately, the **importable surface is now honest**: 13 fully-wired
+> Operations classes that the API index advertised but that
+> `from flexicon import ...` could not actually import are exported
+> (#311, #257), and `__init__.pyi` declares the full public surface, so a
+> correctly-typed downstream project no longer sees a Pyright error on
+> every one of those imports (#297).
+>
+> Also of note for anyone comparing suite numbers across cuts: #264 fixed
+> a duplicated `Sldr.Initialize()` that made the offline suite's pass/fail
+> count **order-dependent** -- an ~1270-result discrepancy was observed
+> between two runs of the identical command on the identical commit. Counts
+> recorded before this cut are not reliable baselines.
+>
+> Offline suite at this cut: **1883 passed / 777 deselected**, superseding the
+> 1795/716 recorded for 4.7.0.
+
 ### Fixed
-- **`LexiconSetComplexFormType()` and `LexiconGetComplexFormType()` no
+- **BREAKING (behavioural): `LexiconSetComplexFormType()` and `LexiconGetComplexFormType()` no
   longer no-op silently on a base-typed `entry_ref`** (issue #280). Both
   methods gated their entire body on `hasattr(entry_ref,
   "ComplexEntryTypesRS")` with no `else`. pythonnet surfaces only the
@@ -58,7 +103,7 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   with `_apply_props_loop`'s warning so a single sync of a single phoneme
   cannot report two different outcomes for `BasicIPASymbol` versus
   `Name`/`Description`.
-- **`WritingSystemOperations.Exists()` now honours its own documented
+- **BREAKING (behavioural): `WritingSystemOperations.Exists()` now honours its own documented
   "active only" contract instead of scanning the whole LDML store**
   (issue #250 Defect 1). The docstring said "active only" three times, but
   the body delegated to `_GetWSByTag()`, which walks the unfiltered
@@ -209,7 +254,43 @@ Future breaking changes go under `[Unreleased]` until the next version cut.
   single guarded init path; a second helper would only be one more seam to
   keep in sync with it.
 
+- **`_GetSequence` now names the collection that actually exists in
+  `TextOperations`, `ParagraphOperations`, `SegmentOperations`,
+  `WfiMorphBundleOperations` and `DataNotebookOperations`** (issues #299,
+  #300). Every reorder entry point on these classes -- `Reorder`,
+  `MoveUp`, `MoveDown`, `MoveToIndex`, all of which route through
+  `BaseOperations._GetSequence(parent)` -- raised `AttributeError` or
+  `ValueError` on first use. Three classes reached one level too deep into
+  the owning object, and two named a sequence that does not exist
+  (`MorphsOS` for the morph bundle, `RecordsOS` for the notebook). A
+  redundant `TextOperations` override was deleted rather than repaired, so
+  the class now inherits the corrected base behaviour.
+- **`ConstChartRowOperations.Create()` and `SetLabel()` no longer call
+  `set_String` on a bare `ITsString`** (issue #290). `IConstChartRow.Label`
+  is an `ITsString`, not an `IMultiString`, so both methods raised
+  `AttributeError` on first use. Both now route through the project's
+  `ITsString` helpers. This is the `Source`-shaped defect class described
+  in `CLAUDE.md`: a working multilingual-write pattern was copied to a
+  target interface whose same-named field has a different LCM type.
+- **`flexicon/__init__.pyi` now declares the full public surface**
+  (issue #297). The stub omitted every exported Operations class, so
+  Pyright flagged `from flexicon import XOperations` as an error for every
+  one of them in a correctly-typed downstream project. Parity between
+  `__init__.py` and the stub is now pinned by
+  `tests/test_297_init_stub_parity.py`.
+
 ### Added
+- **13 wired Operations classes are now importable from the package top
+  level** (issue #311, and issue #257 with it):
+  `ConstChartCellTagOperations`, `ConstChartClauseMarkerOperations`,
+  `ConstChartMarkerOperations`, `ConstChartMovedTextOperations`,
+  `ConstChartOperations`, `ConstChartRowOperations`,
+  `ConstChartWordGroupOperations`, `LocalizedListsOperations`,
+  `MSAOperations`, `PhonFeatureOperations`,
+  `ReversalIndexEntryOperations`, `ReversalIndexOperations` and
+  `StratumOperations`. Each was fully implemented and reachable through
+  its `FLExProject` property, but `from flexicon import MSAOperations`
+  raised `ImportError` even though the API index advertised it.
 - **`WritingSystemOperations.ExistsInStore(language_tag)`** -- the
   whole-store writing-system predicate that `Exists()` used to answer by
   accident (issue #250 Defect 1). Returns `True` for a tag present
