@@ -25,7 +25,7 @@
 #   BEFORE this file was written and BEFORE any live run, per the C28
 #   forward rule.
 #
-#   Uses target_sandbox / target_sandbox_path (tests/conftest.py)
+#   Uses target_sandbox / target_sandbox_path (tests/flex_plugin.py)
 #   EXCLUSIVELY. Never the real Target project, never scripts/restore_*.py.
 #
 #   Platform: Python.NET

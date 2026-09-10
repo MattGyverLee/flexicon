@@ -3,7 +3,7 @@
 Render tests/LIVE_STATUS.md from tests/live_status.json.
 
 Reads the JSON ledger emitted by pytest's session-finish hook (see
-tests/conftest.py) and writes a human-readable Markdown table that
+tests/flex_plugin.py) and writes a human-readable Markdown table that
 summarises which Operations classes have live coverage for each CRUD
 phase (read / add / reorder / modify / delete).
 

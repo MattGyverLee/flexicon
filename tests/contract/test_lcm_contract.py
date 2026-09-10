@@ -55,7 +55,7 @@ BASELINE_SNAPSHOT_PATH = SNAPSHOTS_DIR / "liblcm_baseline.json"
 def _add_fieldworks_path():
     """
     Add the FieldWorks install directory to sys.path so clr.AddReference
-    can find SIL.LCModel. Mirrors the bootstrap in tests/conftest.py, which
+    can find SIL.LCModel. Mirrors the bootstrap in tests/flex_plugin.py, which
     runs as an autouse session fixture -- too late for the module-level
     skipif marker below, which is evaluated at collection time.
 

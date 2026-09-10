@@ -17,7 +17,7 @@
 #   (the investigation-probe convention: print findings, assert only on
 #   setup sanity and on the headline claims).
 #
-#   Uses target_sandbox_path (tests/conftest.py) exclusively for the P-3/
+#   Uses target_sandbox_path (tests/flex_plugin.py) exclusively for the P-3/
 #   P-4/P-5 probes: those need to OPEN, CLOSE, and REOPEN the same .fwdata
 #   file within a single test, which the auto-opening sandbox fixtures
 #   cannot express. Every project opened in this file is disposed in a

@@ -77,7 +77,7 @@ def test_get_poss_items_reads_possitemsrc_not_subpossibilitiesos():
 class TestGetPossItemsLive:
     """
     Live-DB coverage against a Sena 3 sandbox (fresh temp copy per test,
-    per tests/conftest.py's sena3_sandbox fixture -- never touches the
+    per tests/flex_plugin.py's sena3_sandbox fixture -- never touches the
     user's real Sena 3).
 
     OverlayOperations.Create()/GetAll() are inherited from

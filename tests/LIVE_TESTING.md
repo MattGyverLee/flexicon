@@ -77,7 +77,7 @@ existing CI behaviour is preserved.
 
 ## Fail-loud on mock fallback (REQUIRED for verification)
 
-The session fixture in `tests/conftest.py` silently falls back to mock
+The session fixture in `tests/flex_plugin.py` silently falls back to mock
 mode when FieldWorks initialization fails (e.g. on a CI runner with no
 FW install), printing `[WARN] MOCK MODE` and letting the session pass
 green. That green wall is how unverified write-path changes have been
@@ -114,7 +114,7 @@ happened twice in this repo's history. Always pass an explicit `-m`.
 ## Ledger and Markdown summary
 
 After each run that actually executes one or more live tests,
-`tests/conftest.py` writes `tests/live_status.json` -- a per-test and
+`tests/flex_plugin.py` writes `tests/live_status.json` -- a per-test and
 per-class summary of pass / fail / skip outcomes. Pure mock runs do NOT
 touch the file, so a CI run never overwrites a developer's live ledger.
 

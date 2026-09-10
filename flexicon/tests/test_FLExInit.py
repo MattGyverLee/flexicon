@@ -12,7 +12,7 @@ from flexicon import FLExInitialize, FLExCleanup
 
 # This module calls the real FLExInitialize()/FLExCleanup()/FLExInitialize()
 # sequence below, tearing down and rebuilding the session-wide SLDR
-# singleton owned by tests/conftest.py::initialize_flex_for_tests. Without
+# singleton owned by tests/flex_plugin.py::initialize_flex_for_tests. Without
 # this marker it runs during the offline `pytest -m "not requires_live_project"`
 # selector and disturbs that singleton mid-run (see CLAUDE.md's Live LCM
 # Verification section -- every test that touches FLEx init/cleanup directly
@@ -27,7 +27,7 @@ class TestFLExInit(unittest.TestCase):
         """Test that FLEx can be initialized and cleaned up without errors.
 
         FLEx services (SLDR, ICU, registry) are owned by the session-wide
-        fixture in tests/conftest.py::initialize_flex_for_tests. This test
+        fixture in tests/flex_plugin.py::initialize_flex_for_tests. This test
         verifies the public API still works, but MUST re-initialize after
         Cleanup -- otherwise the suite's SLDR singleton stays torn down
         and every later live-DB test marks .ldml files as bad

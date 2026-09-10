@@ -263,7 +263,7 @@ python -m pytest <your live test file> -m requires_live_project -q
 
 `FLEXLIBS_REQUIRE_LIVE=1` converts every silent degradation into a hard
 failure: FLEx init falling back to mocks, a locked Target, a missing
-fixture. Without it, `tests/conftest.py` prints `[WARN] MOCK MODE` and the
+fixture. Without it, `tests/flex_plugin.py` prints `[WARN] MOCK MODE` and the
 session still passes green -- which is exactly how unverified write-path
 changes have been reported as done.
 

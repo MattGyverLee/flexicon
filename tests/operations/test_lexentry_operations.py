@@ -315,7 +315,7 @@ class TestLexEntryOperationsIntegration:
         """Setup real FLEx project for integration testing.
 
         Uses the session-scoped FLEx services bootstrapped by
-        tests/conftest.py::initialize_flex_for_tests. Calling
+        tests/flex_plugin.py::initialize_flex_for_tests. Calling
         FLExInitialize() / FLExCleanup() here would tear down state
         shared with the rest of the live-DB suite.
         """
