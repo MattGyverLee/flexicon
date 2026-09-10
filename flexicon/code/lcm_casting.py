@@ -66,6 +66,9 @@ Supported Types:
     - Owner / container types (used by .Owner casting paths in Lexicon,
       Notebook, and Discourse operations): LexEntry, LexSense, RnGenericRec,
       CmPossibility, CmAnthroItem, DsConstChart, Text, StText, StTxtPara
+    - Entry-ref type: LexEntryRef (ILexEntry.EntryRefsOS elements; needed
+      to reach ComplexEntryTypesRS / ComponentLexemesRS / PrimaryLexemesRS
+      / VariantEntryTypesRS on a base-typed or HVO-resolved entry_ref)
 
 Note:
     The interface cache is lazy-loaded on first use to avoid import issues
@@ -210,6 +213,19 @@ def _ensure_interfaces() -> None:
         IWfiAnalysis = None
         ILangProject = None
 
+    # ILexEntryRef - the complex-form/variant entry-ref type owned by
+    # ILexEntry.EntryRefsOS. Confirmed present in
+    # tests/contract/snapshots/expected_contract.json. Registered
+    # because elements read off EntryRefsOS directly happen to already
+    # come back concrete-typed, but any HVO-resolved or otherwise
+    # round-tripped entry_ref arrives as bare ICmObject, on which
+    # ComplexEntryTypesRS / ComponentLexemesRS / PrimaryLexemesRS /
+    # VariantEntryTypesRS are unreachable without this cast (issue #280).
+    try:
+        from SIL.LCModel import ILexEntryRef
+    except ImportError:
+        ILexEntryRef = None
+
     # Feature-structure owner interfaces (phonology) - spec
     # feature-structure-sync-gap, decision D3. IPhNCFeatures and
     # IPhPhoneme both declare FeaturesOA directly; IPhNCSegments does
@@ -327,6 +343,8 @@ def _ensure_interfaces() -> None:
         _interface_cache["LexSense"] = ILexSense
     if ILexRefType is not None:
         _interface_cache["LexRefType"] = ILexRefType
+    if ILexEntryRef is not None:
+        _interface_cache["LexEntryRef"] = ILexEntryRef
     if IRnGenericRec is not None:
         _interface_cache["RnGenericRec"] = IRnGenericRec
     if ICmPossibility is not None:

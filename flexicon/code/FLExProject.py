@@ -34,6 +34,7 @@ from .exceptions import (
     FP_TransactionError,
     FP_ConflictingSaveError,
 )
+from .lcm_casting import cast_to_concrete
 
 import logging
 import os
@@ -5250,8 +5251,20 @@ class FLExProject(object):
 
         Note:
             Returns None if the entry reference is not a complex form type.
+
+        Raises:
+            FP_ParameterError: If entry_ref does not resolve to an object
+                with a ComplexEntryTypesRS field (i.e. is not a LexEntryRef).
+                A base-typed (e.g. ICmObject, HVO-resolved) entry_ref is
+                cast to its concrete type first; see
+                BaseOperations.py:1568-1576 for why the uncast hasattr check
+                is otherwise always False regardless of the concrete object.
         """
-        if hasattr(entry_ref, "ComplexEntryTypesRS") and entry_ref.ComplexEntryTypesRS.Count > 0:
+        entry_ref = cast_to_concrete(entry_ref)
+        if not hasattr(entry_ref, "ComplexEntryTypesRS"):
+            raise FP_ParameterError("Object is not a LexEntryRef")
+
+        if entry_ref.ComplexEntryTypesRS.Count > 0:
             return entry_ref.ComplexEntryTypesRS[0]
         return None
 
@@ -5271,14 +5284,25 @@ class FLExProject(object):
 
         Note:
             Replaces any existing complex form types with the specified one.
+
+        Raises:
+            FP_ParameterError: If entry_ref does not resolve to an object
+                with a ComplexEntryTypesRS field (i.e. is not a LexEntryRef).
+                pythonnet only surfaces the static type's attributes, so a
+                base-typed (e.g. ICmObject, HVO-resolved) entry_ref must be
+                cast to its concrete type before the check is meaningful --
+                see BaseOperations.py:1568-1576.
         """
-        if hasattr(entry_ref, "ComplexEntryTypesRS"):
-            # Clear-then-Add is two mutations: a failure between them would
-            # leave the entry ref with no complex form type at all, which is
-            # neither the old value nor the requested one.
-            with self._TransactionCM("Set complex form type"):
-                entry_ref.ComplexEntryTypesRS.Clear()
-                entry_ref.ComplexEntryTypesRS.Add(complex_form_type)
+        entry_ref = cast_to_concrete(entry_ref)
+        if not hasattr(entry_ref, "ComplexEntryTypesRS"):
+            raise FP_ParameterError("Object is not a LexEntryRef")
+
+        # Clear-then-Add is two mutations: a failure between them would
+        # leave the entry ref with no complex form type at all, which is
+        # neither the old value nor the requested one.
+        with self._TransactionCM("Set complex form type"):
+            entry_ref.ComplexEntryTypesRS.Clear()
+            entry_ref.ComplexEntryTypesRS.Add(complex_form_type)
 
     def LexiconAddComplexForm(self, entry, components, complex_form_type):
         """
