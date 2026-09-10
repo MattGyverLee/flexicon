@@ -18,7 +18,7 @@ CUSTOM_VALUE = "Test.Value"
 
 # This module opens a REAL FLEx project via FLExProject.OpenProject(). It
 # lives under flexicon/tests/, not the root tests/ tree, so the session-wide
-# initialize_flex_for_tests fixture in tests/conftest.py never reaches it --
+# initialize_flex_for_tests fixture in tests/flex_plugin.py never reaches it --
 # pytest conftest.py fixtures only apply within their own directory subtree.
 # Without this marker the test runs during the offline
 # `pytest -m "not requires_live_project"` selector and fails opening the

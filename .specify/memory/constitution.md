@@ -40,7 +40,7 @@ python -m pytest -m "not requires_live_project" -q
 
 `pytest --ignore=tests/contract` is **prohibited**. It applies no `-m` filter, so
 it collects and executes all 322 `requires_live_project` tests; per
-`tests/conftest.py:1221` Phases A-D of those run in-place against the real Sena 3
+`tests/flex_plugin.py:1217` Phases A-D of those run in-place against the real Sena 3
 project. It is a live-write command wearing the costume of a scoping flag.
 
 *Why:* the prose rule "no live writes" was in force and was breached twice in one

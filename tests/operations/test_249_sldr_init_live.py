@@ -12,7 +12,7 @@
 #   that was passed in.
 #
 #   SESSION CONTRACT: the SLDR is a session-wide singleton owned by
-#   tests/conftest.py::initialize_flex_for_tests. This module tears it
+#   tests/flex_plugin.py::initialize_flex_for_tests. This module tears it
 #   down deliberately to exercise the cleanup guard, so it MUST leave it
 #   INITIALIZED again -- exactly as flexicon/tests/test_FLExInit.py:34
 #   does. If it does not, every later live test in the session reads LDML

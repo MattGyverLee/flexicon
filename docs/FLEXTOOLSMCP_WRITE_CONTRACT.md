@@ -53,7 +53,7 @@ numbers.
 
 **Do NOT use `pytest --ignore=tests/contract`.** It applies no `-m` filter, so
 it collects and EXECUTES the 322 `requires_live_project` tests. Per
-`tests/conftest.py:1221`, Phases A-D of those run **in-place against the real
+`tests/flex_plugin.py:1217`, Phases A-D of those run **in-place against the real
 Sena 3 project** (only Phase E uses the isolated `sena3_sandbox` tempdir).
 That invocation therefore performs live LCM writes against a real FLEx project
 on the machine running it. An earlier revision of this document quoted

@@ -9,7 +9,7 @@
 #   Uses list-backed fake LCM objects (no live FieldWorks project
 #   required for these); one dedicated test exercises the real
 #   ILexEntry cast failure path and therefore needs SIL.LCModel to be
-#   importable (provided by the session fixture in tests/conftest.py).
+#   importable (provided by the session fixture in tests/flex_plugin.py).
 #
 #   Platform: Python.NET
 #             FieldWorks Version 9+

@@ -18,7 +18,7 @@ class TestFLExProject(unittest.TestCase):
     """Test FLExProject functionality.
 
     FLEx services (SLDR, ICU, registry, FLExInitialize) are owned by the
-    session-wide fixture in tests/conftest.py::initialize_flex_for_tests.
+    session-wide fixture in tests/flex_plugin.py::initialize_flex_for_tests.
     A per-class FLExCleanup() here would tear down SLDR for the remainder
     of the suite, causing later OpenProject calls to mark .ldml files as
     bad ("SLDR has not been initialized") and triggering the "Unable to

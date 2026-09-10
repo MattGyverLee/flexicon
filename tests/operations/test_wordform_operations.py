@@ -230,7 +230,7 @@ class TestWordformOperationsIntegration:
         """Setup real FLEx project for integration testing.
 
         Uses the session-scoped FLEx services bootstrapped by
-        tests/conftest.py::initialize_flex_for_tests. Calling
+        tests/flex_plugin.py::initialize_flex_for_tests. Calling
         FLExInitialize() / FLExCleanup() here would tear down SLDR
         for the remainder of the suite, causing later OpenProject
         calls to mark .ldml files as bad ("SLDR has not been

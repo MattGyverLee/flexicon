@@ -58,7 +58,7 @@
 #     test_p5 -- THE NON-STR BRANCH DIVERGENCE between ParagraphOperations
 #       and SegmentOperations.AppendSentence.
 #
-#   Uses target_sandbox / target_sandbox_path (tests/conftest.py)
+#   Uses target_sandbox / target_sandbox_path (tests/flex_plugin.py)
 #   EXCLUSIVELY. Never the real Target project, never scripts/restore_*.py.
 #   Every project opened via target_sandbox_path in this file is disposed
 #   in a `finally:` block, matching the convention established by

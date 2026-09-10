@@ -31,7 +31,7 @@ import pytest
 # ---------------------------------------------------------------------------
 # Live-pythonnet fixtures: HeadlessLcmUI subclasses SIL.LCModel.ILcmUI, so
 # importing it requires the SIL.LCModel assembly to be loaded. The session
-# fixture in tests/conftest.py already attempts this and falls back to mock
+# fixture in tests/flex_plugin.py already attempts this and falls back to mock
 # mode on failure; skip the whole module cleanly if that fallback happened.
 # ---------------------------------------------------------------------------
 
